@@ -819,7 +819,11 @@
         });
         F.draw();
         if (this.state === 'hook') this.drawHook();
-        if (this.state === 'dead' || this.state === 'cut') CH.wickGhost(this.pl.x, this.pl.y - Math.min(this.st, 1.8) * 60, 1.4);
+        if (this.state === 'dead' || this.state === 'cut') {
+          const st = this.state === 'dead' ? this.st : 9;
+          if (CH.heroDeath) CH.heroDeath(this.pl.x, this.pl.y, st);
+          if (st > 0.9) CH.wickGhost(this.pl.x, this.pl.y - Math.min(st - 0.9, 1.2) * 60, 1.4);
+        }
         if (this.near && !U.blocking()) U.prompt(this.near.x, this.near.y - 40, 'E', this.near.label);
       },
       drawDoors() {

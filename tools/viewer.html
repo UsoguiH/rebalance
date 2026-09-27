@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hero Sprite Viewer</title>
+<style>
+  body { margin: 0; background: #f4ecd9; font: 15px Georgia, serif; color: #1b1310; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px; display: grid; gap: 16px; }
+  #anims { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { font: inherit; padding: 6px 10px; border: 2px solid #1b1310; border-radius: 6px; background: #fffaf0; cursor: pointer; }
+  button[aria-pressed="true"] { background: #b3261e; color: #fff; }
+  canvas { background: #fbf6ea; border: 3px solid #1b1310; border-radius: 10px; max-width: 100%; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Hero sprite sheet</h1>
+  <div id="anims"></div>
+  <canvas id="c" width="720" height="360"></canvas>
+  <p id="info"></p>
+</main>
+<script>window.G = {};</script>
+<script src="../assets/atlas.js"></script>
+<script>
+  const R = G.ATLAS.hero, img = new Image();
+  img.src = '../assets/hero.png';
+  const c = document.getElementById('c').getContext('2d');
+  let cur = 'idle_down', t0 = performance.now();
+  Object.keys(R.anims).forEach((name) => {
+    const b = document.createElement('button');
+    b.textContent = name;
+    b.onclick = () => { cur = name; t0 = performance.now(); document.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b)); };
+    if (name === cur) b.setAttribute('aria-pressed', 'true');
+    document.getElementById('anims').appendChild(b);
+  });
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (!img.complete) return;
+    const a = R.anims[cur], n = a.frames.length;
+    let k = Math.floor(((now - t0) / 1000) * a.fps);
+    k = a.loop ? k % n : Math.min(n - 1, k % (n + 6));
+    const i = a.frames[k], col = i % R.cols, row = Math.floor(i / R.cols);
+    c.clearRect(0, 0, 720, 360);
+    // big preview + the whole strip
+    c.drawImage(img, col * R.cw * R.S, row * R.ch * R.S, R.cw * R.S, R.ch * R.S, 40, 10, R.cw * 2.2, R.ch * 2.2);
+    a.frames.forEach((fi, j) => {
+      const cc = fi % R.cols, rr = Math.floor(fi / R.cols);
+      c.globalAlpha = j === k ? 1 : 0.45;
+      c.drawImage(img, cc * R.cw * R.S, rr * R.ch * R.S, R.cw * R.S, R.ch * R.S, 340 + (j % 6) * 62, 20 + Math.floor(j / 6) * 80, R.cw * 0.5, R.ch * 0.5);
+    });
+    c.globalAlpha = 1;
+    document.getElementById('info').textContent = cur + ': frame ' + (k + 1) + ' of ' + n + ' at ' + a.fps + ' fps' + (a.loop ? ', looping' : '');
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>

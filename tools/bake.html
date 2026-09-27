@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sprite baker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chango&family=Limelight&family=Special+Elite&display=swap">
+</head>
+<body style="background:#222">
+<script src="../js/core.js"></script>
+<script src="../js/ink.js"></script>
+<script src="../js/cel.js"></script>
+<script src="../js/items.js"></script>
+<script src="../js/art/wick.js"></script>
+<script src="../js/art/hero.js"></script>
+<script src="../js/art/enemies.js"></script>
+<script src="../js/art/ui.js"></script>
+<script>
+// Paints every animation frame of a sheet into one PNG and returns atlas data.
+window.bake = (name) => {
+  const def = G.art.sheets[name];
+  const CL = G.cel;
+  const cw = def.cell[0], ch = def.cell[1], S = def.scale, cols = def.cols || 16;
+  const list = [];
+  Object.keys(def.anims).forEach((an) => {
+    const a = def.anims[an];
+    for (let f = 0; f < a[0]; f++) list.push([an, f]);
+  });
+  const rows = Math.ceil(list.length / cols);
+  const cv = document.createElement('canvas');
+  cv.width = Math.min(cols, list.length) * cw * S;
+  cv.height = rows * ch * S;
+  const c = cv.getContext('2d');
+  G.ctx = c;
+  G.boil = 0;
+  const frames = {}, anims = {};
+  list.forEach(([an, f], i) => {
+    const x = (i % cols) * cw, y = Math.floor(i / cols) * ch;
+    c.save();
+    c.scale(S, S);
+    c.beginPath();
+    c.rect(x, y, cw, ch);
+    c.clip();
+    c.translate(x + def.anchor[0], y + def.anchor[1]);
+    CL.seed(i * 7 + 3);
+    CL.jitter = def.jitter == null ? 0.3 : def.jitter;
+    G.ink.amt = 0.35;
+    def.draw(an, f);
+    c.restore();
+    const key = an + '_' + f;
+    frames[key] = { frame: { x: x * S, y: y * S, w: cw * S, h: ch * S }, pivot: { x: def.anchor[0] / cw, y: def.anchor[1] / ch } };
+    (anims[an] = anims[an] || { frames: [], fps: def.anims[an][1], loop: def.anims[an][2] }).frames.push(i);
+  });
+  return {
+    png: cv.toDataURL('image/png'),
+    meta: { image: name + '.png', size: { w: cv.width, h: cv.height }, scale: S, cell: { w: cw, h: ch }, anchor: { x: def.anchor[0], y: def.anchor[1] }, cols },
+    frames,
+    animations: Object.fromEntries(Object.entries(anims).map(([k, v]) => [k, { frames: v.frames.map((i) => list[i][0] + '_' + list[i][1]), fps: v.fps, loop: v.loop }])),
+    runtime: { cols, cw, ch, S, ax: def.anchor[0], ay: def.anchor[1], anims },
+  };
+};
+window.ready = true;
+</script>
+</body>
+</html>

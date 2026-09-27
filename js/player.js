@@ -216,6 +216,8 @@
         rolling: !!this.roll,
         rollT: this.roll ? this.roll.t / this.roll.dur : 0,
         rollDir: this.roll ? (this.roll.dx >= 0 ? 1 : -1) : 1,
+        rollView: this.roll ? (Math.abs(this.roll.dy) > Math.abs(this.roll.dx) ? (this.roll.dy > 0 ? 'down' : 'up') : 'side') : null,
+        hurtT: this.inv > 1.2 && !this.roll ? (1.6 - this.inv) / 0.4 : null,
         alpha: blink ? 0.35 : 1,
         mood: this.inv > 1.2 ? 'o' : 'grin',
       });

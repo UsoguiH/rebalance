@@ -64,6 +64,23 @@ Each boss has three phases, and **pink** projectiles can be parried.
 | Esc / P | Pause, options, how to play |
 | M | Mute |
 
+## Sprite sheets
+
+The hero is a top-hatted plague-doctor crow drawn in a clean cel-animation style:
+tapered brush outlines, flat colors with hard shadow shapes, and follow-through on
+the cloak, scarf and hat. His frames are painted in code and baked to a sprite sheet:
+
+- `assets/hero.png` plus `assets/hero.json`: 164 frames (TexturePacker-style JSON with
+  frames and named animations)
+- `assets/atlas.js`: the same data in a compact form the game loads at runtime
+
+The animations are idle, run, dash and shoot (5 aim angles), run-and-shoot, hurt,
+death, ghost, cheer, parry and talk. Each comes in down, side and up views where
+that applies; side frames are mirrored for left.
+
+To rebake after editing `js/art/*.js`, run `node tools/bake.js`. It needs Playwright.
+Open `tools/viewer.html` (served over http) to play each animation.
+
 ## Code map
 
 | File | What it does |
@@ -84,5 +101,9 @@ Each boss has three phases, and **pink** projectiles can be parried.
 | `js/bosses.js` | The four bosses and their hazards |
 | `js/dungeon.js` | Floor generation, rooms, loot, minimap, boss flow, death and results cards |
 | `js/game.js` | Canvas setup, main loop, scene transitions |
+| `js/cel.js` | Clean cel-style drawing kit used to paint the sprite sheets |
+| `js/art/wick.js`, `js/art/hero.js` | The pose and animation library, and the crow hero's painter |
+| `js/sprites.js` | Loads the baked sheets and plays the hero's animations in game |
+| `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
