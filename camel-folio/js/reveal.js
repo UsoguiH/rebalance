@@ -54,38 +54,37 @@ export function applyReveal(scene, skip = new Set()) {
   });
 }
 
-// Tileable void pattern: small eight-point stars (khatam) on a dark ground with faint diagonals.
+// Tileable void pattern: moonlit sand dunes. Wavy ridge bands bent by a slow
+// warp, with soft golden crests and fine wind ripples. All frequencies are
+// whole numbers across the tile so it repeats seamlessly.
 function voidTexture() {
-  const S = 256;
+  const S = 512;
   const c = document.createElement('canvas');
   c.width = c.height = S;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#17121f';
-  ctx.fillRect(0, 0, S, S);
-  ctx.strokeStyle = 'rgba(160, 120, 220, 0.16)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(0, 0); ctx.lineTo(S, S);
-  ctx.moveTo(S, 0); ctx.lineTo(0, S);
-  ctx.stroke();
-  const star = (x, y, r) => {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.fillStyle = '#7b5cd6';
-    for (const a of [0, Math.PI / 4]) {
-      ctx.save();
-      ctx.rotate(a);
-      ctx.fillRect(-r, -r, r * 2, r * 2);
-      ctx.restore();
+  const img = ctx.createImageData(S, S);
+  const d = img.data;
+  const TAU = Math.PI * 2;
+  const trough = [23, 17, 33], flank = [74, 50, 66], crest = [214, 150, 96];
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const u = x / S, v = y / S;
+      const warp = Math.sin(v * TAU * 2) * 0.35 + Math.sin((u + v) * TAU) * 0.25;
+      const wave = 0.5 + 0.5 * Math.sin((u * 3 + warp) * TAU);
+      const ripple = 0.5 + 0.5 * Math.sin((u * 24 + warp * 6 + v * 2) * TAU);
+      const shade = wave * wave * (3 - 2 * wave);
+      const ridge = Math.max(0, (wave - 0.86) / 0.14);
+      const i = (y * S + x) * 4;
+      for (let k = 0; k < 3; k++) {
+        let col = trough[k] + (flank[k] - trough[k]) * shade;
+        col += (crest[k] - col) * ridge * 0.7;
+        col += ripple * shade * 6;
+        d[i + k] = Math.min(255, col);
+      }
+      d[i + 3] = 255;
     }
-    ctx.fillStyle = '#17121f';
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.45, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  };
-  star(S / 4, S / 4, 7);
-  star((3 * S) / 4, (3 * S) / 4, 7);
+  }
+  ctx.putImageData(img, 0, 0);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -115,7 +114,7 @@ export class Island {
 
     // Void floor far below, patterned.
     const tex = voidTexture();
-    tex.repeat.set(60, 60);
+    tex.repeat.set(18, 18);
     this.floorMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, fog: false });
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), this.floorMat);
     floor.rotation.x = -Math.PI / 2;
