@@ -148,13 +148,15 @@ export class Intro
             let cachedTexture = this.text.textures.get(name)
             if(!cachedTexture)
             {
-                const loader = this.game.resourcesLoader.getLoader('textureKtx')
+                // Arabic labels ship as PNG (same orientation as the KTX versions).
+                const loader = this.game.resourcesLoader.getLoader('texture')
                 
-                const resourcePath = `intro/${name}Label.ktx`
+                const resourcePath = `intro/${name}Label.png`
                 loader.load(
                     resourcePath,
                     (loadedTexture) =>
                     {
+                        loadedTexture.flipY = false
                         this.text.textures.set(name, loadedTexture)
 
                         // Update material and mesh

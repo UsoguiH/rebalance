@@ -465,12 +465,17 @@ export class LabArea extends Area
                 resource = {}
                 resource.loaded = false
 
-                const loader = this.game.resourcesLoader.getLoader('textureKtx')
+                const loader = this.game.resourcesLoader.getLoader(path.endsWith('.ktx') ? 'textureKtx' : 'texture')
 
                 loader.load(
                     path,
                     (loadedTexture) =>
                     {
+                        if(!path.endsWith('.ktx'))
+                        {
+                            loadedTexture.flipY = false
+                            loadedTexture.colorSpace = THREE.SRGBColorSpace
+                        }
                         resource.texture = loadedTexture
                         resource.colorSpace = THREE.SRGBColorSpace
                         resource.flipY = false
@@ -838,12 +843,17 @@ export class LabArea extends Area
                         if(mini.startedLoading)
                             return
 
-                        const loader = this.game.resourcesLoader.getLoader('textureKtx')
+                        const loader = this.game.resourcesLoader.getLoader(project.imageMini.endsWith('.ktx') ? 'textureKtx' : 'texture')
 
                         loader.load(
                             `lab/images/${project.imageMini}`,
                             (loadedTexture) =>
                             {
+                                if(!project.imageMini.endsWith('.ktx'))
+                                {
+                                    loadedTexture.flipY = false
+                                    loadedTexture.colorSpace = THREE.SRGBColorSpace
+                                }
                                 const alpha = uniform(0)
                                 const textureColor = texture(loadedTexture).rgb
                                 gsap.to(alpha, { value: 1, duration: 1, overwrite: true })

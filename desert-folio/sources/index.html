@@ -1,27 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bruno's</title>
+    <title>رحلة الجمل</title>
+    <meta name="description" content="معرض أعمال عربي ثلاثي الأبعاد مبني على Folio 2025 لـ Bruno Simon">
 
-    <meta name="description" content="Bruno Simon's creative portfolio">
-
-    <meta itemprop="name" content="Bruno Simon">
-    <meta itemprop="description" content="Bruno Simon's creative portfolio">
-    <meta itemprop="image" content="https://bruno-simon.com/social/share-image.png?cb=a">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Bruno Simon">
-    <meta name="twitter:description" content="Bruno Simon's creative portfolio">
-    <meta name="twitter:image" content="https://bruno-simon.com/social/share-image.png?cb=a">
-
-    <meta property="og:site_name" content="Three.js Journey">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://bruno-simon.com/">
-    <meta property="og:title" content="Bruno Simon">
-    <meta property="og:description" content="Bruno Simon's creative portfolio">
-    <meta property="og:image" content="https://bruno-simon.com/social/share-image.png?cb=a">
+    <meta itemprop="name" content="رحلة الجمل">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,23 +18,24 @@
     <link rel="icon" type="image/svg+xml" href="/favicons/favicon.svg" loading="lazy" />
     <link rel="shortcut icon" href="/favicons/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="Bruno's" />
+    <meta name="apple-mobile-web-app-title" content="رحلة الجمل" />
     <link rel="manifest" href="/favicons/site.webmanifest" />
 
     <link rel="preload" href="/respawns/respawnsReferences-compressed.glb" as="fetch" crossorigin>
     <link rel="preload" href="/behindTheScene/stars.ktx" as="fetch" crossorigin>
     <link rel="preload" href="/intro/sound.ktx" as="fetch" crossorigin>
     <link rel="preload" href="/palette.ktx" as="fetch" crossorigin>
-    
-    <!-- Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JMSN30BQ5J"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
 
-        gtag('config', '%VITE_ANALYTICS_TAG%');
-    </script>
+    <style>
+        @font-face { font-family: 'Nunito'; font-weight: 100 600; src: url('fonts/arabic/cairo-arabic-400-normal.woff2') format('woff2'); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+        @font-face { font-family: 'Nunito'; font-weight: 700 900; src: url('fonts/arabic/cairo-arabic-700-normal.woff2') format('woff2'); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+        @font-face { font-family: 'Amatic SC'; src: url('fonts/arabic/aref-ruqaa-arabic-700-normal.woff2') format('woff2'); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+        @font-face { font-family: 'Pally-Medium'; src: url('fonts/arabic/cairo-arabic-700-normal.woff2') format('woff2'); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+        @font-face { font-family: 'Pally-Bold'; src: url('fonts/arabic/cairo-arabic-700-normal.woff2') format('woff2'); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+        @font-face { font-family: 'Pally-Regular'; src: url('fonts/arabic/cairo-arabic-400-normal.woff2') format('woff2'); unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200F; }
+        .content-inner .text, .content-inner .title, .content-inner li, .modal p, .modal .title, .tooltip { direction: rtl; }
+        .content-inner .text, .content-inner li, .modal p { text-align: right; }
+    </style>
 </head>
 <body>
 
@@ -67,8 +53,8 @@
         <div class="js-touch-buttons touch-buttons">
             <div class="js-overlay overlay"></div>
             <div class="list">
-                <button data-name="interact" class="js-button interact">Interact</button>
-                <button data-name="unstuck" class="js-button unstuck">Unstuck</button>
+                <button data-name="interact" class="js-button interact">تفاعل</button>
+                <button data-name="unstuck" class="js-button unstuck">حرّرني</button>
                 <button data-name="previous" class="js-button previous"></button>
                 <button data-name="next" class="js-button next"></button>
                 <button data-name="open" class="js-button open"></button>
@@ -224,27 +210,27 @@
                         <!-- Intro -->
                         <div class="js-content content home-content">
                             <div class="content-inner">
-                                <div class="title">Bruno's Home</div>
-                                <p class="text">Welcome!</p>
-                                <p class="text">My name is <strong>Bruno Simon</strong>, and I'm a <strong>creative developer</strong> (mostly for the web).</p>
-                                <p class="text">This is my portfolio. Please drive around to learn more about me and discover the many secrets of this world.</p>
-                                <p class="text">And don't break anything!</p>
+                                <div class="title">الرئيسية</div>
+                                <p class="text">أهلاً بك!</p>
+                                <p class="text">أنا <strong>اسمك هنا</strong>، <strong>مطوّر ويب ومصمم تجارب ثلاثية الأبعاد</strong>.</p>
+                                <p class="text">هذا معرض أعمالي. تجوّل في الصحراء لتتعرّف عليّ وتكتشف أسرار هذا العالم.</p>
+                                <p class="text">ولا تكسر شيئاً!</p>
                             </div>
                         </div>
 
                         <!-- Options -->
                         <div class="js-content content options-content">
                             <div class="content-inner">
-                                <div class="title">Options</div>
+                                <div class="title">الإعدادات</div>
                                 <table class="options">
                                     <tbody>
                                         <tr>
                                             <td>
-                                                Audio 
+                                                الصوت 
                                             </td>
                                             <td>
                                                 <button class="js-audio-toggle audio-toggle button is-small has-tooltip">
-                                                    <div class="tooltip">Toggles sound</div>
+                                                    <div class="tooltip">تشغيل الصوت وإيقافه</div>
                                                     <img class="icon icon-audio audio-on" src="ui/audio/audioOn.svg" loading="lazy">
                                                     <img class="icon icon-audio audio-off" src="ui/audio/audioOff.svg" loading="lazy">
                                                 </button>
@@ -252,56 +238,56 @@
                                         </tr>
                                         <tr>
                                             <td>
-                                                Quality 
+                                                الجودة 
                                             </td>
                                             <td>
                                                 <button class="js-quality-toggle quality-toggle button is-small has-tooltip">
-                                                    <div class="tooltip">Toggles some effects</div>
-                                                    <span>Low</span>
+                                                    <div class="tooltip">تشغيل بعض المؤثرات وإيقافها</div>
+                                                    <span>منخفضة</span>
                                                 </button>
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>
-                                                I'm stuck!
+                                                علقت!
                                             </td>
                                             <td>
                                                 <button class="js-respawn button is-small has-tooltip">
-                                                    <div class="tooltip">Teleports you to the closest respawn</div>
-                                                    Respawn
+                                                    <div class="tooltip">ينقلك إلى أقرب نقطة انطلاق</div>
+                                                    العودة
                                                 </button>
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>
-                                                Reset
+                                                إعادة ضبط
                                             </td>
                                             <td>
                                                 <button class="js-reset button is-small has-tooltip">
-                                                    <div class="tooltip">Resets every object</div>
-                                                    Reset
+                                                    <div class="tooltip">يعيد كل الأشياء إلى أماكنها</div>
+                                                    إعادة ضبط
                                                 </button>
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>
-                                                Renderer
+                                                المحرّك
                                             </td>
                                             <td>
                                                 <button class="js-renderer button is-small is-disabled is-success has-tooltip">
-                                                    <div class="js-tooltip tooltip">Best for performance</div>
+                                                    <div class="js-tooltip tooltip">الأفضل للأداء</div>
                                                     <span>WebGPU</span>
                                                 </button>
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>
-                                                Server
+                                                الخادم
                                             </td>
                                             <td>
                                                 <button class="js-server button is-small is-disabled has-tooltip">
                                                     <div class="js-tooltip tooltip"></div>
-                                                    <span>Pending</span>
+                                                    <span>قيد الانتظار</span>
                                                 </button>
                                             </td>
                                         </tr>
@@ -320,21 +306,21 @@
                                             <span class="icon-container">
                                                 <span class="icon icon-mouse-keyboard"></span>
                                             </span>
-                                            <span class="label">Mouse Keyboard</span>
+                                            <span class="label">الفأرة ولوحة المفاتيح</span>
                                         </button>
                                         <button class="js-tabs-navigation-item tab" data-tabs-name="touch">
                                             <div class="active-background"></div>
                                             <span class="icon-container">
                                                 <span class="icon icon-touch"></span>
                                             </span>
-                                            <span class="label">Mobile Tablet</span>
+                                            <span class="label">الجوال واللوحي</span>
                                         </button>
                                         <button class="js-tabs-navigation-item tab" data-tabs-name="gamepad">
                                             <div class="active-background"></div>
                                             <span class="icon-container">
                                                 <span class="icon icon-gamepad"></span>
                                             </span>
-                                            <span class="label">Gamepad</span>
+                                            <span class="label">يد التحكم</span>
                                         </button>
                                     </div>
                                     <div class="js-tabs-content text text-small tabs-content">
@@ -345,52 +331,52 @@
                                                 <table>
                                                     <tbody>
                                                         <tr>
-                                                            <td><span class="key">WASD</span> or <span class="key">ARROWS</span></td>
-                                                            <td>Move around</td>
+                                                            <td><span class="key">WASD</span> أو <span class="key">الأسهم</span></td>
+                                                            <td>التحرك</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">SHIFT</span></td>
-                                                            <td>Boost</td>
+                                                            <td>تسريع</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">CTRL LEFT</span> or <span class="key">B</span></td>
-                                                            <td>Brake</td>
+                                                            <td><span class="key">CTRL LEFT</span> أو <span class="key">B</span></td>
+                                                            <td>فرملة</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">SPACE</span></td>
-                                                            <td>Jump</td>
+                                                            <td>قفز</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">ENTER</span></td>
-                                                            <td>Interact</td>
+                                                            <td>تفاعل</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">M</span></td>
-                                                            <td>Map</td>
+                                                            <td>الخريطة</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">L</span></td>
-                                                            <td>Mute</td>
+                                                            <td>كتم الصوت</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">T</span></td>
-                                                            <td>Post a whisper</td>
+                                                            <td>اترك همسة</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">R</span></td>
-                                                            <td>Respawn</td>
+                                                            <td>العودة</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">NUM KEYS</span>/<span class="key">NUM PAD</span></td>
-                                                            <td>Activate hydraulics</td>
+                                                            <td><span class="key">أزرار الأرقام</span>/<span class="key">لوحة الأرقام</span></td>
+                                                            <td>تشغيل الهيدروليك</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">LEFT CLICK (DRAG)</span></td>
-                                                            <td>Move camera</td>
+                                                            <td><span class="key">الزر الأيسر (سحب)</span></td>
+                                                            <td>تحريك الكاميرا</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">H</span></td>
-                                                            <td>Honk</td>
+                                                            <td>صوت التنبيه</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -403,16 +389,16 @@
                                                 <table>
                                                     <tbody>
                                                         <tr>
-                                                            <td><span class="key">One finger</span></td>
-                                                            <td>Move the car</td>
+                                                            <td><span class="key">إصبع واحد</span></td>
+                                                            <td>التحرك</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">Two fingers</span></td>
-                                                            <td>Move camera / zoom</td>
+                                                            <td><span class="key">إصبعان</span></td>
+                                                            <td>تحريك الكاميرا / التقريب</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">Tap (on the car)</span></td>
-                                                            <td>Jump</td>
+                                                            <td><span class="key">المس المركبة</span></td>
+                                                            <td>قفز</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -430,73 +416,73 @@
                                                                 <span class="is-gamepad-button is-xbox key">B</span>
                                                                 <span class="is-gamepad-button is-playstation is-icon circle"></span>
                                                             </td>
-                                                            <td>Boost</td>
+                                                            <td>تسريع</td>
                                                         </tr>
                                                         <tr>
                                                             <td>
                                                                 <span class="is-gamepad-button is-xbox key">Y</span>
                                                                 <span class="is-gamepad-button is-playstation is-icon triangle"></span>
                                                             </td>
-                                                            <td>Jump</td>
+                                                            <td>قفز</td>
                                                         </tr>
                                                         <tr>
                                                             <td>
                                                                 <span class="is-gamepad-button is-xbox key">X</span>
                                                                 <span class="is-gamepad-button is-playstation is-icon square"></span>
                                                             </td>
-                                                            <td>Brake</td>
+                                                            <td>فرملة</td>
                                                         </tr>
                                                         <tr>
                                                             <td>
                                                                 <span class="is-gamepad-button is-xbox key">A</span>
                                                                 <span class="is-gamepad-button is-playstation is-icon cross"></span>
                                                             </td>
-                                                            <td>Interact / Exit</td>
+                                                            <td>تفاعل / خروج</td>
                                                         </tr>
                                                         <tr>
                                                             <td>
                                                                 <span class="is-gamepad-button is-xbox key">LT</span>
                                                                 <span class="is-gamepad-button is-playstation key">L2</span>
                                                             </td>
-                                                            <td>Accelerate</td>
+                                                            <td>تسارع</td>
                                                         </tr>
                                                         <tr>
                                                             <td>
                                                                 <span class="is-gamepad-button is-xbox key">RT</span>
                                                                 <span class="is-gamepad-button is-playstation key">R2</span>
                                                             </td>
-                                                            <td>Backward accelerate</td>
+                                                            <td>رجوع للخلف</td>
                                                         </tr>
                                                         <tr>
                                                             <td>
                                                                 <span class="is-gamepad-button is-xbox key">LB / RB</span>
                                                                 <span class="is-gamepad-button is-playstation key">L1 / R1</span>
                                                             </td>
-                                                            <td>Hydraulics</td>
+                                                            <td>الهيدروليك</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">Joystick Left</span></td>
-                                                            <td>Turn wheels</td>
+                                                            <td><span class="key">العصا اليسرى</span></td>
+                                                            <td>التوجيه</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">Joystick Left (press)</span></td>
-                                                            <td>Honk</td>
+                                                            <td><span class="key">العصا اليسرى (ضغط)</span></td>
+                                                            <td>صوت التنبيه</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">Joystick Right</span></td>
-                                                            <td>Move camera</td>
+                                                            <td><span class="key">العصا اليمنى</span></td>
+                                                            <td>تحريك الكاميرا</td>
                                                         </tr>
                                                         <tr>
-                                                            <td><span class="key">Joystick Right (press)</span></td>
-                                                            <td>Zoom in/out</td>
+                                                            <td><span class="key">العصا اليمنى (ضغط)</span></td>
+                                                            <td>تقريب / إبعاد</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">Select</span></td>
-                                                            <td>Reset</td>
+                                                            <td>إعادة ضبط</td>
                                                         </tr>
                                                         <tr>
                                                             <td><span class="key">Start</span></td>
-                                                            <td>Pause</td>
+                                                            <td>إيقاف مؤقت</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -510,51 +496,51 @@
                         <!-- Achievements -->
                         <div class="js-content content achievements-content">
                             <div class="content-inner">
-                                <div class="title">Achievements</div>
+                                <div class="title">الإنجازات</div>
                                 <div class="js-global-progress global-progress">
                                     <span class="ratio"><span class="js-current current"></span> / <span class="js-total total"></span></span>
                                     <span class="js-time time">2h 30min 15s</span>
                                 </div>
                                 <div class="rewards-container">
-                                    <div class="title">Rewards</div>
+                                    <div class="title">المكافآت</div>
                                     <div class="rewards">
                                         <button class="js-reward reward has-tooltip" data-name="red" data-default>
-                                            <div class="js-tooltip tooltip">Unlock at <strong></strong></div>
+                                            <div class="js-tooltip tooltip">تُفتح عند <strong></strong></div>
                                             <img class="picture" src="ui/achievements/rewards/red.webp" loading="lazy">
                                             <div class="lock">
                                                 <img class="lock-icon" src="ui/lock.svg" loading="lazy">
                                             </div>
                                         </button>
                                         <button class="js-reward reward has-tooltip is-locked" data-name="orange">
-                                            <div class="js-tooltip tooltip">Unlock at <strong></strong></div>
+                                            <div class="js-tooltip tooltip">تُفتح عند <strong></strong></div>
                                             <img class="picture" src="ui/achievements/rewards/orange.webp" loading="lazy">
                                             <div class="lock">
                                                 <img class="lock-icon" src="ui/lock.svg" loading="lazy">
                                             </div>
                                         </button>
                                         <button class="js-reward reward has-tooltip is-locked" data-name="white">
-                                            <div class="js-tooltip tooltip">Unlock at <strong></strong></div>
+                                            <div class="js-tooltip tooltip">تُفتح عند <strong></strong></div>
                                             <img class="picture" src="ui/achievements/rewards/white.webp" loading="lazy">
                                             <div class="lock">
                                                 <img class="lock-icon" src="ui/lock.svg" loading="lazy">
                                             </div>
                                         </button>
                                         <button class="js-reward reward has-tooltip is-locked" data-name="black">
-                                            <div class="js-tooltip tooltip">Unlock at <strong></strong></div>
+                                            <div class="js-tooltip tooltip">تُفتح عند <strong></strong></div>
                                             <img class="picture" src="ui/achievements/rewards/black.webp" loading="lazy">
                                             <div class="lock">
                                                 <img class="lock-icon" src="ui/lock.svg" loading="lazy">
                                             </div>
                                         </button>
                                         <button class="js-reward reward has-tooltip is-locked" data-name="flames">
-                                            <div class="js-tooltip tooltip">Unlock at <strong></strong></div>
+                                            <div class="js-tooltip tooltip">تُفتح عند <strong></strong></div>
                                             <img class="picture" src="ui/achievements/rewards/flames.webp" loading="lazy">
                                             <div class="lock">
                                                 <img class="lock-icon" src="ui/lock.svg" loading="lazy">
                                             </div>
                                         </button>
                                         <button class="js-reward reward has-tooltip is-locked" data-name="abyssal">
-                                            <div class="js-tooltip tooltip">Unlock at <strong></strong></div>
+                                            <div class="js-tooltip tooltip">تُفتح عند <strong></strong></div>
                                             <img class="picture" src="ui/achievements/rewards/abyssal.webp" loading="lazy">
                                             <div class="lock">
                                                 <img class="lock-icon" src="ui/lock.svg" loading="lazy">
@@ -567,7 +553,7 @@
                                 <div class="horizontal-group">
                                 
                                     <button class="js-button-reset button button-reset">
-                                        Reset achievements
+                                        إعادة ضبط الإنجازات
                                     </button>
                                     
                                 </div>
@@ -577,14 +563,14 @@
                         <!-- Circuit -->
                         <div class="js-content content circuit-content">
                             <div class="content-inner">
-                                <div class="title">Circuit</div>
+                                <div class="title">الحلبة</div>
                                 
                                 <p class="offline-element text text-danger">
-                                    <img src="ui/warning.svg" loading="lazy" alt="" class="icon"> Server currently offline. Scores can't be saved.
+                                    <img src="ui/warning.svg" loading="lazy" alt="" class="icon"> الخادم غير متصل حالياً، لا يمكن حفظ النتائج.
                                 </p>
 
                                 <div class="js-leaderboard-container leaderboard-container has-no-score">
-                                    <div class="no-score">No score yet today</div>
+                                    <div class="no-score">لا توجد نتائج اليوم بعد</div>
                                     <table class="js-leaderboard leaderboard online-element">
                                         <tbody>
                                         </tbody>
@@ -592,7 +578,7 @@
                                     </table>
 
                                     <p class="online-element reset">
-                                        Resets in <span class="js-reset-time reset-time"></span>
+                                        يُعاد الضبط خلال <span class="js-reset-time reset-time"></span>
                                     </p>
 
                                 </div>
@@ -603,21 +589,21 @@
                                         <svg class="icon icon-restart" width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M17 5L10 10V6C5.58172 6 2 9.58172 2 14C2 18.4183 5.58172 22 10 22C14.4183 22 18 18.4183 18 14H20C20 19.5228 15.5228 24 10 24C4.47715 24 0 19.5228 0 14C0 8.47715 4.47715 4 10 4V0L17 5Z" fill="#ffffff"/>
                                         </svg>
-                                        Restart
+                                        إعادة
                                     </button>
                                 
                                     <button class="js-button-end button">
                                         <svg class="icon icon-flag" class="none" width="23" height="20" viewBox="0 0 23 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M0.551758 1.7258C6.55166 -2.27398 11.0001 3.40978 19 1.40953L23 13.4096C15.5952 15.2611 11.6175 10.2589 6.30859 12.6762L8.44824 19.0941L6.55176 19.7269L0.551758 1.7258ZM5.26562 2.00328C4.68209 2.01685 4.07959 2.11674 3.42871 2.37242L6.16309 10.5746C7.17704 10.2014 8.1765 10.0274 9.17188 10.0043C10.8337 9.96566 12.395 10.3531 13.7764 10.7299C15.9783 11.3304 17.9741 11.9562 20.3564 11.806L17.6533 3.69664C13.9491 4.17921 11.0237 3.21654 8.72363 2.58922C7.3553 2.21603 6.29108 1.97952 5.26562 2.00328Z" fill="#ffffff"/>
                                         </svg>
-                                        End
+                                        إنهاء
                                     </button>
                                 
                                     <button class="js-button-controls button">
                                         <svg class="icon icon-controller" width="34" height="22" viewBox="0 0 34 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M24.9901 0C27.2187 0 29.1912 1.98468 30.0877 3.96582C30.9844 5.94795 33.3919 15.0915 33.9373 17.4551C34.4824 19.8185 30.7556 22.1815 26.5741 22.1816C24.3923 19.6363 22.2847 16.7432 19.8465 15H14.2235C11.7707 16.7432 9.6507 19.6363 7.4559 22.1816C3.24927 22.1816 -0.494655 19.8185 0.053558 17.4551C0.602246 15.0917 3.02451 5.94816 3.9266 3.96582C4.82847 1.98469 6.81257 0.000114396 9.05453 0H24.9901ZM8.85532 2.01074C8.38039 2.06286 7.8363 2.30078 7.27133 2.77344C6.62835 3.31144 6.08313 4.05636 5.74692 4.79492C5.3762 5.61 4.5895 8.20768 3.78403 11.1035C3.19639 13.2162 2.63705 15.345 2.28207 16.7588L2.0018 17.9072C1.9553 18.1081 1.96994 18.5603 2.69711 19.124C3.29365 19.5864 5.2646 20.0018 6.56332 20.1357C6.88401 19.7496 7.20912 19.3522 7.54086 18.9434C8.08227 18.2761 8.64694 17.5798 9.22153 16.9062C10.36 15.5716 11.6783 14.3885 13.1112 13.3701L13.6307 13H20.534L21.0555 13.373C22.4808 14.3921 23.7002 15.5757 24.8319 16.9102C25.4031 17.5837 25.9636 18.2811 26.5018 18.9482C26.83 19.3551 27.1523 19.7504 27.4696 20.1348C28.7512 20 30.7095 19.5872 31.2987 19.1279C32.0175 18.5673 32.0359 18.1133 31.9881 17.9053L31.7098 16.7559C31.3569 15.3419 30.8007 13.2132 30.2166 11.1006C29.4159 8.20421 28.6341 5.60492 28.2655 4.79004C27.9309 4.05089 27.3888 3.30754 26.7508 2.77051C26.1096 2.23085 25.4989 2 24.9901 2H9.05453L8.85532 2.01074ZM12.0096 7H14.0096V9H12.0096V11H10.0096V9H8.00961V7H10.0096V5H12.0096V7ZM24.0096 11H22.0096V9H24.0096V11ZM22.0096 9H20.0096V7H22.0096V9ZM26.0096 9H24.0096V7H26.0096V9ZM24.0096 7H22.0096V5H24.0096V7Z" fill="#ffffff"/>
                                         </svg>
-                                        Controls
+                                        التحكم
                                     </button>
                                     
                                 </div>
@@ -627,23 +613,23 @@
                         <!-- Whispers -->
                         <div class="js-content content whispers-content">
                             <div class="content-inner">
-                                <div class="title">Leave a whisper</div>
-                                <p class="text">Whispers are messages left by visitors.</p>
+                                <div class="title">اترك همسة</div>
+                                <p class="text">الهمسات رسائل يتركها الزوار.</p>
                                 <p class="text text-small text-faded">
-                                    - Everyone can see them<br />
-                                    - New whispers remove old ones (max 30)<br />
-                                    - One whisper per user<br />
-                                    - Choose a flag<br />
-                                    - No slur!<br />
-                                    - Max 30 characters
+                                    - يراها الجميع<br />
+                                    - الهمسات الجديدة تحذف القديمة (٣٠ كحد أقصى)<br />
+                                    - همسة واحدة لكل زائر<br />
+                                    - اختر علماً<br />
+                                    - بلا إساءة!<br />
+                                    - ٣٠ حرفاً كحد أقصى
                                 </p>
                                 <p class="offline-element text text-danger">
-                                    <img src="ui/warning.svg" loading="lazy" alt="" class="icon"> Server currently offline
+                                    <img src="ui/warning.svg" loading="lazy" alt="" class="icon"> الخادم غير متصل حالياً
                                 </p>
                                 <form class="js-input-group input-group is-message" action="#">
                                     <div class="js-input-flag input-flag">
                                         <div class="js-flag-button flag-button">
-                                            <img class="js-flag flag" src="ui/flags/fr.webp" loading="lazy">
+                                            <img class="js-flag flag" src="ui/flags/sa.webp" loading="lazy">
                                             <svg class="none" width="23" height="20" viewBox="0 0 23 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M0.551758 1.7258C6.55166 -2.27398 11.0001 3.40978 19 1.40953L23 13.4096C15.5952 15.2611 11.6175 10.2589 6.30859 12.6762L8.44824 19.0941L6.55176 19.7269L0.551758 1.7258ZM5.26562 2.00328C4.68209 2.01685 4.07959 2.11674 3.42871 2.37242L6.16309 10.5746C7.17704 10.2014 8.1765 10.0274 9.17188 10.0043C10.8337 9.96566 12.395 10.3531 13.7764 10.7299C15.9783 11.3304 17.9741 11.9562 20.3564 11.806L17.6533 3.69664C13.9491 4.17921 11.0237 3.21654 8.72363 2.58922C7.3553 2.21603 6.29108 1.97952 5.26562 2.00328Z" fill="white"/>
                                             </svg>
@@ -658,7 +644,7 @@
                                             </div>
                                             <input type="text" class="js-flag-search search" placeholder="Search…">
                                             <div class="js-no-result no-result">
-                                                No result
+                                                لا نتائج
                                             </div>
                                             <div class="choices">
                                                 <div class="js-scroller scroller">
@@ -681,52 +667,27 @@
                         <!-- Behind the scene -->
                         <div class="js-content content behindTheScene-content">
                             <div class="content-inner">
-                                <div class="title">Behind the scene</div>
+                                <div class="title">خلف الكواليس</div>
+                                <p class="text">شكراً لزيارتك!</p>
+
+                                <h2 class="title">المشروع الأصلي</h2>
                                 <p class="text">
-                                    Thank you for visiting my portfolio!
-                                    <br />If you are curious about the stack and how I built this project, here’s everything you need to know.
-                                </p>
-                                
-                                <h2 class="title">Three.js</h2>
-                                <p class="text">
-                                    <a href="https://threejs.org" target="_blank" rel="noreferrer">Three.js</a> is the library I’m using to render this 3D world.
-                                    <br />It was created by <strong>mr.doob</strong> (<a href="https://x.com/mrdoob" target="_blank" rel="noreferrer">X</a>, <a href="http://github.com/mrdoob" target="_blank" rel="noreferrer">GitHub</a>), followed by hundreds of awesome developers, one of which being Sunag (<a href="https://x.com/sea3dformat" target="_blank" rel="noreferrer">X</a>, <a href="https://github.com/sunag" target="_blank" rel="noreferrer">GitHub</a>) who added <a href="https://github.com/mrdoob/three.js/wiki/Three.js-Shading-Language" target="_blank" rel="noreferrer">TSL</a>, enabling the use of both WebGL and WebGPU, making this portfolio possible.
-                                </p>
-                                
-                                <h2 class="title">Three.js Journey</h2>
-                                <p class="text">
-                                    If you want to learn Three.js, I got you covered with this <a href="https://threejs-journey.com" target="_blank" rel="noreferrer">huge course</a>.
-                                    <br />It contains everything you need to start building awesome stuff with Three.js (and much more).
-                                </p>
-                                
-                                <h2 class="title">Devlogs</h2>
-                                <p class="text">
-                                    I’ve been making devlogs since the very start of this portfolio and you can find them all on my <a href="https://www.youtube.com/playlist?list=PL5nApUt6Z8sTZxEsEMd8x89OCKCAAfNL0" target="_blank" rel="noreferrer">Youtube channel</a>.
-                                </p>
-                                
-                                <h2 class="title">Source code</h2>
-                                <p class="text">
-                                    The code is available on <a href="https://github.com/brunosimon/folio-2025" target="_blank" rel="noreferrer">GitHub</a> under <a href="https://choosealicense.com/licenses/mit/" target="_blank" rel="noreferrer">MIT license</a>. Even the Blender files are there, so have fun!
-                                    <br />For security reasons, I’m not sharing the server code, but the portfolio works without it.
-                                </p>
-                                
-                                <h2 class="title">Musics</h2>
-                                <p class="text">
-                                    The music you hear was made especially for this portfolio by the awesome Kounine (<a href="https://linktr.ee/Kounine" target="_blank" rel="noreferrer">Linktree</a>).
-                                    <br />They are now under <a href="https://choosealicense.com/licenses/cc0-1.0/" target="_blank" rel="noreferrer">CC0 license</a>, meaning you can do whatever you want with them!
-                                    <br />Download them <a href="https://github.com/brunosimon/folio-2025/tree/main/static/sounds/musics" target="_blank" rel="noreferrer">here</a>.
+                                    هذا الموقع مبني على مشروع <a href="https://github.com/brunosimon/folio-2025" target="_blank" rel="noreferrer">Folio 2025</a> من إبداع <strong>Bruno Simon</strong>، المنشور برخصة <a href="https://github.com/brunosimon/folio-2025/blob/main/license.md" target="_blank" rel="noreferrer">MIT</a>.
+                                    <br />كل الشكر له على مشاركة الكود والنماذج مع الجميع.
                                 </p>
 
-                                <h2 class="title">Some more links</h2>
+                                <h2 class="title">الموسيقى</h2>
+                                <p class="text">
+                                    الموسيقى من تأليف Kounine (<a href="https://linktr.ee/Kounine" target="_blank" rel="noreferrer">Linktree</a>) وهي برخصة <a href="https://choosealicense.com/licenses/cc0-1.0/" target="_blank" rel="noreferrer">CC0</a>.
+                                </p>
+
+                                <h2 class="title">التقنيات</h2>
                                 <ul class="text">
-                                    <li>Physics library ⇒ <a href="https://rapier.rs" target="_blank" rel="noreferrer">Rapier</a></li>
-                                    <li>Audio library ⇒ <a href="https://howlerjs.com" target="_blank" rel="noreferrer">Howler.js</a></li>
-                                    <li>Fonts ⇒ <a href="https://fonts.google.com/specimen/Amatic+SC" target="_blank" rel="noreferrer">Amatic SC</a> & <a href="https://fonts.google.com/specimen/Nunito?query=Nunito" target="_blank" rel="noreferrer">Nunito</a></li>
+                                    <li>العرض ثلاثي الأبعاد ⇐ <a href="https://threejs.org" target="_blank" rel="noreferrer">Three.js</a></li>
+                                    <li>الفيزياء ⇐ <a href="https://rapier.rs" target="_blank" rel="noreferrer">Rapier</a></li>
+                                    <li>الصوت ⇐ <a href="https://howlerjs.com" target="_blank" rel="noreferrer">Howler.js</a></li>
+                                    <li>الخطوط العربية ⇐ Cairo و Aref Ruqaa</li>
                                 </ul>
-
-                                <p class="text text-faded text-align-right">
-                                    — Bruno
-                                </p>
                             </div>
                         </div>
 
@@ -751,16 +712,16 @@
                         </button>
 
                         <div class="your-time">
-                            Your time
+                            وقتك
                             <br /><span class="js-time value">00:00:000</span>
                         </div>
 
                         <p class="offline-element text text-danger">
-                            <img src="ui/warning.svg" loading="lazy" alt="" class="icon"> Server currently offline. Scores can't be saved.
+                            <img src="ui/warning.svg" loading="lazy" alt="" class="icon"> الخادم غير متصل حالياً، لا يمكن حفظ النتائج.
                         </p>
 
                         <p class="not-top-10 text">
-                            Sorry, you didn't make it to the top 10.
+                            للأسف لم تدخل قائمة أفضل ١٠.
                         </p>
 
                         <div class="horizontal-group">
@@ -768,7 +729,7 @@
                             <form class="js-input-group input-group is-name-tag online-element" action="#">
                                 <div class="js-input-flag input-flag">
                                     <div class="js-flag-button flag-button">
-                                        <img class="js-flag flag" src="ui/flags/fr.webp" loading="lazy">
+                                        <img class="js-flag flag" src="ui/flags/sa.webp" loading="lazy">
                                         <svg class="none" width="23" height="20" viewBox="0 0 23 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M0.551758 1.7258C6.55166 -2.27398 11.0001 3.40978 19 1.40953L23 13.4096C15.5952 15.2611 11.6175 10.2589 6.30859 12.6762L8.44824 19.0941L6.55176 19.7269L0.551758 1.7258ZM5.26562 2.00328C4.68209 2.01685 4.07959 2.11674 3.42871 2.37242L6.16309 10.5746C7.17704 10.2014 8.1765 10.0274 9.17188 10.0043C10.8337 9.96566 12.395 10.3531 13.7764 10.7299C15.9783 11.3304 17.9741 11.9562 20.3564 11.806L17.6533 3.69664C13.9491 4.17921 11.0237 3.21654 8.72363 2.58922C7.3553 2.21603 6.29108 1.97952 5.26562 2.00328Z" fill="white"/>
                                         </svg>
@@ -783,7 +744,7 @@
                                         </div>
                                         <input type="text" class="js-flag-search search" placeholder="Search…">
                                         <div class="js-no-result no-result">
-                                            No result
+                                            لا نتائج
                                         </div>
                                         <div class="choices">
                                             <div class="js-scroller scroller">
@@ -794,19 +755,19 @@
                                 </div>
                                 <input class="js-input js-main-focus input-text" type="text" placeholder="---" maxlength="3" />
                                 <button class="submit has-text">
-                                    Submit
+                                    إرسال
                                 </button>
                             </form>
 
                             <div class="or">
-                                or
+                                أو
                             </div>
 
                             <button class="js-button-restart button">
                                 <svg class="icon icon-restart" width="20" height="24" viewBox="0 0 20 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M17 5L10 10V6C5.58172 6 2 9.58172 2 14C2 18.4183 5.58172 22 10 22C14.4183 22 18 18.4183 18 14H20C20 19.5228 15.5228 24 10 24C4.47715 24 0 19.5228 0 14C0 8.47715 4.47715 4 10 4V0L17 5Z" fill="#ffffff"/>
                                 </svg>
-                                Restart
+                                إعادة
                             </button>
 
                         </div>
@@ -824,32 +785,32 @@
                             <span class="icon is-xbox">A</span>
                         </button>
 
-                        <div class="title"><img src="ui/discord.svg" loading="lazy"> Discord</div>
+                        <div class="title">تواصل معي</div>
 
                         <div class="items">
                             <div class="item">
                                 <div class="title-container">
                                     <div class="line left"></div>
-                                    <div class="title">Public server</div>
+                                    <div class="title">البريد</div>
                                     <div class="line right"></div>
                                 </div>
-                                <p>Come hang out with the community<span class="optional">, show us your projects and ask us anything</span>.</p>
+                                <p>راسلني على <span dir="ltr">you@example.com</span></p>
                                 <div class="button-container">
-                                    <a href="https://discord.com/channels/769928116701233152/1445064878384480288" target="_blank" rel="noreferrer" class="button">
-                                        Join server
+                                    <a href="mailto:you@example.com" target="_blank" rel="noreferrer" class="button">
+                                        أرسل رسالة
                                     </a>
                                 </div>
                             </div>
                             <div class="item">
                                 <div class="title-container">
                                     <div class="line left"></div>
-                                    <div class="title">Private messages</div>
+                                    <div class="title">GitHub</div>
                                     <div class="line right"></div>
                                 </div>
-                                <p>Contact me directly.<span class="optional"><br />I have to warn you, I try to answer everyone, but it might take a while.</span></p>
+                                <p>شاهد أكواد مشاريعي.</p>
                                 <div class="button-container">
-                                    <a href="https://discord.com/users/202907325722263553" target="_blank" rel="noreferrer" class="button">
-                                        Start chating
+                                    <a href="https://github.com/" target="_blank" rel="noreferrer" class="button">
+                                        زيارة الحساب
                                     </a>
                                 </div>
                             </div>

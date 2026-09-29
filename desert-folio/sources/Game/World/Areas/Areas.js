@@ -25,7 +25,6 @@ export class Areas
             [ 'altar', AltarArea ],
             [ 'behindTheScene', BehindTheSceneArea ],
             [ 'bowling', BowlingArea ],
-            [ 'career', CareerArea ],
             [ 'circuit', CircuitArea ],
             [ 'cookie', CookieArea ],
             [ 'lab', LabArea ],
