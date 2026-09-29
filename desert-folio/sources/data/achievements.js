@@ -5,234 +5,234 @@ export default
 [
     [
         'landingLeave',
-        'I’m going on an adventure!',
-        'Get out of the landing area.',
+        'هيا إلى المغامرة!',
+        'اخرج من منطقة البداية.',
         1
     ],
     [
         'areas',
-        'Traveler',
-        'Vist every area.',
+        'رحّالة',
+        'زُر كل المناطق.',
         13,
         true // Unique
     ],
     [
         'projects',
-        'But can you fix the wifi?',
-        'Check every project in the <strong>projects</strong> area.',
+        'مهندس الشبكة',
+        'تصفّح كل مشروع في منطقة <strong>المشاريع</strong>.',
         projectsData.length,
         true // Unique
     ],
     [
         'lab',
-        'I\'m a bit of a scientist myself',
-        'Check every project in the <strong>lab</strong> area.',
+        'عالِم صغير',
+        'تصفّح كل تجربة في منطقة <strong>المختبر</strong>.',
         labData.length,
         true // Unique
     ],
     [
         'cookie',
-        'Wake & bake',
-        'Accept <strong>1</strong> cookies.',
+        'أول لقمة',
+        'اقبل كعكة واحدة.',
         1
     ],
     [
         'cookie',
-        'Making some dough',
-        'Accept <strong>10</strong> cookies.',
+        'خبّاز مبتدئ',
+        'اقبل ١٠ كعكات.',
         10
     ],
     [
         'cookie',
-        'So baked right now',
-        'Accept <strong>100</strong> cookies.',
+        'فرن مشتعل',
+        'اقبل ١٠٠ كعكة.',
         100
     ],
     [
         'cookie',
-        'Cookie Clicker',
-        'Accept <strong>1000</strong> cookies.',
+        'ملك الكعك',
+        'اقبل ١٠٠٠ كعكة.',
         1000
     ],
     [
         'whisper',
-        'It\'s About Sending A Message',
-        'Post a whisper.',
+        'رسالة في الرمال',
+        'اترك همسة.',
         1
     ],
     [
         'sea',
-        'Under the sea',
-        'Go make friend with the fishes.',
+        'صديق الأسماك',
+        'انزل إلى الماء وصادق الأسماك.',
         1
     ],
     [
         'upsideDown',
-        'Turtle',
-        'Get upside down.',
+        'سلحفاة',
+        'انقلب رأساً على عقب.',
         1
     ],
     [
         'frontFlip',
-        'Teeth first',
-        'Do a front flip and land on your 4 wheels.',
+        'شقلبة أمامية',
+        'اقلب للأمام وهبط على قوائمك الأربع.',
         1
     ],
     [
         'backFlip',
-        'Flip of faith',
-        'Do a back flip and land on your 4 wheels.',
+        'شقلبة خلفية',
+        'اقلب للخلف وهبط على قوائمك الأربع.',
         1
     ],
     [
         'suspensions',
-        'Lowrider',
-        'Use the vehicle suspensions.',
+        'راقص الهيدروليك',
+        'استخدم نظام التعليق.',
         4
     ],
     [
         'honk',
-        'Honk',
-        'Honk me like one of your french driver.',
+        'بيب بيب',
+        'أطلق صوت التنبيه.',
         10
     ],
     [
         'explosiveCrates',
-        'Great Explosion Murder God Dynamight',
-        'Blow up every explosive crate.',
+        'خبير المتفجرات',
+        'فجّر كل الصناديق المتفجرة.',
         20,
         true // Unique
     ],
     [
         'goHigh',
-        'Limit the sky',
-        'Reach <strong>15 meters</strong> high.',
+        'عنان السماء',
+        'ارتفع ١٥ متراً.',
         15
     ],
     [
         'strike',
-        'F*** it, dude. Let\'s go bowling',
-        'Accomplished a strike.',
+        'ضربة كاملة',
+        'أسقط كل القوارير بضربة واحدة.',
         1
     ],
     [
         'toiletDown',
-        'Do not disturb',
-        'Knock down the latrine.',
+        'ممنوع الإزعاج',
+        'أسقط الكوخ الصغير.',
         1
     ],
     [
         'circuitFinish',
-        'Participation medal',
-        'Finish a race.',
+        'ميدالية المشاركة',
+        'أنهِ سباقاً.',
         1
     ],
     [
         'circuitFinishFast',
-        'KA-CHOW!',
-        'Finish a race in less than <strong>30s</strong>.',
+        'البرق',
+        'أنهِ سباقاً في أقل من ٣٠ ثانية.',
         1
     ],
     [
         'circuitLeaderboard',
-        'Early Bird gets the Worm',
-        'Make it to the leaderboard.',
+        'من سبق لحق',
+        'ادخل قائمة المتصدرين.',
         1
     ],
     [
         'fullDay',
-        'Don’t you have work to do?',
-        'Spend a full day cycle here in one go.',
+        'أما عندك شغل؟',
+        'اقضِ يوماً كاملاً هنا دون توقف.',
         1
     ],
     [
         'distanceDriven',
-        'Baby step',
-        'Drive 1km.',
+        'أول خطوة',
+        'اقطع كيلومتراً واحداً.',
         1
     ],
     [
         'distanceDriven',
-        'Are we there yet?',
-        'Drive 10km.',
+        'هل وصلنا؟',
+        'اقطع ١٠ كيلومترات.',
         10
     ],
     [
         'distanceDriven',
-        'Honey, I’m home!',
-        'Drive 100km.',
+        'رحلة القوافل',
+        'اقطع ١٠٠ كيلومتر.',
         100
     ],
     [
         'sacrifice',
-        'One for the god of Chaos',
-        'Sacrifice yourself into the altar.',
+        'قربان الفوضى',
+        'ضحِّ بنفسك على المذبح.',
         1
     ],
     [
         'cataclysm',
-        'Witness me!',
-        'Witness a cataclysm',
+        'شاهد العاصفة',
+        'شاهد كارثة.',
         1
     ],
     [
         'weatherSnow',
-        'Do you want to build a snowman?',
-        'Witness snowy weather.',
+        'ثلج في الصحراء؟',
+        'شاهد الطقس المثلج.',
         1
     ],
     [
         'weatherRain',
-        'I’m singing in the rain',
-        'Witness a rainy weather.',
+        'مطر الخير',
+        'شاهد الطقس الماطر.',
         1
     ],
     [
         'lightning',
-        '1.21 Gigawatts!',
-        'Get hit by a lightning.',
+        'صاعقة!',
+        'أصابتك صاعقة.',
         1
     ],
     [
         'waterfall',
-        'Gamer instinct',
-        'What did you expect? A treasure?',
+        'غريزة اللاعب',
+        'ماذا توقعت؟ كنزاً؟',
         1
     ],
     [
         'fan',
-        'You’re my only fan',
-        'Spawn a fan.',
+        'معجبك الوحيد',
+        'استدعِ معجباً.',
         1
     ],
     [
         'reset',
-        'Clean your room',
-        'Put back everything as it was.',
+        'رتّب غرفتك',
+        'أعد كل شيء كما كان.',
         1
     ],
     [
         'statueDown',
-        'Revolution!',
-        'Tear that statue down.',
+        'ثورة!',
+        'أسقط ذلك التمثال.',
         1
     ],
     [
         'konami',
-        'Up up down down…',
-        'You know the rest.',
+        'فوق فوق تحت تحت…',
+        'أنت تعرف البقية.',
         1
     ],
     [
         'debug',
-        'It\'s not a bug, it\'s a feature',
-        'Access the debug UI.',
+        'ليست علّة بل ميزة',
+        'افتح واجهة التصحيح.',
         1
     ],
     [
         'hacker',
-        'Hacker',
-        'This one can’t be achieved.',
+        'مخترق',
+        'هذا الإنجاز مستحيل.',
         1
     ],
 ]

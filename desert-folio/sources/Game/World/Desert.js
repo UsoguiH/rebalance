@@ -86,6 +86,9 @@ export class Desert
             [13, -8, 8, 1.6, 4, -0.2],
             [-20, -3, 6, 1.2, 4, 0.8],
             [3, 18, 7, 1.3, 4, -0.7],
+            [-16, 16, 6, 1.3, 4, 0.2],
+            [18, 14, 7, 1.5, 4.5, -1.0],
+            [-4, -20, 6, 1.2, 4, 0.4],
         ]
         for(const [x, z, sx, sy, sz, rotation] of layout)
         {
@@ -164,7 +167,7 @@ export class Desert
 
     setPalms()
     {
-        for(const [x, z, height] of [[-4, 12, 5.2], [6, 14, 4.4], [-16, 14, 4.8], [18, 2, 5], [-2, -16, 4.2]])
+        for(const [x, z, height] of [[-4, 12, 5.2], [6, 14, 4.4], [-16, 14, 4.8], [18, 2, 5], [-2, -16, 4.2], [-22, -12, 4.6], [22, 20, 5.1]])
         {
             const palm = this.palm(height)
             palm.rotation.y = random() * Math.PI * 2

@@ -531,7 +531,7 @@ export class Achievements
 
             else if(clickCount === 3)
             {
-                button.textContent = 'Done!'
+                button.textContent = 'تم!'
                 clickCount = 0
                 this.reset()
             }
@@ -542,7 +542,7 @@ export class Achievements
             event.preventDefault()
             clickCount = 0
 
-            button.textContent = 'Reset achievements'
+            button.textContent = 'إعادة ضبط الإنجازات'
         })
     }
 

@@ -26,7 +26,7 @@ export class Options
     {
         const element = this.element.querySelector('.js-quality-toggle')
         const text = element.querySelector('span')
-        text.textContent = this.game.quality.level === 0 ? 'High' : 'Low'
+        text.textContent = this.game.quality.level === 0 ? 'عالية' : 'منخفضة'
 
         element.addEventListener('click', () =>
         {
@@ -35,7 +35,7 @@ export class Options
 
         this.game.quality.events.on('change', () =>
         {
-            text.textContent = this.game.quality.level === 0 ? 'High' : 'Low'
+            text.textContent = this.game.quality.level === 0 ? 'عالية' : 'منخفضة'
         })
     }
 
@@ -90,7 +90,7 @@ export class Options
                 element.classList.add('is-success')
                 element.classList.remove('is-danger')
                 
-                text.textContent = 'Online'
+                text.textContent = 'متصل'
 
                 tooltip.innerHTML = /* html */`Enjoy the <strong>multiplayer</strong> features`
             }
@@ -98,7 +98,7 @@ export class Options
             {
                 element.classList.remove('is-success')
                 element.classList.add('is-danger')
-                text.textContent = 'Offline'
+                text.textContent = 'غير متصل'
 
                 tooltip.innerHTML = /* html */`Should be back soon`
             }
