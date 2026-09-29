@@ -52,10 +52,9 @@ export function createZones(ctx) {
           pos.push(z.x + lx * PAD_R, cy, z.z + lz * PAD_R); loc.push(lx, lz); zi.push(i);
         }
       }
-      for (let s = 0; s < seg; s++) {
-        const a = base + s * 3, b = base + (s + 1) * 3;
-        idx.push(a, a + 1 + 0, b + 1, a, b + 1, b);              // filler (degenerate centre fan)
-        idx.push(a + 1, a + 2, b + 2, a + 1, b + 2, b + 1);
+      for (let s = 0; s < seg; s++) for (let r = 0; r < 2; r++) {
+        const a = base + s * 3 + r, b = base + (s + 1) * 3 + r;
+        idx.push(a, b, b + 1, a, b + 1, a + 1);
       }
     });
     const g = new THREE.BufferGeometry();
