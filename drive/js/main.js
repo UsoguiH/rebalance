@@ -43,6 +43,7 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 
+let targetTime = 0.12, timeOfDay = 0.12;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 700);
 
@@ -63,34 +64,33 @@ const audio = new GameAudio();
 let input = createInput(document.body);
 
 // ---------- UI ----------
-const visited = new Set();
-let openZoneId = null;
-let suppressZone = null; // zone the player closed; don't re-open until they leave it
+let modalOpen = false;   // any panel/settings open -> camel stands still
 let started = false;
 
 const ui = new UI({
   content, lang,
   onStart: async () => {
     started = true;
-    await audio.unlock();
-    audio.play('click');
     introT = 0; introDone = false;
-    if (isCoarse) tryFullscreen();
+    await audio.unlock();
+    audio.setMuted(!ui.prefs.sound);
+    audio.setMusic(ui.prefs.music);
+    audio.play('click');
   },
-  onLangChange: (l) => { lang = l; store.set('lang', l); document.documentElement.lang = l; document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr'; },
+  onLangChange: (l) => { lang = l; store.set('lang', l); },
   onSoundToggle: (on) => { audio.setMuted(!on); },
   onMusicToggle: (on) => { audio.setMusic(on); },
-  onQualityChange: (q) => { qualitySetting = q; store.set('quality', q); applyQuality(q === 'auto' ? autoQuality() : q); },
-  onTimeToggle: () => { targetTime = targetTime < 0.4 ? 0.7 : 0.1; document.documentElement.toggleAttribute('data-night', targetTime > 0.4); },
-  onZoneClose: () => { closeZone(); },
+  onQualityChange: (q) => { qualitySetting = q; applyQuality(q === 'auto' ? autoQuality() : q); },
+  onTimeToggle: (night) => { targetTime = night ? 0.72 : 0.12; audio.setNight?.(night ? 1 : 0); },
+  onZoneOpen: () => { audio.play('panelOpen'); audio.duck?.(true); },
+  onModalChange: (open, kind) => {
+    modalOpen = open;
+    if (!open) { audio.duck?.(false); if (kind === 'zone') audio.play('panelClose'); }
+  },
 });
-document.documentElement.lang = lang;
-document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-
-function tryFullscreen() {
-  try { if (!document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); } catch { /* iOS */ }
-  try { screen.orientation?.lock?.('landscape').catch(() => {}); } catch { /* unsupported */ }
-}
+ui.setWorld({ radius: 140, zones: world.zones });
+qualitySetting = params.get('quality') || ui.prefs.quality || 'auto';
+if (ui.prefs.night) { targetTime = timeOfDay = 0.72; }
 
 function applyQuality(q) {
   quality = q;
@@ -100,21 +100,6 @@ function applyQuality(q) {
   resize();
 }
 
-function openZone(id) {
-  openZoneId = id;
-  visited.add(id);
-  audio.play('panelOpen');
-  audio.duck?.(true);
-  ui.openZone(id);
-  ui.setVisited?.(visited);
-}
-function closeZone() {
-  if (!openZoneId) return;
-  suppressZone = openZoneId;
-  openZoneId = null;
-  audio.play('panelClose');
-  audio.duck?.(false);
-}
 
 // ---------- camera rig ----------
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
@@ -122,7 +107,6 @@ const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3();
 let camYaw = 0, shake = 0, fov = 58;
 let introT = 0, introDone = false;
 let idleOrbit = 0;
-let targetTime = 0.12, timeOfDay = 0.12;
 
 function updateCamera(dt, t, s) {
   const portrait = camera.aspect < 0.9;
@@ -189,17 +173,16 @@ function adapt(dt) {
 // ---------- loop ----------
 const clock = new THREE.Clock();
 let stampAcc = 0;
-const zoneById = Object.fromEntries(world.zones.map((z) => [z.id, z]));
-let hudAcc = 0;
+let nearZoneId = null;
 
 function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
 
   const raw = input.read();
-  const locked = !started || !!openZoneId;
+  const locked = !started || modalOpen;
   const inp = locked ? { throttle: 0, steer: 0, sprint: false, brake: true, call: raw.call && started, reset: false } : raw;
-  if (raw.reset && started && !openZoneId) { ride.reset(0, 0, 0); camYaw = 0; camPos.set(0, 6, -10); }
+  if (raw.reset && started && !modalOpen) { ride.reset(0, 0, 0); camYaw = 0; camPos.set(0, 6, -10); }
   ride.update(dt, inp);
   const s = ride.state;
 
@@ -225,34 +208,22 @@ function frame() {
   world.setTimeOfDay(timeOfDay);
   world.update(dt, t, camel.root.position);
 
-  // zone triggers
+  // zone proximity -> "enter" prompt in the UI (Enter key / tap opens the panel)
   if (started) {
     let inside = null;
-    for (const z of world.zones) {
-      const d = Math.hypot(s.x - z.x, s.z - z.z);
-      if (d < z.r) { inside = z; break; }
-    }
-    if (!inside) suppressZone = null;
-    else if (!openZoneId && suppressZone !== inside.id && Math.abs(s.speed) < 6.5) {
-      audio.play('zoneEnter');
-      openZone(inside.id);
+    for (const z of world.zones) if (Math.hypot(s.x - z.x, s.z - z.z) < z.r) { inside = z; break; }
+    const id = inside ? inside.id : null;
+    if (id !== nearZoneId) {
+      nearZoneId = id;
+      ui.setNearZone(id);
+      if (id) audio.play('zoneEnter'); else if (!modalOpen) audio.play('zoneLeave');
     }
   }
 
   updateCamera(dt, t, s);
   audio.update(dt, s);
 
-  hudAcc += dt;
-  if (hudAcc > 0.1) {
-    hudAcc = 0;
-    let nearest = null, nd = Infinity;
-    for (const z of world.zones) {
-      if (visited.has(z.id)) continue;
-      const d = Math.hypot(z.x - s.x, z.z - s.z);
-      if (d < nd) { nd = d; nearest = z; }
-    }
-    ui.updateHud?.(s, { zones: world.zones, visited, nearest, distance: nd, camYaw });
-  }
+  ui.updateHud(s);
 
   adapt(dt);
   renderer.render(scene, camera);
@@ -266,9 +237,9 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) cloc
 resize();
 applyQuality(quality);
 camPos.set(6, 5, -10); camLook.set(0, 2, 0);
-ui.setProgress?.(1);
-ui.ready?.();
+ui.setProgress(1);
+ui.ready();
 requestAnimationFrame(frame);
 
 // test / debug hooks (used by Playwright)
-window.__drive = { ride, world, camel, audio, ui, renderer, scene, camera, get visited() { return visited; }, get started() { return started; }, openZone, closeZone, setInput(o) { input = { read: () => ({ throttle: 0, steer: 0, sprint: false, brake: false, call: false, reset: false, ...o }), dispose() {} }; } };
+window.__drive = { ride, world, camel, audio, ui, renderer, scene, camera, get started() { return started; }, setInput(o) { input = { read: () => ({ throttle: 0, steer: 0, sprint: false, brake: false, call: false, reset: false, ...o }), dispose() {} }; } };
