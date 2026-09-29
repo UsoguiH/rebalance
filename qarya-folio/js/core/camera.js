@@ -7,7 +7,11 @@ import * as THREE from 'three';
 
 export function createCamera(ctx) {
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.5, 600);
-  const dir = new THREE.Vector3(0, 1.05, 1).normalize();
+  // Looking down from the south. Portrait screens get a steeper angle so the
+  // mud houses hide less of the camel.
+  const dir = new THREE.Vector3();
+  const setDir = () => dir.set(0, innerHeight > innerWidth ? 1.5 : 1.05, 1).normalize();
+  setDir();
   const target = new THREE.Vector3();
   const lead = new THREE.Vector3();
   const rig = {
@@ -22,6 +26,7 @@ export function createCamera(ctx) {
   const portrait = () => innerHeight > innerWidth;
 
   rig.resize = () => {
+    setDir();
     camera.aspect = innerWidth / innerHeight;
     camera.fov = portrait() ? 50 : 38;
     camera.updateProjectionMatrix();

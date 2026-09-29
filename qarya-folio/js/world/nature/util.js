@@ -56,8 +56,8 @@ export function makeKeepOut(ctx) {
   const S = LAYOUT.spawn, W = spots.well, G = spots.gate;
   const zp = (id) => { const z = zones.find((q) => q.id === id); return z ? { x: z.x, z: z.z } : null; };
   const segs = [];
-  const seg = (a, b) => { if (a && b) segs.push([a.x, a.z, b.x, b.z]); };
-  seg(S, G); seg(G, W); seg(W, spots.souq); seg(W, zp('about')); seg(W, zp('skills'));
+  const seg = (a, b, extra = 0) => { if (a && b) segs.push([a.x, a.z, b.x, b.z, extra]); };
+  seg(S, G); seg(G, W); seg(W, spots.souq); seg(W, zp('about')); seg(W, zp('skills'), 3); // the skill signpost avenue is wider
   seg(zp('about'), zp('oasis')); seg(zp('skills'), zp('oasis')); seg(G, zp('contact'));
   seg(G, spots.playground); seg(G, spots.campfire); seg(spots.souq, zp('project-1'));
   seg(spots.souq, zp('project-0'));
@@ -75,7 +75,7 @@ export function makeKeepOut(ctx) {
     for (const p of points) if (Math.hypot(x - p.x, z - p.z) < p.r + clear) return false;
     // Paths only matter inside and just around the village.
     if (Math.hypot(x, z) < LAYOUT.village.r + 8) {
-      for (const s of segs) if (segDist(x, z, s) < pathClear) return false;
+      for (const s of segs) if (segDist(x, z, s) < pathClear + s[4]) return false;
     }
     return true;
   };
