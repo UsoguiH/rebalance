@@ -1,0 +1,12 @@
+{
+  "name": "drive-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node tests/e2e.mjs"
+  },
+  "dependencies": { "three": "^0.170.0" },
+  "devDependencies": { "playwright": "^1.56.0" }
+}
