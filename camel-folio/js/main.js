@@ -160,13 +160,10 @@ async function main() {
     if (a.type === 'project') uiLayer.project(a.project);
     else if (a.type === 'about') uiLayer.about();
     else if (a.type === 'skills') uiLayer.skills();
-    else if (a.type === 'link') {
-      const href = a.item.href;
-      if (href.startsWith('mailto:')) location.href = href;
-      else window.open(href, '_blank', 'noopener');
-      audio.ui('open');
-      return;
-    } else if (a.type === 'reset') {
+    // Show real links rather than opening them from script: popups and mailto
+    // jumps are blocked in sandboxed frames and some in-app browsers.
+    else if (a.type === 'link') uiLayer.contact(a.item.id);
+    else if (a.type === 'reset') {
       props.resetJars();
       audio.ui('close');
       uiLayer.toast(copy.reset);

@@ -314,6 +314,8 @@ body.modal #prompt { opacity: 0; pointer-events: none; }
 .links { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
 .links a { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 14px; background: var(--c); color: #fff; text-decoration: none; }
 .links a:hover { filter: brightness(1.1); }
+.links a.focus { outline: 3px solid var(--gold); outline-offset: 2px; }
+.links span { user-select: text; -webkit-user-select: text; }
 .menu { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .menu button { width: 100%; text-align: start; border: 0; border-radius: 12px; padding: 12px 14px; background: rgba(43, 29, 20, 0.07); font-weight: 700; }
 .menu button:hover { background: var(--sand-deep); }

@@ -123,11 +123,13 @@ export class UI {
     `, '#c8894f');
   }
 
-  contact() {
+  // focus: id of the link whose pad the camel is standing on; it is listed first.
+  contact(focus) {
+    const list = focus ? [...contact].sort((a, b) => (b.id === focus) - (a.id === focus)) : contact;
     this.openPanel(`
       <h2>${ui.sections.contact}</h2>
       <p class="sub">يسعدني سماع أفكارك ومشاريعك.</p>
-      <ul class="links">${contact.map((c) => `<li><a href="${esc(c.href)}" target="_blank" rel="noopener" style="--c:${esc(c.color)}"><b>${esc(c.label)}</b><span dir="ltr">${esc(c.value)}</span></a></li>`).join('')}</ul>
+      <ul class="links">${list.map((c) => `<li><a href="${esc(c.href)}" target="_blank" rel="noopener" class="${c.id === focus ? 'focus' : ''}" style="--c:${esc(c.color)}"><b>${esc(c.label)}</b><span dir="ltr">${esc(c.value)}</span></a></li>`).join('')}</ul>
     `, '#2f6f73');
   }
 
