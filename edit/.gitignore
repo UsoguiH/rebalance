@@ -1,0 +1,9 @@
+.venv/
+node_modules/
+work/
+src/
+bin/
+asr/
+hf/proj/assets/base_video.mp4
+hf/proj/snapshots/
+hf/proj/renders/
