@@ -27,18 +27,17 @@ export function controlsTable(rows, { compact = false } = {}) {
 }
 
 /** Header band shared by all panels. */
-function header({ accent, iconName, kicker, title, sub, extra = '' }) {
+function header({ accent, iconName, kicker, title, sub, badge = '' }) {
   return `
   <header class="sheet-head" style="--accent:${esc(accent)}">
     <div class="head-pattern" aria-hidden="true"></div>
     <div class="head-row">
       <span class="head-ico">${icon(iconName)}</span>
       <div class="head-text">
-        ${kicker ? `<p class="head-kicker">${esc(kicker)}</p>` : ''}
+        ${kicker ? `<p class="head-kicker">${esc(kicker)}${badge ? ` <span class="head-year">${esc(badge)}</span>` : ''}</p>` : ''}
         <h2 class="head-title" id="sheet-title">${esc(title)}</h2>
         ${sub ? `<p class="head-sub">${esc(sub)}</p>` : ''}
       </div>
-      ${extra}
     </div>
   </header>`;
 }
@@ -61,7 +60,7 @@ export function sectionHTML(zone, ctx, { standalone = false } = {}) {
         accent, iconName: ic,
         kicker: `${U.sections.project} ${ar(zone.project + 1)} من ${ar(n)}`,
         title: pr.title, sub: pr.subtitle,
-        extra: `<span class="head-year">${esc(ar(pr.year))}</span>`,
+        badge: ar(pr.year),
       }) + `
       <div class="sheet-body">
         <p class="lead">${esc(pr.body)}</p>

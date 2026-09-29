@@ -144,7 +144,7 @@ function compose(o) {
   const s = o.scale === undefined ? [1, 1, 1] : (typeof o.scale === 'number' ? [o.scale, o.scale, o.scale] : o.scale);
   return new THREE.Matrix4().compose(
     new THREE.Vector3(p[0], p[1], p[2]),
-    new THREE.Quaternion().setFromEuler(new THREE.Euler(r[0], r[1], r[2])),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(r[0], r[1], r[2], r[3] || 'XYZ')),
     new THREE.Vector3(s[0], s[1], s[2]),
   );
 }
