@@ -73,7 +73,7 @@ async function main() {
   await nextFrame();
 
   // Compile shaders up front so the first frames don't hitch.
-  stylize(scene);
+  const look3 = stylize(scene);
   // Clip everything to the starting island; the island's own pieces are added after.
   reveal.center.value.set(camel.position.x, camel.position.z);
   applyReveal(scene);
@@ -123,6 +123,7 @@ async function main() {
       const r = 7.5 + Math.pow(cam.intro, 2.4) * 320;
       reveal.radius.value = r;
       island.set(r, 1 - Math.min(1, Math.max(0, (cam.intro - 0.45) / 0.4)));
+      reveal.glow.value = Math.max(0, 1 - cam.intro * 3);
       world.sky.visible = cam.intro > 0.35;
       if (cam.intro >= 1) { reveal.radius.value = 1e5; island.set(1e5, 0); }
     }
@@ -336,6 +337,10 @@ async function main() {
     props.syncCamel(camel, dt);
     props.update(dt);
     audio.setMotion(camel.onGround ? camel.speed : 0, inputState.run);
+    // Day cycle: starts at warm dusk, drifts to violet night and back (~70 s).
+    const night = 0.5 - 0.5 * Math.cos((t / 70) * Math.PI * 2);
+    world.setNight(night);
+    look3.setNight(night);
     world.update(t, dt);
     fx.update(dt);
     if (cam.intro >= 0) { updateTriggers(dt, t); updateZones(); }

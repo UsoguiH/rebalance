@@ -7,6 +7,7 @@ import * as THREE from 'three';
 export const reveal = {
   center: { value: new THREE.Vector2(0, 0) },
   radius: { value: 7.5 },
+  glow: { value: 1 }, // glowing band where the island cuts through objects (intro only)
 };
 
 const VERT_DECL = 'varying vec3 vRevealWorld;\n';
@@ -17,8 +18,13 @@ const VERT_CODE = `
   #endif
   vRevealWorld = (modelMatrix * rvPos).xyz;
 `;
-const FRAG_DECL = 'uniform vec2 uRevealCenter;\nuniform float uRevealRadius;\nvarying vec3 vRevealWorld;\n';
-const FRAG_CODE = 'if (distance(vRevealWorld.xz, uRevealCenter) > uRevealRadius) discard;\n';
+const FRAG_DECL = 'uniform vec2 uRevealCenter;\nuniform float uRevealRadius;\nuniform float uRevealGlow;\nvarying vec3 vRevealWorld;\n';
+const FRAG_CODE = `
+  float rvD = distance(vRevealWorld.xz, uRevealCenter);
+  if (rvD > uRevealRadius) discard;
+  float rvEdge = smoothstep(uRevealRadius - 0.22, uRevealRadius - 0.02, rvD) * uRevealGlow;
+`;
+const FRAG_END = 'gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 0.86, 1.0) * 1.8, rvEdge);\n';
 
 function patch(material) {
   if (material.userData.revealPatched || material.isShaderMaterial || material.isPointsMaterial) return;
@@ -28,10 +34,13 @@ function patch(material) {
     if (prev) prev(shader, renderer);
     // Only shaders with both hook points (sprites, for example, have no project_vertex).
     if (!shader.vertexShader.includes('#include <project_vertex>') || !shader.fragmentShader.includes('#include <clipping_planes_fragment>')) return;
+    shader.uniforms.uRevealGlow = reveal.glow;
     shader.uniforms.uRevealCenter = reveal.center;
     shader.uniforms.uRevealRadius = reveal.radius;
     shader.vertexShader = VERT_DECL + shader.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n' + VERT_CODE);
-    shader.fragmentShader = FRAG_DECL + shader.fragmentShader.replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + FRAG_CODE);
+    shader.fragmentShader = FRAG_DECL + shader.fragmentShader
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + FRAG_CODE)
+      .replace('#include <dithering_fragment>', FRAG_END + '#include <dithering_fragment>');
   };
   const key = material.customProgramCacheKey ? material.customProgramCacheKey.bind(material) : () => '';
   material.customProgramCacheKey = () => key() + '|reveal';
@@ -53,8 +62,8 @@ function voidTexture() {
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#17121f';
   ctx.fillRect(0, 0, S, S);
-  ctx.strokeStyle = 'rgba(140, 110, 200, 0.10)';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(160, 120, 220, 0.16)';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(0, 0); ctx.lineTo(S, S);
   ctx.moveTo(S, 0); ctx.lineTo(0, S);
@@ -89,11 +98,11 @@ function glowTexture() {
   c.width = 512; c.height = 8;
   const ctx = c.getContext('2d');
   const g = ctx.createLinearGradient(0, 0, 512, 0);
-  g.addColorStop(0, 'rgba(160,130,255,0)');
-  g.addColorStop(0.72, 'rgba(160,130,255,0.35)');
-  g.addColorStop(0.86, 'rgba(255,255,255,1)');
-  g.addColorStop(0.9, 'rgba(210,190,255,0.6)');
-  g.addColorStop(1, 'rgba(160,130,255,0)');
+  g.addColorStop(0, 'rgba(190,150,255,0)');
+  g.addColorStop(0.42, 'rgba(210,170,255,0.35)');
+  g.addColorStop(0.5, 'rgba(255,255,255,1)');
+  g.addColorStop(0.56, 'rgba(230,200,255,0.45)');
+  g.addColorStop(1, 'rgba(190,150,255,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 512, 8);
   return new THREE.CanvasTexture(c);
@@ -114,45 +123,27 @@ export class Island {
     floor.renderOrder = -2;
     this.group.add(floor);
 
-    // Island cross-section: the cut edge of the sand, fading to dark.
-    this.wallMat = new THREE.ShaderMaterial({
-      transparent: true,
-      side: THREE.DoubleSide,
-      uniforms: { opacity: { value: 1 } },
-      vertexShader: 'varying float vY; void main(){ vY = uv.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-      fragmentShader: `uniform float opacity; varying float vY;
-        void main(){ vec3 top = vec3(0.86, 0.62, 0.42); vec3 bot = vec3(0.23, 0.14, 0.24);
-          float band = step(0.93, fract(vY * 5.0)) * 0.08;
-          gl_FragColor = vec4(mix(bot, top, pow(vY, 1.6)) - band, opacity * smoothstep(0.0, 0.35, vY)); }`,
-    });
-    this.wall = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 96, 1, true), this.wallMat);
-    this.group.add(this.wall);
-
-    // Glowing rim, drawn twice: a thin bright line and a soft halo.
+    // Glowing rim on the ground: a thin bright line with a soft halo.
     this.rimMat = new THREE.MeshBasicMaterial({ map: glowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide });
-    const ringGeo = new THREE.RingGeometry(0.82, 1.12, 128, 1);
+    const ringGeo = new THREE.RingGeometry(0.9, 1.1, 160, 1);
     // Map u across the ring's width so the gradient runs inner -> outer.
     const uv = ringGeo.attributes.uv, pos = ringGeo.attributes.position;
     for (let i = 0; i < uv.count; i++) {
       const r = Math.hypot(pos.getX(i), pos.getY(i));
-      uv.setXY(i, (r - 0.82) / 0.3, 0.5);
+      uv.setXY(i, (r - 0.9) / 0.2, 0.5);
     }
     this.rim = new THREE.Mesh(ringGeo, this.rimMat);
     this.rim.rotation.x = -Math.PI / 2;
     this.rim.renderOrder = 5;
     this.group.add(this.rim);
-    this.depth = 2.2;
     this.set(reveal.radius.value, 1);
   }
 
   set(radius, visible) {
     const c = reveal.center.value;
-    this.wall.position.set(c.x, -this.depth / 2 + 0.02, c.y);
-    this.wall.scale.set(radius, this.depth, radius);
     this.rim.position.set(c.x, 0.06, c.y);
-    const rimScale = radius / 0.95;
+    const rimScale = radius;
     this.rim.scale.set(rimScale, rimScale, 1);
-    this.wallMat.uniforms.opacity.value = visible;
     this.rimMat.opacity = visible;
     this.floorMat.opacity = visible;
     this.group.visible = visible > 0.001;

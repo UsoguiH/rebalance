@@ -16,6 +16,12 @@ export const ZONES = {
   oasis: { x: -4, z: 44 },
 };
 
+const C = (h) => new THREE.Color(h);
+// The day cycle runs between a warm dusk and a violet night.
+const CYCLE = {
+  dusk: { top: C('#2a2150'), horizon: C('#e8866a'), fog: C('#7a4a6e'), hemiSky: C('#ffb892'), hemiGround: C('#5a2f55'), sun: C('#ffb27a') },
+  night: { top: C('#120e2e'), horizon: C('#3d2f6e'), fog: C('#2e2458'), hemiSky: C('#8f86ff'), hemiGround: C('#3a2a5e'), sun: C('#c4c8ff') },
+};
 // Night: indigo sky, violet haze, a cool moon high to the upper left.
 const SKY_TOP = new THREE.Color('#120e2e');
 const SKY_HORIZON = new THREE.Color('#3d2f6e');
@@ -216,18 +222,19 @@ export class World {
       depthWrite: false,
       fog: false,
       uniforms: {
-        top: { value: SKY_TOP },
-        horizon: { value: SKY_HORIZON },
+        top: { value: SKY_TOP.clone() },
+        horizon: { value: SKY_HORIZON.clone() },
+        night: { value: 1 },
         sunDir: { value: SUN_DIR },
       },
       vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
-      fragmentShader: `uniform vec3 top; uniform vec3 horizon; uniform vec3 sunDir; varying vec3 vDir;
+      fragmentShader: `uniform vec3 top; uniform vec3 horizon; uniform vec3 sunDir; uniform float night; varying vec3 vDir;
         float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
         void main(){ vec3 d = normalize(vDir); float h = d.y;
           vec3 col = mix(horizon, top, smoothstep(0.0, 0.5, h));
           vec3 cell = floor(d * 180.0);
           float star = step(0.9965, hash(cell)) * smoothstep(0.05, 0.3, h);
-          col += vec3(0.85, 0.85, 1.0) * star * (0.5 + 0.5 * hash(cell + 1.0));
+          col += vec3(0.85, 0.85, 1.0) * star * (0.5 + 0.5 * hash(cell + 1.0)) * night;
           float s = max(dot(d, sunDir), 0.0);
           col += vec3(0.85, 0.88, 1.0) * (smoothstep(0.9993, 0.9996, s) * 1.2 + pow(s, 30.0) * 0.25);
           gl_FragColor = vec4(col, 1.0); }`,
@@ -241,7 +248,7 @@ export class World {
   }
 
   buildLights() {
-    const hemi = new THREE.HemisphereLight('#8f86ff', '#3a2a5e', 1.5);
+    const hemi = (this.hemi = new THREE.HemisphereLight('#8f86ff', '#3a2a5e', 1.5));
     this.scene.add(hemi);
     const sun = (this.sun = new THREE.DirectionalLight('#c4c8ff', 1.7));
     sun.castShadow = true;
@@ -252,6 +259,23 @@ export class World {
     sun.shadow.bias = -0.0005;
     sun.shadow.normalBias = 0.04;
     this.scene.add(sun, sun.target);
+  }
+
+  // 0 = warm dusk, 1 = violet night. Drives sky, fog, lights and lantern glow.
+  setNight(k) {
+    const P = CYCLE;
+    const L = (a, b) => this._c.copy(a).lerp(b, k);
+    this._c = this._c || new THREE.Color();
+    this.sky.material.uniforms.top.value.copy(L(P.dusk.top, P.night.top));
+    this.sky.material.uniforms.horizon.value.copy(L(P.dusk.horizon, P.night.horizon));
+    this.sky.material.uniforms.night.value = k;
+    this.scene.fog.color.copy(L(P.dusk.fog, P.night.fog));
+    this.hemi.color.copy(L(P.dusk.hemiSky, P.night.hemiSky));
+    this.hemi.groundColor.copy(L(P.dusk.hemiGround, P.night.hemiGround));
+    this.hemi.intensity = THREE.MathUtils.lerp(1.45, 1.5, k);
+    this.sun.color.copy(L(P.dusk.sun, P.night.sun));
+    this.sun.intensity = THREE.MathUtils.lerp(2.2, 1.7, k);
+    this.lanternLevel = 0.35 + 0.65 * k;
   }
 
   followSun(target) {
@@ -827,7 +851,10 @@ export class World {
       const R = reveal.radius.value, c = reveal.center.value;
       for (const l of this.glows) {
         const f = 1 + Math.sin(t * 7 + l.phase) * 0.05 + Math.sin(t * 13 + l.phase) * 0.03;
-        l.sprite.scale.setScalar(2.6 * f);
+        const lv = this.lanternLevel ?? 1;
+        l.sprite.scale.setScalar(2.6 * f * (0.7 + 0.3 * lv));
+        l.sprite.material.opacity = 0.9 * lv;
+        l.pool.material.opacity = 0.55 * lv;
         // Sprites and additive pools ignore the island clip, so hide them outside it.
         const vis = Math.hypot(l.x - c.x, l.z - c.y) < R - 0.5;
         l.sprite.visible = l.pool.visible = vis;
