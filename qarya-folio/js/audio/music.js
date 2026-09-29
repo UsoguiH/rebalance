@@ -343,7 +343,7 @@ export function createMusic(kit, dest, reverb) {
   }
 
   function schedule() {
-    if (!running || ac.state !== 'running') return;
+    if (!running) return; // (while suspended the clock stands still, so nothing piles up)
     const now = ac.currentTime;
     if (nextTime < now) nextTime = now + 0.05; // fell behind (stall): skip ahead
     while (nextTime < now + LOOKAHEAD) {
