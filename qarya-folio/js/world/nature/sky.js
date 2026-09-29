@@ -77,10 +77,10 @@ export function createSky(ctx) {
   const puffs = [[0, 0, 0, 3.2], [3.4, -0.3, 0.4, 2.4], [-3.2, -0.4, -0.2, 2.3], [1.4, 1.3, -0.3, 2.2], [-1.5, 1.0, 0.5, 2.0], [5.6, -0.8, 0, 1.5], [-5.4, -0.9, 0.3, 1.4]];
   for (const [x, y, z, r] of puffs) {
     b.sphere(r, '#fffaf0', { position: [x, y, z], scale: [1, 0.72, 0.85] }, 1);
-    b.sphere(r * 0.92, '#f6dcc6', { position: [x, y - r * 0.28, z], scale: [1.05, 0.45, 0.9] }, 0);
+    b.sphere(r * 0.92, '#f3dccf', { position: [x, y - r * 0.28, z], scale: [1.05, 0.45, 0.9] }, 0);
   }
   const cloudGeo = b.build().geometry;
-  const cloudMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, fog: false, emissive: '#8a6f5c', emissiveIntensity: 0.55 });
+  const cloudMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, fog: false, emissive: '#fff1dc', emissiveIntensity: 0.5 });
   const nClouds = mobile ? 8 : 14;
   const clouds = new THREE.InstancedMesh(cloudGeo, cloudMat, nClouds);
   clouds.frustumCulled = false;
