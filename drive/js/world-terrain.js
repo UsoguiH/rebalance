@@ -147,12 +147,12 @@ float dView = length(vViewPosition);
 float fadeR = 1.0 - smoothstep(20.0, 85.0, dView);
 float ph1 = ripPh(vWPos.xz);
 float ph2 = ripPh(vWPos.xz*2.3 + 7.0);
-diffuseColor.rgb *= 1.0 + fadeR*(0.055*sin(ph1) + 0.03*sin(ph2));`)
+diffuseColor.rgb *= 1.0 + fadeR*(0.035*sin(ph1) + 0.02*sin(ph2));`)
         .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
 {
   vec2 g = (cos(ph1)*4.2*0.6 + cos(ph2)*9.7*0.25) * vec2(0.87,0.5);
   vec3 pert = (viewMatrix * vec4(-g.x, 0.0, -g.y, 0.0)).xyz;
-  normal = normalize(normal + pert * 0.11 * fadeR);
+  normal = normalize(normal + pert * 0.028 * fadeR);
 }`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 {
