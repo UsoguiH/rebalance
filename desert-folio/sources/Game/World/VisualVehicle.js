@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu'
+import { Camel } from './Camel.js'
 import { Game } from '../Game.js'
 import { Track } from '../Tracks.js'
 import { Trails } from '../Trails.js'
@@ -26,6 +27,7 @@ export class VisualVehicle
         this.setBoostAnimation()
         this.setScreenPosition()
         this.setPaints()
+        this.setCamel()
 
         this.tickCallback = () =>
         {
@@ -415,6 +417,27 @@ export class VisualVehicle
         this.screenPosition = new THREE.Vector2(0, 0)
     }
 
+    // Replace the jeep visuals with a camel. The jeep meshes move into a hidden
+    // group (so blinkers or paint toggles can't bring them back); the physics,
+    // wheel containers and boost references keep working as before.
+    setCamel()
+    {
+        const keep = new Set([ this.boostTrails?.leftReference, this.boostTrails?.rightReference ].filter(Boolean))
+        this.jeepVisual = new THREE.Group()
+        this.jeepVisual.name = 'jeepVisual'
+        this.jeepVisual.visible = false
+        for(const child of [ ...this.parts.chassis.children ])
+        {
+            if(!keep.has(child))
+                this.jeepVisual.add(child)
+        }
+        this.parts.chassis.add(this.jeepVisual)
+
+        this.camel = new Camel()
+        this.camel.group.position.y = - 0.9
+        this.parts.chassis.add(this.camel.group)
+    }
+
     update()
     {
         const physicalVehicle = this.game.physicalVehicle
@@ -465,6 +488,17 @@ export class VisualVehicle
 
             // Ground tracks
             visualWheel.groundTrack.update(physicalWheel.contactPoint, physicalWheel.inContact)
+        }
+
+        // Camel: feet at the average wheel bottom, legs from forward speed.
+        if(this.camel)
+        {
+            let wheelsY = 0
+            for(const wheel of this.wheels.items)
+                wheelsY += wheel.container.position.y
+            const feetY = wheelsY / this.wheels.items.length - physicalVehicle.wheels.settings.radius
+            this.camel.group.position.y += (feetY - this.camel.group.position.y) * Math.min(1, 20 * this.game.ticker.deltaScaled)
+            this.camel.update(this.game.ticker.deltaScaled, physicalVehicle.forwardSpeed, this.game.player.steering)
         }
 
         // Main ground track
