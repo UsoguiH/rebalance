@@ -32,18 +32,42 @@ export class UI {
     if (label) $('#load-label').textContent = label;
   }
 
+  // The loader fades to reveal the island; a click, tap or Enter anywhere starts.
   ready(onStart) {
-    const btn = $('#start');
-    btn.disabled = false;
-    btn.textContent = ui.start;
-    btn.classList.add('ready');
-    $('#load-label').textContent = '';
-    btn.focus();
-    btn.addEventListener('click', () => {
-      $('#loader').classList.add('gone');
-      setTimeout(() => $('#loader').remove(), 1200);
+    $('#loader').classList.add('gone');
+    setTimeout(() => $('#loader').remove(), 1200);
+    const hint = $('#start-hint');
+    hint.hidden = false;
+    requestAnimationFrame(() => hint.classList.add('on'));
+    hint.focus({ preventScroll: true });
+    let started = false;
+    const go = (e) => {
+      if (started) return;
+      if (e.type === 'keydown' && !['Enter', 'Space', 'NumpadEnter'].includes(e.code)) return;
+      if (e.target.closest && e.target.closest('#hud')) return;
+      started = true;
+      if (e.cancelable) e.preventDefault();
+      hint.classList.remove('on');
+      hint.classList.add('gone');
+      setTimeout(() => { hint.hidden = true; }, 700);
+      removeEventListener('pointerdown', go, true);
+      removeEventListener('keydown', go, true);
       onStart();
-    }, { once: true });
+    };
+    addEventListener('pointerdown', go, true);
+    addEventListener('keydown', go, true);
+  }
+
+  // Pin the start label next to the island's right-hand rim.
+  placeStartHint(camera, center, radius) {
+    const hint = $('#start-hint');
+    if (hint.hidden) return;
+    const p = this._p || (this._p = camera.position.clone());
+    p.set(center.x + radius * 0.72, 0.4, center.y - radius * 0.5).project(camera);
+    const w = innerWidth, h = innerHeight;
+    const x = Math.min(w - 16 - hint.offsetWidth, Math.max(16, (p.x * 0.5 + 0.5) * w));
+    const y = Math.min(h - 16 - hint.offsetHeight, Math.max(16, (-p.y * 0.5 + 0.5) * h - hint.offsetHeight * 0.75));
+    hint.style.transform = `translate(${x}px, ${y}px)`;
   }
 
   setSound(on) {

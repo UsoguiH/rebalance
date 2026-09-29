@@ -128,7 +128,7 @@ export class Props {
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 20, 14), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }));
     mesh.castShadow = true;
     const body = new CANNON.Body({ mass: 0.5, shape: new CANNON.Sphere(0.7) });
-    body.position.set(7, 0.7, -3);
+    body.position.set(4.6, 0.7, -1.2);
     this.add(body, mesh, 'ball');
     body.linearDamping = 0.25;
     body.angularDamping = 0.3;

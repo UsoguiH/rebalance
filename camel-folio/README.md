@@ -19,6 +19,12 @@ Everything is self-hosted (three.js, cannon-es and the Arabic fonts are in `vend
 
 Edit **`js/content.js`**: name, role, about text, projects, skills, contact links and every UI string. The 3D signs, boards and crates are drawn from that file at load time.
 
+## البداية / The opening
+
+The page opens on a small desert island floating over a dark void patterned with eight-point stars, with a glowing rim. A hand-drawn «اضغط للبدء» label points at it. A click, a tap, Enter or Space starts the journey: the island's edge grows until it covers the whole desert, the letters of your name drop into the sand, and the camera settles overhead. The world is a moonlit night with brass lanterns (fanous) glowing on the sand.
+
+Section pads are two white rings. Stand on one and the space between them fills up; when it's full, the section opens. Enter opens it immediately.
+
 ## ما في العالم / What's in the world
 
 | القسم | Where | What happens |
@@ -35,8 +41,8 @@ Edit **`js/content.js`**: name, role, about text, projects, skills, contact link
 
 | Desktop | Phone / tablet |
 |---|---|
-| Arrows or WASD to move (works on Arabic keyboard layouts too) | Drag anywhere to move; drag further to run |
-| Shift to run, Space to jump | «قفز» button to jump |
+| ↑ throttle, ↓ brake/reverse, ← → steer (like a vehicle; works on Arabic keyboard layouts too) | Drag anywhere to move; drag further to run |
+| Shift to boost (and drift in turns), Space to jump | «قفز» button to jump |
 | H for the camel's grunt | 🐪 button |
 | Enter to open a section, Esc to close | Tap the prompt bubble |
 | Mouse wheel to zoom | Pinch to zoom |
@@ -57,7 +63,10 @@ Audio starts on the «ابدأ الرحلة» click (needed for iOS and Chrome a
 ## البنية / Structure
 
 ```
-js/main.js      renderer, follow camera + intro swoop, triggers, game loop, adaptive resolution
+js/main.js      renderer, island intro + reveal, follow camera, filling pads, game loop, adaptive resolution
+js/reveal.js    clips the world to the starting island; island rim, edge and patterned void
+js/letters3d.js traces the Arabic name into extruded 3D letter groups
+js/stylize.js   moonlit clay matcap shading
 js/camel.js     procedural camel: joint hierarchy, pacing gait, idle (chewing, blinking, looking), jump
 js/world.js     dunes, sky shader, sun + shadows, palms/rocks (instanced), tent, well, boards, oasis, birds
 js/props.js     cannon-es physics: crates, jars, ball, and the camel as a kinematic body
@@ -80,4 +89,4 @@ js/content.js   all the copy
 
 - three.js: MIT (`vendor/LICENSE-three.txt`)
 - cannon-es: MIT (`vendor/LICENSE-cannon-es.txt`)
-- Cairo and Reem Kufi fonts: SIL Open Font License (`fonts/OFL-*.txt`)
+- Cairo, Reem Kufi and Aref Ruqaa fonts: SIL Open Font License (`fonts/OFL-*.txt`)

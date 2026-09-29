@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#f7d7a8">
+  <meta name="theme-color" content="#17121f">
   <meta name="description" content="معرض أعمال تفاعلي ثلاثي الأبعاد: اركب الجمل واستكشف المشاريع في الصحراء.">
   <title>رحلة الجمل</title>
   <link rel="preload" href="fonts/reem-kufi-arabic-700-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/cairo-arabic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/aref-ruqaa-arabic-700-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23e07a3f'/%3E%3Cpath d='M14 44v-10c0-6 4-10 9-10 3-6 9-6 11 0 3-4 8-4 10 2l4-8 5 2-4 10v14h-4v-9H22v9z' fill='%23fbeed6'/%3E%3C/svg%3E">
   <script type="importmap">
@@ -34,9 +35,21 @@
       <p class="tagline">اركب الجمل واستكشف أعمالي في الصحراء</p>
       <div class="bar"><span id="load-bar"></span></div>
       <p id="load-label" class="load-label" aria-live="polite">جارٍ التحميل…</p>
-      <button id="start" disabled>…</button>
-      <p class="hint">🔊 التجربة أجمل مع الصوت</p>
+
     </div>
+  </div>
+
+  <!-- Start label beside the island -->
+  <div id="start-hint" hidden tabindex="0" role="button" aria-label="اضغط للبدء">
+    <svg class="arrow" viewBox="0 0 140 70" aria-hidden="true">
+      <path class="stroke" d="M128 12 C 96 2, 52 8, 22 44" />
+      <path class="stroke" d="M22 44 L 28 24 M22 44 L 42 40" />
+    </svg>
+    <span class="txt">اضغط للبدء</span>
+    <svg class="spk" viewBox="0 0 40 32" aria-hidden="true">
+      <path class="stroke" d="M4 12 L 11 12 L 19 5 L 19 27 L 11 20 L 4 20 Z" />
+      <path class="stroke" d="M25 11 C 28 14, 28 18, 25 21 M30 7 C 35 12, 35 20, 30 25" />
+    </svg>
   </div>
 
   <div id="nogl" class="nogl" hidden>

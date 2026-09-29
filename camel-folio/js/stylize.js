@@ -1,38 +1,35 @@
 import * as THREE from 'three';
 
-// A soft "clay" look: objects are shaded with a matcap painted in code (warm key
-// light from the upper left, cool bounce underneath, a thin rim), while the
-// ground keeps real lighting so shadows still land on it.
+// A soft "clay" look: objects are shaded with a matcap painted in code, while
+// the ground keeps real lighting so shadows still land on it.
 
+// Moonlit clay: cool violet key light from the upper left, deep indigo shadow,
+// and a faint warm bounce from the lanterns along the lower right.
 function clayMatcap(size = 256) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const ctx = c.getContext('2d');
   const r = size / 2;
-  // Base: cool, slightly purple shadow side.
-  ctx.fillStyle = '#8f7f86';
+  ctx.fillStyle = '#2c2352';
   ctx.fillRect(0, 0, size, size);
-  // Key light.
-  let g = ctx.createRadialGradient(r * 0.72, r * 0.62, 0, r * 0.9, r * 0.85, r * 1.15);
-  g.addColorStop(0, '#fff6e8');
-  g.addColorStop(0.45, '#f1dcc6');
-  g.addColorStop(0.8, '#c3a99e');
-  g.addColorStop(1, '#8f7f86');
+  let g = ctx.createRadialGradient(r * 0.7, r * 0.6, 0, r * 0.9, r * 0.85, r * 1.15);
+  g.addColorStop(0, '#f3eeff');
+  g.addColorStop(0.4, '#c7bdf2');
+  g.addColorStop(0.78, '#6d5fae');
+  g.addColorStop(1, '#2c2352');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(r, r, r, 0, Math.PI * 2);
   ctx.fill();
-  // Warm bounce from the sand along the bottom edge.
-  g = ctx.createLinearGradient(0, size * 0.65, 0, size);
-  g.addColorStop(0, 'rgba(240, 180, 110, 0)');
-  g.addColorStop(1, 'rgba(240, 180, 110, 0.35)');
+  g = ctx.createRadialGradient(r * 1.55, r * 1.55, 0, r * 1.55, r * 1.55, r * 0.9);
+  g.addColorStop(0, 'rgba(255, 150, 80, 0.45)');
+  g.addColorStop(1, 'rgba(255, 150, 80, 0)');
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(r, r, r, 0, Math.PI * 2);
   ctx.fill();
-  // Rim.
-  ctx.lineWidth = size * 0.035;
-  ctx.strokeStyle = 'rgba(255, 238, 215, 0.45)';
+  ctx.lineWidth = size * 0.03;
+  ctx.strokeStyle = 'rgba(220, 210, 255, 0.5)';
   ctx.beginPath();
   ctx.arc(r, r, r - ctx.lineWidth / 2, Math.PI * 1.05, Math.PI * 1.75);
   ctx.stroke();

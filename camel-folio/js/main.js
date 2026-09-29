@@ -9,6 +9,7 @@ import { UI } from './ui.js';
 import { projects, ui as copy } from './content.js';
 import { setAnisotropy } from './textures.js';
 import { stylize } from './stylize.js';
+import { applyReveal, Island, reveal } from './reveal.js';
 
 const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 const mobile = touch && Math.min(screen.width, screen.height) < 900;
@@ -17,7 +18,7 @@ const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
 
 async function loadFonts() {
   if (!document.fonts) return;
-  const wanted = ['700 64px "Reem Kufi"', '400 32px "Cairo"', '700 32px "Cairo"'];
+  const wanted = ['700 64px "Reem Kufi"', '400 32px "Cairo"', '700 32px "Cairo"', '700 40px "Aref Ruqaa"'];
   const all = Promise.all(wanted.map((f) => document.fonts.load(f, 'أبجد abc')));
   await Promise.race([all, new Promise((r) => setTimeout(r, 3000))]);
 }
@@ -73,6 +74,11 @@ async function main() {
 
   // Compile shaders up front so the first frames don't hitch.
   stylize(scene);
+  // Clip everything to the starting island; the island's own pieces are added after.
+  reveal.center.value.set(camel.position.x, camel.position.z);
+  applyReveal(scene);
+  const island = new Island(scene);
+  world.sky.visible = false;
   renderer.compile(scene, camera);
   uiLayer.setLoading(1);
 
@@ -80,10 +86,10 @@ async function main() {
   const cam = {
     target: new THREE.Vector3(0, 1.5, 0),
     az: 0,
-    elev: 0.72,
-    dist: 25,
+    elev: 0.95,
+    dist: 23,
     shake: 0,
-    intro: -1, // -1: attract mode behind the loader, 0..1 intro swoop, >1 play
+    intro: -1, // -1: the island before the start, 0..1 reveal, >1 play
   };
   const camForward = new THREE.Vector3(0, 0, -1);
   const look = new THREE.Vector3();
@@ -98,17 +104,27 @@ async function main() {
     let dist = cam.dist * input.zoom * (portrait ? 1.35 : 1);
     let elev = cam.elev;
     let az = cam.az;
+    // Island framing: a three-quarter view that fits the island on any screen.
+    const islandAz = 0.62 + Math.sin(t * 0.25) * 0.04;
+    const islandElev = 0.78;
+    const islandDist = (portrait ? 38 : 32) * Math.max(1, 1.2 / camera.aspect * (portrait ? 0.62 : 1));
     if (cam.intro < 0) {
-      // Slow orbit while the loader is up.
-      az = t * 0.08;
-      dist *= 1.9;
-      elev = 0.75;
+      az = islandAz;
+      dist = islandDist;
+      elev = islandElev;
+      cam.target.set(reveal.center.value.x, 0.4, reveal.center.value.y);
     } else if (cam.intro < 1) {
       const k = ease(cam.intro);
-      az = THREE.MathUtils.lerp(cam.startAz, cam.az, k);
-      dist *= THREE.MathUtils.lerp(1.9, 1, k);
-      elev = THREE.MathUtils.lerp(0.75, cam.elev, k);
-      cam.intro += dt / 2.6;
+      az = THREE.MathUtils.lerp(islandAz, cam.az, k);
+      dist = THREE.MathUtils.lerp(islandDist, dist, k);
+      elev = THREE.MathUtils.lerp(islandElev, cam.elev, k);
+      cam.intro += dt / 3;
+      // The island grows until it swallows the desert.
+      const r = 7.5 + Math.pow(cam.intro, 2.4) * 320;
+      reveal.radius.value = r;
+      island.set(r, 1 - Math.min(1, Math.max(0, (cam.intro - 0.45) / 0.4)));
+      world.sky.visible = cam.intro > 0.35;
+      if (cam.intro >= 1) { reveal.radius.value = 1e5; island.set(1e5, 0); }
     }
     camera.position.set(
       cam.target.x + Math.sin(az) * Math.cos(elev) * dist,
@@ -194,11 +210,18 @@ async function main() {
       if (d < tr.r && d < bestD) { best = tr; bestD = d; }
     }
     for (const tr of world.triggers) {
-      const target = tr === best ? 1 : 0;
-      tr.active += (target - tr.active) * Math.min(1, dt * 8);
-      tr.fill.material.opacity = 0.16 + tr.active * 0.45;
-      const pulse = 1 + Math.sin(t * 3 + tr.x) * 0.03 + tr.active * 0.08;
-      tr.ring.scale.set(pulse, pulse, pulse);
+      const inside = tr === best;
+      tr.active += ((inside ? 1 : 0) - tr.active) * Math.min(1, dt * 8);
+      if (inside && !tr.done && !uiLayer.open) {
+        tr.progress = Math.min(1, tr.progress + dt / 1.1);
+        if (tr.progress >= 1) { tr.done = true; runAction(tr.action); }
+      } else if (!inside) {
+        tr.progress = Math.max(0, tr.progress - dt * 3);
+        tr.done = false;
+      }
+      tr.fillMat.uniforms.progress.value = tr.done ? 1 : tr.progress;
+      const pulse = 1 + tr.active * 0.06 + Math.sin(t * 3 + tr.x) * 0.015;
+      tr.group.scale.set(pulse, 1, pulse);
     }
     if (best !== activeTrigger) {
       activeTrigger = best;
@@ -287,14 +310,12 @@ async function main() {
 
   // ---------- start ----------
   uiLayer.ready(() => {
-    camel.dropFrom(14);
-    props.dropLetters();
     audio.unlock();
     cam.intro = 0;
-    cam.startAz = ((timer.getElapsed() * 0.08 + Math.PI) % (Math.PI * 2)) - Math.PI;
     input.enabled = true;
-    setTimeout(() => uiLayer.toast(copy.sections.welcome), 1800);
-    setTimeout(grunt, 1400);
+    setTimeout(() => props.dropLetters(), 1100);
+    setTimeout(grunt, 300);
+    setTimeout(() => uiLayer.toast(copy.sections.welcome), 3200);
   });
 
   // ---------- loop ----------
@@ -319,6 +340,7 @@ async function main() {
     fx.update(dt);
     if (cam.intro >= 0) { updateTriggers(dt, t); updateZones(); }
     updateCamera(dt, t);
+    if (cam.intro < 0) uiLayer.placeStartHint(camera, reveal.center.value, reveal.radius.value);
     renderer.render(scene, camera);
 
     // Drop resolution on slow devices (checked a few times after start).
@@ -338,7 +360,7 @@ async function main() {
   frame();
 
   // Handy for debugging and automated tests.
-  window.__folio = { camel, world, props, audio, camera, renderer, input, cam, ui: uiLayer, teleport };
+  window.__folio = { camel, world, props, audio, camera, renderer, input, cam, ui: uiLayer, teleport, reveal };
 }
 
 main().catch((err) => {

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { reveal } from './reveal.js';
 import { mergeGeometries } from 'three-addons';
 import { profile, projects, contact, ui } from './content.js';
 import { sandTexture, groundText, boardTexture, signTexture, rugTexture, FONT_DISPLAY } from './textures.js';
@@ -15,9 +16,10 @@ export const ZONES = {
   oasis: { x: -4, z: 44 },
 };
 
-const SKY_TOP = new THREE.Color('#6fb0d8');
-const SKY_HORIZON = new THREE.Color('#f7d7a8');
-export const SUN_DIR = new THREE.Vector3(-0.55, 0.75, 0.38).normalize();
+// Night: indigo sky, violet haze, a cool moon high to the upper left.
+const SKY_TOP = new THREE.Color('#120e2e');
+const SKY_HORIZON = new THREE.Color('#3d2f6e');
+export const SUN_DIR = new THREE.Vector3(-0.5, 0.8, 0.3).normalize();
 
 // ---------- deterministic noise ----------
 function hash(x, z) {
@@ -117,7 +119,7 @@ function palmGeometry() {
   for (let k = 0; k < fronds; k++) {
     const a = (k / fronds) * Math.PI * 2 + (k % 2) * 0.2;
     const tilt = (k % 3) * 0.12 - 0.1;
-    const color = k % 2 ? '#5f8a3a' : '#4f7a31';
+    const color = k % 2 ? '#4f7050' : '#3f6045';
     parts.push(part(frondGeometry(3.2 + (k % 3) * 0.4), color, mtx(top.x, top.y + 0.1, top.z, 0, a, tilt)));
   }
   for (let d = 0; d < 7; d++) {
@@ -173,6 +175,8 @@ export class World {
     this.buildPlayground();
     this.buildOasis();
     this.buildScatter();
+    this.buildLanterns();
+    this.buildLeaves();
     this.buildBirds();
   }
 
@@ -218,23 +222,28 @@ export class World {
       },
       vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
       fragmentShader: `uniform vec3 top; uniform vec3 horizon; uniform vec3 sunDir; varying vec3 vDir;
-        void main(){ float h = vDir.y; vec3 col = mix(horizon, top, smoothstep(0.0, 0.45, h));
-          float s = max(dot(normalize(vDir), sunDir), 0.0);
-          col += vec3(1.0, 0.85, 0.6) * (pow(s, 400.0) * 2.0 + pow(s, 12.0) * 0.25);
+        float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
+        void main(){ vec3 d = normalize(vDir); float h = d.y;
+          vec3 col = mix(horizon, top, smoothstep(0.0, 0.5, h));
+          vec3 cell = floor(d * 180.0);
+          float star = step(0.9965, hash(cell)) * smoothstep(0.05, 0.3, h);
+          col += vec3(0.85, 0.85, 1.0) * star * (0.5 + 0.5 * hash(cell + 1.0));
+          float s = max(dot(d, sunDir), 0.0);
+          col += vec3(0.85, 0.88, 1.0) * (smoothstep(0.9993, 0.9996, s) * 1.2 + pow(s, 30.0) * 0.25);
           gl_FragColor = vec4(col, 1.0); }`,
     });
     this.sky = new THREE.Mesh(geo, mat);
     this.sky.renderOrder = -1;
     this.sky.frustumCulled = false;
     this.scene.add(this.sky);
-    this.scene.fog = new THREE.Fog(SKY_HORIZON, 70, 190);
-    this.scene.background = SKY_HORIZON.clone();
+    this.scene.fog = new THREE.Fog(new THREE.Color('#2e2458'), 55, 170);
+    this.scene.background = new THREE.Color('#17121f');
   }
 
   buildLights() {
-    const hemi = new THREE.HemisphereLight('#fff0d6', '#d19a62', 1.35);
+    const hemi = new THREE.HemisphereLight('#8f86ff', '#3a2a5e', 1.5);
     this.scene.add(hemi);
-    const sun = (this.sun = new THREE.DirectionalLight('#fff0d8', 2.4));
+    const sun = (this.sun = new THREE.DirectionalLight('#c4c8ff', 1.7));
     sun.castShadow = true;
     const size = this.mobile ? 1024 : 2048;
     sun.shadow.mapSize.set(size, size);
@@ -258,8 +267,8 @@ export class World {
     geo.rotateX(-Math.PI / 2);
     const p = geo.attributes.position;
     const colors = new Float32Array(p.count * 3);
-    const base = new THREE.Color('#ecc690');
-    const shade = new THREE.Color('#d9a56a');
+    const base = new THREE.Color('#b8a0c8');
+    const shade = new THREE.Color('#6f5f9a');
     const c = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i), z = p.getZ(i);
@@ -293,23 +302,39 @@ export class World {
     return m;
   }
 
-  // A glowing pad on the sand. Standing on it lets you open the section.
+  // A pad on the sand: two white rings, and a slice between them that fills
+  // up while the camel stands inside. When it's full, the section opens.
   addTrigger({ id, x, z, r = 2.4, label, action, color = '#f2c14e' }) {
     const group = new THREE.Group();
-    group.position.set(x, 0.04, z);
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(r - 0.25, r, 40),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false }),
-    );
-    ring.rotation.x = -Math.PI / 2;
-    const fill = new THREE.Mesh(
-      new THREE.CircleGeometry(r - 0.35, 40),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.18, depthWrite: false }),
-    );
-    fill.rotation.x = -Math.PI / 2;
-    group.add(ring, fill);
+    group.position.set(x, 0.05, z);
+    const white = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false, fog: false });
+    const inner = r * 0.46;
+    const outerRing = new THREE.Mesh(new THREE.RingGeometry(r - 0.13, r, 72), white);
+    const innerRing = new THREE.Mesh(new THREE.RingGeometry(inner - 0.1, inner, 56), white);
+    const fillMat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      uniforms: {
+        progress: { value: 0 },
+        tint: { value: new THREE.Color(color) },
+        uRevealCenter: reveal.center,
+        uRevealRadius: reveal.radius,
+      },
+      vertexShader: `varying vec2 vP; varying vec3 vW;
+        void main(){ vP = position.xy; vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+      fragmentShader: `uniform float progress; uniform vec3 tint; uniform vec2 uRevealCenter; uniform float uRevealRadius;
+        varying vec2 vP; varying vec3 vW;
+        void main(){
+          if (distance(vW.xz, uRevealCenter) > uRevealRadius) discard;
+          float a = fract(atan(vP.x, vP.y) / 6.2831853 + 1.0); // 0..1 clockwise from the top
+          float filled = step(a, progress) * step(0.001, progress);
+          vec3 col = mix(tint, vec3(1.0), 0.88);
+          gl_FragColor = vec4(col, mix(0.10, 0.92, filled)); }`,
+    });
+    const fill = new THREE.Mesh(new THREE.RingGeometry(inner, r - 0.13, 72, 1), fillMat);
+    for (const m of [outerRing, innerRing, fill]) { m.rotation.x = -Math.PI / 2; group.add(m); }
     this.scene.add(group);
-    const t = { id, x, z, r, label, action, group, ring, fill, active: 0 };
+    const t = { id, x, z, r, label, action, group, ring: outerRing, fill, fillMat, active: 0, progress: 0, done: false };
     this.triggers.push(t);
     return t;
   }
@@ -630,10 +655,10 @@ export class World {
       new THREE.CircleGeometry(R, 48),
       new THREE.ShaderMaterial({
         transparent: true,
-        uniforms: { t: { value: 0 }, center: { value: new THREE.Vector2(x, z) }, R: { value: R } },
+        uniforms: { t: { value: 0 }, center: { value: new THREE.Vector2(x, z) }, R: { value: R }, uRevealCenter: reveal.center, uRevealRadius: reveal.radius },
         vertexShader: `varying vec2 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xz; gl_Position = projectionMatrix * viewMatrix * w; }`,
-        fragmentShader: `uniform float t; uniform vec2 center; uniform float R; varying vec2 vW;
-          void main(){ float d = length(vW - center) / R;
+        fragmentShader: `uniform float t; uniform vec2 center; uniform float R; uniform vec2 uRevealCenter; uniform float uRevealRadius; varying vec2 vW;
+          void main(){ if (distance(vW, uRevealCenter) > uRevealRadius) discard; float d = length(vW - center) / R;
             vec3 deep = vec3(0.12, 0.45, 0.5); vec3 shallow = vec3(0.35, 0.75, 0.72);
             vec3 col = mix(deep, shallow, smoothstep(0.3, 1.0, d));
             float w = sin(vW.x * 1.3 + t * 1.5) * sin(vW.y * 1.1 - t * 1.2) + sin((vW.x + vW.y) * 2.1 + t * 2.0) * 0.5;
@@ -673,6 +698,7 @@ export class World {
       palms.push([o.x + Math.cos(a) * r, o.z + Math.sin(a) * r]);
     }
     // Groves elsewhere, avoiding the zones.
+    palms.push([-4.4, 4.6]);
     const groves = [[18, 8], [-18, -22], [22, -26], [-22, 8], [12, 50], [-40, 42], [50, 18], [-52, -30], [45, -38], [0, 20]];
     for (const [gx, gz] of groves) {
       const n = 2 + Math.floor(rand() * 3);
@@ -734,6 +760,113 @@ export class World {
   nearZone(x, z, r) {
     if (Math.hypot(x, z) < 12) return true;
     return Object.values(ZONES).some((q) => Math.hypot(x - q.x, z - q.z) < r + 6);
+  }
+
+  // Brass lanterns (fanous) with a warm glow and a pool of light on the sand.
+  buildLanterns() {
+    const spots = [
+      [3.6, 3.8, true], [-6.8, -6, true], [6, -12, false], [-8, -34, true], [8, -34, true],
+      [-30, -16, true], [-34, 2, false], [-22, 30, true], [30, -16, true], [30, 4, false],
+      [24, 22, true], [36, 40, false], [4, 34, true], [-14, 38, false], [-4, 20, true], [16, -4, false],
+    ];
+    const metal = new THREE.MeshStandardMaterial({ color: '#3b2f5c', flatShading: true, roughness: 0.6 });
+    const brass = new THREE.MeshStandardMaterial({ color: '#b98a3e', flatShading: true, roughness: 0.4 });
+    const glass = new THREE.MeshBasicMaterial({ color: '#ffb347' });
+    const glowTex = (() => {
+      const c = document.createElement('canvas');
+      c.width = c.height = 128;
+      const g = c.getContext('2d').createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, 'rgba(255,190,110,1)');
+      g.addColorStop(0.3, 'rgba(255,150,70,0.45)');
+      g.addColorStop(1, 'rgba(255,120,50,0)');
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 128, 128);
+      return new THREE.CanvasTexture(c);
+    })();
+    const poolMat = new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.55 });
+    const spriteMat = new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.9 });
+    this.glows = [];
+    for (const [x, z, post] of spots) {
+      const g = new THREE.Group();
+      g.position.set(x, 0, z);
+      const h = post ? 2.6 : 0;
+      if (post) {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, h, 6), metal);
+        pole.position.y = h / 2;
+        const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.3, 6), metal);
+        foot.position.y = 0.15;
+        g.add(pole, foot);
+      }
+      const body = new THREE.Group();
+      body.position.y = h + 0.1;
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.28, 0.16, 6), brass);
+      const pane = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.6, 6), glass);
+      pane.position.y = 0.45;
+      const frame = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.62, 6, 1, true), new THREE.MeshStandardMaterial({ color: '#b98a3e', wireframe: true }));
+      frame.position.y = 0.45;
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.42, 6), brass);
+      cap.position.y = 0.96;
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 4), brass);
+      tip.position.y = 1.22;
+      body.add(base, pane, frame, cap, tip);
+      g.add(body);
+      g.traverse((o) => { if (o.isMesh && o.material !== glass) o.castShadow = true; });
+      const sprite = new THREE.Sprite(spriteMat);
+      sprite.position.set(0, h + 0.55, 0);
+      sprite.scale.setScalar(2.6);
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), poolMat);
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.y = 0.045;
+      g.add(sprite, pool);
+      this.scene.add(g);
+      this.addCollider(x, z, post ? 0.4 : 0.45);
+      this.glows.push({ sprite, pool, x, z, phase: Math.random() * 10 });
+    }
+    this.animated.push((t) => {
+      const R = reveal.radius.value, c = reveal.center.value;
+      for (const l of this.glows) {
+        const f = 1 + Math.sin(t * 7 + l.phase) * 0.05 + Math.sin(t * 13 + l.phase) * 0.03;
+        l.sprite.scale.setScalar(2.6 * f);
+        // Sprites and additive pools ignore the island clip, so hide them outside it.
+        const vis = Math.hypot(l.x - c.x, l.z - c.y) < R - 0.5;
+        l.sprite.visible = l.pool.visible = vis;
+      }
+    });
+  }
+
+  // Dry leaves and date-palm leaflets scattered on the sand.
+  buildLeaves() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(32, 4);
+    ctx.quadraticCurveTo(58, 32, 32, 60);
+    ctx.quadraticCurveTo(6, 32, 32, 4);
+    ctx.fill();
+    const tex = new THREE.CanvasTexture(c);
+    const count = this.mobile ? 260 : 520;
+    const mesh = new THREE.InstancedMesh(
+      new THREE.PlaneGeometry(0.45, 0.45).rotateX(-Math.PI / 2),
+      new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.5, roughness: 1, side: THREE.DoubleSide }),
+      count,
+    );
+    const cols = ['#4a2330', '#6b3a2e', '#3a2440', '#7a4a32'].map((h) => new THREE.Color(h));
+    seed = 77;
+    let n = 0;
+    while (n < count) {
+      const a = rand() * Math.PI * 2;
+      const r = Math.sqrt(rand()) * 62;
+      const x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (Math.hypot(x - ZONES.oasis.x, z - ZONES.oasis.z) < this.pondRadius + 1) continue;
+      mesh.setMatrixAt(n, mtx(x, 0.035 + rand() * 0.01, z, 0, rand() * 6.28, 0, 0.6 + rand() * 0.8));
+      mesh.setColorAt(n, cols[n % cols.length]);
+      n++;
+    }
+    mesh.receiveShadow = true;
+    this.scene.add(mesh);
   }
 
   // A few birds circling high over the oasis.
