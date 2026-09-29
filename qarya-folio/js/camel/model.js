@@ -41,7 +41,7 @@ function tube(b, r0, r1, len, color, segs = 7, opts = {}) {
   g.dispose();
 }
 
-// Double-sided cloth that wraps the body's cylindrical middle.
+// Cloth that wraps the body's cylindrical middle.
 // bands: [[a0, a1, colour, segments]], a = angle from the top of the back.
 function cloth(b, bands, z0, z1, zSegs, sx, sy, radiusAt) {
   for (const [a0, a1, color, segs = 1] of bands) {
@@ -55,8 +55,6 @@ function cloth(b, bands, z0, z1, zSegs, sx, sy, radiusAt) {
           const A = p(aa, za), Bz = p(aa, zb), C = p(ab, za), D = p(ab, zb);
           const tris = side > 0 ? [A, Bz, C, C, Bz, D] : [A, C, Bz, C, D, Bz];
           for (const v of tris) pos.push(...v);
-          // back faces, so the cloth never shows holes from below
-          for (let t = tris.length - 1; t >= 0; t--) pos.push(...tris[t]);
         }
       }
     }
@@ -318,7 +316,7 @@ export function buildCamel(ctx) {
       lb.add(ico(0), P.camel, { position: [0, -0.04, 0], scale: [0.14, 0.2, 0.16] });
       tube(lb, 0.135, 0.085, -DIM.L1, P.camel, 6);
     } else {
-      lb.add(ico(1), P.camel, { position: [0, -0.12, 0], scale: [0.16, 0.28, 0.2] });
+      lb.add(ico(0), P.camel, { position: [0, -0.12, 0], scale: [0.17, 0.29, 0.21] });
       tube(lb, 0.15, 0.085, -DIM.L1, P.camel, 6);
     }
     bake(lb, upper);
@@ -329,7 +327,7 @@ export function buildCamel(ctx) {
     lb = new Builder();
     lb.add(ico(0), P.camel, { scale: 0.075 });
     lb.cylinder(0.12, 0.145, DIM.PAD * 0.7, P.camelDark, { position: [0, -DIM.PAD * 0.65, 0.03], scale: [1, 1, 1.15] }, 7);
-    for (const tx of [1, -1]) lb.add(oct(), P.camelLight, { position: [tx * 0.058, -DIM.PAD * 0.62, 0.16], scale: [0.06, 0.045, 0.06] });
+    for (const tx of [1, -1]) lb.add(oct(), P.camelLight, { position: [tx * 0.058, -DIM.PAD * 0.55, 0.16], scale: [0.06, 0.045, 0.06] });
     bake(lb, foot);
     const h = front ? DIM.hipF : DIM.hipH;
     legs.push({ front, side: sx, root, upper, knee, foot, hip: new THREE.Vector3(sx * h[0], h[1], h[2]), home: h[2] + (front ? 0.04 : -0.02) });
