@@ -38,10 +38,10 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family
 /* ---------- scenes ---------- */
 .scene{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;
   background:radial-gradient(900px 700px at 15% 8%,rgba(99,102,241,.45),transparent 60%),radial-gradient(800px 700px at 95% 92%,rgba(139,92,246,.38),transparent 60%),linear-gradient(180deg,#0B1030,#0A0F24 60%,#070A1A)}
-.tag{position:absolute;top:96px;left:0;width:1080px;text-align:center}
+.tag{position:absolute;top:80px;left:0;width:1080px;text-align:center}
 .tag span{display:inline-block;padding:14px 44px;border-radius:99px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.16);font-weight:800;font-size:46px;color:#fff;backdrop-filter:none}
-.phone{position:absolute;left:215px;top:200px;width:650px;height:1290px;border-radius:84px;background:#05081c;padding:16px;box-shadow:0 60px 120px rgba(0,0,0,.55),0 0 0 3px rgba(255,255,255,.14),0 0 120px rgba(99,102,241,.35)}
-.screen{position:relative;width:100%;height:100%;border-radius:68px;overflow:hidden;background:linear-gradient(180deg,#131a45,#0d1233);padding:30px 34px}
+.phone{position:absolute;left:182px;top:176px;width:716px;height:1419px;border-radius:88px;background:#05081c;padding:16px;box-shadow:0 60px 120px rgba(0,0,0,.55),0 0 0 3px rgba(255,255,255,.14),0 0 120px rgba(99,102,241,.35)}
+.screen{position:relative;width:100%;height:100%;border-radius:72px;overflow:hidden;background:linear-gradient(180deg,#131a45,#0d1233);padding:30px 34px}
 .notch{position:absolute;left:50%;top:14px;width:170px;height:38px;margin-left:-85px;border-radius:24px;background:#05081c;z-index:3}
 .hdr{display:flex;align-items:center;justify-content:space-between;margin-top:46px;height:76px}
 .brand{display:flex;align-items:center;gap:14px;font-weight:900;font-size:44px}
@@ -60,6 +60,8 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family
 .opt.sel{border-color:var(--indigo);background:rgba(99,102,241,.22)}
 .opt.ok{border-color:var(--mint);background:rgba(52,211,153,.2)}
 .toast{position:absolute;left:34px;right:34px;bottom:44px;height:96px;border-radius:30px;background:linear-gradient(90deg,#10b981,#34d399);color:#04231a;display:flex;align-items:center;justify-content:center;gap:16px;font-weight:900;font-size:40px;opacity:0}
+.shot{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.screen{padding:0!important;background:#fff!important}
 /* leaderboard */
 .podium{margin-top:34px;height:470px;display:flex;align-items:flex-end;justify-content:center;gap:18px}
 .pod{width:170px;display:flex;flex-direction:column;align-items:center}
@@ -104,7 +106,7 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family
 #outro{position:absolute;left:0;top:0;width:1080px;height:1920px;overflow:hidden;background:#070A1A}
 #outro .bg{position:absolute;left:-60px;top:-60px;width:1200px;height:2040px;background:url(assets/last.png) center/cover;filter:blur(38px) saturate(1.1);transform:scale(1.05)}
 #outro .dim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,10,26,.86),rgba(20,26,80,.82))}
-#outro .logo{position:absolute;left:390px;top:600px;width:300px;height:300px;border-radius:84px;background:linear-gradient(135deg,var(--indigo),var(--violet));display:flex;align-items:center;justify-content:center;font-weight:900;font-size:210px;box-shadow:0 40px 100px rgba(99,102,241,.6);line-height:1.25}
+#outro .logo{position:absolute;left:390px;top:600px;width:300px;height:300px;border-radius:70px;box-shadow:0 40px 100px rgba(88,204,2,.35),0 30px 80px rgba(0,0,0,.5)}
 #outro .nm{position:absolute;top:950px;left:0;width:1080px;text-align:center;font-weight:900;font-size:170px;line-height:1.5}
 #outro .sub{position:absolute;top:1250px;left:0;width:1080px;text-align:center;font-weight:800;font-size:64px;color:#DCE3FF}
 #outro .url{position:absolute;top:1400px;left:50%;transform:translateX(-50%);padding:22px 64px;border-radius:99px;background:#fff;color:#0A0F24;font-family:"CairoL";font-weight:900;font-size:76px;letter-spacing:.5px;white-space:nowrap;direction:ltr;box-shadow:0 20px 60px rgba(0,0,0,.45)}
@@ -115,114 +117,42 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family
 
   <video id="base" class="clip" src="assets/base_video.mp4" muted playsinline data-start="0" data-duration="38.3" data-track-index="0"></video>
 
-  <!-- ===== cutaway: score ===== -->
   <div id="s_score" class="scene clip" data-start="7.6" data-duration="2.15" data-track-index="2">
-    <div class="tag"><span>هدفك في القدرات</span></div>
-    <div class="ring">
-      <svg viewBox="0 0 700 700"><circle cx="350" cy="350" r="300" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="44"/>
-      <circle id="ringfill" cx="350" cy="350" r="300" fill="none" stroke="url(#g1)" stroke-width="44" stroke-linecap="round" stroke-dasharray="1885" stroke-dashoffset="1885"/>
-      <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366F1"/><stop offset="1" stop-color="#FFD24A"/></linearGradient></defs></svg>
-      <div class="num"><span id="scorenum">0</span><small>من 100</small></div>
-    </div>
-    <div class="sc-l1" id="sc1">القدرات الكمي</div>
-    <div class="sc-l2" id="sc2">تطبيق قدراتي</div>
+    <div class="tag"><span>ما هو قدراتي؟</span></div>
+    <div class="phone" id="ph_score"><div class="screen"><img class="shot" id="score_i0" src="assets/app/intro.png" alt="" /></div></div>
   </div>
 
-  <!-- ===== cutaway: quiz ===== -->
   <div id="s_quiz" class="scene clip" data-start="12.35" data-duration="2.4" data-track-index="2">
     <div class="tag"><span>أسئلة تفاعلية</span></div>
-    <div class="phone" id="ph_quiz"><div class="screen"><div class="notch"></div>
-      <div class="hdr"><div class="brand"><i>ق</i>قدراتي</div><div class="chip a">كمي</div></div>
-      <div class="prog"><b style="width:30%"></b></div>
-      <div class="qcard"><div class="lb">السؤال 3 من 10</div><div class="q">إذا كان <bdi dir="ltr">3<bdi dir="rtl">س</bdi> + 5 = 20</bdi> فما قيمة <bdi dir="rtl">س</bdi>؟</div></div>
-      <div class="opts">
-        <div class="opt"><span class="k">أ</span>4</div>
-        <div class="opt" id="q_b"><span class="k">ب</span>5<span class="ck">✓</span></div>
-        <div class="opt"><span class="k">ج</span>6</div>
-        <div class="opt"><span class="k">د</span>7</div>
-      </div>
-      <div class="toast" id="q_toast">إجابة صحيحة  +10 نقاط</div>
-    </div></div>
+    <div class="phone" id="ph_quiz"><div class="screen"><img class="shot" id="quiz_i0" src="assets/app/lesson.png" alt="" /><img class="shot" id="quiz_i1" src="assets/app/fbgood.png" alt="" /></div></div>
   </div>
 
-  <!-- ===== cutaway: leaderboard ===== -->
   <div id="s_board" class="scene clip" data-start="17.4" data-duration="2.55" data-track-index="2">
-    <div class="tag"><span>لوحة المتصدرين</span></div>
-    <div class="phone" id="ph_board"><div class="screen"><div class="notch"></div>
-      <div class="hdr"><div class="brand"><i>ق</i>المتصدرون</div><div class="chip a">هذا الأسبوع</div></div>
-      <div class="podium">
-        <div class="pod p2"><div class="av" style="background:#94a3b8">2</div><div class="bar">2<span class="pt">2,310</span></div></div>
-        <div class="pod p1"><div class="av" style="background:#f59e0b">1</div><div class="bar">1<span class="pt">2,540</span></div></div>
-        <div class="pod p3"><div class="av" style="background:#c2410c">3</div><div class="bar">3<span class="pt">2,180</span></div></div>
-      </div>
-      <div class="rows">
-        <div class="row r"><span class="rk">4</span><span class="dot" style="background:#38bdf8"></span><span class="nm">user_2841</span><span class="xp">2,020</span></div>
-        <div class="row r"><span class="rk">5</span><span class="dot" style="background:#a78bfa"></span><span class="nm">user_1093</span><span class="xp">1,960</span></div>
-        <div class="row r me"><span class="rk" style="color:#fff">6</span><span class="dot" style="background:#fff"></span><span class="nm">أنت</span><span class="xp">1,905</span></div>
-        <div class="row r"><span class="rk">7</span><span class="dot" style="background:#f472b6"></span><span class="nm">user_7730</span><span class="xp">1,840</span></div>
-      </div>
-    </div></div>
+    <div class="tag"><span>المجلس · لوحة المتصدرين</span></div>
+    <div class="phone" id="ph_board"><div class="screen"><img class="shot" id="board_i0" src="assets/app/league.png" alt="" /></div></div>
   </div>
 
-  <!-- ===== cutaway: mock exam ===== -->
-  <div id="s_exam" class="scene clip" data-start="19.55" data-duration="3.45" data-track-index="3">
-    <div class="tag"><span>اختبار تجريبي</span></div>
-    <div class="phone" id="ph_exam"><div class="screen"><div class="notch"></div>
-      <div class="hdr"><div class="timer"><span>⏱</span><span class="tmw"><span class="tv">45:00</span><span class="tv">44:59</span><span class="tv">44:58</span><span class="tv">44:57</span></span></div><div class="chip a"><bdi dir="ltr">12 / 40</bdi></div></div>
-      <div class="segs" id="segs"></div>
-      <div class="qcard"><div class="lb">قدرات كمي</div><div class="q">ما ناتج <bdi dir="ltr">15%</bdi> من 240؟</div></div>
-      <div class="opts">
-        <div class="opt"><span class="k">أ</span>24</div>
-        <div class="opt" id="e_b"><span class="k">ب</span>36</div>
-        <div class="opt"><span class="k">ج</span>48</div>
-        <div class="opt"><span class="k">د</span>60</div>
-      </div>
-      <div class="btn">التالي</div>
-    </div></div>
+  <div id="s_exam" class="scene clip" data-start="19.55" data-duration="3.45" data-track-index="2">
+    <div class="tag"><span>محاكاة الاختبار</span></div>
+    <div class="phone" id="ph_exam"><div class="screen"><img class="shot" id="exam_i0" src="assets/app/mock.png" alt="" /><img class="shot" id="exam_i1" src="assets/app/mocktest.png" alt="" /></div></div>
   </div>
 
-  <!-- ===== cutaway: easy ===== -->
   <div id="s_easy" class="scene clip" data-start="26.5" data-duration="3.55" data-track-index="2">
-    <div class="tag"><span>مستوى مبتدئ</span></div>
-    <div class="phone lvl" id="ph_easy"><div class="screen"><div class="notch"></div>
-      <div class="hdr"><div class="brand"><i>ق</i>قدراتي</div><div class="chip a">كمي</div></div>
-      <div class="lv"><div class="t">مستواك الحالي</div><div class="v">مبتدئ</div>
-        <div class="track"><div class="f" id="f_easy" style="width:18%"></div></div>
-        <div class="steps"><span class="on">مبتدئ</span><span>متوسط</span><span>متقدم</span></div></div>
-      <div class="qcard"><div class="lb">سؤال مناسب لك</div><div class="q">ما ناتج <bdi dir="ltr">12 ÷ 4</bdi>؟</div></div>
-      <div class="opts">
-        <div class="opt"><span class="k">أ</span>2</div>
-        <div class="opt" id="z_b"><span class="k">ب</span>3<span class="ck">✓</span></div>
-        <div class="opt"><span class="k">ج</span>4</div>
-      </div>
-      <div class="tip">نبدأ معك بأسئلة سهلة</div>
-    </div></div>
+    <div class="tag"><span>ابدأ من الصفر</span></div>
+    <div class="phone" id="ph_easy"><div class="screen"><img class="shot" id="easy_i0" src="assets/app/pop.png" alt="" /></div></div>
   </div>
 
-  <!-- ===== cutaway: hard ===== -->
   <div id="s_hard" class="scene clip" data-start="31.4" data-duration="3.7" data-track-index="2">
-    <div class="tag"><span>مستوى متقدم</span></div>
-    <div class="phone lvl" id="ph_hard"><div class="screen"><div class="notch"></div>
-      <div class="hdr"><div class="brand"><i>ق</i>قدراتي</div><div class="chip a">كمي</div></div>
-      <div class="lv"><div class="t">مستواك الحالي</div><div class="v">متقدم</div>
-        <div class="track"><div class="f" id="f_hard" style="width:18%"></div></div>
-        <div class="steps"><span>مبتدئ</span><span>متوسط</span><span class="on">متقدم</span></div></div>
-      <div class="qcard"><div class="lb">سؤال مناسب لك</div><div class="q">إذا كان <bdi dir="ltr"><bdi dir="rtl">س</bdi>² − 5<bdi dir="rtl">س</bdi> + 6 = 0</bdi> فما مجموع قيمتي <bdi dir="rtl">س</bdi>؟</div></div>
-      <div class="opts">
-        <div class="opt"><span class="k">أ</span>6</div>
-        <div class="opt" id="h_b"><span class="k">ب</span>5<span class="ck">✓</span></div>
-        <div class="opt"><span class="k">ج</span><bdi dir="ltr">−5</bdi></div>
-      </div>
-      <div class="tip">وأسئلة أصعب تناسب مستواك</div>
-    </div></div>
+    <div class="tag"><span>تابع تقدّمك</span></div>
+    <div class="phone" id="ph_hard"><div class="screen"><img class="shot" id="hard_i0" src="assets/app/stats.png" alt="" /></div></div>
   </div>
 
   <!-- ===== outro ===== -->
   <div id="outro" class="clip" data-start="38.3" data-duration="2.0" data-track-index="4">
     <div class="bg"></div><div class="dim"></div>
-    <div class="logo" id="o_logo">ق</div>
+    <img class="logo" id="o_logo" src="assets/app/icon-512.png" alt="" />
     <div class="nm" id="o_nm">قدراتي</div>
-    <div class="sub" id="o_sub">جرّب التطبيق الآن</div>
+    <div class="sub" id="o_sub">العب مجانًا من المتصفح</div>
     <div class="url" id="o_url">qudrati.xyz</div>
   </div>
 
@@ -292,50 +222,37 @@ function pick(sel, st, okAt, ck) {
   if (ck) tl.fromTo(sel + " .ck", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.25, ease: "back.out(3)" }, okAt);
 }
 
-/* score */
-enter("score", null);
-tl.fromTo("#s_score .ring", { scale: 0.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.6)" }, I.score.start);
-const ctr = { v: 0 };
-tl.to("#ringfill", { attr: { "stroke-dashoffset": 1885 * (1 - 0.99) }, duration: 1.0, ease: "power2.out" }, I.score.start + 0.2);
-tl.to(ctr, { v: 99, duration: 1.0, ease: "power2.out", onUpdate: () => { $("#scorenum").textContent = Math.round(ctr.v); } }, I.score.start + 0.2);
-tl.fromTo(["#sc1", "#sc2"], { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0.12, ease: "power3.out" }, I.score.start + 0.55);
-leave("score", null);
+/* real-screen cutaways */
+function fadeTo(id, b, st) {
+  tl.fromTo("#" + id + "_i" + b, { opacity: 0 }, { opacity: 1, duration: 0.22, ease: "power1.out" }, st);
+}
+function tapPulse(sel, st) {
+  tl.fromTo(sel, { scale: 1 }, { scale: 0.975, duration: 0.09, yoyo: true, repeat: 1, ease: "power1.inOut" }, st);
+}
+enter("score", "#ph_score");
+leave("score", "#ph_score");
 
-/* quiz */
 enter("quiz", "#ph_quiz");
-pick("#q_b", I.quiz.start + 1.0, I.quiz.start + 1.45, true);
-tl.fromTo("#q_toast", { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "back.out(2)" }, I.quiz.start + 1.5);
+tapPulse("#ph_quiz", I.quiz.start + 0.95);
+fadeTo("quiz", 1, I.quiz.start + 1.05);
 leave("quiz", "#ph_quiz");
 
-/* leaderboard */
 enter("board", "#ph_board");
-tl.fromTo("#s_board .pod", { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0.08, ease: "back.out(1.6)" }, I.board.start + 0.25);
-tl.fromTo("#s_board .row", { x: 260, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, stagger: 0.15, ease: "power3.out" }, I.board.start + 0.65);
 tl.to("#ph_board", { x: -1300, duration: 0.4, ease: "power3.in" }, I.board.end - 0.4);
 tl.to("#s_board", { opacity: 0, duration: 0.12 }, I.board.end - 0.12);
 
-/* exam (slides in over the leaderboard) */
-const segs = $("#segs"); for (let k = 0; k < 40; k++) { const b = document.createElement("i"); if (k < 12) b.className = "d"; segs.appendChild(b); }
+/* exam slides in over the leaderboard */
 tl.fromTo("#s_exam", { opacity: 0 }, { opacity: 1, duration: 0.1 }, I.exam.start);
 tl.fromTo("#ph_exam", { x: 1300 }, { x: 0, duration: 0.42, ease: "power3.out" }, I.exam.start);
 tl.fromTo("#s_exam .tag", { y: -40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, I.exam.start + 0.15);
-const tvs = document.querySelectorAll(".tmw .tv");
-for (let k = 1; k < 4; k++) { tl.set(tvs[k - 1], { opacity: 0 }, I.exam.start + 0.85 + (k - 1)); tl.set(tvs[k], { opacity: 1 }, I.exam.start + 0.85 + (k - 1)); }
-pick("#e_b", I.exam.start + 2.35, I.exam.start + 2.75, false);
+tapPulse("#ph_exam", I.exam.start + 1.35);
+fadeTo("exam", 1, I.exam.start + 1.45);
 leave("exam", "#ph_exam");
 
-/* easy */
 enter("easy", "#ph_easy");
-tl.to("#f_easy", { width: "26%", duration: 0.8, ease: "power2.out" }, I.easy.start + 0.5);
-pick("#z_b", I.easy.start + 1.5, I.easy.start + 1.95, true);
-tl.fromTo("#s_easy .tip", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, I.easy.start + 2.2);
 leave("easy", "#ph_easy");
 
-/* hard */
 enter("hard", "#ph_hard");
-tl.to("#f_hard", { width: "88%", duration: 0.9, ease: "power2.out" }, I.hard.start + 0.4);
-pick("#h_b", I.hard.start + 1.7, I.hard.start + 2.15, true);
-tl.fromTo("#s_hard .tip", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, I.hard.start + 2.4);
 leave("hard", "#ph_hard");
 
 /* outro */
