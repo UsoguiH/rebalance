@@ -6,16 +6,17 @@ import { MeshDefaultMaterial } from '../Materials/MeshDefaultMaterial.js'
 // Local axes follow the physical vehicle: +X is forward, +Y is up. Feet rest at y = 0.
 // Legs are animated from the vehicle's forward speed with a pacing gait
 // (both legs on the same side move together, like a real camel).
+// Colours come from the game's palette; shapes are low-poly and flat-shaded.
 
 const PALETTE = {
-    fur: '#c9965a',
-    furDark: '#a8743e',
-    furLight: '#dcb27a',
-    dark: '#1d140e',
-    white: '#fff8ec',
-    blanket: '#b5473a',
-    trim: '#f2c14e',
-    teal: '#2f6f73',
+    fur: '#b36d45',
+    furDark: '#988165',
+    furLight: '#ebd1a3',
+    dark: '#1e0603',
+    white: '#fff2e8',
+    blanket: '#c30e3a',
+    trim: '#e4a90c',
+    teal: '#3dbbe7',
 }
 
 export class Camel
@@ -26,14 +27,19 @@ export class Camel
         this.group.name = 'camel'
         this.materials = {}
         for(const [name, hex] of Object.entries(PALETTE))
-            this.materials[name] = new MeshDefaultMaterial({ colorNode: color(hex) })
+        {
+            const material = new MeshDefaultMaterial({ colorNode: color(hex) })
+            material.flatShading = true
+            this.materials[name] = material
+        }
 
         this.phase = 0
         this.gait = 0
         this.time = 0
 
-        this.sphere = new THREE.SphereGeometry(1, 14, 10)
-        this.cylinder = new THREE.CylinderGeometry(1, 1, 1, 10)
+        // Low-poly shapes to match the faceted look of the rest of the world.
+        this.sphere = new THREE.IcosahedronGeometry(1, 1)
+        this.cylinder = new THREE.CylinderGeometry(1, 1, 1, 6)
 
         this.build()
     }
