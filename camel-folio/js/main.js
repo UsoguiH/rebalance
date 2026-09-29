@@ -3,6 +3,7 @@ import { World, ZONES } from './world.js';
 import { Camel } from './camel.js';
 import { Props } from './props.js';
 import { FX } from './fx.js';
+import { Dust } from './dust.js';
 import { Input } from './input.js';
 import { Audio } from './audio.js';
 import { UI } from './ui.js';
@@ -68,6 +69,8 @@ async function main() {
   camel.position.set(0, 0, 1);
   const props = new Props(scene, world, audio);
   const fx = new FX(scene, { mobile });
+  const dust = new Dust(scene, { mobile });
+  const hazeEl = document.getElementById('haze');
   const input = new Input(canvas, document.getElementById('joy'));
   uiLayer.setLoading(0.8);
   await nextFrame();
@@ -342,6 +345,8 @@ async function main() {
     world.setNight(night);
     look3.setNight(night);
     world.update(t, dt);
+    dust.update(dt, t, cam.target, night);
+    hazeEl.style.opacity = String((1 - night * 0.7) * (cam.intro >= 0.5 ? 1 : 0));
     fx.update(dt);
     if (cam.intro >= 0) { updateTriggers(dt, t); updateZones(); }
     updateCamera(dt, t);

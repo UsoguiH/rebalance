@@ -17,10 +17,11 @@ export const ZONES = {
 };
 
 const C = (h) => new THREE.Color(h);
-// The day cycle runs between a warm dusk and a violet night.
+// The day cycle runs between a dusty desert afternoon and a violet night.
 const CYCLE = {
-  dusk: { top: C('#2a2150'), horizon: C('#e8866a'), fog: C('#7a4a6e'), hemiSky: C('#ffb892'), hemiGround: C('#5a2f55'), sun: C('#ffb27a') },
-  night: { top: C('#120e2e'), horizon: C('#3d2f6e'), fog: C('#2e2458'), hemiSky: C('#8f86ff'), hemiGround: C('#3a2a5e'), sun: C('#c4c8ff') },
+  // Hazy desert afternoon: dusty sky, sandy horizon, warm dust in the air.
+  dusk: { top: C('#7fa6c4'), horizon: C('#f2cf9a'), fog: C('#e0b27e'), hemiSky: C('#fff0d0'), hemiGround: C('#c8925e'), sun: C('#ffd49a') },
+  night: { top: C('#120e2e'), horizon: C('#4a3a6a'), fog: C('#3a2e52'), hemiSky: C('#8f86ff'), hemiGround: C('#3a2a5e'), sun: C('#c4c8ff') },
 };
 // Night: indigo sky, violet haze, a cool moon high to the upper left.
 const SKY_TOP = new THREE.Color('#120e2e');
@@ -270,6 +271,9 @@ export class World {
     this.sky.material.uniforms.horizon.value.copy(L(P.dusk.horizon, P.night.horizon));
     this.sky.material.uniforms.night.value = k;
     this.scene.fog.color.copy(L(P.dusk.fog, P.night.fog));
+    // Dust thickens the haze by day.
+    this.scene.fog.near = THREE.MathUtils.lerp(32, 55, k);
+    this.scene.fog.far = THREE.MathUtils.lerp(125, 170, k);
     this.hemi.color.copy(L(P.dusk.hemiSky, P.night.hemiSky));
     this.hemi.groundColor.copy(L(P.dusk.hemiGround, P.night.hemiGround));
     this.hemi.intensity = THREE.MathUtils.lerp(1.45, 1.5, k);
@@ -291,8 +295,8 @@ export class World {
     geo.rotateX(-Math.PI / 2);
     const p = geo.attributes.position;
     const colors = new Float32Array(p.count * 3);
-    const base = new THREE.Color('#b8a0c8');
-    const shade = new THREE.Color('#6f5f9a');
+    const base = new THREE.Color('#e8c08a');
+    const shade = new THREE.Color('#c08a5c');
     const c = new THREE.Color();
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i), z = p.getZ(i);
@@ -392,7 +396,7 @@ export class World {
       { text: profile.role, size: 110, font: '"Cairo", sans-serif', alpha: 0.85 },
     ], 0, -6.2, 22, 1.8);
     this.hintLabel = this.groundLabel([
-      { text: this.touch ?'اسحب على الشاشة لتحريك الجمل' : '↑ للتقدم   ← → للالتفاف   Shift للإسراع', size: 120, font: '"Cairo", sans-serif', weight: 700, alpha: 0.8 },
+      { text: this.touch ?'اسحب على الشاشة لتحريك الجمل' : '↑ للتقدم   ← → للالتفاف   ⇧ للإسراع', size: 120, font: '"Cairo", sans-serif', weight: 700, alpha: 0.8 },
     ], 0, 5.2, this.touch ? 10 : 15, this.touch ? 1.1 : 1.6);
 
     const s = ui.sections;

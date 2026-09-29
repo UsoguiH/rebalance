@@ -94,6 +94,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
   background: radial-gradient(ellipse at 50% 45%, transparent 50%, rgba(12, 6, 30, 0.45) 100%);
 }
 
+#haze {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  background:
+    linear-gradient(180deg, rgba(246, 214, 168, 0.28) 0%, rgba(246, 214, 168, 0.06) 45%, rgba(224, 170, 110, 0.18) 100%);
+  mix-blend-mode: screen;
+}
+
 /* ---------- start label (hand-drawn, beside the island) ---------- */
 #start-hint {
   position: fixed;

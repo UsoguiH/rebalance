@@ -3,11 +3,11 @@ import * as THREE from 'three';
 // A soft "clay" look: objects are shaded with a matcap painted in code, while
 // the ground keeps real lighting so shadows still land on it.
 
-// Clay matcaps for the two ends of the day cycle: warm dusk and moonlit night.
+// Clay matcaps for the two ends of the day cycle: desert afternoon and moonlit night.
 // Each has a key light from the upper left, a shadow tone, and a warm bounce
 // from the lanterns along the lower right.
 const PALETTES = {
-  dusk: { base: '#4a2a4a', stops: ['#fff1e6', '#ffc9a8', '#b8667a', '#4a2a4a'], bounce: 'rgba(255, 170, 90, 0.35)', rim: 'rgba(255, 225, 200, 0.5)' },
+  dusk: { base: '#6a4030', stops: ['#fff6e6', '#f6d6a8', '#c88a5e', '#6a4030'], bounce: 'rgba(255, 190, 120, 0.35)', rim: 'rgba(255, 235, 205, 0.5)' },
   night: { base: '#2c2352', stops: ['#f3eeff', '#c7bdf2', '#6d5fae', '#2c2352'], bounce: 'rgba(255, 150, 80, 0.45)', rim: 'rgba(220, 210, 255, 0.5)' },
 };
 
