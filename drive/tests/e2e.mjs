@@ -31,18 +31,19 @@ async function boot(ctxOpts, name) {
   const { ctx, page, errs } = await boot({ viewport: { width: 1280, height: 720 } }, 'desktop');
   check(await page.evaluate(() => document.documentElement.lang) === 'ar', 'desktop: Arabic by default');
   check(await page.evaluate(() => document.documentElement.dir) === 'rtl', 'desktop: RTL by default');
-  await page.waitForSelector('#ui-root button', { timeout: 20000 });
+  await page.waitForSelector('.btn-start:not([disabled])', { timeout: 30000 });
   // start button (first prominent button in the intro card)
-  await page.evaluate(() => document.querySelector('.intro button, #ui-root .intro-start, #ui-root button')?.click());
+  await page.evaluate(() => document.querySelector('.btn-start')?.click());
   await sleep(3500);
   check(await page.evaluate(() => window.__drive.started), 'desktop: journey started (audio unlock gesture)');
   check(await page.evaluate(() => window.__drive.audio.unlocked), 'desktop: audio context unlocked');
   const p0 = await page.evaluate(() => ({ x: window.__drive.ride.state.x, z: window.__drive.ride.state.z }));
   await page.keyboard.down('ArrowUp');
-  await sleep(3500);
+  // software WebGL renders ~4 fps, so simulated time runs slow: poll instead of a fixed wait
+  await page.waitForFunction((p0) => Math.hypot(window.__drive.ride.state.x - p0.x, window.__drive.ride.state.z - p0.z) > 9, p0, { timeout: 60000, polling: 300 }).catch(() => {});
   await page.screenshot({ path: OUT + 'e2e-desktop-2-riding.png' });
   await page.keyboard.down('Shift');
-  await sleep(2500);
+  await sleep(6000);
   const st = await page.evaluate(() => ({ ...window.__drive.ride.state }));
   await page.screenshot({ path: OUT + 'e2e-desktop-3-sprint.png' });
   await page.keyboard.up('Shift'); await page.keyboard.up('ArrowUp');
@@ -69,7 +70,7 @@ async function boot(ctxOpts, name) {
 // ---------------- phone (portrait + landscape, touch) ----------------
 for (const [name, vp] of [['phone-portrait', { width: 390, height: 844 }], ['phone-landscape', { width: 844, height: 390 }]]) {
   const { ctx, page, errs } = await boot({ ...PHONE, viewport: vp, screen: vp }, name);
-  await page.evaluate(() => document.querySelector('.intro button, #ui-root .intro-start, #ui-root button')?.click());
+  await page.evaluate(() => document.querySelector('.btn-start')?.click());
   await sleep(3000);
   check(await page.evaluate(() => document.documentElement.dataset.input) === 'touch', `${name}: touch controls active`);
   const noScrollX = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
