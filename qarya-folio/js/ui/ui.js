@@ -48,7 +48,7 @@ export function createUI(ctx) {
   const startBtn = $('ld-start');
   if ($('ld-tagline')) $('ld-tagline').textContent = content.profile.tagline;
   if ($('ld-kicker')) $('ld-kicker').textContent = `معرض أعمال ${content.profile.name}`;
-  if ($('ld-name')) $('ld-name').textContent = `${content.profile.name} · ${content.profile.role}`;
+  if ($('ld-name')) $('ld-name').textContent = `${content.profile.name} — ${content.profile.role}`;
   if ($('ld-text')) $('ld-text').textContent = U.loading;
   if (startBtn) startBtn.querySelector('span').textContent = U.start;
 
@@ -119,7 +119,6 @@ export function createUI(ctx) {
       <span class="prompt-key"></span>
     </button>
     <div class="hint" hidden></div>
-    <div class="toasts" role="status" aria-live="polite"></div>
     ${touch ? `<div class="pad">
       <button type="button" class="pad-btn pad-camel" aria-label="صوت الجمل">${icon('camel')}</button>
       <button type="button" class="pad-btn pad-jump" aria-label="القفز">${icon('jump')}</button>
@@ -194,7 +193,11 @@ export function createUI(ctx) {
   }
 
   // ───────────────────────────── Toasts ─────────────────────────────
-  const toasts = q('.toasts');
+  const toasts = document.createElement('div');
+  toasts.className = 'toasts';
+  toasts.setAttribute('role', 'status');
+  toasts.setAttribute('aria-live', 'polite');
+  root.appendChild(toasts);
   function toast(text, kind = 'info', ms = 3200) {
     const el = document.createElement('div');
     el.className = `toast toast-${kind}`;
@@ -222,7 +225,7 @@ export function createUI(ctx) {
   function kickerFor(zone) {
     if (zone.section === 'project') {
       const pr = content.projects[zone.project];
-      return `${U.sections.project} · ${pr?.subtitle || ''}`;
+      return `${U.sections.project} — ${pr?.subtitle || ''}`;
     }
     return U.sections[zone.section] || '';
   }
@@ -323,6 +326,7 @@ export function createUI(ctx) {
     sheet.open = true;
     for (const k of ['menu', 'help']) btn(k).setAttribute('aria-expanded', String(kind === k));
     hud.classList.add('sheet-open');
+    toasts.classList.add('over-sheet');
     if (ctx.input) ctx.input.enabled = false;
     prompt.classList.remove('on');
     prompt.hidden = true;
@@ -338,6 +342,7 @@ export function createUI(ctx) {
     sheet.open = false;
     layer.classList.remove('open');
     hud.classList.remove('sheet-open');
+    toasts.classList.remove('over-sheet');
     for (const k of ['menu', 'help']) btn(k).setAttribute('aria-expanded', 'false');
     sheet.closing = setTimeout(() => { layer.hidden = true; scrollEl.innerHTML = ''; }, reduceMotion ? 10 : 380);
     if (ctx.input && started) ctx.input.enabled = true;
@@ -400,7 +405,7 @@ export function createUI(ctx) {
         <div class="head-text">
           <p class="head-kicker">قرية الواحة</p>
           <h2 class="head-title" id="sheet-title">${esc(U.menu)}</h2>
-          <p class="head-sub">اختر مكاناً وسيحملك الجمل إليه · زرت ${ar(visited.size)} من ${ar(content.zones.length)}</p>
+          <p class="head-sub">اختر مكاناً وسيحملك الجمل إليه — زرت ${ar(visited.size)} من ${ar(content.zones.length)}</p>
         </div>
       </div>
     </header>
@@ -409,7 +414,7 @@ export function createUI(ctx) {
     for (const z of content.zones) {
       if (z.section === 'project' && !souq) {
         souq = true;
-        html += `<li class="menu-group" aria-hidden="true"><span>السوق · المشاريع</span></li>`;
+        html += `<li class="menu-group" aria-hidden="true"><span>مشاريع السوق</span></li>`;
       } else if (z.section !== 'project' && souq) {
         souq = false;
         html += `<li class="menu-group" aria-hidden="true"><span>أرجاء القرية</span></li>`;
@@ -495,6 +500,7 @@ export function createUI(ctx) {
       loader?.remove();
       hud.remove();
       layer.remove();
+      toasts.remove();
       root.appendChild(noWebGLPage());
     },
   };
@@ -507,7 +513,7 @@ export function createUI(ctx) {
     page.innerHTML = `
       <header class="pp-hero">
         <div class="pp-sun" aria-hidden="true"></div>
-        <p class="pp-kicker">${esc(pf.name)} · ${esc(pf.role)}</p>
+        <p class="pp-kicker">${esc(pf.name)} — ${esc(pf.role)}</p>
         <h1>قرية الواحة</h1>
         <p class="pp-tag">${esc(pf.tagline)}</p>
       </header>
@@ -519,7 +525,7 @@ export function createUI(ctx) {
       <div class="pp-sections">
         ${content.zones.map((z) => `<article class="pp-card" style="--accent:${esc(sectionAccent(z, content, P))}">${sectionHTML(z, ctx, { standalone: true })}</article>`).join('')}
       </div>
-      <footer class="pp-foot">${icon('star')} ${esc(pf.name)} · ${ar(new Date().getFullYear())}</footer>`;
+      <footer class="pp-foot">${icon('star')} ${esc(pf.name)} — ${ar(new Date().getFullYear())}</footer>`;
     page.querySelectorAll('#sheet-title').forEach((h) => h.removeAttribute('id'));
     return page;
   }
