@@ -15,8 +15,8 @@ export function createProps(ctx) {
       geo() {
         const b = new Builder();
         b.add(G.lathe('prop-pot', [[0, -0.32], [0.17, -0.31], [0.28, -0.14], [0.29, 0.0], [0.22, 0.17], [0.12, 0.25], [0.11, 0.29], [0.15, 0.32], [0, 0.32]], 8), '#b8663a');
-        b.cyl(0.285, 0.29, 0.07, P.cream, { position: [0, -0.06, 0] }, 8);
-        b.cyl(0.26, 0.28, 0.04, P.mudDark, { position: [0, 0.04, 0] }, 8);
+        b.cylinder(0.285, 0.29, 0.07, P.cream, { position: [0, -0.06, 0] }, 8);
+        b.cylinder(0.26, 0.28, 0.04, P.mudDark, { position: [0, 0.04, 0] }, 8);
         return b.build().geometry;
       },
     },
@@ -42,11 +42,11 @@ export function createProps(ctx) {
       h: 0.44, r: 0.3, mass: 0.7, kind: 'fabric', shape: 'cyl',
       geo() {
         const b = new Builder();
-        b.cyl(0.33, 0.25, 0.42, '#d6b06a', { position: [0, -0.01, 0] }, 9);
-        b.cyl(0.335, 0.33, 0.07, P.red, { position: [0, 0.1, 0] }, 9);
-        b.cyl(0.3, 0.27, 0.05, '#b98f4d', { position: [0, -0.12, 0] }, 9);
-        b.cyl(0.29, 0.29, 0.04, P.date, { position: [0, 0.19, 0] }, 9);
-        for (let i = 0; i < 7; i++) b.ball(0.07, i % 2 ? P.date : '#6e2416', { position: [Math.sin(i * 2.3) * 0.17 * (i % 3) / 2, 0.22, Math.cos(i * 2.3) * 0.17 * (i % 3) / 2] });
+        b.cylinder(0.33, 0.25, 0.42, '#d6b06a', { position: [0, -0.01, 0] }, 9);
+        b.cylinder(0.335, 0.33, 0.07, P.red, { position: [0, 0.1, 0] }, 9);
+        b.cylinder(0.3, 0.27, 0.05, '#b98f4d', { position: [0, -0.12, 0] }, 9);
+        b.cylinder(0.29, 0.29, 0.04, P.date, { position: [0, 0.19, 0] }, 9);
+        for (let i = 0; i < 7; i++) b.sphere(0.07, i % 2 ? P.date : '#6e2416', { position: [Math.sin(i * 2.3) * 0.17 * (i % 3) / 2, 0.22, Math.cos(i * 2.3) * 0.17 * (i % 3) / 2] }, 0);
         return b.build().geometry;
       },
     },

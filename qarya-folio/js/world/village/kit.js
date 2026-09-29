@@ -222,11 +222,15 @@ export class Kit {
   // Static colliders in this frame.
   solid(size, position, ry = 0) {
     const p = this.point(position[0], position[1], position[2]);
-    return this.physics.addBox({ size, position: [p.x, p.y, p.z], rotationY: this.rotY + ry, mass: 0 });
+    const b = this.physics.addBox({ size, position: [p.x, p.y, p.z], rotationY: this.rotY + ry, mass: 0 });
+    b.village = true;
+    return b;
   }
   solidCyl(radius, height, position) {
     const p = this.point(position[0], position[1], position[2]);
-    return this.physics.addCylinder({ radius, height, position: [p.x, p.y, p.z], mass: 0 });
+    const b = this.physics.addCylinder({ radius, height, position: [p.x, p.y, p.z], mass: 0 });
+    b.village = true;
+    return b;
   }
 }
 

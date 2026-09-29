@@ -261,6 +261,7 @@ export function createNature(ctx) {
   let settled = false;
   function settle() {
     settled = true;
+    const t0 = performance.now();
     const probe = new THREE.Vector3();
     const blocked = (x, z, r) => {
       const offs = [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]];
@@ -274,7 +275,7 @@ export function createNature(ctx) {
     };
     for (const l of layers) {
       l.items.forEach((it, i) => {
-        if (Math.hypot(it.x, it.z) < village.r + 6 && blocked(it.x, it.z, Math.min(it.r, 1.6))) l.hide(i);
+        if ((Math.hypot(it.x, it.z) < village.r + 6 || dOasis(it.x, it.z) < oasis.r + 10) && blocked(it.x, it.z, Math.min(it.r, 1.6))) l.hide(i);
       });
     }
     for (const l of layers) {
@@ -286,6 +287,7 @@ export function createNature(ctx) {
         else if (c.type === 'box') physics.addBox({ size: [c.w, c.h, c.d], position: [it.x, it.y + c.h / 2, it.z], rotationY: it.yaw });
       }
     }
+    ctx.natureDebug = { settleMs: performance.now() - t0, hidden: layers.map((l) => `${l.opts.name}:${l.items.filter((i) => !i.alive).length}/${l.items.length}`).join(' ') };
   }
 
   return {

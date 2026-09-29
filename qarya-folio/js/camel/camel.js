@@ -159,20 +159,20 @@ export function createCamel(ctx) {
     const mk = st.moveK * (1 - st.air);
     const bk = st.boostK;
     const duty = lerp(0.6, 0.4, bk);
-    const halfStride = mk * lerp(0.34, 0.46, bk);
+    const halfStride = mk * lerp(0.3, 0.44, bk);
     const lift = mk * lerp(0.2, 0.34, bk);
 
     // ---- torso ----
     const idle = (1 - st.moveK) * (1 - st.air);
     const breath = Math.sin(t * 1.9);
-    const paceBob = Math.cos(ph * TAU * 2) * 0.035;
-    const runBob = Math.sin(ph * TAU) * 0.09;
+    const paceBob = Math.cos((ph - duty / 2) * TAU * 2) * 0.025;
+    const runBob = Math.sin((ph - 0.1) * TAU) * 0.09;
     const bob = mk * lerp(paceBob, runBob, bk);
     const paceRoll = Math.sin(ph * TAU) * 0.07 * (1 - bk);
     st.lean = approach(st.lean, clamp(-v * s.turn * 0.022, -0.2, 0.2), 5, dt);
     torso.position.set(
       Math.sin(t * 0.45) * 0.015 * idle,
-      DIM.torsoY + bob - 0.05 * mk + breath * 0.008 * idle + st.air * 0.08,
+      DIM.torsoY + bob - 0.02 * mk + breath * 0.008 * idle + st.air * 0.08,
       0);
     torso.rotation.set(
       mk * bk * Math.cos(ph * TAU) * 0.07 - 0.03 * st.fwdAcc / 20 + st.air * (s.vy > 0 ? -0.1 : 0.06),

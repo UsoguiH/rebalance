@@ -423,10 +423,10 @@ export function plaza(k, P, heightAt, cx, cz, B, props) {
 
   // swinging rope + bucket (own mesh)
   const b = new B();
-  b.cyl(0.015, 0.015, 1.2, '#e2cfa4', { position: [0.22, -0.6, 0] }, 4);
-  b.cyl(0.2, 0.15, 0.32, P.wood, { position: [0.22, -1.32, 0] }, 7);
-  b.cyl(0.205, 0.205, 0.04, P.ink, { position: [0.22, -1.22, 0] }, 7);
-  b.cyl(0.155, 0.155, 0.04, P.ink, { position: [0.22, -1.44, 0] }, 7);
+  b.cylinder(0.015, 0.015, 1.2, '#e2cfa4', { position: [0.22, -0.6, 0] }, 4);
+  b.cylinder(0.2, 0.15, 0.32, P.wood, { position: [0.22, -1.32, 0] }, 7);
+  b.cylinder(0.205, 0.205, 0.04, P.ink, { position: [0.22, -1.22, 0] }, 7);
+  b.cylinder(0.155, 0.155, 0.04, P.ink, { position: [0.22, -1.44, 0] }, 7);
   b.add(G.torus(0.18, 0.012, 3, 8, Math.PI), P.ink, { position: [0.22, -1.16, 0] });
   const bucket = b.build();
   bucket.position.copy(k.point(0, 2.72, 0));
@@ -445,7 +445,12 @@ export function oasisBits(root, P, heightAt, zone, pond, labels) {
   // find the shore
   let t = 0;
   while (t < len && heightAt(zone.x + ux * t, zone.z + uz * t) > pond.water + 0.05) t += 0.25;
-  const sx = zone.x + ux * (t - 1.6), sz = zone.z + uz * (t - 1.6);
+  // beside the zone circle (not in it), on the left of the approach
+  const side = zone.radius + 1.6;
+  const ox = zone.x + uz * side, oz = zone.z - ux * side;
+  t = 0;
+  while (t < len && heightAt(ox + ux * t, oz + uz * t) > pond.water + 0.05) t += 0.25;
+  const sx = ox + ux * (t - 1.6), sz = oz + uz * (t - 1.6);
   const deckY = Math.max(heightAt(sx, sz) + 0.12, pond.water + 0.5);
   const jk = root.at(sx, deckY, sz, ry);
   const L = 5.2;

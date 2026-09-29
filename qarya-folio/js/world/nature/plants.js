@@ -59,7 +59,7 @@ export function palmGeometry(P, variant) {
     const r0 = 0.34 - 0.13 * s0, r1 = 0.34 - 0.13 * s1;
     between(b, p0, p1, r0, r1 * 1.05, i % 2 ? trunkA : trunkB);
     // The knobbly ring left by each old frond.
-    between(b, p0, p0.clone().lerp(p1, 0.18), r0 * 1.22, r0 * 1.12, ring);
+    between(b, p0, p0.clone().lerp(p1, 0.18), r0 * 1.22, r0 * 1.12, ring, 6);
   }
   const top = point(1);
   b.sphere(0.36, P.palmLeafDark, { position: [top.x, top.y, top.z], scale: [1, 0.8, 1] }, 0);
@@ -78,7 +78,7 @@ export function palmGeometry(P, variant) {
       const yaw = (k / tier.n) * Math.PI * 2 + rand() * 0.4 + (tier.y ? 0.4 : 0);
       const L = tier.L * (0.85 + rand() * 0.3);
       const g = frondGeometry(L, tier.lift + (rand() - 0.5) * 0.2, tier.droop + (rand() - 0.5) * 0.3, tier.W);
-      const old = !tier.y && rand() < 0.18;
+      const old = !tier.y && rand() < 0.12;
       const col = old ? '#9a9a44' : greens[(k + (tier.y ? 1 : 0)) % greens.length];
       m4.compose(v4.set(top.x, top.y + tier.y, top.z), q4.setFromEuler(new THREE.Euler(0, yaw, (rand() - 0.5) * 0.15)), s4.set(1, 1, 1));
       b.add(g, col, { matrix: m4.clone() });
@@ -94,12 +94,12 @@ export function palmGeometry(P, variant) {
     const base = new THREE.Vector3(top.x + ox * 0.5, top.y - 0.15, top.z + oz * 0.5);
     const tip = new THREE.Vector3(top.x + ox * 1.25, top.y - 0.75, top.z + oz * 1.25);
     between(b, base, tip, 0.035, 0.025, '#c8902e', 4);
-    for (let d = 0; d < 9; d++) {
+    for (let d = 0; d < 6; d++) {
       const f = 0.35 + rand() * 0.65;
-      b.sphere(0.085 + rand() * 0.03, dates[d % 3], {
+      b.add(new THREE.OctahedronGeometry(0.1 + rand() * 0.03, 0), dates[d % 3], {
         position: [base.x + (tip.x - base.x) * f + (rand() - 0.5) * 0.22, base.y + (tip.y - base.y) * f - 0.1 - rand() * 0.12, base.z + (tip.z - base.z) * f + (rand() - 0.5) * 0.22],
         scale: [1, 1.25, 1],
-      }, 0);
+      });
     }
   }
 
