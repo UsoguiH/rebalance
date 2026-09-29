@@ -55,6 +55,7 @@ export class Audio {
 
     this.noiseBuf = this.makeNoise(2);
     this.startWind();
+    this.startMotion();
     this.startMusic();
     // Some mobile browsers start the context suspended even inside a gesture.
     if (ctx.state === 'suspended') ctx.resume();
@@ -110,6 +111,49 @@ export class Audio {
     lfo.start();
     lfo2.start();
     this.windGain = g;
+  }
+
+  // ---------- movement layer ----------
+  // Sand hiss and a low rumble whose loudness and brightness follow speed.
+  startMotion() {
+    const ctx = this.ctx;
+    const src = this.noiseSource(true);
+    this.motionFilter = ctx.createBiquadFilter();
+    this.motionFilter.type = 'bandpass';
+    this.motionFilter.frequency.value = 300;
+    this.motionFilter.Q.value = 0.9;
+    this.motionGain = ctx.createGain();
+    this.motionGain.gain.value = 0;
+    src.connect(this.motionFilter).connect(this.motionGain).connect(this.sfx);
+    src.start();
+  }
+
+  setMotion(speed, boost) {
+    if (!this.ready() || !this.motionGain) return;
+    const t = this.ctx.currentTime;
+    const k = Math.min(1, speed / 16);
+    this.motionGain.gain.setTargetAtTime(k * (boost ? 0.16 : 0.1), t, 0.1);
+    this.motionFilter.frequency.setTargetAtTime(220 + k * 900, t, 0.1);
+  }
+
+  // Small brass saddle bell.
+  bell(strength = 1) {
+    if (!this.ready()) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const f0 = 1850 + Math.random() * 60;
+    for (const [ratio, amp, dec] of [[1, 1, 0.5], [2.76, 0.45, 0.25], [5.4, 0.2, 0.12]]) {
+      const o = ctx.createOscillator();
+      o.frequency.value = f0 * ratio;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.045 * strength * amp, t);
+      g.gain.exponentialRampToValueAtTime(0.0005, t + dec);
+      o.connect(g);
+      g.connect(this.sfx);
+      g.connect(this.reverb);
+      o.start(t);
+      o.stop(t + dec + 0.05);
+    }
   }
 
   // ---------- music: generative oud + darbuka ----------

@@ -8,6 +8,7 @@ import { Audio } from './audio.js';
 import { UI } from './ui.js';
 import { projects, ui as copy } from './content.js';
 import { setAnisotropy } from './textures.js';
+import { stylize } from './stylize.js';
 
 const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 const mobile = touch && Math.min(screen.width, screen.height) < 900;
@@ -49,7 +50,7 @@ async function main() {
   setAnisotropy(Math.min(8, renderer.capabilities.getMaxAnisotropy()));
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.5, 900);
+  const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.5, 900);
 
   uiLayer.setLoading(0.1, copy.loading);
   await loadFonts();
@@ -71,6 +72,7 @@ async function main() {
   await nextFrame();
 
   // Compile shaders up front so the first frames don't hitch.
+  stylize(scene);
   renderer.compile(scene, camera);
   uiLayer.setLoading(1);
 
@@ -78,8 +80,9 @@ async function main() {
   const cam = {
     target: new THREE.Vector3(0, 1.5, 0),
     az: 0,
-    elev: 0.62,
-    dist: 19,
+    elev: 0.72,
+    dist: 25,
+    shake: 0,
     intro: -1, // -1: attract mode behind the loader, 0..1 intro swoop, >1 play
   };
   const camForward = new THREE.Vector3(0, 0, -1);
@@ -113,6 +116,11 @@ async function main() {
       cam.target.z + Math.cos(az) * Math.cos(elev) * dist,
     );
     camera.lookAt(cam.target);
+    if (cam.shake > 0.001) {
+      camera.position.x += (Math.random() - 0.5) * cam.shake;
+      camera.position.y += (Math.random() - 0.5) * cam.shake;
+      cam.shake *= Math.exp(-dt * 10);
+    }
     camForward.set(-Math.sin(az), 0, -Math.cos(az));
     world.followSun(cam.target);
   }
@@ -127,9 +135,15 @@ async function main() {
     fx.footprint(pos.x, camel.position.y, pos.z, camel.heading);
     if (camel.speed > 7 || Math.random() < 0.35) fx.kick(pos, camel.forward(new THREE.Vector3()), strength);
     audio.footstep(0.6 + strength * 0.5, leg.side * 0.25);
+    if (leg.front && camel.speed > 4) audio.bell(Math.min(1, camel.speed / 14));
+  };
+  camel.onBump = (v) => {
+    audio.hit('rock', v * 1.5, 'bump');
+    cam.shake = Math.min(0.6, v * 0.06);
   };
   camel.onLand = (v) => {
     fx.landing(camel.position);
+    cam.shake = Math.min(0.8, v * 0.05);
     audio.hit('rock', v, 'land');
     if (camel.inWater) audio.splash(1.2);
   };
@@ -258,7 +272,7 @@ async function main() {
     const w = innerWidth, h = innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w < h ? 50 : 38;
+    camera.fov = w < h ? 42 : 30;
     camera.updateProjectionMatrix();
   }
   addEventListener('resize', resize);
@@ -273,12 +287,14 @@ async function main() {
 
   // ---------- start ----------
   uiLayer.ready(() => {
+    camel.dropFrom(14);
+    props.dropLetters();
     audio.unlock();
     cam.intro = 0;
     cam.startAz = ((timer.getElapsed() * 0.08 + Math.PI) % (Math.PI * 2)) - Math.PI;
     input.enabled = true;
     setTimeout(() => uiLayer.toast(copy.sections.welcome), 1800);
-    setTimeout(grunt, 900);
+    setTimeout(grunt, 1400);
   });
 
   // ---------- loop ----------
@@ -293,11 +309,12 @@ async function main() {
     const dt = Math.min(timer.getDelta(), 1 / 20);
     const t = timer.getElapsed();
 
-    const inputState = uiLayer.open || cam.intro < 0.6 ? { x: 0, y: 0, run: false, jump: false } : input.read();
+    const inputState = uiLayer.open || cam.intro < 0.6 ? { throttle: 0, steer: 0, stick: null, run: false, jump: false } : input.read();
     camel.inWater = world.inPond(camel.position.x, camel.position.z);
     camel.update(dt, inputState, camForward, world);
     props.syncCamel(camel, dt);
     props.update(dt);
+    audio.setMotion(camel.onGround ? camel.speed : 0, inputState.run);
     world.update(t, dt);
     fx.update(dt);
     if (cam.intro >= 0) { updateTriggers(dt, t); updateZones(); }

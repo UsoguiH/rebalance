@@ -338,13 +338,13 @@ export class World {
   }
 
   buildWelcome() {
+    // The name itself stands in the sand as physical letters (see props.js).
     this.groundLabel([
-      { text: profile.name, size: 280 },
       { text: profile.role, size: 110, font: '"Cairo", sans-serif', alpha: 0.85 },
-    ], 0, -9, 22, 6.3);
+    ], 0, -6.2, 22, 1.8);
     this.hintLabel = this.groundLabel([
-      { text: this.touch ?'اسحب على الشاشة لتحريك الجمل' : 'استخدم الأسهم أو W A S D للتحرك', size: 120, font: '"Cairo", sans-serif', weight: 700, alpha: 0.8 },
-    ], 0, 5.2, 15, 1.6);
+      { text: this.touch ?'اسحب على الشاشة لتحريك الجمل' : '↑ للتقدم   ← → للالتفاف   Shift للإسراع', size: 120, font: '"Cairo", sans-serif', weight: 700, alpha: 0.8 },
+    ], 0, 5.2, this.touch ? 10 : 15, this.touch ? 1.1 : 1.6);
 
     const s = ui.sections;
     this.signPost(-5, -2.5, [

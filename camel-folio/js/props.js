@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { skills } from './content.js';
+import { skills, profile } from './content.js';
 import { crateTexture } from './textures.js';
 import { ZONES } from './world.js';
+import { textPieces } from './letters3d.js';
 
 const up = new CANNON.Vec3(0, 1, 0);
 const tmpV = new CANNON.Vec3();
@@ -50,6 +51,7 @@ export class Props {
     this.buildCrates();
     this.buildJars();
     this.buildBall();
+    this.buildLetters();
   }
 
   add(body, mesh, kind) {
@@ -130,6 +132,32 @@ export class Props {
     this.add(body, mesh, 'ball');
     body.linearDamping = 0.25;
     body.angularDamping = 0.3;
+  }
+
+  // The name as big physical letters standing in the sand.
+  buildLetters() {
+    this.letters = [];
+    const pieces = textPieces(profile.name, { height: 2.4, depth: 1.3 });
+    const colors = ['#e07a3f', '#f4e3c1', '#b5473a', '#f2c14e'];
+    pieces.forEach((p, i) => {
+      const mat = new THREE.MeshStandardMaterial({ color: colors[i % colors.length], roughness: 0.7 });
+      const mesh = new THREE.Mesh(p.geometry, mat);
+      mesh.castShadow = mesh.receiveShadow = true;
+      const body = new CANNON.Body({ mass: 1.2 + p.w * p.h * 0.4, shape: new CANNON.Box(new CANNON.Vec3(p.w / 2, p.h / 2, p.d / 2)) });
+      body.position.set(p.x, p.h / 2 + 0.01, -9);
+      const item = this.add(body, mesh, 'letter');
+      item.drop = 5 + i * 1.6;
+      this.letters.push(item);
+    });
+  }
+
+  // Intro: lift the letters into the sky and let them fall into place.
+  dropLetters() {
+    for (const it of this.letters) {
+      this.restore(it);
+      it.body.position.y += it.drop;
+      it.body.wakeUp();
+    }
   }
 
   resetJars() {

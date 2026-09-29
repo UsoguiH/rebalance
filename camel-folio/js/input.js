@@ -104,18 +104,18 @@ export class Input {
 
   has(action) { return KEYS[action].some((k) => this.down.has(k)); }
 
-  // Screen-space movement: x right, y up.
+  // Keyboard: throttle (up/down) and steer (left = +1). Stick: screen-space direction.
   read() {
-    if (!this.enabled) return { x: 0, y: 0, run: false, jump: false };
-    let x = 0, y = 0;
-    if (this.has('up')) y += 1;
-    if (this.has('down')) y -= 1;
-    if (this.has('left')) x -= 1;
-    if (this.has('right')) x += 1;
-    let run = this.has('run');
-    if (this.stick.active) { x += this.stick.x; y += this.stick.y; run = run || this.stick.run; }
+    const idle = { throttle: 0, steer: 0, stick: null, run: false, jump: false };
+    if (!this.enabled) return idle;
+    let throttle = 0, steer = 0;
+    if (this.has('up')) throttle += 1;
+    if (this.has('down')) throttle -= 1;
+    if (this.has('left')) steer += 1;
+    if (this.has('right')) steer -= 1;
+    const run = this.has('run') || this.stick.run;
     const jump = this.jumpQueued;
     this.jumpQueued = false;
-    return { x, y, run, jump };
+    return { throttle, steer, stick: this.stick.active ? this.stick : null, run, jump };
   }
 }

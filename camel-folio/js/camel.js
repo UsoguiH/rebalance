@@ -20,6 +20,7 @@ function mesh(geo, material, { x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, rx =
 }
 
 const tmp = new THREE.Vector3();
+const tmp2 = new THREE.Vector3();
 
 // A camel built from primitives, with a joint hierarchy we animate by hand.
 // Local forward is +Z.
@@ -29,6 +30,12 @@ export class Camel {
     this.position = this.group.position;
     this.heading = Math.PI; // facing -Z (up the screen) at start
     this.speed = 0;
+    this.forwardSpeed = 0;
+    this.prevFs = 0;
+    this.vel = new THREE.Vector3();
+    this.angVel = 0;
+    this.spring = { y: 0, yV: 0, pitch: 0, pitchV: 0, roll: 0, rollV: 0 };
+    this.onBump = null;
     this.vy = 0;
     this.onGround = true;
     this.phase = 0;
@@ -191,48 +198,99 @@ export class Camel {
     return out.set(Math.sin(this.heading), 0, Math.cos(this.heading));
   }
 
-  // input: { x, y (screen space, -1..1), run, jump }, camForward: world Vector3 for "screen up".
+  // input: { throttle, steer (keyboard, -1..1), stick: {x, y, active} (screen space), run, jump }
+  // Keyboard drives like a vehicle: up/down is throttle, left/right steers relative to the camel.
+  // The touch stick points where to go (camera-relative) and feeds the same momentum model.
   update(dt, input, camForward, world) {
     this.time += dt;
-    const mag = Math.min(1, Math.hypot(input.x, input.y));
-    let targetSpeed = 0;
-    if (mag > 0.08) {
-      // Screen-relative direction mapped onto the ground plane.
-      const fx = camForward.x, fz = camForward.z;
-      const rx = -fz, rz = fx; // camera right
-      const dx = fx * input.y - rx * input.x;
-      const dz = fz * input.y - rz * input.x;
-      const desired = Math.atan2(dx, dz);
-      let diff = desired - this.heading;
-      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-      const turnSpeed = 5.5 - Math.min(2.5, this.speed * 0.15);
-      const step = Math.sign(diff) * Math.min(Math.abs(diff), turnSpeed * dt);
-      this.turnRate = step / Math.max(dt, 1e-4);
-      this.heading += step;
-      targetSpeed = mag * (input.run ? 14 : 6.5) * Math.max(0.15, Math.cos(diff));
-    } else {
-      this.turnRate *= 0.8;
-    }
-    if (this.inWater) targetSpeed *= 0.55;
-    const accel = targetSpeed > this.speed ? 9 : 14;
-    this.speed += (targetSpeed - this.speed) * Math.min(1, accel * dt * 0.5);
-    if (this.speed < 0.02) this.speed = 0;
-
     const fwd = this.forward();
-    const px = this.position.x + fwd.x * this.speed * dt;
-    const pz = this.position.z + fwd.z * this.speed * dt;
-    const resolved = world.resolve(px, pz, this.radius);
-    // If a collider stopped us, lose the speed that went into it.
-    const moved = Math.hypot(resolved.x - this.position.x, resolved.z - this.position.z);
-    if (dt > 0 && this.speed > 0) this.speed = Math.min(this.speed, moved / dt + 0.5);
-    this.position.x = resolved.x;
-    this.position.z = resolved.z;
+    const rx = -fwd.z, rz = fwd.x; // camel's right on the ground plane
+    let fs = this.vel.x * fwd.x + this.vel.z * fwd.z; // forward speed
+    let ss = this.vel.x * rx + this.vel.z * rz; // sideways (drift) speed
+
+    let throttle = input.throttle || 0;
+    let steer = input.steer || 0;
+    const st = input.stick;
+    if (st && st.active && Math.hypot(st.x, st.y) > 0.08) {
+      const mag = Math.min(1, Math.hypot(st.x, st.y));
+      const cx = camForward.x, cz = camForward.z;
+      const dx = cx * st.y + cz * st.x;
+      const dz = cz * st.y - cx * st.x;
+      let diff = Math.atan2(dx, dz) - this.heading;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      steer = Math.max(-1, Math.min(1, diff * 2.2));
+      throttle = mag * Math.max(0, Math.cos(diff));
+    }
+
+    const boost = input.run;
+    const maxF = (boost ? 17 : 10) * (this.inWater ? 0.55 : 1);
+    const onGround = this.onGround;
+    if (throttle > 0) {
+      if (fs < 0) fs = Math.min(0, fs + 30 * dt); // braking out of reverse
+      else if (fs < maxF * throttle) fs = Math.min(maxF * throttle, fs + (boost ? 26 : 18) * throttle * dt);
+      else fs += (maxF * throttle - fs) * Math.min(1, dt * 2);
+    } else if (throttle < 0) {
+      if (fs > 0.3) fs = Math.max(0, fs - 32 * dt); // brake
+      else fs = Math.max(-4.5, fs - 12 * dt); // reverse
+    } else {
+      fs *= Math.exp(-dt * (onGround ? 2.4 : 0.3)); // coast to a stop
+      if (Math.abs(fs) < 0.05) fs = 0;
+    }
+    // Grip kills sideways speed; less grip while boosting lets the camel slide into turns.
+    if (onGround) ss *= Math.exp(-dt * (boost ? 3.5 : 9));
+
+    // Steering: faster when moving, reversed when backing up, and a slow pivot on the spot.
+    const moving = Math.min(1, Math.abs(fs) / 5);
+    const dir = fs < -0.2 ? -1 : 1;
+    const targetAng = steer * (1.1 + moving * 1.6) * dir * (boost ? 0.85 : 1);
+    this.angVel += (targetAng - this.angVel) * Math.min(1, dt * 10);
+    this.heading += this.angVel * dt;
+    this.turnRate = this.angVel;
+
+    const f2 = this.forward(tmp2);
+    const r2x = -f2.z, r2z = f2.x;
+    this.vel.set(f2.x * fs + r2x * ss, 0, f2.z * fs + r2z * ss);
+
+    // Move, then bounce off static colliders.
+    const px = this.position.x + this.vel.x * dt;
+    const pz = this.position.z + this.vel.z * dt;
+    const res = world.resolve(px, pz, this.radius);
+    const nx = res.x - px, nz = res.z - pz;
+    const nl = Math.hypot(nx, nz);
+    if (nl > 1e-5) {
+      const ux = nx / nl, uz = nz / nl;
+      const vn = this.vel.x * ux + this.vel.z * uz;
+      if (vn < 0) {
+        this.vel.x -= 1.35 * vn * ux;
+        this.vel.z -= 1.35 * vn * uz;
+        if (-vn > 3 && this.onBump) this.onBump(-vn);
+        this.spring.pitchV += vn * 0.08;
+      }
+    }
+    this.position.x = res.x;
+    this.position.z = res.z;
+    this.forwardSpeed = this.vel.x * f2.x + this.vel.z * f2.z;
+    this.speed = Math.abs(this.forwardSpeed);
+
+    // Suspension-like springs driven by acceleration and turning.
+    const accel = (this.forwardSpeed - this.prevFs) / Math.max(dt, 1e-4);
+    this.prevFs = this.forwardSpeed;
+    const sp = this.spring;
+    const pitchTarget = Math.max(-0.14, Math.min(0.14, -accel * 0.006));
+    const rollTarget = Math.max(-0.2, Math.min(0.2, this.forwardSpeed * this.angVel * 0.012));
+    sp.pitchV += ((pitchTarget - sp.pitch) * 90 - sp.pitchV * 9) * dt;
+    sp.pitch += sp.pitchV * dt;
+    sp.rollV += ((rollTarget - sp.roll) * 80 - sp.rollV * 8) * dt;
+    sp.roll += sp.rollV * dt;
+    sp.yV += ((0 - sp.y) * 120 - sp.yV * 8) * dt;
+    sp.y += sp.yV * dt;
 
     // Jump and gravity.
     const ground = world.heightAt(this.position.x, this.position.z);
     if (input.jump && this.onGround) {
       this.vy = 9.5;
       this.onGround = false;
+      sp.yV -= 2.5; // crouch before the leap
     }
     if (!this.onGround) {
       this.vy -= 28 * dt;
@@ -240,6 +298,7 @@ export class Camel {
       if (this.position.y <= ground) {
         this.position.y = ground;
         this.onGround = true;
+        sp.yV -= Math.min(6, Math.abs(this.vy) * 0.35); // squash on landing
         if (this.onLand) this.onLand(Math.abs(this.vy));
         this.vy = 0;
       }
@@ -251,6 +310,13 @@ export class Camel {
     this.animate(dt);
   }
 
+  // Drop in from the sky (intro).
+  dropFrom(height) {
+    this.position.y = height;
+    this.onGround = false;
+    this.vy = 0;
+  }
+
   animate(dt) {
     const speed = this.speed;
     const targetGait = Math.min(1, speed / 6.5);
@@ -258,7 +324,7 @@ export class Camel {
     const running = Math.max(0, Math.min(1, (speed - 7) / 5));
     // Stride length grows when running so legs don't spin like a cartoon.
     const stride = 2.3 + running * 1.4;
-    this.phase += (speed / stride) * Math.PI * 2 * dt;
+    this.phase += (this.forwardSpeed / stride) * Math.PI * 2 * dt;
     const g = this.gait;
     const amp = 0.32 + running * 0.22;
     const air = this.onGround ? 0 : 1;
@@ -284,9 +350,13 @@ export class Camel {
     // Pacing sway, bob, and a lean into turns.
     const breathe = Math.sin(this.time * 1.8) * 0.012;
     const bob = Math.cos(this.phase * 2) * 0.05 * g + running * 0.03 * Math.abs(Math.sin(this.phase));
-    this.body.position.y = 1.72 + bob + breathe;
-    this.body.rotation.z = Math.sin(this.phase) * 0.06 * g - this.turnRate * 0.03 * g;
-    this.body.rotation.x = -running * 0.06 + (this.onGround ? 0 : -this.vy * 0.015);
+    const sp = this.spring;
+    this.body.position.y = 1.72 + bob + breathe + sp.y * 0.35;
+    this.body.rotation.z = Math.sin(this.phase) * 0.06 * g + sp.roll;
+    this.body.rotation.x = -running * 0.06 + sp.pitch + (this.onGround ? 0 : -this.vy * 0.015);
+    // Squash and stretch from the vertical spring.
+    const sq = 1 + Math.max(-0.12, Math.min(0.12, sp.y * 0.6));
+    this.body.scale.set(1 / Math.sqrt(sq), sq, 1 / Math.sqrt(sq));
     this.torso.scale.y = 0.6 + breathe;
 
     // Neck swings forward/back with each step, reaches out when running.
