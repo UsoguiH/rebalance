@@ -10,7 +10,7 @@ synthesized with the Web Audio API. There are no image or audio files and no bui
 
 ## Also in this repo
 
-- [`minecraft-switch/`](minecraft-switch/): a Minecraft-style world with a GTA V-style character switch effect.
+- [`minecraft-switch/`](minecraft-switch/): a Minecraft-style game with a GTA V-style character switch effect.
 
 ## Play
 
