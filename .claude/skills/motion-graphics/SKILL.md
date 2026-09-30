@@ -75,6 +75,10 @@ Read `references/craft.md` and `references/storyboard.md`. Write the script and 
 screen copy on `brand.json` content. Show the user a compact table (scene · seconds · what we see · what we
 hear) and ask for approval with AskUserQuestion. Only continue once they approve.
 
+**Pace it like the pros.** Read `references/studied-films.md`: time every scene in whole music beats (2-8 beats),
+hard-cut on the beat, change something inside each scene every 1-2 beats, keep voice lines to a few words, and let
+weight-contrast typography carry the message. Slow 4-6 s scenes with soft fades are what make a video feel amateur.
+
 **Make the motion amazing.** Read `references/motion.md` and choreograph like a motion designer: a signature move
 roughly every 4 seconds (`heroDevice`, `promptGlow`, `explode`, `textMask`, `particleLogo`, `morph`, 3D `cards`), letter
 animations (`"chars"`) for headlines, and transitions that carry the eye (`zoomThrough`, `iris` from the click point,
@@ -143,5 +147,6 @@ Deliver:
 | `references/style-study.md` | Step 3: how to study references, the style-DNA template, patterns from studied launch videos |
 | `references/storyboard.md` | Step 5: `video.json` format, every scene type and prop, custom scenes, an example |
 | `references/motion.md` | Step 5 and 7: signature moves, transitions, effects library, how to judge motion |
+| `references/studied-films.md` | Step 3 and 5: two professional launch films studied frame by frame; the beat-driven pacing and 15 studio moves (`warpText`, `wordSwap`, `lockup`, `frameToLogo`, `feed`, `marquee`, `notifyCycle`, `collage`, `vortex`, `resize`, `tagsDrop`, `waveform`, `clickButton`) |
 | `references/craft.md` | Step 5 and 7: structure, script-writing, motion, type, sound, formats, QA checklist |
 | `references/assets.md` | Any time assets, licences, keys or errors come up (blocked downloads, proxies, fonts) |

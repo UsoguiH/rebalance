@@ -112,18 +112,30 @@ def finish(project, path, meta, known_bpm=None):
 def search(project, query, want, bpm_range):
     # Only CC0 / CC BY / public domain: syncing music to picture is an adaptation, which ND forbids
     # and SA would force onto the whole video.
-    params = {"q": query, "license": "cc0,by,pdm", "category": "music", "page_size": 20}
-    r = requests.get("https://api.openverse.org/v1/audio/", params=params, headers=UA, timeout=30)
-    r.raise_for_status()
-    results = [x for x in r.json().get("results", []) if x.get("duration") and want * 0.85 * 1000 <= x["duration"] <= 480000]
+    # Openverse ANDs every word, so multi-word moods often return nothing: also search each word and merge,
+    # ranking tracks by how many of the words they match (title + tags).
+    words = [w for w in query.lower().split() if len(w) > 2]
+    pool = {}
+    for q in [query] + words:
+        params = {"q": q, "license": "cc0,by,pdm", "category": "music", "page_size": 20}
+        r = requests.get("https://api.openverse.org/v1/audio/", params=params, headers=UA, timeout=30)
+        if not r.ok:
+            continue
+        for x in r.json().get("results", []):
+            hay = (x.get("title", "") + " " + " ".join(tg.get("name", "") for tg in (x.get("tags") or []))).lower()
+            x["_match"] = sum(w in hay for w in words) + (2 if q == query else 0)
+            if x["id"] not in pool or pool[x["id"]]["_match"] < x["_match"]:
+                pool[x["id"]] = x
+    allr = sorted(pool.values(), key=lambda x: -x["_match"])
+    results = [x for x in allr if x.get("duration") and want * 0.85 * 1000 <= x["duration"] <= 480000]
     if not results:
-        results = [x for x in r.json().get("results", []) if x.get("duration") and x["duration"] >= 20000]
+        results = [x for x in allr if x.get("duration") and x["duration"] >= 20000]
     if not results:
         return None
     tmp = os.path.join(project, "public", "music", "_candidates")
     os.makedirs(tmp, exist_ok=True)
     scored = []
-    for x in results[:6]:
+    for x in results[:8]:
         try:
             a = requests.get(x["url"], headers=UA, timeout=90)
             if not a.ok or len(a.content) < 50000:
@@ -139,7 +151,7 @@ def search(project, query, want, bpm_range):
             dur_fit = 1.0 if (info["duration"] or 0) >= want else 0.5
             beat = min(1.0, (au.get("beat_confidence") or 0) * 2)
             intro = first_loud(p)
-            score = bpm_fit * 2 + dur_fit + beat - min(1.0, intro / 6)
+            score = bpm_fit * 2 + dur_fit + beat - min(1.0, intro / 6) + 0.5 * x.get("_match", 0)
             scored.append((score, p, x, bpm))
             print(f"  candidate {score:.2f}  {x['title'][:40]:<40} {info['duration']:.0f}s ~{bpm} BPM  {x['license']}  {x.get('foreign_landing_url')}")
         except Exception as e:  # noqa: BLE001

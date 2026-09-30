@@ -109,6 +109,24 @@ Upgrades: `kinetic.props.chars` = flip3d|rise|blurIn|scramble|slam|cascade|shine
 Transitions also accept `iris` / `zoomThrough` (with `x`, `y` 0-1), `cube`, `panels` (`colors` optional).
 Scene field `drift: false` disables the automatic slow push-in.
 
+### Studio scenes (see `studied-films.md` for what each reproduces and why)
+- `warpText`: `text` · `variants` [flat|bulge|pinch|wave|arc] · `each` (s, one beat) · `size` · `font` · `weight` · `corners` [4 labels] · `flip` (false = no gradient flash) · `flipBg`
+- `wordSwap`: `prefix` · `words` [] · `each` (s) · `size` · `phone` (skeleton phone behind) · `gradientLast`
+- `lockup`: `logo` · `markRatio` (symbol share of logo width) · `aspect` (logo w/h) · `height` · `revealAt` · `type` ("**bold**" ok) · `typeAt` · `typeSize` · `cps` · `gradient`
+- `frameToLogo`: `word` · `icon` · `color` · `shrinkAt` · `iconAt` · `size` · `burst`
+- `feed`: `lines` ("**bold**") · `cards` [{title, meta, icon?}] · `ticker` [strings] · `every` (s) · `size`
+- `marquee`: `line` ("**bold**") · `items` [text | image path | "[pill]"] · `rows` · `speed` · `size`
+- `notifyCycle`: `items` [{icon, title, body, tint}] · `each` (s)
+- `collage`: `items` [{src, w, aspect, pos} | {text, size} | {sticker (emoji), size}] each with `x`, `y` (px offsets at 1080), `rot`, `z`
+- `vortex`: `logos` [] · `word` · `size` · `ring`
+- `resize`: `a`, `b` (emoji or image path) · `from` [w,h] · `to` [w,h] · `swapAt` (s) · `fill`
+- `tagsDrop`: `tags` [{text, color?}] · `lines` · `titleSize` · `every` (s) · `size`
+- `waveform`: `logo` · `bars` · `height` · `logoHeight`
+- `clickButton`: `label` · `clickAt` (s)
+
+Timing tip: set `"transition": {"type": "none"}` for hard cuts, and make every `duration` a whole number of
+beats (`music.json` → `beat_period`). Point `audio.musicTrimBefore` at a beat inside the track's most energetic section.
+
 ### `features`: 2-4 feature tiles
 `lines` · `items` [{ title, text, image?, icon? }] · `stagger`.
 

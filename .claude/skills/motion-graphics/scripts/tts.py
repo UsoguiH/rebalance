@@ -24,7 +24,8 @@ import sys
 import requests
 
 sys.path.insert(0, os.path.dirname(__file__))
-from _common import probe, read_json, write_json  # noqa: E402
+from _common import ffmpeg_bin, probe, read_json, write_json  # noqa: E402
+import subprocess
 
 # Friendly presets -> provider voice ids. Pick with --voice <preset> or pass a raw provider voice id/name.
 PRESETS = {
@@ -136,6 +137,16 @@ def openai_say(text, voice, rate, path, tone):
     return None  # no timestamps: estimated below
 
 
+def trim_silence(path):
+    """Cut leading/trailing silence (TTS engines pad short lines), keeping 60 ms of air at each end."""
+    tmp = path + ".trim.mp3"
+    flt = ("silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.06,"
+           "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.06,areverse")
+    r = subprocess.run([ffmpeg_bin(), "-v", "error", "-y", "-i", path, "-af", flt, "-b:a", "160k", tmp], capture_output=True)
+    if r.returncode == 0 and os.path.getsize(tmp) > 1000:
+        os.replace(tmp, path)
+
+
 def estimate_words(text, duration):
     toks = text.split()
     weights = [len(t) + 2 for t in toks]
@@ -245,6 +256,11 @@ def main():
                 words = elevenlabs_say(text, voice, a.rate, path, lang)
             else:
                 words = openai_say(text, voice, a.rate, path, a.tone)
+            lead = words[0]["s"] if words else 0.0
+            trim_silence(path)
+            if words and lead > 0.08:  # keep word timings in step with the trimmed start
+                shift = lead - 0.06
+                words = [{**w, "s": round(w["s"] - shift, 3), "e": round(w["e"] - shift, 3)} for w in words]
             dur = probe(path)["duration"] or 0
             if not words:
                 words = estimate_words(text, dur)

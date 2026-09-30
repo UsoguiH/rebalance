@@ -21,7 +21,7 @@ from _common import read_json  # noqa: E402
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
       "Chrome/128.0 Safari/537.36")
 KEEP_SUBSETS = {"latin", "latin-ext", "arabic"}
-WEIGHTS = "300;400;500;600;700;800"
+WEIGHTS = "300;400;500;600;700;800;900"
 
 
 def css_for(family):
