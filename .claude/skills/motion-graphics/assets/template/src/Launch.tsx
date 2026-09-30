@@ -24,8 +24,12 @@ export const timeline = (spec: VideoSpec, fps: number) => {
   return { durs, trans, starts, total };
 };
 
-const SceneView: React.FC<{ scene: Scene; durationInFrames: number }> = ({ scene, durationInFrames }) => {
+// Always light: "dark" becomes the brand background, "accent" becomes a light gradient with accent glow.
+const LIGHT: Record<string, NonNullable<Scene["background"]>> = { dark: "brand", accent: "gradient" };
+
+const SceneView: React.FC<{ scene: Scene; durationInFrames: number }> = ({ scene: raw, durationInFrames }) => {
   const t = useTheme();
+  const scene = { ...raw, background: LIGHT[raw.background ?? "brand"] ?? raw.background ?? "brand" };
   const Comp = resolveScene(scene.type, scene.component);
   return (
     <AbsoluteFill style={{ direction: t.dir }}>

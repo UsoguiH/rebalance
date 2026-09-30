@@ -53,8 +53,10 @@ node "$SKILL/scripts/brand_kit.mjs" --url <product-url> --project "$P" [--pages 
 ```
 Look at `$P/public/brand/preview.png` and decide:
 - **Logo:** pick the real product logo. Customer logos also appear as candidates, so check the name.
-  `logo-shot.png` is the pixel-exact header logo. Use a light-on-dark version for dark scenes.
-- **Colours:** bg, fg and one accent. The detected accent can be wrong when buttons are neutral, so choose it by eye.
+  `logo-shot.png` is the pixel-exact header logo. Videos are light, so you need a dark logo: if the site
+  only has a white one, set `brand.logoInvert: true`.
+- **Colours:** a light bg (white or off-white, even if the site is dark), dark fg, and one accent from the brand.
+  The detected accent can be wrong when buttons are neutral, so choose it by eye.
 - **Fonts:** use the site's font if it is on Google Fonts; otherwise the closest match (Inter, Geist, Manrope…).
 - **Screens:** which screenshots show the product best. The best screens are often behind a login, so if the site
   is only marketing, ask the user for app screenshots or screen recordings and put them in `public/shots/`.
@@ -114,6 +116,12 @@ Deliver:
 - **Licensing notes, in one line each:** Remotion is free for individuals and teams of up to 3 people. The Edge voices are for drafts; use ElevenLabs or OpenAI voices for paid ads.
 
 ## Principles
+- **Always light.** Every video uses a light or white look: white / off-white backgrounds, dark text,
+  the brand's accent colour for highlights. Never dark themes or dark scenes, even when the brand's
+  website or the reference videos are dark: translate them to light (keep their pacing, moves and
+  accent colour, not their darkness). The template enforces this (a dark `brand.colors.bg` becomes white,
+  `dark`/`accent` scene backgrounds render light); don't work around it. If the only logo is white,
+  set `brand.logoInvert: true` (renders it black) or find a dark version.
 - **Real beats generic.** Real logos, real screenshots, real product copy. Never draw a fake logo, never
   invent customers, testimonials or numbers. If something real is missing, ask for it or leave it out.
 - **Look at every picture you produce.** Brand preview, logo preview, stills and QA sheets: the numbers

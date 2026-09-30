@@ -18,7 +18,8 @@ export const Captions: React.FC<{ cues: AbsCue[] }> = ({ cues }) => {
     <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: t.H * (t.portrait ? 0.2 : 0.07), pointerEvents: "none" }}>
       <div style={{
         direction: t.dir, maxWidth: t.W * 0.8, textAlign: "center", fontFamily: t.fonts.body, fontWeight: 600,
-        fontSize: (t.portrait ? 46 : 38) * t.u, lineHeight: 1.25, color: "#fff", background: "rgba(10,10,12,0.72)",
+        fontSize: (t.portrait ? 46 : 38) * t.u, lineHeight: 1.25, color: "#111", background: "rgba(255,255,255,0.94)",
+        boxShadow: `0 ${8 * t.u}px ${24 * t.u}px rgba(0,0,0,0.12), 0 0 0 ${1 * t.u}px rgba(0,0,0,0.06)`,
         padding: `${10 * t.u}px ${22 * t.u}px`, borderRadius: 14 * t.u, transform: `translateY(${(1 - s) * 12}px)`, opacity: Math.min(1, s * 1.5),
         backdropFilter: "blur(8px)",
       }}>

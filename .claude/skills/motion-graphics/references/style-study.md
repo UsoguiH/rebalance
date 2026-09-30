@@ -41,12 +41,15 @@ For each reference, write down:
 
 ## 3. Write the style DNA
 
+House rule: the output is **always light/white**. If a reference is dark, take its pacing, moves,
+typography and accent colour, and write the palette as light (white/off-white bg, dark text, same accent).
+
 Save `$P/style_dna.md`. Keep it concrete enough to build from. Template:
 
 ```markdown
 # Style DNA (from: <reference names>)
 Targets: 30 s · 12-15 cuts/min · median shot 2.5 s (min 0.6, max 6) · cuts on beat ≥ 60%
-Palette: bg #F4F2EC (60%) · text #141414 · accent #D9623B (buttons, highlights only) · dark scenes #0A0F13 for contrast
+Palette: bg #F4F2EC (60%) · text #141414 · accent #D9623B (buttons, highlights only) · accent glow for big moments (no dark scenes)
 Type: sans (Inter 600) for UI and headlines, italic serif (Instrument Serif) for 1-2 emotional words
 Moves: 1) typewriter prompt in a white rounded box, orange Send → 2) "Designing…" spinner → 3) macro zoom 1.9× on a button then click ripple → 4) wall of 8-12 real screens tilted 25° panning slowly → 5) logo: icon + wordmark, then parent brand
 Transitions: mostly hard cuts on beats, zoom-through into the product, fade to white before the logo
@@ -82,6 +85,7 @@ re-render. Then look at `renders/qa/sheets/*.jpg` the same way you looked at the
 - Transitions: mostly hard cuts and continuous camera; the loaders are the "transitions".
 - Music: calm, steady (~70-100 BPM), no voice; clicks are the sound design.
 - Lesson: real UI + cursor + zooms reads as *honest*; loaders build anticipation; one accent colour.
+  (Its dark globe scenes are the one thing we don't copy: our videos stay light.)
 
 ### Zelios agency SaaS launch films (LangEase, Lovio; 3 s previews studied)
 - Light lavender/white backgrounds, UI as **rounded cards with soft blue glow**, tilted in 3D.
@@ -91,5 +95,5 @@ re-render. Then look at `renders/qa/sheets/*.jpg` the same way you looked at the
 - Lesson: every UI element is an actor; cards enter/exit with depth; headline words are short (2-3 words).
 
 ### BIASafe AI (ObiN Studio) and similar "AI SaaS" launch ads
-Could not be downloaded here (YouTube blocked the server). Typical of the genre: dark UI, neon accent,
-kinetic type between product shots, fast cuts on the beat. Study it properly if the user provides the file.
+Could not be downloaded here (YouTube blocked the server). Typical of the genre: kinetic type between
+product shots, fast cuts on the beat, one neon-ish accent (we keep the accent, on white). Study it properly if the user provides the file.

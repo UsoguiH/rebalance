@@ -19,9 +19,9 @@ Durations are in **seconds**; the template converts to frames.
   "brand": {
     "name": "Acme", "url": "https://acme.com",
     "logo": "brand/logo-1.svg",        // for light backgrounds (public/ path)
-    "logoDark": "brand/logo-white.svg",// for dark backgrounds (optional)
+    "logoInvert": false,               // true if the only logo is white: rendered black on the light video
     "icon": "brand/icon-3.png",        // square app icon (optional, used in logoCloud centre)
-    "colors": { "bg": "#F4F2EC", "fg": "#141414", "accent": "#D9623B", "accent2": "#F2B45A", "muted": "#7A7A74", "dark": "#101114" },
+    "colors": { "bg": "#FFFFFF", "fg": "#141414", "accent": "#D9623B", "accent2": "#F2B45A", "muted": "#7A7A74" },  // bg must be light
     "font": "Inter", "displayFont": "Instrument Serif",   // run fetch_fonts.py after changing
     "rtl": false                                          // true for Arabic
   },
@@ -41,7 +41,7 @@ Scene fields (all scenes):
 | `duration` | seconds on screen (includes the transition out) |
 | `vo` | the narration for this scene; tts.py turns it into `voice`, `voiceDuration`, `captions` |
 | `voiceDelay` | seconds before the line starts (default 0.3) |
-| `background` | `brand` (brand bg + soft light), `dark`, `gradient` (moving accent blobs), `grid` (dot grid), `accent`, `none` |
+| `background` | always light: `brand` (light bg + soft light), `gradient` (light with moving accent blobs), `grid` (dot grid), `none`. (`dark`/`accent` are mapped to light; never plan dark scenes) |
 | `transition` | into the next scene: `{ "type": "fade"|"slide"|"zoom"|"wipe"|"whip"|"blur"|"none", "duration": 0.5, "direction": "left"|"right"|"up"|"down" }` |
 | `sfx` | extra sounds: `[{ "at": 1.2, "name": "pop", "volume": 0.5 }]` (whoosh, swoosh-short, click, pop, tick, riser, impact, shimmer, type) |
 | `props` | per-type settings below |

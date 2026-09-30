@@ -41,9 +41,15 @@
   RTL alignment, fonts with Arabic glyphs (IBM Plex Sans Arabic, Tajawal, Cairo, Noto Kufi Arabic, Almarai).
 - Accent colour on 1 word per line at most.
 
-## Colour
-- Take the brand palette from the site. One accent. Backgrounds: brand bg for most scenes, one or two
-  dark (or accent) scenes for contrast at big moments. Check text contrast on each still.
+## Colour (always light)
+- White or off-white backgrounds, near-black text, one brand accent for highlights, buttons and glows.
+  Never dark scenes, even for "wow" moments: build contrast with scale, an accent-colour glow
+  (`gradient`), a big number, or a white card with a strong shadow instead.
+- Dark brands (dark websites, white logos): keep their accent colour and fonts, put them on white;
+  `logoInvert: true` makes a white logo black. brand_kit asks sites for their light colour scheme;
+  if the product itself is dark, its screenshots are fine as content inside devices/cards (it is the
+  real product), but keep the frame around them light and avoid zooming so far that a dark screen fills
+  the whole frame (zoom ≤ 1.5 on dark UIs). Prefer light-mode app screenshots when the user can provide them.
 
 ## Sound
 - Music bed -18 to -22 LUFS under voice (the template ducks it to `duckTo` while the voice speaks).

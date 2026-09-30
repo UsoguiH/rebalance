@@ -51,7 +51,7 @@ const browser = await launch(project);
 const kit = { url, screenshots: [], logos: [], icons: [], colors: {}, fonts: {}, content: {} };
 
 // ---------------------------------------------------------------- desktop
-const desk = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, locale: "en-US" });
+const desk = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2, locale: "en-US", colorScheme: "light" });
 const page = await desk.newPage();
 await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 await settle(page);
@@ -292,7 +292,7 @@ for (const [view, vp, dsf, ua] of [
   ["mobile", { width: 390, height: 844 }, 3, "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"],
   ["tablet", { width: 820, height: 1180 }, 2, "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1"],
 ]) {
-  const ctx = await browser.newContext({ viewport: vp, deviceScaleFactor: dsf, isMobile: true, hasTouch: true, userAgent: ua, locale: "en-US" });
+  const ctx = await browser.newContext({ viewport: vp, deviceScaleFactor: dsf, isMobile: true, hasTouch: true, userAgent: ua, locale: "en-US", colorScheme: "light" });
   const pg = await ctx.newPage();
   try {
     await pg.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -306,7 +306,7 @@ for (const [view, vp, dsf, ua] of [
 
 // ---------------------------------------------------------------- optional scroll recording (real footage)
 if (a.record) {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, recordVideo: { dir: shotDir, size: { width: 1440, height: 900 } } });
+  const ctx = await browser.newContext({ colorScheme: "light", viewport: { width: 1440, height: 900 }, recordVideo: { dir: shotDir, size: { width: 1440, height: 900 } } });
   const pg = await ctx.newPage();
   await pg.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
   await settle(pg);
@@ -326,8 +326,20 @@ if (a.record) {
   kit.screenshots.push({ file: rel(f), view: "desktop", part: "scroll recording (webm)" });
 }
 
-// ---------------------------------------------------------------- preview sheet
+// ---------------------------------------------------------------- light video palette + white-logo check
 kit.logo = kit.logos.find((l) => l.kind === "svg")?.file || kit.logos[0]?.file || null;
+const lum = (hex) => { const h = hex.replace("#", ""); const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const siteDark = lum(kit.colors.bg) < 0.5;
+// Videos are always light: suggest the palette to use in video.json
+kit.videoColors = { bg: siteDark ? "#FFFFFF" : kit.colors.bg, fg: siteDark ? "#111111" : kit.colors.fg, accent: kit.colors.accent };
+for (const l of kit.logos.filter((x) => x.kind === "svg")) {
+  const svg = fs.readFileSync(path.join(pub, l.file), "utf8");
+  const cols = [...svg.matchAll(/(?:fill|stroke)="rgba?\((\d+),\s*(\d+),\s*(\d+)/g)].map((m) => (0.2126 * m[1] + 0.7152 * m[2] + 0.0722 * m[3]) / 255);
+  l.light = cols.length > 0 && cols.every((v) => v > 0.8); // white logo: needs brand.logoInvert on a light video
+}
+kit.logoIsLight = !!kit.logos.find((l) => l.file === kit.logo)?.light;
+
+// ---------------------------------------------------------------- preview sheet
 const esc = (s) => String(s ?? "").replace(/</g, "&lt;");
 const fileUrl = (r) => "file://" + path.join(pub, r);
 const html = `<!doctype html><meta charset=utf-8><style>
@@ -340,7 +352,7 @@ h2{margin:18px 0 8px;font-size:16px} .row{display:flex;gap:12px;flex-wrap:wrap}
 .shot{height:180px;border:1px solid #ddd;border-radius:6px}
 </style>
 <h1 style="margin:0">${esc(kit.name)} · brand kit</h1><div>${esc(url)}</div>
-<h2>Logo candidates (light / dark)</h2><div class=row>${kit.logos.map((l, i) => `<div class=tile><div class=a><img src="${fileUrl(l.file)}"></div><div class=b><img src="${fileUrl(l.file)}"></div><div class=c>#${i + 1} ${esc(l.file)}<br>${esc(l.kind)} · score ${l.score} · ${esc(l.why)}</div></div>`).join("")}</div>
+<h2>Logo candidates (light / dark)</h2><div class=row>${kit.logos.map((l, i) => `<div class=tile><div class=a><img src="${fileUrl(l.file)}"></div><div class=b><img src="${fileUrl(l.file)}"></div><div class=c>#${i + 1} ${esc(l.file)}<br>${esc(l.kind)} · score ${l.score} · ${esc(l.why)}${l.light ? " · WHITE logo" : ""}</div></div>`).join("")}</div>
 <h2>Icons</h2><div class=row>${kit.icons.map((l) => `<div class=tile><div class=a><img src="${fileUrl(l.file)}"></div><div class=c>${esc(l.file)}</div></div>`).join("")}${kit.ogImage ? `<img class=shot src="${fileUrl(kit.ogImage)}">` : ""}</div>
 <h2>Colors</h2><div class=row>${[["bg", kit.colors.bg], ["fg", kit.colors.fg], ...kit.colors.accentCandidates.map((c, i) => ["accent" + (i || ""), c]), ["theme", kit.colors.themeColor]].filter((x) => x[1]).map(([n, c]) => `<div class=sw style="background:${c};color:${/^#(f|e|d)/i.test(c) ? "#000" : "#fff"}">${n}<br>${c}</div>`).join("")}</div>
 <h2>Fonts</h2><div>heading: <b>${esc(kit.fonts.heading)}</b> · body: <b>${esc(kit.fonts.body)}</b> · button: <b>${esc(kit.fonts.button)}</b></div>
@@ -358,4 +370,6 @@ fs.writeFileSync(path.join(project, "brand.json"), JSON.stringify(kit, null, 2))
 console.log(`Brand kit for ${kit.name}: ${kit.logos.length} logo candidates, ${kit.icons.length} icons, ${kit.screenshots.length} screenshots`);
 console.log(`colors bg ${kit.colors.bg} fg ${kit.colors.fg} accent ${kit.colors.accent} (candidates ${kit.colors.accentCandidates.join(" ")})`);
 console.log(`fonts heading ${kit.fonts.heading} / body ${kit.fonts.body}`);
+console.log(`video palette (always light): bg ${kit.videoColors.bg} fg ${kit.videoColors.fg} accent ${kit.videoColors.accent}${siteDark ? "  (site is dark: translated to light)" : ""}`);
+if (kit.logoIsLight) console.log("the SVG logo is white: set brand.logoInvert: true in video.json (or find a dark version)");
 console.log(`Look at ${path.join(brandDir, "preview.png")} to pick the logo and confirm colors. Details: ${path.join(project, "brand.json")}`);

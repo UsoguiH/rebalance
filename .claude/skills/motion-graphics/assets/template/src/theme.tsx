@@ -13,15 +13,24 @@ export type Theme = Brand & {
   dir: "rtl" | "ltr";
 };
 
+const norm = (hex: string) => {
+  const h = hex.replace("#", "");
+  return h.length === 3 || h.length === 4 ? h.split("").map((c) => c + c).join("") : h;
+};
+
 const Ctx = createContext<Theme | null>(null);
 
 export const ThemeProvider: React.FC<{ brand: Brand; children: React.ReactNode }> = ({ brand, children }) => {
   const { width, height } = useVideoConfig();
   const body = useFontFamily(brand.font, brand.rtl ? "IBM Plex Sans Arabic" : "Inter");
   const display = useFontFamily(brand.displayFont ?? brand.font, brand.rtl ? "IBM Plex Sans Arabic" : "Inter");
+  // House rule: videos are always light / white. A dark brand background (e.g. from a dark website)
+  // is replaced by white with near-black text; the brand keeps its accent colour.
+  const lightBg = isLight(brand.colors.bg) ? brand.colors.bg : "#FFFFFF";
+  const fg = isLight(brand.colors.bg) ? brand.colors.fg : "#111111";
   const theme: Theme = {
     ...brand,
-    colors: { muted: "#8a8a8a", dark: "#0c0d10", ...brand.colors },
+    colors: { muted: "#6f6f6f", ...brand.colors, bg: lightBg, fg, dark: "#F1F1EE" },
     fonts: { body, display },
     u: Math.min(width, height) / 1080,
     portrait: height > width * 1.1,
@@ -39,12 +48,14 @@ export const useTheme = (): Theme => {
   return t;
 };
 
-/** Pick readable text color for a background (#rrggbb). */
-const norm = (hex: string) => {
-  const h = hex.replace("#", "");
-  return h.length === 3 || h.length === 4 ? h.split("").map((c) => c + c).join("") : h;
+/** True when a colour is light enough to be a background in this (always light) style. */
+export const isLight = (hex: string) => {
+  const h = norm(hex || "#ffffff");
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.72;
 };
 
+/** Pick readable text color for a background (#rrggbb). */
 export const onColor = (hex: string, light = "#ffffff", dark = "#111111") => {
   const h = norm(hex);
   if (h.length < 6) return dark;

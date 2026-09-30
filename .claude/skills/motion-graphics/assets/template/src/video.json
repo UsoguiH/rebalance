@@ -15,7 +15,7 @@
     { "id": "hook", "type": "kinetic", "duration": 2.6, "background": "brand",
       "props": { "eyebrow": "Introducing", "lines": ["Work at the", "speed of thought"], "highlight": ["speed"] },
       "transition": { "type": "zoom", "duration": 0.5 } },
-    { "id": "stat", "type": "stat", "duration": 2.8, "background": "dark",
+    { "id": "stat", "type": "stat", "duration": 2.8, "background": "gradient",
       "props": { "value": 3200, "suffix": "+", "label": "teams shipped faster", "bars": [0.2, 0.35, 0.5, 0.7, 1] },
       "transition": { "type": "slide", "direction": "left", "duration": 0.5 } },
     { "id": "features", "type": "features", "duration": 3.4, "background": "grid",

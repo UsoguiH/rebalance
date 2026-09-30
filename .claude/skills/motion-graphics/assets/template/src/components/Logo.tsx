@@ -30,7 +30,8 @@ export const Logo: React.FC<{
   }
   return (
     <div style={{ position: "relative", transform: `scale(${0.7 + 0.3 * s})`, opacity: p, filter: `blur(${(1 - p) * 12 * t.u}px)` }}>
-      <Img src={/^https?:/.test(file) ? file : staticFile(file)} style={{ height: h, width: "auto", display: "block" }} />
+      <Img src={/^https?:/.test(file) ? file : staticFile(file)}
+        style={{ height: h, width: "auto", display: "block", filter: t.logoInvert && !src ? "brightness(0)" : undefined }} />
       {sweep && (
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none", mixBlendMode: "overlay",

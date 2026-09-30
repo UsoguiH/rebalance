@@ -62,11 +62,11 @@ Rules that keep it simple:
     {"label": "Integrations", "description": "Tools it works with (e.g. Slack, Notion, GitHub), real logos"},
     {"label": "Customers ('trusted by')", "description": "Real customer logos. Tell me which ones"},
     {"label": "Press / investors", "description": "'As seen in' row"}]},
-  {"header": "Theme", "question": "Light or dark look?", "multiSelect": false, "options": [
-    {"label": "Match our website (Recommended)", "description": "Colours and fonts taken from your site"},
-    {"label": "Light", "description": "Off-white backgrounds, dark text, one accent colour"},
-    {"label": "Dark", "description": "Near-black backgrounds with glowing accent"},
-    {"label": "Brand-colour backgrounds", "description": "Bold full-colour scenes"}]}
+  {"header": "Background", "question": "Which light background? (videos are always light)", "multiSelect": false, "options": [
+    {"label": "Pure white (Recommended)", "description": "Clean #FFFFFF, dark text, your brand colour as accent"},
+    {"label": "Warm off-white", "description": "Soft paper tone like #F5F3EE (Claude Design style)"},
+    {"label": "Light with brand glow", "description": "White with soft blobs of your brand colour"},
+    {"label": "Light with dot grid", "description": "White with a subtle technical dot grid"}]}
 ]}
 ```
 
@@ -133,3 +133,4 @@ Skip "Narrator" when the answer to Voice is "No voice" (ask about call-to-action
 | Arabic | `brand.rtl: true`, Arabic-capable font (IBM Plex Sans Arabic, Tajawal, Cairo, Noto Kufi Arabic), edge voice `ar-sa-*` / `ar-ae-*` / `ar-kw-*` or ElevenLabs multilingual |
 | Narrator | edge presets `en-male`, `en-female`, `en-energetic`, `en-narrator`, `en-british` (see `tts.py --list-voices`) |
 | Music mood | `music.py --search "<mood words>"`; fallback `--synth --mood bright/chill/epic/dark` |
+| Background | always light: white → `bg: "#FFFFFF"`; off-white → `"#F5F3EE"`; brand glow → scenes `"background": "gradient"`; dot grid → `"grid"`. Never dark. |

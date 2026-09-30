@@ -18,7 +18,7 @@ export type Scene = {
   voiceDuration?: number;
   voiceDelay?: number; // seconds after scene start before the voice starts (default 0.3)
   captions?: Cue[];
-  background?: "brand" | "dark" | "gradient" | "grid" | "accent" | "none";
+  background?: "brand" | "gradient" | "grid" | "none"; // always light ("dark"/"accent" are mapped to light)
   transition?: TransitionSpec; // transition INTO the next scene
   sfx?: Sfx[];
   component?: string; // for type "custom"
@@ -29,7 +29,8 @@ export type Brand = {
   name: string;
   url?: string;
   logo?: string; // public/ path, for light backgrounds
-  logoDark?: string; // public/ path, for dark backgrounds
+  logoDark?: string; // public/ path, for dark surfaces (rare: videos are always light)
+  logoInvert?: boolean; // true when the only logo is white (made for a dark site): renders it black
   icon?: string; // square app icon / symbol
   colors: { bg: string; fg: string; accent: string; accent2?: string; muted?: string; dark?: string };
   font?: string; // UI/body font (Google Fonts family name)
