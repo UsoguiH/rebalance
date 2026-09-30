@@ -139,12 +139,12 @@ export const StatScene: React.FC<SceneProps> = ({ props, scene }) => {
   const bars: number[] = props.bars ?? [];
   return (
     <Center gap={18}>
-      <div style={{ fontFamily: t.fonts.display, fontWeight: 800, fontSize: (props.size ?? 220) * t.u, color: fg, letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
+      <div style={{ direction: "ltr", unicodeBidi: "isolate", fontFamily: t.fonts.display, fontWeight: 800, fontSize: (props.size ?? (t.portrait ? 180 : 220)) * t.u, color: fg, letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
         {props.prefix}{txt}<span style={{ color: dark ? fg : t.colors.accent }}>{props.suffix}</span>
       </div>
       {props.label && <KineticText lines={[props.label]} size={44} weight={500} font="body" delay={10} color={dark ? "#ffffffbb" : t.colors.muted} />}
       {bars.length > 0 && (
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 14 * t.u, height: 220 * t.u, marginTop: 30 * t.u }}>
+        <div style={{ direction: "ltr", display: "flex", alignItems: "flex-end", gap: 14 * t.u, height: 220 * t.u, marginTop: 30 * t.u }}>
           {bars.map((b, i) => {
             const bp = prog(frame, 12 + i * 4, 22, ease.back);
             return <div key={i} style={{ width: 46 * t.u, height: `${b * bp * 100}%`, borderRadius: 10 * t.u, background: i === bars.length - 1 ? t.colors.accent : alpha(fg, 0.18) }} />;

@@ -87,6 +87,7 @@ Good material: `shots/section-*.jpg`, extra page captures.
 `callouts` [{ t, x, y, text }]: accent labels that pop on the UI.
 Find x/y by opening the screenshot with Read and estimating fractions (button at 30% across, 64% down → 0.30, 0.64).
 Zoom where the cursor goes: camera key at the click time with the same x/y and zoom 1.6-2.2.
+In 9:16 a desktop screenshot is small: keep the camera at zoom ≥ 1.6 most of the time, or use the mobile screenshots.
 
 ### `logoCloud`: integration / customer logos
 `logos` [] (public paths from logos.py) · `layout` orbit|grid|row · `center` (defaults to brand icon/logo) ·

@@ -85,7 +85,7 @@ export const CardsScene: React.FC<SceneProps> = ({ props, durationInFrames }) =>
   const imgs: string[] = props.images ?? [];
   const layout = props.layout ?? "helix";
   const life = prog(frame, 0, durationInFrames, ease.inOut);
-  const cw = props.cardWidth ?? (layout === "grid" ? 560 : 620);
+  const cw = props.cardWidth ?? (layout === "grid" ? 560 : t.portrait ? 520 : 620);
   const focusP = props.focus !== undefined ? prog(frame, (props.focusAt ?? 1) * fps, 22, ease.inOut) : 0;
   const n = Math.max(1, imgs.length);
   const cards = [] as React.ReactNode[];
@@ -97,12 +97,12 @@ export const CardsScene: React.FC<SceneProps> = ({ props, durationInFrames }) =>
     const appear = pop(frame, fps, i * 2, { damping: 20, stiffness: 110 });
     if (layout === "helix") {
       const a = (i / n) * Math.PI * 2 + life * Math.PI * 0.9;
-      const R = 1100 * t.u;
+      const R = Math.min(1100 * t.u, t.W * 0.6); // keep the orbit on screen in portrait
       const y = (i - (n - 1) / 2) * 110 * t.u;
       tf = `translate3d(${Math.sin(a) * R}px, ${y}px, ${Math.cos(a) * R - R}px) rotateY(${(a * 180) / Math.PI}deg)`;
       op = appear;
     } else if (layout === "scatter") {
-      const x = (rand(i + 1) - 0.5) * t.W * 1.3;
+      const x = (rand(i + 1) - 0.5) * t.W * (t.portrait ? 1.0 : 1.3);
       const y = (rand(i + 7) - 0.5) * t.H * 1.2;
       const z = -2400 * t.u + rand(i + 3) * 1200 * t.u + life * 2600 * t.u;
       tf = `translate3d(${x}px, ${y}px, ${z}px) rotateY(${(rand(i + 5) - 0.5) * 30}deg) rotateX(${(rand(i + 9) - 0.5) * 20}deg)`;
@@ -153,7 +153,8 @@ export const CursorScene: React.FC<SceneProps> = ({ props }) => {
   const { fps } = useVideoConfig();
   const cam = keyframes(frame, ((props.camera ?? [{ t: 0, zoom: 1, x: 0.5, y: 0.5 }]) as any[]).map((k) => ({ ...k, t: k.t * fps })));
   const z = cam.zoom ?? 1;
-  const stageW = t.W * (props.frame === "none" ? 0.9 : 0.84);
+  // portrait frames are narrow: use almost the full width (and zoom in with `camera` to make UI readable)
+  const stageW = t.W * (t.portrait ? 0.96 : props.frame === "none" ? 0.9 : 0.84);
   const stageH = stageW / (props.aspect ?? 1.6);
   const tx = (0.5 - (cam.x ?? 0.5)) * stageW * z;
   const ty = (0.5 - (cam.y ?? 0.5)) * stageH * z;
