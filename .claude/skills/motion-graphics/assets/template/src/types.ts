@@ -37,6 +37,7 @@ export type Brand = {
   logoInvert?: boolean; // true when the only logo is white (made for a dark site): renders it black
   icon?: string; // square app icon / symbol
   colors: { bg: string; fg: string; accent: string; accent2?: string; muted?: string; dark?: string };
+  gradient?: string[]; // the brand's signature gradient stops (e.g. from its logo); used for highlights, glows, panels, confetti
   font?: string; // UI/body font (Google Fonts family name)
   displayFont?: string; // headline font
   rtl?: boolean; // Arabic/Hebrew narration + on-screen text

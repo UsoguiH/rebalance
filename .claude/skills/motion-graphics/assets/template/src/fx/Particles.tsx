@@ -98,7 +98,7 @@ export const Burst: React.FC<{ at: number; x: number; y: number; count?: number;
   const t = useTheme();
   const f = frame - at;
   if (f < 0 || f > fps * 2.2) return null;
-  const cols = colors ?? [t.colors.accent, t.colors.accent2 ?? "#F2B45A", "#FF7AB6", "#7AA7FF", "#48D597"];
+  const cols = colors ?? t.gradient ?? [t.colors.accent, t.colors.accent2 ?? "#F2B45A", "#FF7AB6", "#7AA7FF", "#48D597"];
   const sec = f / fps;
   return (
     <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible", pointerEvents: "none" }}>

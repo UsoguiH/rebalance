@@ -19,7 +19,7 @@ export const GlowBorder: React.FC<{
   const t = useTheme();
   const frame = useCurrentFrame();
   const ang = (frame / 30) * 360 * speed;
-  const cols = colors ?? [t.colors.accent, t.colors.accent2 ?? "#F2B45A", "#FF7AB6", "#7AA7FF", t.colors.accent];
+  const cols = colors ?? (t.gradient ? [...t.gradient, t.gradient[0]] : [t.colors.accent, t.colors.accent2 ?? "#F2B45A", "#FF7AB6", "#7AA7FF", t.colors.accent]);
   const grad = `conic-gradient(from ${ang}deg, ${cols.join(", ")})`;
   const w = width ?? 3 * t.u;
   return (

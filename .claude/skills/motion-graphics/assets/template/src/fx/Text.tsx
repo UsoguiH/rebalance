@@ -56,7 +56,7 @@ export const CharText: React.FC<{
               const isHl = hl.has(clean(word));
               const units = t.rtl ? [word] : Array.from(word);
               const wordStyle: React.CSSProperties = isHl && gradientHighlight
-                ? { backgroundImage: `linear-gradient(100deg, ${t.colors.accent}, ${t.colors.accent2 ?? t.colors.accent})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }
+                ? { backgroundImage: `linear-gradient(100deg, ${(t.gradient ?? [t.colors.accent, t.colors.accent2 ?? t.colors.accent]).join(", ")})`, WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }
                 : isHl ? { color: t.colors.accent } : {};
               return (
                 <span key={wi} style={{ display: "inline-block", whiteSpace: "nowrap", transformStyle: "preserve-3d" }}>

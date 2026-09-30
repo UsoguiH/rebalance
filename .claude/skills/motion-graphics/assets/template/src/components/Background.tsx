@@ -17,7 +17,7 @@ export const Background: React.FC<{ variant?: Variant; grain?: boolean }> = ({ v
     <AbsoluteFill style={{ background: base, overflow: "hidden" }}>
       {variant === "gradient" && (
         <>
-          {[c.accent, c.accent2 ?? c.accent, c.accent].map((col, i) => (
+          {(t.gradient?.slice(0, 3) ?? [c.accent, c.accent2 ?? c.accent, c.accent]).map((col, i) => (
             <div
               key={i}
               style={{

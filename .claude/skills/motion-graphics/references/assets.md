@@ -39,4 +39,5 @@ Nothing is required: the free path (Edge voices, Openverse music/photos, Simple 
 | Render slow | `--scale 0.5` for drafts; stills first; close other heavy scenes. 30 s at 1080p ≈ 2-7 min on 4 cores. |
 | Voice too long for scene | tts.py stretches the scene automatically; or shorten the line (better). |
 | Wikimedia 429 | logos.py backs off and retries; run again later or add `Name=domain`. |
+| Site shows "Just a moment…" (Cloudflare bot check) | Don't try to get around it. Use pages that load (blog, docs, changelog, help centre), the docs' images (often real product UI), the brand's press kit, the icon from `https://<site>/apple-touch-icon.png`, or ask the user for screenshots. |
 | Logo candidate is a customer logo, not the product | brand_kit lists all logo-ish images; choose by looking at preview.png; `logo-shot.png` is the pixel-exact header logo. |

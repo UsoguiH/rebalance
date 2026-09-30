@@ -139,7 +139,8 @@ export const ExplodeScene: React.FC<SceneProps> = ({ props, durationInFrames }) 
   const tilt = prog(frame, at - 10, 26, ease.inOut) * (1 - prog(frame, at + hold + 14, 22, ease.inOut));
   const spread = prog(frame, at + 6, 30, ease.out) * (1 - prog(frame, at + hold, 22, ease.inOut));
   const orbit = prog(frame, 0, durationInFrames, ease.inOut);
-  const W = Math.min(t.W * (t.portrait ? 0.9 : 0.62), 1300 * t.u);
+  // leave room on the right for the layer labels (portrait frames are narrow)
+  const W = Math.min(t.W * (t.portrait ? ((props.labels ?? []).length ? 0.62 : 0.9) : 0.62), 1300 * t.u);
   const H = W / (props.aspect ?? 1.6);
   const enter = pop(frame, fps, 0, { damping: 18, stiffness: 90 });
   const labels: string[] = props.labels ?? [];
@@ -152,6 +153,7 @@ export const ExplodeScene: React.FC<SceneProps> = ({ props, durationInFrames }) 
       )}
       <div style={{
         width: W, height: H, position: "relative", transformStyle: "preserve-3d", marginTop: props.lines ? 90 * t.u : 0,
+        marginRight: t.portrait && (props.labels ?? []).length ? t.W * 0.2 : 0,
         transform: `scale(${0.85 + 0.15 * enter}) rotateX(${tilt * 52}deg) rotateZ(${tilt * (-28 + orbit * 16)}deg)`,
       }}>
         {Array.from({ length: n }, (_, i) => {

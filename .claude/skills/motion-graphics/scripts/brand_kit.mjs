@@ -97,6 +97,19 @@ const info = await page.evaluate(() => {
     }
   };
   const re = /logo|brand|wordmark/i;
+  // Home links near the top (logo links are rarely inside <header>/<nav> classes on modern sites)
+  document.querySelectorAll("a").forEach((link) => {
+    if (!home(link.getAttribute("href") || "")) return;
+    const r = link.getBoundingClientRect();
+    if (r.top > 160 || r.height > 140) return;
+    link.querySelectorAll("svg, img").forEach((el) => push(el, 12, "home link at top of page"));
+  });
+  // Images/SVGs labelled with the site's own name (aria-label="Acme", alt="Acme")
+  const siteName = (document.querySelector('meta[property="og:site_name"]')?.content || document.title.split(/[|\-–—:·]/)[0] || "").trim().toLowerCase();
+  if (siteName) document.querySelectorAll("svg[aria-label], img[alt]").forEach((el) => {
+    const lab = (el.getAttribute("aria-label") || el.getAttribute("alt") || "").trim().toLowerCase();
+    if (lab && (lab === siteName || lab === siteName + " logo")) push(el, 11, "labelled with the brand name");
+  });
   document.querySelectorAll("header a, nav a, [class*=header] a, [class*=Header] a, [class*=nav] a").forEach((link) => {
     if (!home(link.getAttribute("href") || "")) return;
     link.querySelectorAll("svg, img").forEach((el) => push(el, 10 + (re.test(link.outerHTML.slice(0, 400)) ? 3 : 0), "home link in header"));

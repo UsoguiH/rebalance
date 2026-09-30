@@ -87,7 +87,7 @@ const Presentation: React.FC<TransitionPresentationComponentProps<P>> = ({
     case "panels": {
       // brand-coloured panels sweep over the old scene, then pull away to reveal the new one
       if (entering) {
-        const cols = passedProps.colors ?? [t.colors.accent2 ?? t.colors.accent, t.colors.accent, t.colors.bg];
+        const cols = passedProps.colors ?? (t.gradient ? [...t.gradient.slice(0, 3), t.colors.bg] : [t.colors.accent2 ?? t.colors.accent, t.colors.accent, t.colors.bg]);
         const n = cols.length;
         style = { opacity: p >= 0.5 ? 1 : 0 };
         overlay = cols.map((c, k) => {

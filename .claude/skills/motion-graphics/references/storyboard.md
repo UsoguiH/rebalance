@@ -22,6 +22,7 @@ Durations are in **seconds**; the template converts to frames.
     "logoInvert": false,               // true if the only logo is white: rendered black on the light video
     "icon": "brand/icon-3.png",        // square app icon (optional, used in logoCloud centre)
     "colors": { "bg": "#FFFFFF", "fg": "#141414", "accent": "#D9623B", "accent2": "#F2B45A", "muted": "#7A7A74" },  // bg must be light
+    "gradient": ["#FE7B02", "#FF3B6B", "#FF66F4", "#4B73FF"], // optional: the brand's signature gradient (e.g. from its logo) → highlights, AI glow, panels, confetti, gradient backgrounds
     "font": "Inter", "displayFont": "Instrument Serif",   // run fetch_fonts.py after changing
     "rtl": false                                          // true for Arabic
   },
