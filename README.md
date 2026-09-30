@@ -8,6 +8,10 @@ raid living cartoon dungeons by night.**
 All art is drawn in code on a `<canvas>`, and all music and sound effects are
 synthesized with the Web Audio API. There are no image or audio files and no build step.
 
+## Also in this repo
+
+- [`minecraft-switch/`](minecraft-switch/): a Minecraft-style world with a GTA V-style character switch effect.
+
 ## Play
 
 Open `index.html` in a browser, or serve the folder:
