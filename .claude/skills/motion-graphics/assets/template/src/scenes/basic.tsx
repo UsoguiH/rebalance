@@ -3,6 +3,8 @@ import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { KineticText } from "../components/KineticText";
 import { Logo } from "../components/Logo";
 import { Media } from "../components/Media";
+import { CharText, Odometer, type CharStyle } from "../fx/Text";
+import { ParticleLogo, Burst } from "../fx/Particles";
 import { ease, pop, prog } from "../motion";
 import { alpha, onColor, useTheme } from "../theme";
 import type { SceneProps } from "../types";
@@ -39,7 +41,10 @@ export const KineticScene: React.FC<SceneProps> = ({ props, scene }) => {
   return (
     <Center>
       {props.eyebrow && <Eyebrow text={props.eyebrow} color={dark ? color : undefined} />}
-      <KineticText
+      {props.chars ? (
+        <CharText lines={props.lines ?? [scene.vo ?? ""]} highlight={props.highlight} style={props.chars as CharStyle}
+          size={props.size ?? (t.portrait ? 110 : 130)} delay={props.eyebrow ? 6 : 0} stagger={props.stagger ?? 1.2} />
+      ) : <KineticText
         lines={props.lines ?? [scene.vo ?? ""]}
         highlight={props.highlight}
         style={props.style ?? "rise"}
@@ -48,7 +53,7 @@ export const KineticScene: React.FC<SceneProps> = ({ props, scene }) => {
         delay={props.eyebrow ? 6 : 0}
         stagger={props.stagger}
         color={color}
-      />
+      />}
       {props.sub && (
         <div style={{ fontFamily: t.fonts.body, fontSize: 38 * t.u, color: dark ? alpha(color!, 0.7) : t.colors.muted, opacity: subP,
           transform: `translateY(${(1 - subP) * 16 * t.u}px)`, textAlign: "center", maxWidth: 1200 * t.u, direction: t.dir }}>
@@ -85,7 +90,9 @@ export const EndCardScene: React.FC<SceneProps> = ({ props, scene }) => {
   const btnBg = scene.background === "accent" ? "#fff" : t.colors.accent;
   return (
     <Center gap={36}>
-      <Logo src={props.logo} height={props.logoHeight ?? 120} onDark={onDark} />
+      {props.particles && (props.logo ?? t.logo)
+        ? <ParticleLogo src={props.logo ?? t.logo!} width={props.logoWidth ?? 440} start={0} assemble={34} invert={t.logoInvert} />
+        : <Logo src={props.logo} height={props.logoHeight ?? 120} onDark={onDark} />}
       {props.tagline && (
         <KineticText lines={[props.tagline]} size={54} weight={600} font="display" style="rise" delay={8} stagger={2}
           color={onDark ? "#fff" : t.colors.fg} />
@@ -97,6 +104,7 @@ export const EndCardScene: React.FC<SceneProps> = ({ props, scene }) => {
           boxShadow: `0 ${16 * t.u}px ${40 * t.u}px ${alpha(t.colors.accent, 0.35)}`,
         }}>{props.cta}</div>
       )}
+      {props.cta && props.burst !== false && <Burst at={26} x={t.W / 2} y={t.H * 0.62} count={60} power={0.8} />}
       {(props.url ?? t.url) && (
         <div style={{ fontFamily: t.fonts.body, fontSize: 30 * t.u, color: onDark ? "#ffffffaa" : t.colors.muted, opacity: urlP, letterSpacing: "0.02em" }}>
           {(props.url ?? t.url).replace(/^https?:\/\//, "").replace(/\/$/, "")}
@@ -139,9 +147,10 @@ export const StatScene: React.FC<SceneProps> = ({ props, scene }) => {
   const bars: number[] = props.bars ?? [];
   return (
     <Center gap={18}>
+      {props.roll ? <Odometer value={props.value ?? 100} prefix={props.prefix} suffix={props.suffix} size={props.size ?? (t.portrait ? 180 : 220)} delay={4} /> :
       <div style={{ direction: "ltr", unicodeBidi: "isolate", fontFamily: t.fonts.display, fontWeight: 800, fontSize: (props.size ?? (t.portrait ? 180 : 220)) * t.u, color: fg, letterSpacing: "-0.04em", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
         {props.prefix}{txt}<span style={{ color: dark ? fg : t.colors.accent }}>{props.suffix}</span>
-      </div>
+      </div>}
       {props.label && <KineticText lines={[props.label]} size={44} weight={500} font="body" delay={10} color={dark ? "#ffffffbb" : t.colors.muted} />}
       {bars.length > 0 && (
         <div style={{ direction: "ltr", display: "flex", alignItems: "flex-end", gap: 14 * t.u, height: 220 * t.u, marginTop: 30 * t.u }}>

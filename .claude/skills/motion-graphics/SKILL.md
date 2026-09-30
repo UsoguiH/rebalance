@@ -75,9 +75,15 @@ Read `references/craft.md` and `references/storyboard.md`. Write the script and 
 screen copy on `brand.json` content. Show the user a compact table (scene · seconds · what we see · what we
 hear) and ask for approval with AskUserQuestion. Only continue once they approve.
 
-Where the references do something the scene library can't (a signature move, a redrawn UI moment, a
-globe, a chat building up), **write a custom scene** in `src/scenes/custom/`. That is the difference between
-"template" and "studio".
+**Make the motion amazing.** Read `references/motion.md` and choreograph like a motion designer: a signature move
+roughly every 4 seconds (`heroDevice`, `promptGlow`, `explode`, `textMask`, `particleLogo`, `morph`, 3D `cards`), letter
+animations (`"chars"`) for headlines, and transitions that carry the eye (`zoomThrough`, `iris` from the click point,
+`panels`, `cube`, `whip`). Never plan a stretch of plain fades and static slides.
+
+Where the references do something the library can't (a redrawn UI moment, a globe, a chat building up,
+a before/after), **write a custom scene** in `src/scenes/custom/` with the effects in `src/fx/` (`Moving` for
+motion-blurred paths, `GlowBorder`, `Sheen`, `CharText`, `ParticleLogo`, `Burst`, `useBeat`). That is the
+difference between "template" and "studio".
 
 ### 6. Fonts, voice, music, SFX
 ```bash
@@ -136,5 +142,6 @@ Deliver:
 | `references/interview.md` | Step 1: the exact clickable questions and how answers map to settings |
 | `references/style-study.md` | Step 3: how to study references, the style-DNA template, patterns from studied launch videos |
 | `references/storyboard.md` | Step 5: `video.json` format, every scene type and prop, custom scenes, an example |
+| `references/motion.md` | Step 5 and 7: signature moves, transitions, effects library, how to judge motion |
 | `references/craft.md` | Step 5 and 7: structure, script-writing, motion, type, sound, formats, QA checklist |
 | `references/assets.md` | Any time assets, licences, keys or errors come up (blocked downloads, proxies, fonts) |

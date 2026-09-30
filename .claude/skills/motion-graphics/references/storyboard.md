@@ -37,12 +37,12 @@ Scene fields (all scenes):
 | field | meaning |
 |---|---|
 | `id` | short unique name (also the voice file name) |
-| `type` | `kinetic`, `logo`, `endCard`, `image`, `stat`, `device`, `cards`, `cursor`, `logoCloud`, `features`, `custom` |
+| `type` | `kinetic`, `logo`, `endCard`, `image`, `stat`, `device`, `cards`, `cursor`, `logoCloud`, `features`, signature: `heroDevice`, `promptGlow`, `explode`, `textMask`, `particleLogo`, `morph`, or `custom` |
 | `duration` | seconds on screen (includes the transition out) |
 | `vo` | the narration for this scene; tts.py turns it into `voice`, `voiceDuration`, `captions` |
 | `voiceDelay` | seconds before the line starts (default 0.3) |
 | `background` | always light: `brand` (light bg + soft light), `gradient` (light with moving accent blobs), `grid` (dot grid), `none`. (`dark`/`accent` are mapped to light; never plan dark scenes) |
-| `transition` | into the next scene: `{ "type": "fade"|"slide"|"zoom"|"wipe"|"whip"|"blur"|"none", "duration": 0.5, "direction": "left"|"right"|"up"|"down" }` |
+| `transition` | into the next scene: `{ "type": "fade"|"slide"|"zoom"|"wipe"|"whip"|"blur"|"iris"|"zoomThrough"|"cube"|"panels"|"none", "duration": 0.5, "direction": "left"|"right"|"up"|"down", "x": 0.5, "y": 0.5 }` |
 | `sfx` | extra sounds: `[{ "at": 1.2, "name": "pop", "volume": 0.5 }]` (whoosh, swoosh-short, click, pop, tick, riser, impact, shimmer, type) |
 | `props` | per-type settings below |
 
@@ -93,6 +93,21 @@ In 9:16 a desktop screenshot is small: keep the camera at zoom ≥ 1.6 most of t
 `logos` [] (public paths from logos.py) · `layout` orbit|grid|row · `center` (defaults to brand icon/logo) ·
 `lines` `highlight` · `tile` (px).
 
+### Signature scenes (see `motion.md` for when to use them)
+- `heroDevice`: `device` · `src` · `width` · `lines` `highlight` `sub` · `textStyle` (CharStyle) · `side` right|left|none ·
+  `from` right|left|bottom|top · `glow` (AI edge glow) · `chips` [{ text, icon?, accent?, x, y, at }] (x/y px offsets at 1080 from the device centre, at in s) ·
+  `second` { device, src, width } · `scrollFrom`/`scrollTo` · `cursor` [steps]
+- `promptGlow`: `text` · `placeholder` · `button` · `thinking` ("Generating…") · `think` (s) · `cps` · `results` [image paths → 3D fan] · `lines` · `cursor` (false to hide)
+- `explode`: `src` · `layers` (2-8) · `explodeAt` (s) · `holdFor` (s) · `labels` [one per layer] · `lines` `highlight` · `aspect`
+- `textMask`: `text` · `src` (photo/screenshot inside the letters) · `dive` (zoom through into the full image) · `size` · `weight` (use `"drift": false` on this scene)
+- `particleLogo`: `logo` · `width` · `step` (particle spacing, default 6) · `assemble` (frames) · `tagline` · `textStyle` · `burst` · `invert`
+- `morph`: `label` · `src` · `clickAt` (s) · `fullAt` (s)
+
+Upgrades: `kinetic.props.chars` = flip3d|rise|blurIn|scramble|slam|cascade|shine · `stat.props.roll` = true ·
+`endCard.props.particles` = true (+ `logoWidth`) · `endCard.props.burst` = false to disable confetti.
+Transitions also accept `iris` / `zoomThrough` (with `x`, `y` 0-1), `cube`, `panels` (`colors` optional).
+Scene field `drift: false` disables the automatic slow push-in.
+
 ### `features`: 2-4 feature tiles
 `lines` · `items` [{ title, text, image?, icon? }] · `stagger`.
 
@@ -141,15 +156,17 @@ Helpers you can import: `motion.ts` (`ease`, `prog`, `pop`, `keyframes`, `rand`,
 `theme.tsx` (`useTheme`, `alpha`, `onColor`). Remotion basics: everything is a function of `frame`;
 never use CSS transitions/animations or `Math.random()` (use `rand(seed)`); use `<Img>`/`staticFile()` for files.
 
-## 5. Example: 30 s SaaS launch (landscape)
+## 5. Example: ~35 s launch with signature motion (landscape, light)
 
-| # | type | s | picture | voice |
-|---|---|---|---|---|
-| 1 | kinetic (blur, eyebrow "Introducing") | 2.5 | "Plan less. **Ship** more." | "Product teams move fast." |
-| 2 | cursor (browser, zoom to button, click, callout) | 5 | real hero screenshot | "Acme turns every idea into shipped work." |
-| 3 | device macbook + side text, scroll full page | 4 | "One system. **Every** team." | "Planning, building and review, in one place." |
-| 4 | device iphone, spin in, side left | 3.5 | "Anywhere you work." | "In your pocket, too." |
-| 5 | cards helix, section screenshots | 3.5 | "Built for **agents**" | "With AI agents built in." |
-| 6 | logoCloud orbit, real integration logos | 3.5 | "Works with your **stack**" | "Works with the tools you already use." |
-| 7 | stat 25,000+ with bars | 3 | "teams build with Acme" | "Trusted by thousands of teams." |
-| 8 | endCard | 3.5 | logo, tagline, CTA, URL | "Acme. Start building today." |
+| # | type (move) | s | picture | voice | transition out |
+|---|---|---|---|---|---|
+| 1 | kinetic `chars: flip3d` | 2.8 | "Think fast, **build faster.**" letters swing up in 3D | "Think fast. Build faster." | zoomThrough (0.5, 0.55) |
+| 2 | promptGlow | 5 | AI-glow prompt types, Send, "designing…", 3 result screens burst into a fan | "Describe what you want, and watch it come to life." | panels left |
+| 3 | heroDevice macbook, chips | 4.4 | laptop flies in from the right, sheen, chips "PR ready" / "Tests passing" | "Hand it a bug fix, a test, or a whole migration." | cube left |
+| 4 | explode, 5 labelled layers | 4.6 | overview page splits into floating layers | "Chats, projects and your tools, together." | whip left |
+| 5 | heroDevice iphone, glow, from bottom | 3.9 | phone rises with AI glow, scrolling real mobile site | "On desktop, in the browser, on your phone." | zoom |
+| 6 | textMask, dive | 3 | brand name filled with a photo, dives into it | (music moment) | fade |
+| 7 | cards helix | 3.9 | real screens orbit with depth of field | "Built for every team." | panels right |
+| 8 | logoCloud orbit | 3.5 | real integration logos around the app icon | "Connected to the apps you already use." | iris (0.5, 0.55) |
+| 9 | morph | 3 | "Try it" button → card → full product page | "Start in one click." | blur |
+| 10 | endCard `particles` | 4 | logo assembles from particles, confetti on the CTA | "Try it today." | end |

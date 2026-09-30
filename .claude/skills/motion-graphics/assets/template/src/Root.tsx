@@ -20,8 +20,8 @@ export const Root: React.FC = () => {
   return (
     <>
       {FORMATS.map((f) => (
+        <React.Fragment key={f.id}>
         <Composition
-          key={f.id}
           id={f.id}
           component={Launch}
           fps={fps}
@@ -31,6 +31,7 @@ export const Root: React.FC = () => {
           defaultProps={{ spec }}
           calculateMetadata={({ props }) => ({ durationInFrames: timeline(props.spec as VideoSpec, fps).total })}
         />
+        </React.Fragment>
       ))}
     </>
   );

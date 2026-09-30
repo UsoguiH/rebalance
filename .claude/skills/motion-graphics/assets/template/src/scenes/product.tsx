@@ -120,11 +120,16 @@ export const CardsScene: React.FC<SceneProps> = ({ props, durationInFrames }) =>
       op = appear;
     }
     const isFocus = props.focus === i;
+    // depth of field: cards far from the focal plane go soft, like a real lens
+    const zMatch = tf.match(/translate3d\([^,]+,[^,]+,\s*(-?[\d.]+)px/);
+    const zz = zMatch ? Number(zMatch[1]) : 0;
+    const dof = layout === "grid" ? 0 : Math.min(10, Math.abs(zz) / (220 * t.u)) * t.u;
     const style: React.CSSProperties = {
       position: "absolute", left: "50%", top: "50%", marginLeft: (-cw / 2) * t.u, marginTop: (-cw / 1.6 / 2) * t.u,
       transform: isFocus && focusP > 0 ? `translate3d(0,0,${lerp(0, 700, focusP) * t.u}px)` : tf,
       opacity: isFocus ? 1 : op * (1 - focusP * 0.6), zIndex: isFocus ? 10 : 1, transformStyle: "preserve-3d",
       backfaceVisibility: "hidden", // cards turned away from camera would read mirrored
+      filter: !isFocus && dof > 0.6 ? `blur(${dof}px)` : undefined,
     };
     cards.push(<div key={i} style={style}><Card src={img} width={cw} glow={isFocus && focusP > 0.5} /></div>);
   });

@@ -96,6 +96,7 @@ def finish(project, path, meta, known_bpm=None):
         spec.setdefault("audio", {})
         spec["audio"]["music"] = out["file"]
         spec["audio"]["musicTrimBefore"] = trim
+        spec["audio"]["beats"] = [round(b + trim, 3) for b in out["beats"][:600]]  # absolute track times; Launch subtracts the trim
         write_json(sp, spec)
     cp = os.path.join(project, "credits.json")
     credits = json.load(open(cp)) if os.path.exists(cp) else []

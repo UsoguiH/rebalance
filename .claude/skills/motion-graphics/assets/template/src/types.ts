@@ -4,9 +4,12 @@ export type Cue = { text: string; start: number; end: number }; // seconds, rela
 export type Sfx = { at: number; name: string; volume?: number }; // at = seconds from scene start
 
 export type TransitionSpec = {
-  type: "fade" | "slide" | "zoom" | "wipe" | "whip" | "blur" | "none";
+  type: "fade" | "slide" | "zoom" | "wipe" | "whip" | "blur" | "iris" | "zoomThrough" | "cube" | "panels" | "none";
   duration?: number; // seconds, default 0.5
   direction?: "left" | "right" | "up" | "down";
+  x?: number; // 0-1 focus point for iris / zoomThrough (e.g. where the cursor clicked)
+  y?: number;
+  colors?: string[]; // panels: colours of the sweeping panels
 };
 
 export type Scene = {
@@ -21,6 +24,7 @@ export type Scene = {
   background?: "brand" | "gradient" | "grid" | "none"; // always light ("dark"/"accent" are mapped to light)
   transition?: TransitionSpec; // transition INTO the next scene
   sfx?: Sfx[];
+  drift?: boolean; // slow camera push-in over the scene (default true): no frame is ever fully static
   component?: string; // for type "custom"
   props?: Record<string, any>;
 };
@@ -47,6 +51,7 @@ export type VideoSpec = {
     duckTo?: number; // music level while the voice speaks, default 0.22
     musicTrimBefore?: number; // seconds to skip at the start of the track
     fadeOut?: number; // seconds, default 1.5
+    beats?: number[]; // beat times in seconds (music.py writes them); drives useBeat()
   };
   captions?: boolean;
   autoWhoosh?: boolean; // add a whoosh on every transition (default true if sfx files exist)

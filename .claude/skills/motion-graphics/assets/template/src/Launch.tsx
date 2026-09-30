@@ -7,6 +7,9 @@ import { ease } from "./motion";
 import { resolveScene } from "./scenes";
 import { ThemeProvider, useTheme } from "./theme";
 import { presentation } from "./transitions";
+import { BeatCtx } from "./fx/beat";
+import { prog } from "./motion";
+import { useCurrentFrame } from "remotion";
 import type { Scene, VideoSpec } from "./types";
 
 /** Frame math shared by the renderer and calculateMetadata. */
@@ -29,12 +32,18 @@ const LIGHT: Record<string, NonNullable<Scene["background"]>> = { dark: "brand",
 
 const SceneView: React.FC<{ scene: Scene; durationInFrames: number }> = ({ scene: raw, durationInFrames }) => {
   const t = useTheme();
+  const frame = useCurrentFrame();
+  const push = raw.drift === false ? 1 : 1 + 0.035 * prog(frame, 0, durationInFrames, (x) => x);
   const scene = { ...raw, background: LIGHT[raw.background ?? "brand"] ?? raw.background ?? "brand" };
   const Comp = resolveScene(scene.type, scene.component);
   return (
     <AbsoluteFill style={{ direction: t.dir }}>
       <Background variant={scene.background ?? "brand"} />
-      {Comp ? <Comp scene={scene} props={scene.props ?? {}} durationInFrames={durationInFrames} /> : (
+      {Comp ? (
+        <AbsoluteFill style={{ transform: `scale(${push})` }}>
+          <Comp scene={scene} props={scene.props ?? {}} durationInFrames={durationInFrames} />
+        </AbsoluteFill>
+      ) : (
         <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", color: "red", fontSize: 40 }}>Unknown scene type: {scene.type} {scene.component}</AbsoluteFill>
       )}
     </AbsoluteFill>
@@ -75,7 +84,9 @@ export const Launch: React.FC<{ spec: VideoSpec }> = ({ spec }) => {
           {spec.scenes.flatMap((scene, i) => {
             const nodes = [
               <TransitionSeries.Sequence key={`s${i}`} durationInFrames={durs[i]}>
-                <SceneView scene={scene} durationInFrames={durs[i]} />
+                <BeatCtx.Provider value={{ beats: (spec.audio?.beats ?? []).map((b) => b - (spec.audio?.musicTrimBefore ?? 0)), sceneStart: starts[i] / fps }}>
+                  <SceneView scene={scene} durationInFrames={durs[i]} />
+                </BeatCtx.Provider>
               </TransitionSeries.Sequence>,
             ];
             if (trans[i] > 0) {

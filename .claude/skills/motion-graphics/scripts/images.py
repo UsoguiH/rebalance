@@ -60,10 +60,8 @@ def openverse(q, n, orient):
     if not r.ok:
         return []
     out = []
-    for p in r.json().get("results", []):
-        w, h = p.get("width") or 0, p.get("height") or 0
-        if w and w < 1400:
-            continue
+    for p in sorted(r.json().get("results", []), key=lambda x: -(x.get("width") or 0)):
+        w, h = p.get("width") or 0, p.get("height") or 0  # reported sizes are often thumbnails; real size is checked after download
         lic = f"CC {p['license'].upper()} {p.get('license_version', '')}".strip() if p["license"] not in ("cc0", "pdm") else p["license"].upper()
         out.append({"url": p["url"], "w": w, "h": h, "credit": f"\"{p.get('title') or 'Untitled'}\" by {p.get('creator') or 'unknown'} ({lic})",
                     "source": p.get("foreign_landing_url") or p["url"], "license": lic, "license_url": p.get("license_url")})
