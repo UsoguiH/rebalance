@@ -1,0 +1,30 @@
+{
+  "meta": { "title": "Sample launch", "fps": 30, "width": 1920, "height": 1080 },
+  "brand": {
+    "name": "Acme",
+    "url": "https://acme.example",
+    "colors": { "bg": "#F4F2EC", "fg": "#141414", "accent": "#D9623B", "accent2": "#F2B45A", "muted": "#7A7A74", "dark": "#101114" },
+    "font": "Inter",
+    "displayFont": "Inter",
+    "rtl": false
+  },
+  "audio": { "musicVolume": 0.55, "duckTo": 0.22 },
+  "captions": false,
+  "autoWhoosh": false,
+  "scenes": [
+    { "id": "hook", "type": "kinetic", "duration": 2.6, "background": "brand",
+      "props": { "eyebrow": "Introducing", "lines": ["Work at the", "speed of thought"], "highlight": ["speed"] },
+      "transition": { "type": "zoom", "duration": 0.5 } },
+    { "id": "stat", "type": "stat", "duration": 2.8, "background": "dark",
+      "props": { "value": 3200, "suffix": "+", "label": "teams shipped faster", "bars": [0.2, 0.35, 0.5, 0.7, 1] },
+      "transition": { "type": "slide", "direction": "left", "duration": 0.5 } },
+    { "id": "features", "type": "features", "duration": 3.4, "background": "grid",
+      "props": { "lines": ["Everything in one place"], "highlight": ["one"],
+        "items": [ { "title": "Plan", "text": "Turn ideas into tasks in seconds." },
+                   { "title": "Build", "text": "Ship with your whole team in sync." },
+                   { "title": "Launch", "text": "Go live and measure what matters." } ] },
+      "transition": { "type": "blur", "duration": 0.5 } },
+    { "id": "end", "type": "endCard", "duration": 3.0, "background": "brand",
+      "props": { "tagline": "Built for what's next.", "cta": "Try it free" } }
+  ]
+}
