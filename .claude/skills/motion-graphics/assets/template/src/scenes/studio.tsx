@@ -119,15 +119,17 @@ export const WordSwapScene: React.FC<SceneProps> = ({ props }) => {
   const local = frame - idx * each;
   const roll = idx === 0 ? pop(frame, fps, 0, { damping: 16 }) : prog(local, 0, 9, ease.out);
   const size = (props.size ?? (t.portrait ? 96 : 110)) * t.u;
-  const estW = (w: string) => w.length * 0.56 * size; // width estimate for smooth re-centring
+  const estW = (w: string) => (w.length * 0.62 + 0.25) * size; // generous width estimate for smooth re-centring
   const prevW = estW(words[Math.max(0, idx - 1)]);
   const curW = estW(words[idx]);
   const wordW = idx === 0 ? curW : lerp(prevW, curW, ease.inOut(Math.min(1, local / 10)));
   const last = idx === words.length - 1;
   const grad = (t.gradient ?? [t.colors.accent, t.colors.accent2 ?? t.colors.accent]).join(", ");
   const u = t.u;
+  const bloom = props.bloomAt !== undefined ? prog(frame, props.bloomAt * fps, 4, ease.in) : 0;
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      {bloom > 0 && <AbsoluteFill style={{ pointerEvents: "none", zIndex: 9, boxShadow: `inset 0 0 ${260 * u * bloom}px ${120 * u * bloom}px ${alpha(t.colors.accent, 0.75 * bloom)}` }} />}
       {props.phone && (
         <div style={{ position: "absolute", width: 520 * u, height: 1000 * u, borderRadius: 80 * u, border: `${6 * u}px solid ${alpha(t.colors.fg, 0.12)}`,
           top: "50%", left: "50%", transform: `translate(-50%, -42%)`, overflow: "hidden" }}>
@@ -238,7 +240,7 @@ export const FrameToLogoScene: React.FC<SceneProps> = ({ props }) => {
   const bg = props.color ?? `linear-gradient(135deg, ${grad})`;
   const straighten = prog(frame, 2, 12, ease.out);
   const shrinkAt = (props.shrinkAt ?? 0.75) * fps;
-  const s = prog(frame, shrinkAt, 16, ease.inOut);
+  const s = prog(frame, shrinkAt, (props.shrinkDur ?? 0.5) * fps, (x) => x * x * x); // accelerates like the film
   const toIcon = prog(frame, (props.iconAt ?? 1.35) * fps, 10, ease.inOut);
   const tile = Math.min(t.W, t.H) * 0.42;
   const w = lerp(t.W, tile, s) * (1 - toIcon * 0.35);
@@ -386,11 +388,13 @@ export const NotifyCycleScene: React.FC<SceneProps> = ({ props }) => {
   const ic = pop(local, fps, 3, { damping: 10, stiffness: 200 });
   const tint = it.tint ?? alpha(t.colors.accent, 0.08);
   const enter = pop(frame, fps, 0, { damping: 18, stiffness: 90 });
-  const PW = 560 * u;
+  const PW = (props.phoneWidth ?? (t.portrait ? 0.52 : 0.24)) * t.W;
+  const k = PW / (560 * u); // scale the phone's insides with its width
   return (
-    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", background: tint }}>
-      <div style={{ position: "relative", width: PW, height: PW * 2, borderRadius: 90 * u, border: `${10 * u}px solid ${t.colors.fg}`, background: "#fff",
-        transform: `translateY(${(1 - enter) * 60 + 18}%)`, overflow: "visible" }}>
+    <AbsoluteFill style={{ alignItems: "center", background: tint }}>
+      <div style={{ position: "absolute", top: t.H * (props.phoneTop ?? 0.1), width: PW, height: PW * 2.05, borderRadius: 90 * u * k, border: `${10 * u * k}px solid ${t.colors.fg}`, background: "#fff",
+        transform: `translateY(${(1 - enter) * 30}%) scale(${1})`, transformOrigin: "top center", overflow: "visible", zoom: 1 }}>
+        <div style={{ position: "absolute", inset: 0, transform: `scale(${k})`, transformOrigin: "top left", width: 560 * u, height: 1148 * u }}>
         <div style={{ position: "absolute", top: 26 * u, left: "50%", width: 150 * u, height: 40 * u, marginLeft: -75 * u, borderRadius: 99, background: t.colors.fg }} />
         {[0, 1].map((k) => <div key={k} style={{ position: "absolute", left: 40 * u, right: 40 * u, top: (360 + k * 110) * u, height: 80 * u, borderRadius: 24 * u, background: alpha(t.colors.fg, 0.06) }} />)}
         <div style={{ position: "absolute", left: 40 * u, right: 40 * u, top: 600 * u, display: "flex", gap: 24 * u }}>
@@ -409,6 +413,7 @@ export const NotifyCycleScene: React.FC<SceneProps> = ({ props }) => {
               <Img src={file(it.icon)} style={{ width: "66%", height: "66%", objectFit: "contain" }} />
             </div>
           )}
+        </div>
         </div>
       </div>
     </AbsoluteFill>

@@ -106,3 +106,25 @@ videos held each idea for 4-6 s with soft transitions, which is why they felt sl
 4. Keep voice lines short (2-6 words); the typography carries the message, so turn captions off.
 5. Choose music by *feel*: compare candidates to the reference soundtrack (tempo, brightness, density,
    dynamics) and start the track at its most energetic 30 s, aligned to a beat.
+
+## Shot-for-shot remakes (frame-accurate)
+
+When the user wants "exactly like this video", don't reinterpret: rebuild its timeline.
+1. Make 10 fps timeline sheets of the reference (every 0.1 s) and write down each event's time.
+2. One scene per shot, `"transition": {"type": "none"}`, `"drift": false`, durations = measured shot lengths.
+3. Put every internal event time into props (line reveals, swaps, reveal/typing starts, shrink times).
+4. Render your frames at the same timestamps and put them side by side with the reference
+   (reference | remake). Match scale and position, not just timing: logo size, text size, phone size and crop.
+5. Keep the house rule: dark shots become light (same layout, light background, brand-colour bloom).
+
+Frame-accurate scenes (`src/scenes/remake.tsx`): `feedPile` (lines, lineAt, cards, ticker, full-bleed brand colour),
+`lockupRow` (symbol starts big via `markScale`, wordmark slides out at `revealAt`, optional `suffix` typed,
+`bloomIn`), `typeWall` (line typing from `startChars` at `cps`, shrinks at `shrinkAt` to `shrinkTo`, rows fly in at
+`rowsAt`), `statement` (bold line, slants italic at `skewAt`). Also `wordSwap.bloomAt`, `notifyCycle.phoneWidth/phoneTop`,
+`frameToLogo.shrinkDur` (accelerating shrink).
+
+The Dexatel film as a timeline (seconds): 0 feed (3 lines, last rises 0.7-1.0) · 3.0 swap 1 · 4.0 swap 2 · 5.0 swap 3 ·
+5.8 edge bloom · 5.9 cut to symbol (big) · 6.7 wordmark reveal 0.2 s · 7.4 suffix types · 8.7 cut to typing line ·
+9.3 line shrinks · 10.2 rows fly in · 11.6/12.2/12.8/13.4 phone notifications (tint changes) · 14.4 statement ·
+15.6 statement slants · 15.8 full-bleed italic word · 16.1 upright · 16.6-17.15 frame shrinks (accelerating) ·
+17.2 cut to symbol · 18.0 wordmark reveal.

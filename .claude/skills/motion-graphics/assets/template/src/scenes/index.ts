@@ -4,6 +4,7 @@ import { EndCardScene, ImageScene, KineticScene, LogoScene, StatScene } from "./
 import { CardsScene, CursorScene, DeviceScene, FeaturesScene, LogoCloudScene } from "./product";
 import { custom } from "./custom";
 import { ClickButtonScene, CollageScene, FeedScene, FrameToLogoScene, LockupScene, MarqueeScene, NotifyCycleScene, ResizeScene, TagsDropScene, VortexScene, WarpTextScene, WaveformScene, WordSwapScene } from "./studio";
+import { FeedPileScene, LockupRowScene, StatementScene, TypeWallScene } from "./remake";
 import { ExplodeScene, HeroDeviceScene, MorphScene, ParticleLogoScene, PromptGlowScene, TextMaskScene } from "./signature";
 
 // scene.type -> component. Bespoke scenes live in ./custom and are used with type "custom".
@@ -39,6 +40,11 @@ export const SCENES: Record<string, React.FC<SceneProps>> = {
   tagsDrop: TagsDropScene,
   waveform: WaveformScene,
   clickButton: ClickButtonScene,
+  // frame-accurate remake moves
+  feedPile: FeedPileScene,
+  lockupRow: LockupRowScene,
+  typeWall: TypeWallScene,
+  statement: StatementScene,
 };
 
 export const resolveScene = (type: string, component?: string): React.FC<SceneProps> | undefined =>
