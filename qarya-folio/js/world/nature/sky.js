@@ -11,11 +11,12 @@ export function createSky(ctx) {
   // Light: a lower, warmer afternoon sun from the south-west. Shadows fall
   // north-east, away from the camera, so they stay readable.
   sunOffset.set(-40, 47, 30);
-  sun.color.set('#ffe4b8');
-  sun.intensity = 2.25;
-  hemi.color.set('#ffeed4');
-  hemi.groundColor.set('#cf9560');
-  hemi.intensity = 1.3;
+  // Sunny: a strong warm sun, and a cooler sky fill so shadows read blue-violet.
+  sun.color.set('#ffe0a6');
+  sun.intensity = 2.9;
+  hemi.color.set('#dfe6ff');
+  hemi.groundColor.set('#d39a62');
+  hemi.intensity = 1.12;
 
   const horizon = new THREE.Color(P.skyHorizon);
   const haze = new THREE.Color('#f2d3a2');
@@ -69,6 +70,8 @@ export function createSky(ctx) {
   dome.renderOrder = -1000;
   dome.frustumCulled = false;
   dome.name = 'sky';
+  dome.renderOrder = -20; // behind the start sandstorm, which fades out over it
+  dome.frustumCulled = false;
   scene.add(dome);
 
   // Clouds: one faceted cloud shape, instanced with stretched scales.
@@ -93,6 +96,7 @@ export function createSky(ctx) {
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sv = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
 
   return {
+    dome,
     update(dt, t, wind) {
       const cam = ctx.camera;
       if (cam) dome.position.copy(cam.position);

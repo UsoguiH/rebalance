@@ -291,6 +291,8 @@ export function createNature(ctx) {
   }
 
   return {
+    sky,
+    dust,
     update(dt, t) {
       if (!settled) settle();
 

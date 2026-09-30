@@ -37,8 +37,6 @@ export function createVillage(ctx) {
   // [x, z, rotY, spec, chunk]
   const HOUSES = [
     [-9, 7.5, Math.PI / 2, { w: 5, d: 6, floors: 2, style: 'tri', seed: 1 }, 'west'],
-    // Kept low (no rooftop room): it sits between the camera and the souq.
-    [-16.5, 6.5, Math.PI, { w: 5, d: 5, floors: 1, style: 'step', seed: 2 }, 'west'],
     [-31, -7, Math.PI / 2, { w: 7, d: 5, floors: 2, style: 'step', seed: 3 }, 'west'],
     [-30, 6, Math.PI / 2, { w: 5, d: 5, floors: 1, style: 'tri', seed: 4, upper: { w: 2.4, d: 2.6, x: -0.8, z: 0.8 } }, 'west'],
     [-12, -20, 0, { w: 7, d: 5, floors: 2, style: 'step', seed: 5, doorX: 1.2 }, 'north'],

@@ -69,17 +69,37 @@ export function createUI(ctx) {
     if (k >= 1 && !loaded) showStart();
   }
 
+  // Once loaded, the title screen lifts away by itself and shows the start
+  // island in its sandstorm, with a hand-drawn «اضغط للبدء» beside it.
+  const startHint = document.createElement('div');
+  startHint.className = 'start-hint';
+  startHint.setAttribute('role', 'button');
+  startHint.setAttribute('tabindex', '0');
+  startHint.setAttribute('aria-label', 'اضغط للبدء');
+  startHint.innerHTML = `
+    <svg class="sh-arrow" viewBox="0 0 140 70" aria-hidden="true"><path d="M130 14C100 2 56 6 24 42"/><path d="M24 42L29 22M24 42L44 38"/></svg>
+    <span class="sh-txt">اضغط للبدء</span>
+    <svg class="sh-spk" viewBox="0 0 40 32" aria-hidden="true"><path d="M4 12L11 12L19 5L19 27L11 20L4 20Z"/><path d="M25 11C28 14 28 18 25 21M30 7C35 12 35 20 30 25"/></svg>`;
+  startHint.hidden = true;
+  root.appendChild(startHint);
+
   function showStart() {
     loaded = true;
     if (!loader) { begin(); return; }
     loader.setAttribute('aria-busy', 'false');
-    loader.classList.add('ready');
-    if (startBtn) {
-      startBtn.hidden = false;
-      setTimeout(() => startBtn.focus({ preventScroll: true }), 50);
-    }
-    loader.addEventListener('click', begin);
+    loader.classList.add('ready', 'leaving');
+    setTimeout(() => loader.remove(), reduceMotion ? 350 : 1700);
+    setTimeout(() => {
+      if (started) return;
+      startHint.hidden = false;
+      requestAnimationFrame(() => startHint.classList.add('on'));
+    }, reduceMotion ? 200 : 1100);
+    addEventListener('pointerdown', onStartPointer, true);
     addEventListener('keydown', onStartKey);
+  }
+  function onStartPointer(e) {
+    if (e.target.closest?.('.hud, .sheet-layer')) return;
+    begin();
   }
   function onStartKey(e) {
     if (e.code === 'Enter' || e.code === 'Space' || e.code === 'NumpadEnter') { e.preventDefault(); begin(); }
@@ -89,14 +109,40 @@ export function createUI(ctx) {
     if (started || !loaded) return;
     started = true;
     removeEventListener('keydown', onStartKey);
+    removeEventListener('pointerdown', onStartPointer, true);
     events.emit('ui:click');
     resolveReady();
-    startBtn?.blur();
-    if (loader) {
-      loader.classList.add('leaving');
-      setTimeout(() => loader.remove(), reduceMotion ? 350 : 1600);
+    startHint.classList.remove('on');
+    startHint.classList.add('gone');
+    setTimeout(() => startHint.remove(), 600);
+    loader?.remove();
+    // The HUD slides in once the island has grown into the world.
+    setTimeout(showHUD, reduceMotion ? 100 : 2600);
+  }
+
+  // Keep the hint beside the island's right edge, whatever the screen size.
+  const hintV = { x: 0, y: 0, z: 0 };
+  function placeStartHint() {
+    const cam = ctx.camera;
+    if (!cam || startHint.hidden || !cam.isCamera) return;
+    const { spawn } = ctx.LAYOUT;
+    const gy = ctx.heightAt(spawn.x, spawn.z);
+    const proj = (x, z) => {
+      const v = cam.position.clone().set(x, gy + 1, z).project(cam);
+      return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight };
+    };
+    const w = startHint.offsetWidth || 180, h = startHint.offsetHeight || 80;
+    const side = proj(spawn.x + 7.4, spawn.z - 1.5);
+    // Beside the island's right edge when there's room, otherwise above it.
+    if (side.x + w < innerWidth - 8) {
+      startHint.classList.remove('above');
+      startHint.style.transform = `translate(${side.x + 6}px, ${Math.max(60, side.y - 70)}px)`;
+    } else {
+      const top = proj(spawn.x, spawn.z - 8.2);
+      startHint.classList.add('above');
+      const x = Math.min(innerWidth - w - 8, Math.max(8, top.x - w / 2));
+      startHint.style.transform = `translate(${x}px, ${Math.max(16, top.y - h - 6)}px)`;
     }
-    setTimeout(showHUD, reduceMotion ? 100 : 650);
   }
 
   // ──────────────────────────────── HUD ────────────────────────────────
@@ -487,6 +533,7 @@ export function createUI(ctx) {
       Object.assign(ctx, c === ctx ? {} : c);
     },
     update(dt, t) {
+      if (!started) placeStartHint();
       if (!attached || !ctx.player) return;
       if (sheet.open && ctx.input) ctx.input.enabled = false;
       map.update(ctx.player, t);

@@ -49,11 +49,11 @@ export function createCamera(ctx) {
     want.y += 1.2;
     target.lerp(want, Math.min(1, dt * 4));
 
-    // Intro: start high above the village and glide down.
+    // Intro: a little further back, framing the start island, then easing in
+    // while the island grows into the world.
     const introK = rig.intro * rig.intro * (3 - 2 * rig.intro);
-    const dist = rig.distance * rig.zoom * (1 + speedK * 0.12) + introK * 60;
+    const dist = rig.distance * rig.zoom * (1 + speedK * 0.12) + introK * (portrait() ? 17 : 7);
     const pos = target.clone().addScaledVector(dir, dist);
-    pos.x += introK * -25;
     camera.position.lerp(pos, Math.min(1, dt * 5));
     if (rig.shake > 0) {
       camera.position.x += (Math.random() - 0.5) * rig.shake;

@@ -15,7 +15,7 @@ page.on('pageerror', (e) => logs.push('pageerror: ' + e.message));
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.type() + ': ' + m.text()); });
 await page.goto(url, { timeout: 60000 });
 await page.waitForFunction(() => window.__qaryaReady || document.querySelector('#load-bar')?.style.width === '100%', null, { timeout: 120000 }).catch(() => logs.push('timeout waiting for load'));
-await page.waitForTimeout(800);
+await page.waitForTimeout(+(process.env.SETTLE || 800));
 for (const step of script.split('|').filter(Boolean)) {
   const [cmd, ...rest] = step.split(':');
   const arg = rest.join(':');

@@ -232,12 +232,14 @@ export function createAmbience(kit, dest, reverb, ctx, panFor) {
 
     if (doParams) {
       const T = 0.15;
-      const wind = (0.1 + 0.3 * Math.pow(gust, 1.6)) * exposure;
+      // The start sandstorm (ctx.reveal.storm 1 → 0) howls over everything.
+      const storm = ctx.reveal ? ctx.reveal.storm : 0;
+      const wind = (0.1 + 0.3 * Math.pow(gust, 1.6)) * exposure + storm * 0.45;
       stats.wind = wind;
       windGain.gain.setTargetAtTime(wind, now, T);
-      windBp.frequency.setTargetAtTime(280 + 750 * gust, now, T);
-      rumbleGain.gain.setTargetAtTime((0.05 + 0.12 * gust) * exposure, now, T);
-      whistleGain.gain.setTargetAtTime(Math.max(0, gust - 0.5) * 2.2 * exposure, now, 0.3);
+      windBp.frequency.setTargetAtTime(280 + 750 * gust + storm * 500, now, T);
+      rumbleGain.gain.setTargetAtTime((0.05 + 0.12 * gust) * exposure + storm * 0.22, now, T);
+      whistleGain.gain.setTargetAtTime(Math.max(0, gust - 0.5) * 2.2 * exposure + storm * 0.5, now, 0.3);
       whistleBp.frequency.setTargetAtTime(950 + 700 * noise1(t * 0.05 + 11), now, 0.3);
       if (windPan.pan) windPan.pan.setTargetAtTime((noise1(t * 0.06 + 3) - 0.5) * 1.2, now, 0.4);
 

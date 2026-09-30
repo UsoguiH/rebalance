@@ -9,6 +9,8 @@ import { createCamera } from './core/camera.js';
 import { createZones } from './core/zones.js';
 import { createEvents } from './core/events.js';
 import { Builder, mat } from './core/builder.js';
+import { applyReveal, createRevealController, reveal } from './core/reveal.js';
+import { createPostFX } from './core/postfx.js';
 import * as content from './content.js';
 
 import { createCamel } from './camel/camel.js';
@@ -16,6 +18,9 @@ import { createVillage } from './world/village.js';
 import { createNature } from './world/nature.js';
 import { createUI } from './ui/ui.js';
 import { createAudio } from './audio/audio.js';
+import { createStorm } from './world/storm.js';
+import { createPads } from './world/pads.js';
+import { createCamp } from './world/camp.js';
 
 const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 const mobile = touch && Math.min(screen.width, screen.height) < 900;
@@ -64,7 +69,8 @@ async function main() {
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(P.sun, 2.1);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(mobile ? 1024 : 2048, mobile ? 1024 : 2048);
+  sun.shadow.mapSize.set(mobile ? 1536 : 2048, mobile ? 1536 : 2048);
+  sun.shadow.radius = 2.5;
   const sc = sun.shadow.camera;
   sc.left = -38; sc.right = 38; sc.top = 38; sc.bottom = -38; sc.near = 1; sc.far = 160;
   sun.shadow.bias = -0.0006;
@@ -88,6 +94,16 @@ async function main() {
   ui.setProgress(0.65);
   await nextFrame();
 
+  const camp = createCamp(ctx);
+  const pads = createPads(ctx);
+
+  // The start island: everything is clipped to a circle around the spawn
+  // point, inside a sandstorm, until the visitor starts.
+  const revealCtl = createRevealController(ctx);
+  revealCtl.setCenter(LAYOUT.spawn.x, LAYOUT.spawn.z);
+  ctx.reveal = revealCtl;
+  const storm = createStorm(ctx);
+
   const player = createPlayer(ctx);
   const camel = createCamel(ctx);
   scene.add(camel.group);
@@ -99,6 +115,24 @@ async function main() {
   ctx.camera = rig.camera;
   ctx.rig = rig;
   rig.snap(player.position.set(LAYOUT.spawn.x, heightAt(LAYOUT.spawn.x, LAYOUT.spawn.z), LAYOUT.spawn.z));
+
+  applyReveal(scene);
+  // Hand-written shaders the clip can't patch (water, dust, ripples, bugs…)
+  // simply wait until the growing circle reaches them.
+  const late = [];
+  scene.traverse((o) => {
+    if (o.userData.noReveal || !o.material || o === nature.sky?.dome) return;
+    const m = Array.isArray(o.material) ? o.material[0] : o.material;
+    if (!m?.isMaterial || m.userData.revealPatched || o.isSprite) return;
+    o.geometry?.computeBoundingSphere?.();
+    const bs = o.geometry?.boundingSphere;
+    const p = bs ? bs.center.clone().applyMatrix4(o.matrixWorld) : o.getWorldPosition(new THREE.Vector3());
+    const r = bs && bs.radius < 60 ? bs.radius * 0.5 : 0;
+    late.push({ o, x: p.x, z: p.z, r, follow: bs ? bs.radius >= 60 : true });
+    o.visible = false;
+  });
+
+  const postfx = createPostFX(renderer, { mobile });
 
   const zones = createZones(ctx);
   const audio = createAudio(ctx);
@@ -119,6 +153,7 @@ async function main() {
   addEventListener('resize', () => {
     renderer.setSize(innerWidth, innerHeight);
     rig.resize();
+    postfx.resize();
   });
 
   // Main loop.
@@ -130,7 +165,15 @@ async function main() {
     const dt = Math.min(timer.getDelta(), 1 / 20);
     t += dt;
     input.update();
-    if (started) rig.intro = Math.max(0, rig.intro - dt * 0.45);
+    revealCtl.update(dt);
+    rig.intro = started ? Math.max(0, 1 - revealCtl.progress * 1.15) : 1;
+    if (late.length) {
+      const c = reveal.center.value, r = reveal.radius.value;
+      for (let i = late.length - 1; i >= 0; i--) {
+        const l = late[i];
+        if (revealCtl.done || (!l.follow && Math.hypot(l.x - c.x, l.z - c.y) - l.r < r)) { l.o.visible = true; late.splice(i, 1); }
+      }
+    }
     if (input.take('grunt')) events.emit('camel:grunt');
     player.update(dt, t);
     physics.step(dt);
@@ -139,11 +182,13 @@ async function main() {
     sun.position.copy(rig.target).add(sunOffset);
     sun.target.position.copy(rig.target);
     for (const fn of ctx.updaters) fn(dt, t);
+    storm.update(dt, t, revealCtl.storm);
+    pads.update(dt, t);
     nature.update?.(dt, t);
     village.update?.(dt, t);
     audio.update?.(dt, t);
     ui.update?.(dt, t);
-    renderer.render(scene, rig.camera);
+    postfx.render(scene, rig.camera, t);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -152,8 +197,9 @@ async function main() {
   await ui.ready();
   audio.unlock?.();
   started = true;
+  revealCtl.start();
   events.emit('game:start');
-  setTimeout(() => { input.enabled = true; }, 900);
+  setTimeout(() => { input.enabled = true; }, 1400);
 }
 
 main().catch((err) => {

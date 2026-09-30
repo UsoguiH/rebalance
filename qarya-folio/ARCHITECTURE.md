@@ -31,6 +31,10 @@ Section zones and landmark spots are in `js/content.js` (`zones`, `spots`).
 | `js/world/nature.js` (+ `js/world/nature/*`) | nature | sky, sun colour, fog, oasis water, palms, rocks, shrubs, dust, birds, clouds |
 | `js/ui/*`, `css/ui.css` | ui | loader/title screen, HUD, prompts, panels, menu, help, touch buttons |
 | `js/audio/*` | audio | Web Audio synthesis: ambience, music, footsteps, SFX |
+| `js/core/reveal.js`, `js/world/storm.js` | core | start island: world clipped to a circle round the spawn, inside a sandstorm; grows open on start |
+| `js/world/pads.js` | core | glowing ring + floating Arabic name at every section zone |
+| `js/world/camp.js` | core | the little camp on the start island |
+| `js/core/postfx.js` | core | sunny grade pass: warm highlights, cool shadows, glow, vignette |
 
 ## The shared context `ctx`
 
@@ -50,7 +54,12 @@ Every module's factory receives `ctx`:
 - `input` — `forward`, `turn`, `boost`, `stick`, `enabled`, `take(name)`, `press(name)`
 - `onUpdate(fn(dt, t))` — register a per-frame callback
 - `mobile`, `touch` — booleans
-- Set later (available by the time `update` runs, and in `ui.attach(ctx)`): `player`, `camel`, `camera`, `rig`, `audio`, `ui`
+- Set later (available by the time `update` runs, and in `ui.attach(ctx)`): `player`, `camel`, `camera`, `rig`, `audio`, `ui`,
+  `reveal` (`progress` 0..1, `storm` 1..0, `started`, `done`)
+
+New materials are clipped by the start island automatically (`applyReveal` in main.js patches every
+built-in material). Hand-written `ShaderMaterial`s can use `REVEAL_GLSL` / `revealUniforms()` from
+`js/core/reveal.js`; any that don't are simply hidden until the growing circle reaches them.
 
 `player`: `position` (Vector3, feet), `heading` (rad; forward = (sin h, 0, cos h)), `speed` (m/s, signed),
 `forwardVec`, `grounded`, `boost`, `maxSpeed`, `body`.
@@ -108,6 +117,7 @@ export function createAudio(ctx) → {
 | `panel:closed` | — | ui |
 | `prop:hit` | `{ kind, speed, position }` | physics (dynamic props) |
 | `ui:click` | — | ui (for a click sound) |
+| `reveal:done` | — | reveal, when the island has grown into the whole world |
 
 ## Testing
 

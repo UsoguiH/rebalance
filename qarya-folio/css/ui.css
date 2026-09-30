@@ -522,3 +522,39 @@
     transition-duration: .001ms !important; transition-delay: 0s !important;
   }
 }
+
+/* ═══════════════════════ Start hint (beside the island) ═══════════════════════ */
+.start-hint {
+  position: fixed; left: 0; top: 0; z-index: 12;
+  display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; align-items: center; column-gap: 6px;
+  color: #fff8ea; cursor: pointer; direction: rtl;
+  filter: drop-shadow(0 2px 0 rgb(74 34 14 / .55)) drop-shadow(0 0 10px rgb(90 40 10 / .45));
+  opacity: 0; transition: opacity .6s ease;
+  will-change: transform;
+}
+.start-hint.on { opacity: 1; }
+.start-hint.gone { opacity: 0; transition-duration: .25s; }
+.start-hint .sh-txt {
+  grid-column: 1; grid-row: 1;
+  font: 700 clamp(28px, 7vw, 40px)/1.1 'Aref Ruqaa', 'Reem Kufi', serif;
+  white-space: nowrap; transform: rotate(-6deg);
+  animation: sh-bob 2.4s ease-in-out infinite;
+}
+.start-hint .sh-arrow {
+  grid-column: 2; grid-row: 1 / span 2; width: 72px; height: 36px; align-self: end;
+  transform: scaleX(1) rotate(8deg); margin-bottom: -10px;
+}
+.start-hint .sh-spk { grid-column: 1; grid-row: 2; justify-self: center; width: 30px; height: 24px; margin-top: 4px; animation: sh-bob 2.4s ease-in-out -1.2s infinite; }
+.start-hint svg path { fill: none; stroke: currentColor; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.start-hint .sh-arrow path { stroke-dasharray: 160; stroke-dashoffset: 160; animation: sh-draw .9s .2s ease-out forwards; }
+@keyframes sh-draw { to { stroke-dashoffset: 0; } }
+@keyframes sh-bob { 50% { translate: 0 -4px; } }
+@media (prefers-reduced-motion: reduce) {
+  .start-hint .sh-txt, .start-hint .sh-spk { animation: none; }
+  .start-hint .sh-arrow path { animation: none; stroke-dashoffset: 0; }
+}
+/* On narrow screens the hint sits above the island, arrow pointing down. */
+.start-hint.above { grid-template-columns: auto; justify-items: center; }
+.start-hint.above .sh-txt { grid-column: 1; grid-row: 1; transform: rotate(-3deg); }
+.start-hint.above .sh-spk { display: none; }
+.start-hint.above .sh-arrow { grid-column: 1; grid-row: 2; align-self: start; width: 56px; height: 34px; margin: 2px 0 0; transform: rotate(-70deg); }
