@@ -15,6 +15,14 @@ Open `minecraft-switch/index.html` in a browser (or serve the repo folder) and c
 - Title screen with a panorama and splash text, pause menu, chat, `F3` debug screen, `F1` to hide the HUD
 - Synthesized block sounds and a quiet piano (`M` toggles music)
 
+## Phones and tablets
+Touch screens get the mobile-edition controls automatically:
+- Left thumb: floating joystick (push all the way forward to sprint), with auto-jump up one-block steps
+- Right thumb: drag to look, tap to place, hold still to break
+- Jump and Sneak buttons, tap a hotbar slot to select it
+- Camera view and pause buttons at the top, **Switch** at the top right opens the character wheel (tap a character)
+- Works in landscape and portrait; tapping Singleplayer asks for full screen where the browser allows it
+
 ## The switch
 Hold `Tab` or `Q` for the wheel, point at a character and let go (or use the **Switch** button).
 Time slows and the world goes gray. The camera cuts up into the sky in steps, each with a whoosh-boom,

@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Blockcraft Switch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -89,9 +90,36 @@
   .corner { position: absolute; bottom: calc(6px + env(safe-area-inset-bottom, 0px)); font-size: 15px; text-shadow: 2px 2px 0 var(--mc-shadow); }
   .corner.l { left: 8px; } .corner.r { right: 8px; text-align: right; max-width: 55vw; }
   @media (prefers-reduced-motion: reduce) { #splash { animation: none; } }
+  /* Touch controls (phones and tablets) */
+  html.touch, html.touch * { touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #touchUI { position: fixed; inset: 0; pointer-events: none; }
+  .tbtn { position: absolute; pointer-events: auto; display: grid; place-items: center; font: 15px var(--ui); color: #fff; text-shadow: 2px 2px 0 var(--mc-shadow);
+    background: rgba(90,90,90,.5); border: 2px solid rgba(0,0,0,.8); box-shadow: inset 2px 2px 0 rgba(255,255,255,.3), inset -2px -3px 0 rgba(0,0,0,.35); padding: 0; }
+  .tbtn.on, .tbtn:active { background: rgba(126,136,196,.75); }
+  .tbtn svg { width: 55%; height: 55%; }
+  #tJump { width: 76px; height: 76px; right: calc(22px + env(safe-area-inset-right, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  #tSneak { width: 58px; height: 58px; right: calc(108px + env(safe-area-inset-right, 0px)); bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+  #tView, #tPause { top: calc(8px + env(safe-area-inset-top, 0px)); width: 48px; height: 40px; }
+  #tView { left: calc(50% - 52px); } #tPause { left: calc(50% + 4px); }
+  #joyBase { position: absolute; width: 132px; height: 132px; margin: -66px 0 0 -66px; border-radius: 50%; background: rgba(40,40,40,.35); border: 3px solid rgba(255,255,255,.35); transition: opacity .2s; }
+  #joyKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(230,230,230,.55); border: 3px solid rgba(0,0,0,.4); }
+  html.touch #swBtn { top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; right: calc(10px + env(safe-area-inset-right, 0px)); }
+  html.touch #toast { top: calc(60px + env(safe-area-inset-top, 0px)); width: min(250px, 44vw); padding: 8px; }
+  html.touch #toast span { font-size: 13px; }
+  html.touch #chat { top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; max-width: calc(50vw - 64px); }
+  html.touch .msg { font-size: 14px; }
+  @media (orientation: portrait) { html.touch #chat { top: calc(60px + env(safe-area-inset-top, 0px)); max-width: 50vw; } }
+  html.touch .slot { pointer-events: auto; }
+  html.touch #hud { user-select: none; }
+  #rotate { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); padding: 10px 14px; background: rgba(0,0,0,.6); font-size: 16px; text-align: center; pointer-events: none; transition: opacity .6s; }
+  @media (orientation: portrait) {
+    #tJump { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+    #tSneak { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); right: calc(108px + env(safe-area-inset-right, 0px)); }
+  }
   @media (max-width: 560px) {
     #stats { width: 273px; height: 33px; } .slot { width: 30px; height: 30px; } .slot canvas { width: 24px; height: 24px; }
     #toast { width: 230px; } #chat { bottom: 110px; } .msg { font-size: 15px; }
+    #splash { right: 2%; bottom: -26px; font-size: 13px; }
   }
 </style>
 </head>
@@ -115,6 +143,15 @@
   <button id="swBtn" class="mcbtn" type="button">Switch</button>
 </div>
 
+<div id="touchUI" hidden>
+  <div id="joyBase"><div id="joyKnob"></div></div>
+  <button class="tbtn" id="tJump" type="button" aria-label="Jump"><svg viewBox="0 0 10 10" fill="#fff"><path d="M5 1 9 6H6v3H4V6H1z"/></svg></button>
+  <button class="tbtn" id="tSneak" type="button" aria-label="Sneak"><svg viewBox="0 0 10 10" fill="#fff"><path d="M5 9 1 4h3V1h2v3h3z"/></svg></button>
+  <button class="tbtn" id="tView" type="button" aria-label="Change camera view"><svg viewBox="0 0 10 10" fill="#fff"><path d="M1 3h2l1-1h2l1 1h2v5H1zM5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3"/></svg></button>
+  <button class="tbtn" id="tPause" type="button" aria-label="Pause"><svg viewBox="0 0 10 10" fill="#fff"><path d="M2 1h2v8H2zM6 1h2v8H6z"/></svg></button>
+  <div id="rotate" hidden>Turn your phone sideways for the best view</div>
+</div>
+
 <div id="wheel"><svg viewBox="-210 -210 420 420" id="wheelSvg"></svg></div>
 
 <div id="title" class="screen">
@@ -132,6 +169,7 @@
     <p>Mouse to look · left click: break · right click: place · middle click: pick block</p>
     <p><kbd>1</kbd>–<kbd>9</kbd> or scroll: hotbar · <kbd>F5</kbd> camera view · <kbd>F3</kbd> debug · <kbd>F1</kbd> hide HUD · <kbd>M</kbd> music</p>
     <p>Hold <kbd>TAB</kbd> or <kbd>Q</kbd>: character wheel. Point at Michael, Franklin or Trevor and let go.</p>
+    <p><b>Touch:</b> left thumb joystick moves · drag the right side to look · tap to place · hold to break · tap a hotbar slot · Switch button for the wheel</p>
   </div>
   <div class="corner l">Blockcraft 1.0</div>
   <div class="corner r">Fan-made. Not affiliated with Mojang or Rockstar.</div>
@@ -485,7 +523,9 @@ function rebuildAround(x, z) {
 // =====================================================================
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches;
+if (TOUCH) document.documentElement.classList.add('touch');
+renderer.setPixelRatio(Math.min(devicePixelRatio, TOUCH ? 1.5 : 2));
 const FOG = new THREE.Color('#c0d8ff');
 scene.background = FOG;
 scene.fog = new THREE.Fog(FOG, 60, 190);
@@ -741,7 +781,7 @@ function drawIcon(c, t) {
   g.setTransform(1, 0, 0, 1, 0, 0);
 }
 const hotbarEl = document.getElementById('hotbar'), itemNameEl = document.getElementById('itemName');
-const slotDivs = HOTBAR.map(t => { const d = document.createElement('div'); d.className = 'slot'; const c = document.createElement('canvas'); c.width = c.height = 32; drawIcon(c, t); d.appendChild(c); hotbarEl.appendChild(d); return d; });
+const slotDivs = HOTBAR.map((t, k) => { const d = document.createElement('div'); d.className = 'slot'; d.addEventListener('pointerdown', e => { e.stopPropagation(); if (state === 'play') selectHot(k); }); const c = document.createElement('canvas'); c.width = c.height = 32; drawIcon(c, t); d.appendChild(c); hotbarEl.appendChild(d); return d; });
 drawIcon(document.getElementById('toastIcon'), GRASS);
 let itemNameT = 0;
 function selectHot(i) { hotSel = (i + 9) % 9; slotDivs.forEach((d, k) => d.classList.toggle('sel', k === hotSel)); itemNameEl.textContent = BLOCK[HOTBAR[hotSel]].name; itemNameEl.style.opacity = 1; itemNameT = 2; updateHeld(); }
@@ -832,6 +872,7 @@ addEventListener('mousemove', e => {
 });
 canvas.addEventListener('pointerdown', e => {
   canvas.focus();
+  if (e.pointerType === 'touch') { touchDown(e); return; }
   if (state !== 'play') return;
   if (!locked && !noLock) { lockPointer(); return; }
   if (noLock) { dragging = true; dragMoved = 0; lastPX = e.clientX; lastPY = e.clientY; canvas.setPointerCapture(e.pointerId); if (e.button !== 2) return; }
@@ -840,15 +881,69 @@ canvas.addEventListener('pointerdown', e => {
   if (e.button === 1) { e.preventDefault(); const h = targetBlock(); if (h) { const i = HOTBAR.indexOf(h.t); if (i >= 0) selectHot(i); } }
 });
 canvas.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch') { touchMove(e); return; }
   if (!dragging || state !== 'play') return;
   dragMoved += Math.abs(e.clientX - lastPX) + Math.abs(e.clientY - lastPY);
   PL().yaw -= (e.clientX - lastPX) * .005; PL().pitch = clamp(PL().pitch - (e.clientY - lastPY) * .005, -1.55, 1.55); lastPX = e.clientX; lastPY = e.clientY;
 });
 addEventListener('pointerup', e => {
+  if (e.pointerType === 'touch') { touchUp(e); return; }
   if (dragging && dragMoved < 6 && e.button === 0 && state === 'play') { const h = targetBlock(); if (h) breakBlock(h); }
   dragging = false; if (e.button === 0) mining = false;
 });
+addEventListener('pointercancel', e => { if (e.pointerType === 'touch') touchUp(e, true); });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---- Touch controls, laid out like the mobile edition of the game
+// left thumb: floating joystick · right thumb: drag to look, tap to place, hold to break
+const touchUI = document.getElementById('touchUI'), joyBase = document.getElementById('joyBase'), joyKnob = document.getElementById('joyKnob'), rotateEl = document.getElementById('rotate');
+const TJ = { id: null, ox: 0, oy: 0, x: 0, y: 0 }, lookTouches = new Map();
+let touchJump = false, touchSneak = false;
+function joyHome() {
+  const portrait = innerHeight > innerWidth;
+  joyBase.style.left = (86 + (portrait ? 0 : 10)) + 'px'; joyBase.style.top = (innerHeight - (portrait ? 220 : 96)) + 'px'; joyKnob.style.transform = '';
+}
+function touchDown(e) {
+  e.preventDefault();
+  if (state !== 'play') return;
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* capture is best-effort */ }
+  if (TJ.id === null && e.clientX < innerWidth * .42 && e.clientY > innerHeight * .3) {
+    TJ.id = e.pointerId; TJ.ox = e.clientX; TJ.oy = e.clientY; TJ.x = TJ.y = 0;
+    joyBase.style.left = TJ.ox + 'px'; joyBase.style.top = TJ.oy + 'px'; return;
+  }
+  lookTouches.set(e.pointerId, { lx: e.clientX, ly: e.clientY, t0: performance.now(), moved: 0, mining: false });
+}
+function touchMove(e) {
+  if (e.pointerId === TJ.id) {
+    let dx = e.clientX - TJ.ox, dy = e.clientY - TJ.oy; const l = Math.hypot(dx, dy); if (l > 54) { dx *= 54 / l; dy *= 54 / l; }
+    TJ.x = dx / 54; TJ.y = dy / 54; joyKnob.style.transform = `translate(${dx}px, ${dy}px)`; return;
+  }
+  const t = lookTouches.get(e.pointerId); if (!t || state !== 'play') return;
+  const dx = e.clientX - t.lx, dy = e.clientY - t.ly; t.lx = e.clientX; t.ly = e.clientY; t.moved += Math.abs(dx) + Math.abs(dy);
+  PL().yaw -= dx * .0065; PL().pitch = clamp(PL().pitch - dy * .0065, -1.55, 1.55);
+}
+function touchUp(e, cancel) {
+  if (e.pointerId === TJ.id) { TJ.id = null; TJ.x = TJ.y = 0; joyHome(); return; }
+  const t = lookTouches.get(e.pointerId); if (!t) return;
+  lookTouches.delete(e.pointerId);
+  if (!cancel && state === 'play' && !t.mining && t.moved < 14 && performance.now() - t.t0 < 300) useItem();
+  if (t.mining && ![...lookTouches.values()].some(o => o.mining)) mining = false;
+}
+function touchTick() {
+  // a finger held still on the right side starts breaking blocks
+  if (state !== 'play') { for (const t of lookTouches.values()) t.mining = false; return; }
+  for (const t of lookTouches.values()) if (!t.mining && t.moved < 14 && performance.now() - t.t0 > 320) { t.mining = true; mining = true; mineCd = 0; }
+  rotateEl.style.opacity = innerHeight > innerWidth ? 1 : 0;
+}
+function holdBtn(id, on) { const b = document.getElementById(id);
+  b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { b.setPointerCapture(e.pointerId); } catch (err) { /* best-effort */ } on(true, b); });
+  for (const ev of ['pointerup', 'pointercancel']) b.addEventListener(ev, e => { e.stopPropagation(); on(false, b); }); }
+holdBtn('tJump', (v, b) => { touchJump = v; b.classList.toggle('on', v); });
+holdBtn('tSneak', (v, b) => { if (v) { touchSneak = !touchSneak; b.classList.toggle('on', touchSneak); } });
+document.getElementById('tView').addEventListener('click', () => { viewMode = (viewMode + 1) % 3; });
+document.getElementById('tPause').addEventListener('click', () => { if (state === 'play') showPause(); });
+addEventListener('resize', () => { if (TJ.id === null) joyHome(); });
+document.addEventListener('touchmove', e => { if (TOUCH && !e.target.closest('.panel')) e.preventDefault(); }, { passive: false });
 canvas.addEventListener('wheel', e => { if (state === 'play') selectHot(hotSel + Math.sign(e.deltaY)); }, { passive: true });
 
 // =====================================================================
@@ -870,7 +965,7 @@ function physics(ch, dt, input) {
   if (input && (input.f || input.r)) {
     const fx = -Math.sin(ch.yaw), fz = -Math.cos(ch.yaw), rx = Math.cos(ch.yaw), rz = -Math.sin(ch.yaw);
     let dx = fx * input.f + rx * input.r, dz = fz * input.f + rz * input.r; const l = Math.hypot(dx, dz); dx /= l; dz /= l;
-    const sp = ch.sneak ? 1.3 : ch.sprint && input.f > 0 ? 5.6 : 4.3; wx = dx * sp * (inWater ? .5 : 1); wz = dz * sp * (inWater ? .5 : 1);
+    const sp = (ch.sneak ? 1.3 : ch.sprint && input.f > 0 ? 5.6 : 4.3) * (input.mag ?? 1); wx = dx * sp * (inWater ? .5 : 1); wz = dz * sp * (inWater ? .5 : 1);
   } else ch.sprint = false;
   const k = 1 - Math.exp(-dt * (ch.onGround ? 16 : inWater ? 5 : 3.5));
   ch.vel.x = lerp(ch.vel.x, wx, k); ch.vel.z = lerp(ch.vel.z, wz, k);
@@ -879,6 +974,12 @@ function physics(ch, dt, input) {
   const hy = moveAxis(p, 'y', ch.vel.y * dt); ch.onGround = hy && ch.vel.y < 0; if (hy) ch.vel.y = 0;
   const hx = moveAxis(p, 'x', ch.vel.x * dt), hz = moveAxis(p, 'z', ch.vel.z * dt);
   if (inWater && (hx || hz) && input && input.jump) ch.vel.y = 9.5;
+  // auto-jump (on by default on touch screens): hop up a one-block step when walking into it
+  if (!inWater && ch.onGround && (hx || hz) && input && input.autoJump) {
+    const fx = Math.sign(ch.vel.x || wx) * (hx ? .6 : 0), fz = Math.sign(ch.vel.z || wz) * (hz ? .6 : 0);
+    const bx = Math.floor(p.x + fx), bz = Math.floor(p.z + fz), by = Math.floor(p.y + .01);
+    if (BLOCK[get(bx, by, bz)].solid && !BLOCK[get(bx, by + 1, bz)].solid && !BLOCK[get(bx, by + 2, bz)].solid) ch.vel.y = 9;
+  }
   p.x = clamp(p.x, .5, WX - .5); p.z = clamp(p.z, .5, WZ - .5);
   if (p.y < -30) { p.set(ch.def.pos[0], groundY(ch.def.pos[0], ch.def.pos[1]).y + 1, ch.def.pos[1]); ch.vel.set(0, 0, 0); }
   ch.hspeed = Math.hypot(ch.vel.x, ch.vel.z);
@@ -1078,7 +1179,13 @@ document.getElementById('ctrlBtn2').addEventListener('click', () => { SFX.uiClic
 document.getElementById('playBtn').addEventListener('click', () => {
   initAudio(); if (AC.state === 'suspended') AC.resume(); SFX.uiClick();
   titleEl.hidden = true; hudEl.hidden = false; state = 'play';
-  selectHot(0); drawStats(); lockPointer(); canvas.focus();
+  selectHot(0); drawStats();
+  if (TOUCH) {
+    noLock = true; touchUI.hidden = false; joyHome(); rotateEl.hidden = innerWidth > innerHeight; setTimeout(() => rotateEl.hidden = true, 6000);
+    toastEl.querySelector('span').textContent = 'Tap Switch at the top right';
+    try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (r && r.then) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (err) { /* fullscreen is optional */ }
+  } else lockPointer();
+  canvas.focus();
   chat('Michael joined the game', 'join'); chat('Franklin joined the game', 'join'); chat('Trevor joined the game', 'join');
   setTimeout(() => toastEl.classList.remove('out'), 1200); setTimeout(() => toastEl.classList.add('out'), 12000);
 });
@@ -1102,9 +1209,10 @@ function frame(now) {
   if (state !== 'pause') {
     let input = null;
     if (state === 'play') {
-      input = { f: (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), r: (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0), jump: keys.Space };
+      input = { f: (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), r: (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0), jump: keys.Space || touchJump, mag: 1 };
+      if (TJ.id !== null) { const m = Math.hypot(TJ.x, TJ.y); if (m > .15) { input.f = -TJ.y; input.r = TJ.x; input.mag = Math.min(1, m * 1.15); input.autoJump = true; P0.sprint = m > .97 && -TJ.y > .9; } }
       if (keys.ControlLeft || keys.ControlRight) P0.sprint = true;
-      P0.sneak = !!(keys.ShiftLeft || keys.ShiftRight);
+      P0.sneak = !!(keys.ShiftLeft || keys.ShiftRight || touchSneak);
     }
     for (const c of chars) { if (state !== 'title') physics(c, c === P0 && state === 'play' ? rawDt : dt, c === P0 ? input : null); c.animate(dt, c === P0 && state === 'play'); }
     for (const m of mobs) m.update(dt);
@@ -1114,6 +1222,7 @@ function frame(now) {
     cloudTex.offset.x += dt * .0015;
   }
 
+  if (TOUCH) touchTick();
   // block targeting and mining
   let hit = null;
   if (state === 'play') {
@@ -1158,6 +1267,7 @@ function frame(now) {
   tintEl.style.opacity = (a * .45).toFixed(3); vigEl.style.opacity = a.toFixed(3); grainEl.style.opacity = (a * .5).toFixed(3);
   flashEl.style.opacity = fx.flash.toFixed(3);
   hudEl.style.opacity = state === 'switching' || hudHidden ? 0 : 1;
+  touchUI.style.opacity = state === 'switching' ? 0 : 1;
   if (windGain) windGain.gain.value = clamp(alt / 80, 0, 1) * .12;
   if (itemNameT > 0) { itemNameT -= rawDt; if (itemNameT <= 0) itemNameEl.style.opacity = 0; }
 
