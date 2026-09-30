@@ -108,13 +108,17 @@
   html.touch #toast span { font-size: 13px; }
   html.touch #chat { top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; max-width: calc(50vw - 64px); }
   html.touch .msg { font-size: 14px; }
-  @media (orientation: portrait) { html.touch #chat { top: calc(60px + env(safe-area-inset-top, 0px)); max-width: 50vw; } }
+  html.rot #chat { max-width: calc(50vh - 64px); }
+  html.rot #toast { width: min(250px, 44vh); }
+  @media (orientation: portrait) { html.touch:not(.rot) #chat { top: calc(60px + env(safe-area-inset-top, 0px)); max-width: 50vw; } }
   html.touch .slot { pointer-events: auto; }
   html.touch #hud { user-select: none; }
+  html.rot body { position: fixed; left: 0; top: 0; transform-origin: 0 0; transform: rotate(90deg) translateY(-100%); overflow: hidden; }
+  #tFull { top: calc(8px + env(safe-area-inset-top, 0px)); width: 48px; height: 40px; left: calc(50% + 60px); }
   #rotate { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); padding: 10px 14px; background: rgba(0,0,0,.6); font-size: 16px; text-align: center; pointer-events: none; transition: opacity .6s; }
   @media (orientation: portrait) {
-    #tJump { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
-    #tSneak { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); right: calc(108px + env(safe-area-inset-right, 0px)); }
+    html:not(.rot) #tJump { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+    html:not(.rot) #tSneak { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); right: calc(108px + env(safe-area-inset-right, 0px)); }
   }
   @media (max-width: 560px) {
     #stats { width: 273px; height: 33px; } .slot { width: 30px; height: 30px; } .slot canvas { width: 24px; height: 24px; }
@@ -149,6 +153,7 @@
   <button class="tbtn" id="tSneak" type="button" aria-label="Sneak"><svg viewBox="0 0 10 10" fill="#fff"><path d="M5 9 1 4h3V1h2v3h3z"/></svg></button>
   <button class="tbtn" id="tView" type="button" aria-label="Change camera view"><svg viewBox="0 0 10 10" fill="#fff"><path d="M1 3h2l1-1h2l1 1h2v5H1zM5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3"/></svg></button>
   <button class="tbtn" id="tPause" type="button" aria-label="Pause"><svg viewBox="0 0 10 10" fill="#fff"><path d="M2 1h2v8H2zM6 1h2v8H6z"/></svg></button>
+  <button class="tbtn" id="tFull" type="button" aria-label="Full screen"><svg viewBox="0 0 10 10" fill="#fff"><path d="M1 1h3v1.5H2.5V4H1zM6 1h3v3H7.5V2.5H6zM1 6h1.5v1.5H4V9H1zM7.5 7.5V6H9v3H6V7.5z"/></svg></button>
   <div id="rotate" hidden>Turn your phone sideways for the best view</div>
 </div>
 
@@ -168,7 +173,7 @@
     <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>SPACE</kbd> jump/swim · <kbd>CTRL</kbd> or double-tap <kbd>W</kbd> sprint · <kbd>SHIFT</kbd> sneak</p>
     <p>Mouse to look · left click: break · right click: place · middle click: pick block</p>
     <p><kbd>1</kbd>–<kbd>9</kbd> or scroll: hotbar · <kbd>F5</kbd> camera view · <kbd>F3</kbd> debug · <kbd>F1</kbd> hide HUD · <kbd>M</kbd> music</p>
-    <p>Hold <kbd>TAB</kbd> or <kbd>Q</kbd>: character wheel. Point at Michael, Franklin or Trevor and let go.</p>
+    <p>Hold <kbd>TAB</kbd> or <kbd>Q</kbd>: character wheel. Point at Saif, Rakan or Fahad and let go.</p>
     <p><b>Touch:</b> left thumb joystick moves · drag the right side to look · tap to place · hold to break · tap a hotbar slot · Switch button for the wheel</p>
   </div>
   <div class="corner l">Blockcraft 1.0</div>
@@ -387,7 +392,7 @@ for (let z = 3; z < WZ - 3; z++) for (let x = 3; x < WX - 3; x++) {
 }
 function box(x0, y0, z0, x1, y1, z1, t) { for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) set(x, y, z, t); }
 function shell(x0, y0, z0, x1, y1, z1, wall) { box(x0, y0, z0, x1, y1, z1, wall); box(x0 + 1, y0, z0 + 1, x1 - 1, y1, z1 - 1, AIR); }
-// Michael's modern hillside mansion
+// Saif's hillside villa
 { const y = SITE.michael;
   box(22, y, 22, 38, y, 30, PLANKS);
   shell(21, y + 1, 21, 39, y + 4, 31, QUARTZ);
@@ -402,7 +407,7 @@ function shell(x0, y0, z0, x1, y1, z1, wall) { box(x0, y0, z0, x1, y1, z1, wall)
   box(24, y - 1, 36, 37, y - 1, 42, QUARTZ);
   for (const [px, pz] of [[20, 44], [42, 36], [41, 44]]) { for (let i = 1; i <= 6; i++) set(px, y + i, pz, LOG); for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2], [0, 0]]) set(px + dx, y + 7, pz + dz, LEAVES); }
 }
-// Franklin's house
+// Rakan's house
 { const y = SITE.franklin;
   box(83, y, 102, 93, y, 109, PLANKS);
   shell(82, y + 1, 101, 94, y + 4, 110, COBBLE);
@@ -414,7 +419,7 @@ function shell(x0, y0, z0, x1, y1, z1, wall) { box(x0, y0, z0, x1, y1, z1, wall)
   for (let i = 0; i < 5; i++) { box(82, y + 5 + i, 101 + i, 82, y + 5 + i, 110 - i, PLANKS); box(94, y + 5 + i, 101 + i, 94, y + 5 + i, 110 - i, PLANKS); }
   box(87, y, 111, 89, y, 115, COBBLE);
 }
-// Trevor's trailer in the desert
+// Fahad's desert camp
 { const y = SITE.trevor;
   shell(131, y + 1, 60, 142, y + 3, 65, IRON); box(131, y + 4, 60, 142, y + 4, 65, IRON);
   for (const x of [133, 134, 139, 140]) set(x, y + 2, 65, GLASS);
@@ -525,6 +530,12 @@ const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
 const TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches;
 if (TOUCH) document.documentElement.classList.add('touch');
+// page size in game coordinates; on an upright phone the page is turned sideways
+const isRot = () => document.documentElement.classList.contains('rot');
+const vw = () => isRot() ? innerHeight : innerWidth, vh = () => isRot() ? innerWidth : innerHeight;
+const tpt = e => isRot() ? { x: e.clientY, y: innerWidth - e.clientX } : { x: e.clientX, y: e.clientY };
+function goFull() { try { const el = document.documentElement, r = (el.requestFullscreen || el.webkitRequestFullscreen || (() => null)).call(el);
+  if (r && r.then) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (err) { /* not allowed here */ } }
 renderer.setPixelRatio(Math.min(devicePixelRatio, TOUCH ? 1.5 : 2));
 const FOG = new THREE.Color('#c0d8ff');
 scene.background = FOG;
@@ -554,12 +565,12 @@ clouds.rotation.x = -Math.PI / 2; clouds.position.set(WX / 2, 110, WZ / 2); scen
 //  Players (Minecraft-style skins drawn in code) with name tags
 // =====================================================================
 const DEFS = [
-  { name: 'Michael', color: '#65b4d4', skin: '#d4a07e', hair: '#3a2a1e', shirt: '#ececec', top: '#3d4350', pants: '#2c3038', shoes: '#151515', sleeve: 10, hairStyle: 'slick',
-    pos: [30.5, 34.5], yaw: Math.PI + .5, idle: 'cross', hp: 20, food: 18, lvl: 30, xp: .42, line: 'Back to the quiet life. Sort of.' },
-  { name: 'Franklin', color: '#abedab', skin: '#6a4630', hair: '#141010', shirt: '#3f8f4a', top: '#3f8f4a', pants: '#3b5a8c', shoes: '#f0f0f0', sleeve: 4, hairStyle: 'short',
-    pos: [88.5, 113.5], yaw: Math.PI - .35, idle: 'phone', hp: 18, food: 20, lvl: 12, xp: .7, line: "Aight, let's get this money." },
-  { name: 'Trevor', color: '#ffa357', skin: '#e0ab8c', hair: '#6d5d4d', shirt: '#d9d2bd', top: '#d9d2bd', pants: '#6a5a3e', shoes: '#3b2a1a', sleeve: 3, hairStyle: 'bald',
-    pos: [136.5, 68.5], yaw: Math.PI + .45, idle: 'twitch', hp: 11, food: 7, lvl: 45, xp: .15, line: 'Who touched my trailer?!' },
+  { name: 'Saif', color: '#65b4d4', skin: '#c68e62', hair: '#1c1410', shirt: '#f4f4f0', top: '#f4f4f0', pants: '#f4f4f0', shoes: '#6b4a2a', sleeve: 11, hairStyle: 'ghutra',
+    pos: [30.5, 34.5], yaw: Math.PI + .5, idle: 'cross', hp: 20, food: 18, lvl: 30, xp: .42, line: 'Yalla, the view from up here is the best.' },
+  { name: 'Rakan', color: '#abedab', skin: '#a8754f', hair: '#141010', shirt: '#1d1d22', top: '#1d1d22', pants: '#3a3f4a', shoes: '#e8e8e8', sleeve: 11, hairStyle: 'hood',
+    pos: [88.5, 113.5], yaw: Math.PI - .35, idle: 'phone', hp: 18, food: 20, lvl: 12, xp: .7, line: 'Who wants to race to the desert?' },
+  { name: 'Fahad', color: '#ffa357', skin: '#d9a47c', hair: '#2a1d14', shirt: '#1f5fbf', top: '#1f5fbf', pants: '#f2f2f2', shoes: '#111111', sleeve: 4, hairStyle: 'short',
+    pos: [136.5, 68.5], yaw: Math.PI + .45, idle: 'twitch', hp: 11, food: 7, lvl: 45, xp: .15, line: 'Goal! ...wait, wrong game.' },
 ];
 function charTex(w, h, draw) { const t = new THREE.CanvasTexture(pixCanvas(w, h, draw)); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; }
 function drawFace(g, d) {
@@ -568,11 +579,12 @@ function drawFace(g, d) {
   g.fillStyle = d.hair;
   if (d.hairStyle === 'slick') { g.fillRect(0, 0, 8, 2); g.fillRect(0, 2, 1, 1); g.fillRect(7, 2, 1, 1); }
   if (d.hairStyle === 'short') { g.fillRect(0, 0, 8, 1); g.fillRect(0, 1, 1, 1); g.fillRect(7, 1, 1, 1); g.fillRect(1, 1, 2, 1); g.fillRect(5, 1, 2, 1); }
-  if (d.hairStyle === 'bald') { g.fillRect(0, 1, 1, 2); g.fillRect(7, 1, 1, 2); g.fillStyle = '#b3423a'; g.fillRect(5, 1, 2, 1); }
+  if (d.hairStyle === 'ghutra') { for (let x = 0; x < 8; x++) { g.fillStyle = x % 2 ? '#d22b2b' : '#f4f4f4'; g.fillRect(x, 0, 1, 2); } g.fillStyle = '#111'; g.fillRect(0, 2, 8, 1); g.fillStyle = '#d22b2b'; g.fillRect(0, 3, 1, 5); g.fillRect(7, 3, 1, 5); g.fillStyle = d.hair; }
+  if (d.hairStyle === 'hood') { g.fillStyle = d.top; g.fillRect(0, 0, 8, 2); g.fillRect(0, 2, 1, 6); g.fillRect(7, 2, 1, 6); g.fillStyle = d.hair; }
   g.fillStyle = shade(d.hair, -.2); g.fillRect(1, 3, 2, 1); g.fillRect(5, 3, 2, 1);
   g.fillStyle = '#fff'; g.fillRect(1, 4, 1, 1); g.fillRect(6, 4, 1, 1);
   g.fillStyle = d.hairStyle === 'short' ? '#2b1a10' : '#3b5870'; g.fillRect(2, 4, 1, 1); g.fillRect(5, 4, 1, 1);
-  if (d.hairStyle !== 'short') { g.fillStyle = 'rgba(60,40,30,.35)'; g.fillRect(1, 6, 6, 2); }
+  if (d.hairStyle === 'ghutra') { g.fillStyle = 'rgba(20,14,10,.55)'; g.fillRect(1, 6, 6, 2); }
   g.fillStyle = shade(d.skin, -.4); g.fillRect(2, 6, 4, 1);
 }
 function portrait(d) { return pixCanvas(64, 64, g => { g.imageSmoothingEnabled = false; g.drawImage(pixCanvas(8, 8, gg => drawFace(gg, d)), 0, 0, 64, 64); }).toDataURL(); }
@@ -590,23 +602,25 @@ class Character {
     const g = this.group = new THREE.Group();
     const M = c => new THREE.MeshLambertMaterial({ color: c });
     const Tm = (w, h, fn) => new THREE.MeshLambertMaterial({ map: charTex(w, h, fn) });
+    const cover = d.hairStyle === 'ghutra' ? '#f4f4f4' : d.hairStyle === 'hood' ? d.top : null;
+    const coverTex = cover && Tm(8, 8, gg => { gg.fillStyle = cover; gg.fillRect(0, 0, 8, 8); if (d.hairStyle === 'ghutra') { gg.fillStyle = '#d22b2b'; for (let i = 0; i < 8; i += 2) { gg.fillRect(i, 0, 1, 8); gg.fillRect(0, i, 8, 1); } gg.fillStyle = '#111'; gg.fillRect(0, 1, 8, 1); } });
     const hairSide = Tm(8, 8, gg => { gg.fillStyle = d.skin; gg.fillRect(0, 0, 8, 8); gg.fillStyle = d.hair; gg.fillRect(0, 0, 8, d.hairStyle === 'bald' ? 1 : 2); if (d.hairStyle === 'bald') gg.fillRect(0, 1, 8, 2); else gg.fillRect(4, 2, 4, 2); gg.fillStyle = shade(d.skin, -.15); gg.fillRect(3, 4, 1, 2); });
     const hairTop = Tm(8, 8, gg => { gg.fillStyle = d.hairStyle === 'bald' ? d.skin : d.hair; gg.fillRect(0, 0, 8, 8); if (d.hairStyle === 'bald') { gg.fillStyle = d.hair; gg.fillRect(0, 0, 1, 8); gg.fillRect(7, 0, 1, 8); gg.fillRect(0, 0, 8, 1); } });
     const back = Tm(8, 8, gg => { gg.fillStyle = d.hair; gg.fillRect(0, 0, 8, 8); if (d.hairStyle === 'bald') { gg.fillStyle = d.skin; gg.fillRect(1, 0, 6, 2); } gg.fillStyle = d.skin; gg.fillRect(0, 6, 8, 2); });
     this.head = new THREE.Group(); this.head.position.y = 1.5;
-    const headMesh = new THREE.Mesh(new THREE.BoxGeometry(.5, .5, .5), [hairSide, hairSide, hairTop, M(d.skin), Tm(8, 8, gg => drawFace(gg, d)), back]);
+    const headMesh = new THREE.Mesh(new THREE.BoxGeometry(.5, .5, .5), cover ? [coverTex, coverTex, coverTex, M(d.skin), Tm(8, 8, gg => drawFace(gg, d)), coverTex] : [hairSide, hairSide, hairTop, M(d.skin), Tm(8, 8, gg => drawFace(gg, d)), back]);
     headMesh.position.y = .25; this.head.add(headMesh);
     const bodyFront = Tm(8, 12, gg => {
       gg.fillStyle = d.top; gg.fillRect(0, 0, 8, 12);
-      if (d.name === 'Michael') { gg.fillStyle = d.shirt; gg.fillRect(3, 0, 2, 6); gg.fillRect(2, 0, 4, 2); gg.fillStyle = '#20242c'; gg.fillRect(3, 2, 2, 1); gg.fillStyle = '#c9ced6'; gg.fillRect(4, 7, 1, 1); gg.fillRect(4, 9, 1, 1); }
-      if (d.name === 'Franklin') { gg.fillStyle = shade(d.top, -.25); gg.fillRect(2, 0, 4, 1); gg.fillStyle = '#e9e9e9'; gg.fillRect(2, 4, 4, 3); gg.fillStyle = d.top; gg.fillRect(3, 5, 2, 1); }
-      if (d.name === 'Trevor') { gg.fillStyle = '#a79f86'; gg.fillRect(1, 7, 2, 2); gg.fillRect(5, 3, 1, 1); gg.fillRect(4, 9, 3, 1); gg.fillStyle = d.skin; gg.fillRect(3, 0, 2, 1); }
-      gg.fillStyle = '#2a2018'; gg.fillRect(0, 11, 8, 1);
+      if (d.name === 'Saif') { gg.fillStyle = '#dcdcd6'; gg.fillRect(3, 0, 2, 1); gg.fillRect(4, 1, 1, 6); gg.fillStyle = '#c9a54a'; gg.fillRect(4, 2, 1, 1); gg.fillRect(4, 4, 1, 1); }
+      if (d.name === 'Rakan') { gg.fillStyle = '#e8c547'; gg.fillRect(2, 0, 1, 2); gg.fillRect(5, 0, 1, 2); gg.fillRect(3, 2, 2, 1); gg.fillStyle = '#34343c'; gg.fillRect(1, 7, 6, 3); }
+      if (d.name === 'Fahad') { gg.fillStyle = '#f2f2f2'; gg.fillRect(2, 0, 4, 1); gg.fillRect(3, 3, 2, 3); gg.fillStyle = '#ffd23f'; gg.fillRect(1, 1, 1, 1); gg.fillStyle = '#10408a'; gg.fillRect(0, 10, 8, 2); }
+      if (d.name !== 'Saif') { gg.fillStyle = '#2a2018'; gg.fillRect(0, 11, 8, 1); }
     });
     const bodySide = M(d.top);
     this.body = new THREE.Mesh(new THREE.BoxGeometry(.5, .75, .25), [bodySide, bodySide, bodySide, M(d.pants), bodyFront, bodySide]);
     this.body.position.y = 1.125;
-    const armTex = Tm(4, 12, gg => { gg.fillStyle = d.top; gg.fillRect(0, 0, 4, 12); gg.fillStyle = d.skin; gg.fillRect(0, d.sleeve, 4, 12 - d.sleeve); if (d.name === 'Michael') { gg.fillStyle = d.shirt; gg.fillRect(0, 9, 4, 1); } });
+    const armTex = Tm(4, 12, gg => { gg.fillStyle = d.top; gg.fillRect(0, 0, 4, 12); gg.fillStyle = d.skin; gg.fillRect(0, d.sleeve, 4, 12 - d.sleeve); if (d.name === 'Fahad') { gg.fillStyle = '#f2f2f2'; gg.fillRect(0, 3, 4, 1); } });
     const legTex = Tm(4, 12, gg => { gg.fillStyle = d.pants; gg.fillRect(0, 0, 4, 12); gg.fillStyle = shade(d.pants, -.2); gg.fillRect(0, 0, 1, 12); gg.fillStyle = d.shoes; gg.fillRect(0, 10, 4, 2); });
     const limb = (tex, topC, botC) => new THREE.Mesh(new THREE.BoxGeometry(.25, .75, .25), [tex, tex, M(topC), M(botC), tex, tex]);
     this.arms = []; this.legs = [];
@@ -900,26 +914,28 @@ const touchUI = document.getElementById('touchUI'), joyBase = document.getElemen
 const TJ = { id: null, ox: 0, oy: 0, x: 0, y: 0 }, lookTouches = new Map();
 let touchJump = false, touchSneak = false;
 function joyHome() {
-  const portrait = innerHeight > innerWidth;
-  joyBase.style.left = (86 + (portrait ? 0 : 10)) + 'px'; joyBase.style.top = (innerHeight - (portrait ? 220 : 96)) + 'px'; joyKnob.style.transform = '';
+  const portrait = vh() > vw();
+  joyBase.style.left = (86 + (portrait ? 0 : 10)) + 'px'; joyBase.style.top = (vh() - (portrait ? 220 : 96)) + 'px'; joyKnob.style.transform = '';
 }
 function touchDown(e) {
   e.preventDefault();
   if (state !== 'play') return;
   try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* capture is best-effort */ }
-  if (TJ.id === null && e.clientX < innerWidth * .42 && e.clientY > innerHeight * .3) {
-    TJ.id = e.pointerId; TJ.ox = e.clientX; TJ.oy = e.clientY; TJ.x = TJ.y = 0;
+  const q = tpt(e);
+  if (TJ.id === null && q.x < vw() * .42 && q.y > vh() * .3) {
+    TJ.id = e.pointerId; TJ.ox = q.x; TJ.oy = q.y; TJ.x = TJ.y = 0;
     joyBase.style.left = TJ.ox + 'px'; joyBase.style.top = TJ.oy + 'px'; return;
   }
-  lookTouches.set(e.pointerId, { lx: e.clientX, ly: e.clientY, t0: performance.now(), moved: 0, mining: false });
+  lookTouches.set(e.pointerId, { lx: q.x, ly: q.y, t0: performance.now(), moved: 0, mining: false });
 }
 function touchMove(e) {
+  const q = tpt(e);
   if (e.pointerId === TJ.id) {
-    let dx = e.clientX - TJ.ox, dy = e.clientY - TJ.oy; const l = Math.hypot(dx, dy); if (l > 54) { dx *= 54 / l; dy *= 54 / l; }
+    let dx = q.x - TJ.ox, dy = q.y - TJ.oy; const l = Math.hypot(dx, dy); if (l > 54) { dx *= 54 / l; dy *= 54 / l; }
     TJ.x = dx / 54; TJ.y = dy / 54; joyKnob.style.transform = `translate(${dx}px, ${dy}px)`; return;
   }
   const t = lookTouches.get(e.pointerId); if (!t || state !== 'play') return;
-  const dx = e.clientX - t.lx, dy = e.clientY - t.ly; t.lx = e.clientX; t.ly = e.clientY; t.moved += Math.abs(dx) + Math.abs(dy);
+  const dx = q.x - t.lx, dy = q.y - t.ly; t.lx = q.x; t.ly = q.y; t.moved += Math.abs(dx) + Math.abs(dy);
   PL().yaw -= dx * .0065; PL().pitch = clamp(PL().pitch - dy * .0065, -1.55, 1.55);
 }
 function touchUp(e, cancel) {
@@ -933,7 +949,6 @@ function touchTick() {
   // a finger held still on the right side starts breaking blocks
   if (state !== 'play') { for (const t of lookTouches.values()) t.mining = false; return; }
   for (const t of lookTouches.values()) if (!t.mining && t.moved < 14 && performance.now() - t.t0 > 320) { t.mining = true; mining = true; mineCd = 0; }
-  rotateEl.style.opacity = innerHeight > innerWidth ? 1 : 0;
 }
 function holdBtn(id, on) { const b = document.getElementById(id);
   b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { b.setPointerCapture(e.pointerId); } catch (err) { /* best-effort */ } on(true, b); });
@@ -941,8 +956,9 @@ function holdBtn(id, on) { const b = document.getElementById(id);
 holdBtn('tJump', (v, b) => { touchJump = v; b.classList.toggle('on', v); });
 holdBtn('tSneak', (v, b) => { if (v) { touchSneak = !touchSneak; b.classList.toggle('on', touchSneak); } });
 document.getElementById('tView').addEventListener('click', () => { viewMode = (viewMode + 1) % 3; });
+document.getElementById('tFull').addEventListener('click', goFull);
 document.getElementById('tPause').addEventListener('click', () => { if (state === 'play') showPause(); });
-addEventListener('resize', () => { if (TJ.id === null) joyHome(); });
+addEventListener('resize', () => { resize(); if (TJ.id === null) joyHome(); });
 document.addEventListener('touchmove', e => { if (TOUCH && !e.target.closest('.panel')) e.preventDefault(); }, { passive: false });
 canvas.addEventListener('wheel', e => { if (state === 'play') selectHot(hotSel + Math.sign(e.deltaY)); }, { passive: true });
 
@@ -1170,7 +1186,7 @@ function finishSwitch() {
 // =====================================================================
 //  Title screen, pause menu
 // =====================================================================
-const SPLASHES = ['Now with sky-cam!', 'Hold TAB!', 'Three players, one world!', 'Also try the desert!', '100% blocks!', 'Whoosh... BOOM!', 'Pigs included!'];
+const SPLASHES = ['Saif, Rakan and Fahad!', 'Now with sky-cam!', 'Hold TAB!', 'Three players, one world!', 'Also try the desert!', '100% blocks!', 'Whoosh... BOOM!', 'Pigs included!'];
 document.getElementById('splash').textContent = SPLASHES[(Math.random() * SPLASHES.length) | 0];
 const ctrlPanel = document.getElementById('ctrlPanel'), ctrlPanel2 = document.getElementById('ctrlPanel2');
 ctrlPanel2.innerHTML = ctrlPanel.innerHTML;
@@ -1181,12 +1197,12 @@ document.getElementById('playBtn').addEventListener('click', () => {
   titleEl.hidden = true; hudEl.hidden = false; state = 'play';
   selectHot(0); drawStats();
   if (TOUCH) {
-    noLock = true; touchUI.hidden = false; joyHome(); rotateEl.hidden = innerWidth > innerHeight; setTimeout(() => rotateEl.hidden = true, 6000);
+    noLock = true; touchUI.hidden = false; joyHome(); rotateEl.hidden = true;
     toastEl.querySelector('span').textContent = 'Tap Switch at the top right';
-    try { const r = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen({ navigationUI: 'hide' }); if (r && r.then) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (err) { /* fullscreen is optional */ }
+    goFull();
   } else lockPointer();
   canvas.focus();
-  chat('Michael joined the game', 'join'); chat('Franklin joined the game', 'join'); chat('Trevor joined the game', 'join');
+  for (const d of DEFS) chat(d.name + ' joined the game', 'join');
   setTimeout(() => toastEl.classList.remove('out'), 1200); setTimeout(() => toastEl.classList.add('out'), 12000);
 });
 document.getElementById('resumeBtn').addEventListener('click', () => { SFX.uiClick(); pauseEl.hidden = true; state = 'play'; ctrlPanel2.hidden = true; lockPointer(); canvas.focus(); });
@@ -1196,7 +1212,11 @@ if (document.fonts) document.fonts.ready.then(() => { drawStats(); for (const c 
 //  Main loop
 // =====================================================================
 const tintEl = document.getElementById('tint'), vigEl = document.getElementById('vig'), flashEl = document.getElementById('flash'), grainEl = document.getElementById('grain');
-function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
+function resize() {
+  const rot = TOUCH && innerHeight > innerWidth; document.documentElement.classList.toggle('rot', rot);
+  document.body.style.width = rot ? innerHeight + 'px' : ''; document.body.style.height = rot ? innerWidth + 'px' : '';
+  renderer.setSize(vw(), vh(), false); camera.aspect = vw() / vh(); camera.updateProjectionMatrix();
+}
 addEventListener('resize', resize); resize();
 let timeScale = 1, last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0, dbgT = 0, titleT = 0;
 function frame(now) {

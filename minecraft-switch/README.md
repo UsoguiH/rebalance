@@ -1,7 +1,7 @@
 # Blockcraft — Switch Edition
 
 A Minecraft-style voxel game in the browser (Three.js, one HTML file) with the GTA V
-character-switch effect. You play as Michael, Franklin and Trevor, each at their own home on one island.
+character-switch effect. You play as Saif, Rakan and Fahad, each at their own home on one island.
 
 Open `minecraft-switch/index.html` in a browser (or serve the repo folder) and click **Singleplayer**.
 
