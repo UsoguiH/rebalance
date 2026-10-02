@@ -796,7 +796,8 @@ function hurt(n, by, kx, kz) {
   n = filter('damage', n, by, kx, kz); if (n <= 0) return;
   const d = DEFS[cur], P = PL(); d.hp = Math.max(0, d.hp - n); drawStats(); shakeT = .3;
   flashEl.style.background = '#b00000'; fx.flash = .45; P.vel.x += kx * 7; P.vel.z += kz * 7; P.vel.y = 5;
-  if (d.hp <= 0) { chat(`${d.name} was slain by ${by}`); d.hp = 20; drawStats(); P.pos.set(d.pos[0], groundY(d.pos[0], d.pos[1]).y + .5, d.pos[1]); P.vel.set(0, 0, 0); }
+  emit('hurt', n, by, kx, kz);
+  if (d.hp <= 0 && !emitFirst('death', by)) { chat(`${d.name} was slain by ${by}`); d.hp = 20; drawStats(); P.pos.set(d.pos[0], groundY(d.pos[0], d.pos[1]).y + .5, d.pos[1]); P.vel.set(0, 0, 0); }
 }
 function tryAttack() {
   if (emitFirst('attack')) return true;
@@ -1343,6 +1344,7 @@ function frame(now) {
       if (TJ.id !== null) { const m = Math.hypot(TJ.x, TJ.y); if (m > .15) { input.f = -TJ.y; input.r = TJ.x; input.mag = Math.min(1, m * 1.15); input.autoJump = true; P0.sprint = m > .97 && -TJ.y > .9; } }
       if (keys.ControlLeft || keys.ControlRight) P0.sprint = true;
       P0.sneak = !!(keys.ShiftLeft || keys.ShiftRight || touchSneak);
+      input = filter('input', input, P0);
     }
     for (const c of chars) { if (state !== 'title') physics(c, c === P0 && state === 'play' ? rawDt : dt, c === P0 ? input : null); c.animate(dt, c === P0 && state === 'play'); }
     for (const m of mobs) m.update(dt);
