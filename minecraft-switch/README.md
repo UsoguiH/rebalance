@@ -16,12 +16,15 @@ Open `minecraft-switch/index.html` in a browser (or serve the repo folder) and c
 - Synthesized block sounds and a quiet piano (`M` toggles music)
 
 ## Phones and tablets
-Touch screens get the mobile-edition controls automatically:
-- Left thumb: floating joystick (push all the way forward to sprint), with auto-jump up one-block steps
-- Right thumb: drag to look, tap to place, hold still to break
-- Jump and Sneak buttons, tap a hotbar slot to select it
-- Camera view and pause buttons at the top, **Switch** at the top right opens the character wheel (tap a character)
-- Works in landscape and portrait; tapping Singleplayer asks for full screen where the browser allows it
+Touch screens get Bedrock-style controls automatically (`js/mobile.js`):
+- Left thumb: floating joystick with a resting ring; push to the edge to sprint (the chevrons light up), auto-jump up one-block steps
+- Right thumb: stone-textured Jump, Attack (tap to swing, hold to keep mining; slide to aim), Use/Place (hold to repeat),
+  Block (hold) and Sneak (toggle); an Eat button appears while holding food
+- Drag anywhere else to look, tap the world to place, hold it to break (a ring fills while you hold)
+- Top bar: full screen, camera view, inventory, your face (character wheel) and pause; bigger hotbar with a "..." slot for the inventory
+- Pause menu > Touch Controls: look sensitivity, button size and opacity, left-handed layout, vibration, auto quality (saved on the device)
+- Auto quality lowers the resolution, view distance and particles when the frame rate stays under 40 fps, and raises them again when stable
+- Upright phones show the game turned to landscape; safe areas (notch, home bar) are respected
 
 ## The switch
 Hold `Tab` or `Q` for the wheel, point at a character and let go (or use the **Switch** button).

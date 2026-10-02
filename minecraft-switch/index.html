@@ -96,14 +96,6 @@
   /* Touch controls (phones and tablets) */
   html.touch, html.touch * { touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   #touchUI { position: fixed; inset: 0; pointer-events: none; }
-  .tbtn { position: absolute; pointer-events: auto; display: grid; place-items: center; font: 15px var(--ui); color: #fff; text-shadow: 2px 2px 0 var(--mc-shadow);
-    background: rgba(90,90,90,.5); border: 2px solid rgba(0,0,0,.8); box-shadow: inset 2px 2px 0 rgba(255,255,255,.3), inset -2px -3px 0 rgba(0,0,0,.35); padding: 0; }
-  .tbtn.on, .tbtn:active { background: rgba(126,136,196,.75); }
-  .tbtn svg { width: 55%; height: 55%; }
-  #tJump { width: 76px; height: 76px; right: calc(22px + env(safe-area-inset-right, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
-  #tSneak { width: 58px; height: 58px; right: calc(108px + env(safe-area-inset-right, 0px)); bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
-  #tView, #tPause { top: calc(8px + env(safe-area-inset-top, 0px)); width: 48px; height: 40px; }
-  #tView { left: calc(50% - 52px); } #tPause { left: calc(50% + 4px); }
   #joyBase { position: absolute; width: 132px; height: 132px; margin: -66px 0 0 -66px; border-radius: 50%; background: rgba(40,40,40,.35); border: 3px solid rgba(255,255,255,.35); transition: opacity .2s; }
   #joyKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(230,230,230,.55); border: 3px solid rgba(0,0,0,.4); }
   html.touch #swBtn { top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; right: calc(10px + env(safe-area-inset-right, 0px)); }
@@ -117,12 +109,7 @@
   html.touch .slot { pointer-events: auto; }
   html.touch #hud { user-select: none; }
   html.rot body { position: fixed; left: 0; top: 0; transform-origin: 0 0; transform: rotate(90deg) translateY(-100%); overflow: hidden; }
-  #tFull { top: calc(8px + env(safe-area-inset-top, 0px)); width: 48px; height: 40px; left: calc(50% + 60px); }
   #rotate { position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); padding: 10px 14px; background: rgba(0,0,0,.6); font-size: 16px; text-align: center; pointer-events: none; transition: opacity .6s; }
-  @media (orientation: portrait) {
-    html:not(.rot) #tJump { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
-    html:not(.rot) #tSneak { bottom: calc(150px + env(safe-area-inset-bottom, 0px)); right: calc(108px + env(safe-area-inset-right, 0px)); }
-  }
   @media (max-width: 560px) {
     #stats { width: 273px; height: 33px; } .slot { width: 30px; height: 30px; } .slot canvas { width: 24px; height: 24px; }
     #toast { width: 230px; } #chat { bottom: 110px; } .msg { font-size: 15px; }
@@ -153,11 +140,6 @@
 
 <div id="touchUI" hidden>
   <div id="joyBase"><div id="joyKnob"></div></div>
-  <button class="tbtn" id="tJump" type="button" aria-label="Jump"><svg viewBox="0 0 10 10" fill="#fff"><path d="M5 1 9 6H6v3H4V6H1z"/></svg></button>
-  <button class="tbtn" id="tSneak" type="button" aria-label="Sneak"><svg viewBox="0 0 10 10" fill="#fff"><path d="M5 9 1 4h3V1h2v3h3z"/></svg></button>
-  <button class="tbtn" id="tView" type="button" aria-label="Change camera view"><svg viewBox="0 0 10 10" fill="#fff"><path d="M1 3h2l1-1h2l1 1h2v5H1zM5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3"/></svg></button>
-  <button class="tbtn" id="tPause" type="button" aria-label="Pause"><svg viewBox="0 0 10 10" fill="#fff"><path d="M2 1h2v8H2zM6 1h2v8H6z"/></svg></button>
-  <button class="tbtn" id="tFull" type="button" aria-label="Full screen"><svg viewBox="0 0 10 10" fill="#fff"><path d="M1 1h3v1.5H2.5V4H1zM6 1h3v3H7.5V2.5H6zM1 6h1.5v1.5H4V9H1zM7.5 7.5V6H9v3H6V7.5z"/></svg></button>
   <div id="rotate" hidden>Turn your phone sideways for the best view</div>
 </div>
 
@@ -1059,14 +1041,7 @@ function touchTick() {
   if (state !== 'play') { for (const t of lookTouches.values()) t.mining = false; return; }
   for (const t of lookTouches.values()) if (!t.mining && t.moved < 14 && performance.now() - t.t0 > 320) { t.mining = true; mining = true; mineCd = 0; }
 }
-function holdBtn(id, on) { const b = document.getElementById(id);
-  b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { b.setPointerCapture(e.pointerId); } catch (err) { /* best-effort */ } on(true, b); });
-  for (const ev of ['pointerup', 'pointercancel']) b.addEventListener(ev, e => { e.stopPropagation(); on(false, b); }); }
-holdBtn('tJump', (v, b) => { touchJump = v; b.classList.toggle('on', v); });
-holdBtn('tSneak', (v, b) => { if (v) { touchSneak = !touchSneak; b.classList.toggle('on', touchSneak); } });
-document.getElementById('tView').addEventListener('click', () => { viewMode = (viewMode + 1) % 3; });
-document.getElementById('tFull').addEventListener('click', goFull);
-document.getElementById('tPause').addEventListener('click', () => { if (state === 'play') showPause(); });
+// buttons, layout and settings for touch screens live in js/mobile.js (it also replaces the handlers above)
 addEventListener('resize', () => { resize(); if (TJ.id === null) joyHome(); });
 document.addEventListener('touchmove', e => { if (TOUCH && !e.target.closest('.panel')) e.preventDefault(); }, { passive: false });
 canvas.addEventListener('wheel', e => { if (state === 'play') selectHot(hotSel + Math.sign(e.deltaY)); }, { passive: true });
