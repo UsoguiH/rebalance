@@ -177,6 +177,7 @@
     <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>SPACE</kbd> jump/swim · <kbd>CTRL</kbd> or double-tap <kbd>W</kbd> sprint · <kbd>SHIFT</kbd> sneak</p>
     <p>Mouse to look · left click: break · right click: place · middle click: pick block</p>
     <p><kbd>1</kbd>–<kbd>9</kbd> or scroll: hotbar · <kbd>F5</kbd> camera view · <kbd>F3</kbd> debug · <kbd>F1</kbd> hide HUD · <kbd>M</kbd> music</p>
+    <p><kbd>E</kbd> inventory and crafting · <kbd>F</kbd> swap item to off hand · hold left click to mine · right click a Workbench for 3x3 crafting</p>
     <p>Hold <kbd>TAB</kbd> or <kbd>Q</kbd>: character wheel. Point at Saif, Rakan or Fahad and let go.</p>
     <p><b>Touch:</b> left thumb joystick moves · drag the right side to look · tap to place · hold to break · tap a hotbar slot · Switch button for the wheel</p>
   </div>
@@ -304,6 +305,7 @@ const tileColor = [];
 // =====================================================================
 const AIR = 0, GRASS = 1, DIRT = 2, STONE = 3, SAND = 4, WATER = 5, LOG = 6, LEAVES = 7, PLANKS = 8, GLASS = 9, QUARTZ = 10, ROAD = 11, IRON = 12,
   CACTUS = 13, BRICK = 14, SANDSTONE = 15, COBBLE = 16, COAL = 17, IRONORE = 18, BEDROCK = 19, TALLGRASS = 20, POPPY = 21, DANDELION = 22;
+const WORKBENCH = 23, TORCH = 24;   // placeable crafting station and torch; their tiles and BLOCK defs live in js/items.js
 const BLOCK = [];
 const cube = (s, t = s, b = t) => [s, s, b, t, s, s];      // face order: -x, +x, -y, +y, -z, +z
 function def(id, name, tiles, sound, o = {}) { BLOCK[id] = { id, name, tiles, sound, kind: o.kind || 'cube', opaque: o.opaque ?? true, solid: o.solid ?? true }; }
@@ -886,7 +888,7 @@ function scheduleMusic() {
 // =====================================================================
 //  HUD: hotbar icons, hearts/hunger/XP, chat, toast, debug
 // =====================================================================
-const HOTBAR = [GRASS, DIRT, STONE, COBBLE, PLANKS, LOG, GLASS, BRICK, SAND];
+const HOTBAR = Array(9).fill(AIR);   // block id in each hotbar slot (AIR for items/empty), mirrored from the inventory by js/items.js
 let hotSel = 0;
 function drawIcon(c, t) {
   const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, 32, 32);
@@ -901,10 +903,10 @@ function drawIcon(c, t) {
   g.setTransform(1, 0, 0, 1, 0, 0);
 }
 const hotbarEl = document.getElementById('hotbar'), itemNameEl = document.getElementById('itemName');
-const slotDivs = HOTBAR.map((t, k) => { const d = document.createElement('div'); d.className = 'slot'; d.addEventListener('pointerdown', e => { e.stopPropagation(); if (state === 'play') selectHot(k); }); const c = document.createElement('canvas'); c.width = c.height = 32; drawIcon(c, t); d.appendChild(c); hotbarEl.appendChild(d); return d; });
+const slotDivs = HOTBAR.map((t, k) => { const d = document.createElement('div'); d.className = 'slot'; d.addEventListener('pointerdown', e => { e.stopPropagation(); if (state === 'play') selectHot(k); }); const c = document.createElement('canvas'); c.width = c.height = 32; d.appendChild(c); hotbarEl.appendChild(d); return d; });
 drawIcon(document.getElementById('toastIcon'), GRASS);
 let itemNameT = 0;
-function selectHot(i) { hotSel = (i + 9) % 9; slotDivs.forEach((d, k) => d.classList.toggle('sel', k === hotSel)); itemNameEl.textContent = BLOCK[HOTBAR[hotSel]].name; itemNameEl.style.opacity = 1; itemNameT = 2; updateHeld(); }
+function selectHot(i) { hotSel = (i + 9) % 9; slotDivs.forEach((d, k) => d.classList.toggle('sel', k === hotSel)); itemNameEl.textContent = typeof Inv !== 'undefined' ? Inv.heldName() : ''; itemNameEl.style.opacity = 1; itemNameT = 2; updateHeld(); }
 const statsCv = document.getElementById('stats'), sg = statsCv.getContext('2d');
 const HEART = [".kkk.kkk.", "kRRWkRRRk", "kRWRRRRRk", "kRRRRRRRk", ".kRRRRRk.", "..kRRRk..", "...kRk...", "....k...."];
 const FOOD = [".....kk..", "....kBBk.", "...kBBBBk", "..kBBBBBk", ".kBBBBBk.", "kWkBBBk..", "kWWkkk...", ".kk......"];
@@ -936,9 +938,9 @@ let showDebug = false, hudHidden = false;
 let heldMesh = null;
 const heldMat = new THREE.MeshBasicMaterial({ map: atlasTex, vertexColors: true, alphaTest: .5, depthTest: false, fog: false });
 function updateHeld() {
-  if (heldMesh) { camera.remove(heldMesh); heldMesh.geometry.dispose(); }
-  const A = newArrays(); emitBlock(A, A, 0, 0, 0, HOTBAR[hotSel], -.5, -.5, -.5, true);
-  heldMesh = new THREE.Mesh(makeGeo(A), heldMat); heldMesh.renderOrder = 50; heldMesh.scale.setScalar(.3); camera.add(heldMesh);
+  if (heldMesh) { camera.remove(heldMesh); heldMesh.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
+  heldMesh = typeof Inv !== 'undefined' ? Inv.heldModel() : null;   // block cube, flat item sprite or bare arm (js/items.js)
+  if (heldMesh) camera.add(heldMesh);
 }
 
 // =====================================================================
@@ -1010,7 +1012,7 @@ canvas.addEventListener('pointermove', e => {
 });
 addEventListener('pointerup', e => {
   if (e.pointerType === 'touch') { touchUp(e); return; }
-  if (dragging && dragMoved < 6 && e.button === 0 && state === 'play') { const h = targetBlock(); if (h) breakBlock(h); }
+  if (dragging && dragMoved < 6 && e.button === 0 && state === 'play') { const h = targetBlock(); if (h && (typeof Inv === 'undefined' || Inv.breakTime(h.t) === 0)) breakBlock(h); }
   dragging = false; if (e.button === 0) mining = false;
 });
 addEventListener('pointercancel', e => { if (e.pointerType === 'touch') touchUp(e, true); });
@@ -1148,17 +1150,20 @@ function breakBlock(h) {
   // water flows into the hole from the sides or above
   if ([[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]].some(([a, b, c]) => get(h.x + a, h.y + b, h.z + c) === WATER)) set(h.x, h.y, h.z, WATER);
   burst(h.x, h.y, h.z, h.t); SFX.block(h.t, 'break'); PL().swing = 1; swingT = 1;
+  if (typeof Inv !== 'undefined') Inv.onBreak(h);   // drops into the inventory, tool wear
   rebuildAround(h.x, h.z);
 }
 function useItem() {
   if (emitFirst('use')) return;
   const h = targetBlock(); if (!h) return;
+  const t = typeof Inv !== 'undefined' ? Inv.heldBlock() : AIR; if (!t) return;   // only block items can be placed
   let x = h.x, y = h.y, z = h.z;
   if (BLOCK[h.t].kind !== 'cross') { x += h.nx; y += h.ny; z += h.nz; }
   if (!inb(x, y, z)) return;
   const c = get(x, y, z); if (c && c !== WATER && BLOCK[c].kind !== 'cross') return;
   for (const ch of chars) { const p = ch.pos; if (x < p.x + PW && x + 1 > p.x - PW && y < p.y + PH && y + 1 > p.y && z < p.z + PW && z + 1 > p.z - PW) return; }
-  const t = HOTBAR[hotSel]; set(x, y, z, t); SFX.block(t, 'place'); PL().swing = 1; swingT = 1;
+  if (BLOCK[t].kind === 'cross' && !BLOCK[get(x, y - 1, z)].solid) return;   // torches and flowers need ground
+  set(x, y, z, t); Inv.consumeHeld(1); SFX.block(t, 'place'); PL().swing = 1; swingT = 1;
   rebuildAround(x, z);
 }
 
@@ -1359,7 +1364,8 @@ function frame(now) {
   let hit = null;
   if (state === 'play') {
     hit = targetBlock();
-    if (mining) { mineCd -= rawDt; if (mineCd <= 0) { if (tryAttack()) mineCd = .45; else if (hit) { breakBlock(hit); mineCd = .25; hit = targetBlock(); } } }
+    if (mining) { mineCd -= rawDt; if (mineCd <= 0) { if (tryAttack()) mineCd = .45;
+      else if (hit && (typeof Inv === 'undefined' ? (breakBlock(hit), true) : Inv.mine(hit, rawDt))) { mineCd = .25; hit = targetBlock(); } } }   // hold to mine, crack stages
   }
   outline.visible = !!hit && !hudHidden;
   if (hit) { const cr = BLOCK[hit.t].kind === 'cross'; outline.position.set(hit.x + .5, hit.y + (cr ? .4 : .5), hit.z + .5); outline.scale.set(cr ? .7 : 1, cr ? .8 : 1, cr ? .7 : 1); }
