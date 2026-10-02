@@ -781,20 +781,31 @@ class Troll {
   }
 }
 function P2(c) { return gg => { for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { gg.fillStyle = shade(c, (rand() - .5) * .25); gg.fillRect(x, y, 1, 1); } }; }
+// ---- Shared extension points for the feature modules in js/*.js (loaded after this script)
+const ENTITIES = [];   // creatures that can be hit: { pos, center(), hit(dmg, dir), dead, update(dt), name }
+const HOOKS = {};
+const on = (name, fn) => (HOOKS[name] || (HOOKS[name] = [])).push(fn);
+const emit = (name, ...a) => { for (const f of HOOKS[name] || []) f(...a); };
+const emitFirst = (name, ...a) => (HOOKS[name] || []).some(f => f(...a));      // true when a module handled it
+const filter = (name, v, ...a) => (HOOKS[name] || []).reduce((x, f) => f(x, ...a), v);
 let troll;
 { let tx = 66, tz = 104; for (let i = 0; i < 400; i++) { const x = 50 + (rand() * 30 | 0), z = 92 + (rand() * 22 | 0); if (!reserved[z * WX + x] && get(x, H(x, z), z) === GRASS) { tx = x + .5; tz = z + .5; break; } }
-  troll = new Troll(tx, tz); }
+  troll = new Troll(tx, tz); troll.name = 'Forest Troll'; ENTITIES.push(troll); }
 let shakeT = 0;
 function hurt(n, by, kx, kz) {
+  n = filter('damage', n, by, kx, kz); if (n <= 0) return;
   const d = DEFS[cur], P = PL(); d.hp = Math.max(0, d.hp - n); drawStats(); shakeT = .3;
   flashEl.style.background = '#b00000'; fx.flash = .45; P.vel.x += kx * 7; P.vel.z += kz * 7; P.vel.y = 5;
   if (d.hp <= 0) { chat(`${d.name} was slain by ${by}`); d.hp = 20; drawStats(); P.pos.set(d.pos[0], groundY(d.pos[0], d.pos[1]).y + .5, d.pos[1]); P.vel.set(0, 0, 0); }
 }
 function tryAttack() {
-  if (troll.dead > 0) return false;
-  const P = PL(), eye = P.eye, to = troll.center().sub(eye), dist = to.length();
-  if (dist > 4.2 || to.normalize().dot(lookDir(P.yaw, P.pitch)) < .8) return false;
-  P.swing = 1; swingT = 1; troll.hit(P.sprint ? 9 : 6, new V3(to.x, 0, to.z).normalize()); return true;
+  if (emitFirst('attack')) return true;
+  const P = PL(), eye = P.eye, dir = lookDir(P.yaw, P.pitch); let best = null, bd = 1e9;
+  for (const e of ENTITIES) { if (e.dead > 0) continue; const to = e.center().sub(eye), dist = to.length();
+    if (dist < 4.2 && dist < bd && to.normalize().dot(dir) > .8) { best = e; bd = dist; } }
+  if (!best) return false;
+  const to = best.center().sub(eye); P.swing = 1; swingT = 1;
+  best.hit(filter('meleeDamage', P.sprint ? 9 : 6, best), new V3(to.x, 0, to.z).normalize()); return true;
 }
 
 // =====================================================================
@@ -953,6 +964,7 @@ addEventListener('keydown', e => {
   if (state === 'title' || state === 'pause') return;
   keys[e.code] = true;
   if (e.repeat) return;
+  if (emitFirst('key', e)) return;
   if (e.code === 'KeyW') { const now = performance.now(); if (now - lastWTap < 280) PL().sprint = true; lastWTap = now; }
   if (e.code === 'F5') viewMode = (viewMode + 1) % 3;
   if (e.code === 'F3') { showDebug = !showDebug; debugEl.hidden = !showDebug; }
@@ -1139,6 +1151,7 @@ function breakBlock(h) {
   rebuildAround(h.x, h.z);
 }
 function useItem() {
+  if (emitFirst('use')) return;
   const h = targetBlock(); if (!h) return;
   let x = h.x, y = h.y, z = h.z;
   if (BLOCK[h.t].kind !== 'cross') { x += h.nx; y += h.ny; z += h.nz; }
@@ -1299,6 +1312,7 @@ document.getElementById('playBtn').addEventListener('click', () => {
   } else lockPointer();
   canvas.focus();
   for (const d of DEFS) chat(d.name + ' joined the game', 'join');
+  emit('start');
   setTimeout(() => toastEl.classList.remove('out'), 1200); setTimeout(() => toastEl.classList.add('out'), 12000);
 });
 document.getElementById('resumeBtn').addEventListener('click', () => { SFX.uiClick(); pauseEl.hidden = true; state = 'play'; ctrlPanel2.hidden = true; lockPointer(); canvas.focus(); });
@@ -1332,7 +1346,8 @@ function frame(now) {
     }
     for (const c of chars) { if (state !== 'title') physics(c, c === P0 && state === 'play' ? rawDt : dt, c === P0 ? input : null); c.animate(dt, c === P0 && state === 'play'); }
     for (const m of mobs) m.update(dt);
-    if (state === 'play' || state === 'wheel') troll.update(dt);
+    if (state === 'play' || state === 'wheel') for (const e of ENTITIES) e.update(dt);
+    emit('frame', dt, rawDt);
     for (let i = particles.length - 1; i >= 0; i--) { const q = particles[i]; q.life -= dt; q.v.y -= 18 * dt; q.m.position.addScaledVector(q.v, dt);
       if (BLOCK[get(Math.floor(q.m.position.x), Math.floor(q.m.position.y), Math.floor(q.m.position.z))].solid) { q.m.position.addScaledVector(q.v, -dt); q.v.set(0, 0, 0); }
       if (q.life <= 0) { scene.remove(q.m); q.m.material.dispose(); particles.splice(i, 1); } }
@@ -1397,9 +1412,14 @@ function frame(now) {
       hit ? `Targeted block: ${BLOCK[hit.t].name} (${hit.x}, ${hit.y}, ${hit.z})` : 'Targeted block: none'];
     debugEl.innerHTML = lines.map(l => `<div class="mc">${l.replace(/</g, '&lt;')}</div>`).join(''); }
 
+  emit('tick', rawDt);
   renderer.render(scene, camera);
 }
 requestAnimationFrame(frame);
 </script>
+<script src="js/items.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/valheim.js"></script>
+<script src="js/mobile.js"></script>
 </body>
 </html>
