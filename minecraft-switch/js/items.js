@@ -1043,11 +1043,11 @@ function itemTip(st) {
   if (broken(st)) L.push(`<div class="rd">Broken: repair it at a ${esc(stName(repairStation(st.id)))}</div>`);
   if (it.durability && (it.weapon || it.armor || it.shield || it.tool)) L.push(`<div class="gd">Quality ${qualityOf(st.id)}/${MAXQ}</div>`);
   if (it.tier) L.push(`<div>Tier: ${esc(it.tier)}</div>`);
-  if (it.weapon) L.push(`<div class="bl">Damage: ${fmt(it.weapon.dmg)}</div>`, `<div>Attack speed: ${fmt(it.weapon.speed)} s</div>`, `<div>Stamina: ${fmt(it.weapon.stamina)} per swing</div>`);
+  if (it.weapon) L.push(`<div class="bl">Damage: ${fmt(it.weapon.dmg)}</div>`, `<div>Attack speed: ${fmt(it.weapon.speed)} s</div>`);
   if (it.tool && it.tool.power) L.push(`<div>${it.tool.type[0].toUpperCase() + it.tool.type.slice(1)}, tier ${it.tool.power}</div>`);
   if (it.armor) L.push(`<div class="bl">+${it.armor.armor} Armor</div>`, `<div>Slot: ${it.armor.slot}</div>`);
   if (it.shield) L.push(`<div class="bl">Block power: ${fmt(it.shield.block)}</div>`, `<div>Parry bonus: ${fmt(it.shield.parry)}x</div>`);
-  if (it.food) L.push(`<div>Food: +${it.food.heal} health, +${it.food.stamina} stamina, ${Math.round(it.food.secs / 60)} min</div>`, `<div>Hunger: +${it.food.hunger}</div>`);
+  if (it.food) L.push(`<div>Food: +${it.food.heal} health, ${Math.round(it.food.secs / 60)} min</div>`, `<div>Hunger: +${it.food.hunger}</div>`);
   if (it.durability) L.push(`<div>Durability: ${Math.max(0, Math.ceil(st.dur ?? it.durability))} / ${it.durability}</div>`);
   L.push(`<div>Weight: ${it.weight.toFixed(1)}</div>`);
   if (it.desc) L.push(`<div class="ds">${esc(it.desc)}</div>`);

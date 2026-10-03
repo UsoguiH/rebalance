@@ -39,13 +39,17 @@ const Combat = (() => {
   // one player now: no per-character starting levels, health is the Valheim base
   for (const d of DEFS) { d.lvl = 0; d.xp = 0; d.hp = CFG.baseHp; d.food = 0; }
   let barFlash = 0, breathT = 0;
+  // Stamina is switched off (user request): actions never cost or wait on stamina, and the bar stays hidden.
+  const NO_STAMINA = true;
   function useStamina(n) {
+    if (NO_STAMINA) return true;
     const s = ST();
     if (s.exhausted || s.stamina < n) { barFlash = .5; if (breathT <= 0) { SND.breath(); breathT = 1.2; } return false; }
     s.stamina -= n; s.wait = CFG.regenDelay; if (s.stamina <= .01) { s.stamina = 0; s.exhausted = true; }
     return true;
   }
   function drainStamina(n) {
+    if (NO_STAMINA) return;
     const s = ST(); s.stamina = Math.max(0, s.stamina - n); s.wait = CFG.regenDelay;
     if (s.stamina <= 0) { s.exhausted = true; barFlash = .5; }
   }
@@ -225,7 +229,7 @@ const Combat = (() => {
     if (blocking) return true;
     if (state !== 'play' || dead || eating || guardT > 0 || dodge) return false;
     if (!shieldItem()) return false;
-    const s = ST(); if (s.exhausted || s.stamina <= 0) { barFlash = .5; return false; }
+    const s = ST(); if (!NO_STAMINA && (s.exhausted || s.stamina <= 0)) { barFlash = .5; return false; }
     blocking = true; blockT = 0; blockSrc = src; PL().sprint = false; SND.raise();
     return true;
   }
@@ -569,6 +573,7 @@ const Combat = (() => {
   const staCv = document.createElement('canvas'); staCv.id = 'cbSta'; staCv.width = 42; staCv.height = 4; hudEl.appendChild(staCv);
   const staG = staCv.getContext('2d'); let staShowT = 0, staKey = '';
   function drawStamina(rawDt) {
+    if (NO_STAMINA) { staCv.style.opacity = 0; return; }
     const s = ST(), mx = maxStamina(), f = clamp(s.stamina / mx, 0, 1), fl = barFlash > 0 && Math.floor(barFlash * 10) % 2 === 0;
     staShowT = f < .999 || fl ? 1.5 : Math.max(0, staShowT - rawDt);
     staCv.style.opacity = state === 'play' && staShowT > 0 && !hudHidden ? Math.min(1, staShowT / .4) : 0;
