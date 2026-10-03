@@ -524,7 +524,7 @@ function model(stack, left) {
   } else {
     const m = add3(new THREE.Mesh(spriteGeo(icon16(stack.id)), spriteMat(stack.id)));
     if (left) { m.rotation.set(0, .45, 0); m.scale.setScalar(.5); }                // off hand: posed by syncOffhand / the tick hook
-    else { camPose(m, new V3(.5, -.3, -.85), SPRITE_Q); m.scale.setScalar(.45); }
+    else { camPose(m, new V3(.5, -.3, -.85), SPRITE_Q); m.scale.setScalar(.3); }
   }
   return g;
 }

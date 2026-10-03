@@ -815,7 +815,7 @@ css.textContent = `
 #vhTitle { position: absolute; left: 0; right: 0; top: 24%; text-align: center; opacity: 0; transition: opacity .6s; }
 #vhTitle b { display: block; font-weight: 600; font-size: clamp(30px, 6.5vmin, 58px); letter-spacing: 2px; text-shadow: 4px 4px 0 #3f3f3f; }
 #vhTitle span { display: block; margin-top: 8px; font-size: clamp(15px, 2.8vmin, 22px); text-shadow: 2px 2px 0 #3f3f3f; }
-#vhSub { position: absolute; left: 50%; bottom: calc(136px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(640px, 92%); text-align: center;
+#vhSub { position: absolute; left: 50%; top: calc(100px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); width: min(640px, 92%); text-align: center;
   font-size: 19px; line-height: 1.3; opacity: 0; transition: opacity .5s; text-shadow: 2px 2px 0 #3f3f3f; }
 #vhAdv { position: absolute; right: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); width: 300px; display: flex; gap: 10px; align-items: center; padding: 10px 12px; box-sizing: border-box;
   background: #212121; border: 2px solid #000; box-shadow: inset 0 0 0 2px #555; transition: transform .5s, opacity .5s; }
