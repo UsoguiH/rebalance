@@ -599,9 +599,18 @@ function monstersNear(p) {
   return ENTITIES.some(e => e && !(e.dead > 0) && e.pos && (e.hostile || HOSTILE.test((e.kind || '') + ' ' + (e.name || ''))) &&
     Math.abs(e.pos.x - p.x) < 8 && Math.abs(e.pos.z - p.z) < 8 && Math.abs(e.pos.y - p.y) < 5);
 }
+// Valheim rule: a bed works only under a roof with a fire (campfire, hearth, lit furnace) within 5 blocks
+function bedOk(x, y, z) {
+  let roof = false; for (let yy = y + 1; yy < WY; yy++) { const b = BLOCK[get(x, yy, z)]; if (b && b.solid && b.kind !== 'cross') { roof = true; break; } }
+  if (!roof) return false;
+  for (let dy = -2; dy <= 3; dy++) for (let dz = -5; dz <= 5; dz++) for (let dx = -5; dx <= 5; dx++) {
+    const t = get(x + dx, y + dy, z + dz); if (t === FURNACE_LIT || /campfire|hearth|bonfire/i.test((BLOCK[t] && BLOCK[t].name) || '')) return true; }
+  return false;
+}
 function useBed(x, y, z) {
   const P = PL();
   if (monstersNear(P.pos)) { chat('You may not rest now; there are monsters nearby'); return; }
+  if (!bedOk(x, y, z)) { chat('You need a roof and a fire to rest here'); return; }
   const d = DEFS[cur], np = [x + .5, z + .5];
   if (!d.pos || d.pos[0] !== np[0] || d.pos[1] !== np[1]) { d.pos = np; chat('Respawn point set'); }
   if (!hasWorld() || !World.isNight || !World.isNight()) { chat('You can sleep only at night'); return; }
@@ -1022,6 +1031,13 @@ Object.assign(Stations, {
   ids: { FURNACE, FURNACE_LIT, CHEST, BED, DOOR, LADDER, OAK_SLAB, COBBLE_SLAB, OAK_STAIRS, COBBLE_STAIRS, FENCE, GRAVEL },
   getMeta: gm, setMeta: sm, chest: (x, y, z) => CHESTS.get(IDX(x, y, z)) || null, furnace: (x, y, z) => FURN.get(IDX(x, y, z)) || null,
   checkFall,
+  // the Hammer (js/build.js) places Minecraft blocks with their own rules (doors, beds, chests, slabs, stairs, torches)
+  placeList: (t, h) => { const f = PLACE[t]; return f ? f(h) : single(h, t, 0); },
+  commitList: list => { const cols = new Set(); for (const [x, y, z, t, m] of list) { set(x, y, z, t); sm(x, y, z, m | 0); cols.add(x + ',' + z); }
+    for (const k of cols) { const [x, z] = k.split(',').map(Number); rebuildAround(x, z); } },
+  iconBoxes: (t, boxes) => { ICON_BOXES[t] = boxes; },
+  removeSmelt: id => { delete SMELT[id]; },
+  smelts: () => Object.keys(SMELT),
 });
 Object.assign(Light, {
   sky: (x, y, z) => inb(x, y, z) ? SKY[IDX(x, y, z)] : y >= WY ? 15 : 0,

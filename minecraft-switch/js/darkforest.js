@@ -1008,8 +1008,8 @@ const STORY = {
   ore: ['Good ore, {name}! But ore alone is just heavy rock.',
     'A smelter needs a living ember. The dead keep embers in their crypt, {dir} of here. Bring a blunt weapon if you have one: bones crack, they do not bleed.'],
   crypt: ['A crypt of the ship-folk. Their bones still walk, and they guard their burial urns.', 'Break the urns. Ember cores sleep inside. Kraa!'],
-  cores: ['Embers! Warm as a heartbeat.', 'At a workbench: twenty stone, four resin and two ember cores make a smelter. Place it, stand close, and open your inventory.'],
-  smelter: ['A smelter! Feed it ore and wood. Copper and tin first, then two copper and one tin make bronze.'],
+  cores: ['Embers! Warm as a heartbeat.', 'With the Hammer, near a workbench: twenty stone, four resin and two ember cores build a smelter. Twenty stone and two more cores build a charcoal kiln to feed it.'],
+  smelter: ['A smelter! Feed it charcoal and ore. Copper and tin first, then two copper and one tin make bronze at a forge.'],
   bronze: ['Bronze! It rings like a bell.', 'Now forge something worth swinging at a workbench. A mace cracks bones, a sword sings, a buckler keeps your teeth.'],
   gear: ['Now you look like a warrior and not a castaway. Kraa.',
     'Something old sleeps at the heart of the forest, under a shrine of roots. The forest hides it well.',
@@ -1028,8 +1028,8 @@ const HINT = {
   enter: ['The Dark Forest is {dir} of here, about {m} blocks. Look for the black pines.'],
   ore: ['Copper boulders are mossy rocks with green veins, all over the forest. Tin sits on the north shore. Hold attack on them with the Antler Pickaxe.'],
   core: ['The crypt is {dir} of here, about {m} blocks: a stone arch over a stair going down. Break the clay urns inside.'],
-  smelter: ['A smelter needs twenty stone, four resin and two ember cores, at a workbench. Then place it on the ground like a block.'],
-  bronze: ['Stand next to your smelter and open the inventory. Smelt Copper Ore and Tin Ore first, then two copper and one tin make bronze.'],
+  smelter: ['A smelter needs twenty stone, four resin and two ember cores. Build it with the Hammer near your workbench.'],
+  bronze: ['Charcoal comes from a kiln fed with wood. Use the smelter with charcoal, then with ore. Two copper and one tin make bronze at a forge.'],
   gear: ['Bronze gear is made at a workbench. Try a Bronze Mace or Sword. Four bronze is enough for a sword.'],
   shrine: ['The Root Shrine is {dir} of here, about {m} blocks, in a ring of glowing stones.'],
   seeds: ['Greyling Shamans carry the seeds: small, hooded, with a glowing staff. They hide behind the brutes. Hunt them in the forest.'],
@@ -1052,7 +1052,7 @@ function step() {
   if (!F.enter) return 'enter';
   if (!F.ore && ((mined.copper >= 6 && mined.tin >= 3) || F.bronze)) F.ore = true;
   if (!F.ore) return 'ore';
-  if (!F.core && (count('ember_core') >= 2 || F.smelter)) F.core = true;
+  if (!F.core && (count('ember_core') >= 4 || F.smelter)) F.core = true;
   if (!F.core) return 'core';
   if (!F.smelter) return 'smelter';
   if (!F.bronze && (count('bronze') > 0 || hasAny(BRONZE_ALL))) F.bronze = true;
@@ -1068,9 +1068,9 @@ function questText(s = step()) {
     case 'pick': return `Craft an Antler Pickaxe (workbench: 10 Wood, 2 Hard Antler)`;
     case 'enter': return `Travel to the Dark Forest (${where(FOREST_GATE.x, FOREST_GATE.z)})`;
     case 'ore': return `Mine Copper Ore ${Math.min(6, mined.copper)}/6 and Tin Ore ${Math.min(3, mined.tin)}/3 with the Antler Pickaxe`;
-    case 'core': return `Find Ember Cores in the burial crypt: ${Math.min(2, count('ember_core'))}/2 (${where(CRY.cx, CRY.cz + 10)})`;
-    case 'smelter': return 'Craft a Smelter at a workbench (20 Stone, 4 Resin, 2 Ember Core) and place it';
-    case 'bronze': return 'At the Smelter: smelt Copper Ore and Tin Ore (1 Wood each), then 2 Copper + 1 Tin make Bronze';
+    case 'core': return `Find Ember Cores in the burial crypt: ${Math.min(4, count('ember_core'))}/4 (${where(CRY.cx, CRY.cz + 10)})`;
+    case 'smelter': return 'Build a Smelter with the Hammer (20 Stone, 4 Resin, 2 Ember Core)';
+    case 'bronze': return 'Feed the Smelter charcoal (Kiln) and Copper + Tin Ore, then make Bronze at a Forge';
     case 'gear': return 'Forge a bronze weapon at a workbench (Sword, Mace or Axe)';
     case 'waystone': return 'Find the Waystone in the Dark Forest (Vesk circles it)';
     case 'shrine': return `Find the Root Shrine (${where(SHR.cx, SHR.cz)})`;
