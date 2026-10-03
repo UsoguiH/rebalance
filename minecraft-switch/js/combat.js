@@ -154,8 +154,8 @@ const Combat = (() => {
       if (dist < reach && dist < bd && to.normalize().dot(dir) > (dist < 1.6 ? .55 : .8)) { best = e; bd = dist; }
     }
     if (!best) return null;
-    const h = raycast(eye, dir, bd);                       // a solid block in the way blocks the swing (grass does not)
-    if (h && BLOCK[h.t].kind !== 'cross' && new V3(h.x + .5, h.y + .5, h.z + .5).distanceTo(eye) < bd - .7) return null;
+    const h = raycast(eye, dir, bd);                       // a solid block in the way blocks the swing (grass and leaves do not)
+    if (h && BLOCK[h.t].kind !== 'cross' && !/Leaves|Needles/.test(BLOCK[h.t].name) && new V3(h.x + .5, h.y + .5, h.z + .5).distanceTo(eye) < bd - .7) return null;
     return best;
   }
   function hitEntity(e, dmg, dir, color, big) {
