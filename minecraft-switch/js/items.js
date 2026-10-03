@@ -969,6 +969,7 @@ Object.assign(Inv, {
   defineStation: (name, d) => { STATIONS[name] = d; },   // { name, block, r } or { name, test: () => bool, icon: itemId }
   itemForBlock: t => BI[t] || null,
   bag: () => bag, save, recipes: () => RECIPES.slice(),
+  reset() { DEFS.forEach((d, i) => { bags[i] = starterBag(); }); bag = bags[cur]; bagCur = cur; carry = null; lastHeldId = undefined; save(); changed(); },   // New World: every character starts over
 });
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
 changed();

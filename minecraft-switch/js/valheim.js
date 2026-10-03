@@ -827,11 +827,11 @@ css.textContent = `
 #vhGoal { position: absolute; left: 8px; top: calc(8px + env(safe-area-inset-top, 0px)); max-width: 260px; background: rgba(0,0,0,.42); padding: 3px 8px 5px; font-size: 15px; line-height: 1.25; text-shadow: 2px 2px 0 #3f3f3f; }
 #vhGoal b { display: block; color: #ffaa00; font-weight: 600; font-size: 13px; }
 .msg.vhA { color: #55ff55; } .msg.vhC { color: #ff55ff; }
-html.touch #vhDlg { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); width: min(520px, 62%); padding: 8px 10px 20px 8px; gap: 8px; }
+html.touch #vhDlg { bottom: calc(152px + env(safe-area-inset-bottom, 0px)); width: min(480px, 56%); padding: 8px 10px 20px 8px; gap: 8px; }
 html.touch #vhDlg .more { font-size: 11px; }
 html.touch #vhDlg canvas { width: 48px; height: 48px; }
 html.touch #vhDlg .txt { font-size: 15px; } html.touch #vhDlg .who { font-size: 14px; }
-html.touch #vhSub { bottom: calc(110px + env(safe-area-inset-bottom, 0px)); font-size: 15px; width: min(560px, 60%); }
+html.touch #vhSub { top: auto; bottom: calc(152px + env(safe-area-inset-bottom, 0px)); font-size: 15px; width: min(560px, 60%); }
 html.touch #vhAdv { top: calc(56px + env(safe-area-inset-top, 0px)); right: 10px; width: min(250px, 40%); padding: 6px 8px; }
 html.touch #vhAdv b { font-size: 14px; } html.touch #vhAdv span { font-size: 13px; }
 html.touch #vhGoal { left: auto; top: auto; bottom: calc(184px + env(safe-area-inset-bottom, 0px)); right: 8px; max-width: 30%; font-size: 13px; }
@@ -969,6 +969,7 @@ const STORY = {
   intro: ['Kraa! Awake at last, {name}. The sea spat you onto Skarnholm, the island at the edge of the north.',
     'No ship leaves this place by luck. The isle keeps the weak. Only the proven may sail away.',
     'So prove yourself. Hunt the deer of the meadows and take their crowned heads as trophies.',
+    'Your hands still work. Break trees for wood, open your bag and make planks and a workbench. Torches and a bed make the nights kinder.',
     'Bring two to the Stag Altar, {dir} of here. What answers there... you will see. I am Korra. I watch. Kraa!'],
   night: ['Night falls, {name}. Listen... the grey folk are crawling out of the pines.',
     'Greylings. Small and sneaky, and they throw stones. Keep moving and hit back hard. Kraa!'],
@@ -996,7 +997,8 @@ function onKill(e) {
 }
 function onPickup(id) {
   if (/_trophy$/.test(id)) advance('trophy');
-  if (id === 'deer_trophy' && !flags.trophy && stage < 2) { flags.trophy = true; korra(countItem('deer_trophy') >= 2 ? STORY.trophy2 : STORY.trophy1); }
+  if (id === 'deer_trophy' && !flags.trophy && stage < 2) { flags.trophy = true; const two = countItem('deer_trophy') >= 2; if (two) flags.trophy2 = true; korra(two ? STORY.trophy2 : STORY.trophy1); }
+  else if (id === 'deer_trophy' && !flags.trophy2 && stage < 2 && countItem('deer_trophy') >= 2) { flags.trophy2 = true; const q = korraQ.find(o => o.lines === STORY.trophy1); if (q) q.lines = STORY.trophy2; else korra(STORY.trophy2.slice(1)); }
 }
 function milestones() {
   const P = PL(), night = isNight();
@@ -1012,7 +1014,8 @@ function updateGoal() {
   else if (boss && !boss.removed) txt = 'Defeat Stormhorn!';
   else { const n = countItem('deer_trophy');
     txt = n < 2 ? `Hunt deer for trophies: ${n}/2` : `Offer 2 deer trophies at the Stag Altar (${dist} m ${compass(dx, dz)})`; }
-  goalEl.hidden = !flags.intro || showDebug; goalEl.querySelector('span').textContent = txt;
+  goalEl.hidden = !flags.intro || showDebug || (TOUCH && dlg.open);   // phones: the dialog box would cover it
+  goalEl.querySelector('span').textContent = txt;
 }
 
 // =====================================================================================================
@@ -1197,6 +1200,8 @@ const World = {
 window.World = World;
 window.Meadows = {
   skipIntro() { fadeT = 0; fadeEl.style.opacity = 0; korraQ.length = 0; timers.length = 0; flags.intro = true; stage = Math.max(stage, 1); },
+  // Continue: put the quest back where it was; a save made mid-fight gets the offering back (the boss is not saved)
+  restore(s) { s = s | 0; if (s === 2) { s = 1; if (hasInv()) try { Inv.add('deer_trophy', 2); } catch (e) { /* ignore */ } } stage = Math.max(stage, s); updateGoal(); },
   spawn, summonBoss, despawnBoss, advance, korra, talk, subtitle, bigTitle, bolt,
   get boss() { return boss; }, get stones() { return stones; }, get creatures() { return CREATURES; }, get drops() { return drops; }, get dialog() { return dlg; },
   get stage() { return stage; }, flags, bag, LORE, ALT, raven, dlgAdvance, blocks: { MOSSY, RUNE, ALTAR },

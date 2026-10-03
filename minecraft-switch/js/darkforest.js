@@ -880,6 +880,18 @@ function spawnTroll(x, z) {
   t.update = function (dt) { if (this.removed) return; if (!(this.dead > 0) && calm()) { this.wind = 0; return; } oUpd(dt); };
   ENTITIES.push(t); TROLLS.push(t); return t;
 }
+// the main script's Forest Troll lived next to the spawn meadow and killed new players in their first minute;
+// like in Valheim, trolls belong to the dark forest, so move its home to an open clearing here
+if (typeof troll !== 'undefined' && troll && troll.home) {
+  let spot = null;
+  for (let r = 0; r < 24 && !spot; r++) for (let a = 0; a < 16 && !spot; a++) {
+    const x = Math.floor(84 + Math.cos(a / 16 * Math.PI * 2) * r), z = Math.floor(30 + Math.sin(a / 16 * Math.PI * 2) * r), ty = topY(x, z);
+    if (ty > SEA && inForest(x + .5, z + .5) && Math.hypot(x - 91, z - 38) > 20 && BLOCK[get(x, ty, z)].solid && !BLOCK[get(x, ty + 1, z)].solid && !BLOCK[get(x, ty + 2, z)].solid && Math.hypot(x - SHR.cx, z - SHR.cz) > 14 && Math.hypot(x - CRY.cx, z - CRY.cz) > 14) spot = { x: x + .5, z: z + .5, y: ty + 1 };
+  }
+  if (spot) { troll.home.set(spot.x, 0, spot.z); troll.pos.set(spot.x, spot.y, spot.z);
+    const u = troll.update; troll.update = function (dt) { const was = this.dead > 0; u.call(this, dt); if (was && !(this.dead > 0)) this.pos.y = spot.y; };   // respawn under the pines, not on top
+  }
+}
 
 // =====================================================================================================
 //  Spawning (tuned for phones): brutes, shamans and trolls in the forest, skeletons in the crypt
@@ -1043,7 +1055,7 @@ function questText(s = step()) {
     case 'ore': return `Mine Copper Ore ${Math.min(6, mined.copper)}/6 and Tin Ore ${Math.min(3, mined.tin)}/3 with the Antler Pickaxe`;
     case 'core': return `Find Ember Cores in the burial crypt: ${Math.min(2, count('ember_core'))}/2 (${where(CRY.cx, CRY.cz + 10)})`;
     case 'smelter': return 'Craft a Smelter at a workbench (20 Stone, 4 Resin, 2 Ember Core) and place it';
-    case 'bronze': return 'At the Smelter: smelt Copper and Tin, then make Bronze';
+    case 'bronze': return 'At the Smelter: smelt Copper Ore and Tin Ore (1 Wood each), then 2 Copper + 1 Tin make Bronze';
     case 'gear': return 'Forge a bronze weapon at a workbench (Sword, Mace or Axe)';
     case 'shrine': return `Find the Root Shrine (${where(SHR.cx, SHR.cz)})`;
     case 'seeds': return `Take Ancient Seeds from Greyling Shamans: ${count('ancient_seed')}/3`;
@@ -1257,11 +1269,12 @@ function fogTick() {
 // =====================================================================================================
 //  Saving (mobs.js Save hooks, when present)
 // =====================================================================================================
-on('save', data => { if (!data) return; data.darkforest = { F: Object.assign({}, F, { summoned: false }), mined: Object.assign({}, mined), urnN, adv: Object.keys(advDone), lore: LORE.map(l => l.read) }; });
+on('save', data => { if (!data) return; data.darkforest = { F: Object.assign({}, F, { summoned: false }), mined: Object.assign({}, mined), urnN, adv: Object.keys(advDone), lore: LORE.map(l => l.read), seedsBack: !!(boss && !boss.removed && !F.bossDead) }; });
 on('load', data => {
   const d = data && data.darkforest; if (!d) return;
   Object.assign(F, d.F || {}); Object.assign(mined, d.mined || {}); urnN = d.urnN | 0; for (const k of d.adv || []) advDone[k] = true;
   (d.lore || []).forEach((r, i) => { if (LORE[i]) LORE[i].read = !!r; }); lastStep = '';
+  if (d.seedsBack) try { Inv.add('ancient_seed', 3); } catch (e) { /* ignore */ }   // saved mid-fight: the boss is not saved, give the offering back
 });
 
 // =====================================================================================================

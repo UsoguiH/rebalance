@@ -976,7 +976,7 @@ function load(data) {
     for (const m of MOBS.slice()) if (m.animal) m.remove();
     for (const [k, x, y, z, age, sheared, hp] of data.animals) { const e = spawn(k, x, z, y); if (!e) continue; e.pos.y = y; e.age = age || 0; if (e.age < 0) e.setBaby(true); if (sheared && e.setSheared) e.setSheared(true); if (hp) e.hp = Math.min(e.max, hp); }
   }
-  if (data.meadows && typeof Meadows !== 'undefined') { Object.assign(Meadows.flags, data.meadows.flags || {}); if ((data.meadows.stage || 0) >= 1 || (data.meadows.flags || {}).intro) Meadows.skipIntro(); }
+  if (data.meadows && typeof Meadows !== 'undefined') { Object.assign(Meadows.flags, data.meadows.flags || {}); if ((data.meadows.stage || 0) >= 1 || (data.meadows.flags || {}).intro) Meadows.skipIntro(); if (Meadows.restore) Meadows.restore(data.meadows.stage || 0); }
   for (const m of MOBS.slice()) if (m.hostile) m.remove();
   drawStats(); if (typeof selectHot === 'function') selectHot(hotSel);
   try { emit('load', data); } catch (e) { console.error(e); }
@@ -996,7 +996,7 @@ if (playBtn) {
     if (pendingLoad) return;
     if (readSave()) {      // New World: forget the old save
       clearSave();
-      try { const b = hasInv() && Inv.bag && Inv.bag(); if (b) { b.main.fill(null); b.armor.fill(null); b.off.fill(null); Inv.remove('arrow', 0); } } catch (e) { /* ignore */ }
+      try { if (hasInv() && Inv.reset) Inv.reset(); else { const b = hasInv() && Inv.bag && Inv.bag(); if (b) { b.main.fill(null); b.armor.fill(null); b.off.fill(null); Inv.remove('arrow', 0); } } } catch (e) { /* ignore */ }
       try { emit('newworld'); } catch (e) { console.error(e); }
     }
   }, true);
