@@ -1,6 +1,6 @@
 "use strict";
 // shaders module: a light "shader pack" for Blockcraft.
-// Post-processing (bloom, sun rays, lens flare, golden-hour grading, ACES tone mapping, vignette)
+// Sun shadows, post-processing (bloom, sun rays, lens flare, golden-hour grading, ACES tone mapping, vignette)
 // plus animated water with sun glints and sky reflections. Toggle with O or the pause-menu button.
 (function () {
   const Shaders = window.Shaders = { on: true };
@@ -9,7 +9,9 @@
   // ---------- animated water (patches the shared water material and the open sea) ----------
   const U = { uTime: { value: 0 }, uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uSkyCol: { value: new THREE.Color('#c0d8ff') }, uFx: { value: 1 } };
   function patchWater(mat) {
-    mat.onBeforeCompile = sh => {
+    const prev = mat.onBeforeCompile;
+    mat.onBeforeCompile = (sh, r) => {
+      prev.call(mat, sh, r);
       Object.assign(sh.uniforms, U);
       sh.vertexShader = 'uniform float uTime; uniform float uFx; varying vec3 vWPos;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
         if (uFx > 0.5 && fract(position.y) > 0.8) transformed.y += (sin(position.x * 1.3 + uTime) * 0.04 + cos(position.z * 1.1 + uTime * 1.3) * 0.04) - 0.04;
@@ -34,6 +36,59 @@
   }
   patchWater(waterMat);
   scene.traverse(o => { if (o.isMesh && o.material && o.material !== waterMat && o.material.color && o.material.color.getHex() === 0x3a64d6) patchWater(o.material); });
+
+  // ---------- sun shadows: depth map from the sun, sampled by the world material ----------
+  const SRES = TOUCH ? 1024 : 2048, SBOX = TOUCH ? 36 : 52;
+  const shadowRT = new THREE.WebGLRenderTarget(SRES, SRES);
+  shadowRT.depthTexture = new THREE.DepthTexture(SRES, SRES); shadowRT.depthTexture.type = THREE.UnsignedIntType;
+  const shadowCam = new THREE.OrthographicCamera(-SBOX, SBOX, SBOX, -SBOX, 1, 260);
+  const depthOnly = new THREE.MeshBasicMaterial({ colorWrite: false });
+  const SU = { uShadowMap: { value: shadowRT.depthTexture }, uShadowMat: { value: new THREE.Matrix4() }, uShadow: { value: 0 }, uTexel: { value: 1 / SRES } };
+  {
+    const prev = opaqueMat.onBeforeCompile;
+    opaqueMat.onBeforeCompile = (sh, r) => {
+      prev.call(opaqueMat, sh, r);
+      Object.assign(sh.uniforms, SU);
+      sh.vertexShader = 'uniform mat4 uShadowMat; varying vec4 vShadowC;\n' + sh.vertexShader.replace('#include <project_vertex>',
+        '#include <project_vertex>\n vShadowC = uShadowMat * modelMatrix * vec4(transformed, 1.0);');
+      sh.fragmentShader = 'uniform sampler2D uShadowMap; uniform float uShadow; uniform float uTexel; varying vec4 vShadowC;\n' + sh.fragmentShader.replace(
+        'gl_FragColor = vec4( outgoingLight, diffuseColor.a );', `
+        if (uShadow > 0.0) {
+          vec3 sc = vShadowC.xyz / vShadowC.w * 0.5 + 0.5;
+          if (sc.x > 0.0 && sc.x < 1.0 && sc.y > 0.0 && sc.y < 1.0 && sc.z < 1.0) {
+            float sh = 0.0, z = sc.z - 0.0012;
+            for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++)
+              sh += step(texture2D(uShadowMap, sc.xy + vec2(float(i), float(j)) * uTexel).r, z);
+            vec2 e = smoothstep(0.0, 0.08, sc.xy) * (1.0 - smoothstep(0.92, 1.0, sc.xy));   // fade at the map edge
+            outgoingLight *= 1.0 - 0.55 * uShadow * (sh / 9.0) * e.x * e.y * clamp(vColor.g, 0.0, 1.0);
+          }
+        }
+        gl_FragColor = vec4( outgoingLight, diffuseColor.a );`);
+    };
+    opaqueMat.needsUpdate = true;
+  }
+  const hideDuringShadow = [sky, sunMesh, clouds, outline];
+  let shadowFrame = 0;
+  function renderShadows(origRender) {
+    const sunDir = tmp.copy(sunMesh.position).sub(camera.position).normalize();
+    const strength = clamp((sunDir.y - .02) / .2, 0, 1);
+    SU.uShadow.value = strength;
+    if (strength <= 0 || (TOUCH && (shadowFrame++ & 1))) return;     // phones refresh every other frame
+    const P = PL(), cx = Math.round(P.pos.x), cy = Math.round(P.pos.y), cz = Math.round(P.pos.z);
+    shadowCam.position.set(cx + sunDir.x * 130, cy + sunDir.y * 130, cz + sunDir.z * 130);
+    shadowCam.up.set(0, 1, 0); if (Math.abs(sunDir.y) > .99) shadowCam.up.set(0, 0, 1);
+    shadowCam.lookAt(cx, cy, cz); shadowCam.updateMatrixWorld(); shadowCam.updateProjectionMatrix();
+    SU.uShadowMat.value.multiplyMatrices(shadowCam.projectionMatrix, shadowCam.matrixWorldInverse);
+    const vis = hideDuringShadow.map(o => o && o.visible), sprites = [];
+    hideDuringShadow.forEach(o => o && (o.visible = false));
+    if (heldMesh) { vis.push(heldMesh.visible); heldMesh.visible = false; }
+    scene.traverse(o => { if (o.isSprite && o.visible) { o.visible = false; sprites.push(o); } });
+    const prevOverride = scene.overrideMaterial; scene.overrideMaterial = depthOnly;
+    renderer.setRenderTarget(shadowRT); renderer.clear(); origRender(scene, shadowCam);
+    scene.overrideMaterial = prevOverride;
+    hideDuringShadow.forEach((o, i) => o && (o.visible = vis[i])); if (heldMesh) heldMesh.visible = vis[vis.length - 1];
+    sprites.forEach(o => o.visible = true);
+  }
 
   // ---------- post-processing pipeline ----------
   const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quadScene = new THREE.Scene();
@@ -83,7 +138,7 @@
   const orig = renderer.render.bind(renderer);
   function draw(mat, target) { quad.material = mat; renderer.setRenderTarget(target); orig(quadScene, quadCam); }
   renderer.render = (s, c) => {
-    if (!Shaders.on || s !== scene) return orig(s, c);
+    if (!Shaders.on || s !== scene) { SU.uShadow.value = 0; return orig(s, c); }
     ensureTargets();
     // sun position on screen and how strongly it shows
     const sunDir = tmp.copy(sunMesh.position).sub(camera.position).normalize();
@@ -97,6 +152,7 @@
     finalMat.uniforms.uSun.value.set(p.x * .5 + .5, p.y * .5 + .5);
     finalMat.uniforms.uAspect.value = w / h;
     // render the world, then bright-pass + blur at quarter resolution, then composite
+    renderShadows(orig);
     renderer.setRenderTarget(rtScene); orig(s, c);
     brightMat.uniforms.t.value = rtScene.texture; draw(brightMat, rtA);
     blurMat.uniforms.t.value = rtA.texture; blurMat.uniforms.dir.value.set(1 / rtA.width, 0); draw(blurMat, rtB);
@@ -118,6 +174,6 @@
   btn.addEventListener('click', () => { SFX.uiClick(); setOn(!Shaders.on); });
   const menu = document.querySelector('#pause .menu'); if (menu) menu.appendChild(btn);
   setOn(Shaders.on);
-  Shaders.set = setOn;
+  Shaders.set = setOn; 
   on('key', e => { if (e.code === 'KeyO') { setOn(!Shaders.on); chat('Shaders: ' + (Shaders.on ? 'ON' : 'OFF')); return true; } return false; });
 })();
