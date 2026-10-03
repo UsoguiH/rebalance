@@ -201,6 +201,9 @@ function defineItems() {
   D({ id: 'blueberries', name: 'Blueberries', kind: 'food', stack: 20, weight: .1, food: { heal: 2, hunger: 3, stamina: 15, secs: 600 }, desc: 'Sweet and cold. Grows under the dark pines.' });
   D({ id: 'mushroom', name: 'Forest Mushroom', kind: 'food', stack: 20, weight: .1, food: { heal: 3, hunger: 2, stamina: 10, secs: 600 }, desc: 'Red cap, white spots. Tastes of earth.' });
   D({ id: 'old_root_trophy', name: 'Old Root Trophy', kind: 'trophy', stack: 20, weight: 2, rarity: 'boss', desc: 'A face of bark. The eyes still glow.' });
+  D({ id: 'drowned_key', name: 'Drowned Key', kind: 'material', stack: 1, weight: .5, rarity: 'boss', desc: 'Green bronze, cold as river water. It opens the sunken crypts of the Swamp.',
+    icon: g => { rr(g, '#1c3d2c', 2, 2, 6, 6); rr(g, '#4f9a7a', 3, 3, 4, 4); rr(g, '#1c3d2c', 4, 4, 2, 2); rr(g, '#1c3d2c', 7, 4, 7, 2); rr(g, '#4f9a7a', 7, 5, 6, 1);
+      rr(g, '#1c3d2c', 11, 6, 2, 3); rr(g, '#1c3d2c', 13, 6, 1, 2); rr(g, '#7fd8b0', 3, 3, 2, 1); } });
   D({ id: 'root_heart', name: 'Rootheart', weight: 1, stack: 1, rarity: 'boss', desc: 'It beats, very slowly. Korra says it opens the way south, to the swamp.' });
   D({ id: 'smelter', name: 'Smelter', kind: 'station', block: SMELTER, weight: 8, desc: 'Place it, then smelt ore and make bronze near it.', icon: undefined });
   const W = (id, name, o) => D(Object.assign({ id, name, rarity: 'uncommon', tint: '#c8873a' }, o));
@@ -426,6 +429,10 @@ function buildRunes() {
 }
 try { genForest(); } catch (e) { console.error('darkforest: generation failed', e); }
 for (const k of touched) { const [a, b] = k.split(',').map(Number); buildChunk(a, b); }
+let WAY = null;
+try { const m = MW(); if (m && m.addWaystone) WAY = m.addWaystone(91 + 3, 38 - 9, { name: 'Waystone', who: 'Vesk',
+  lines: ['...the root that held the hall...', '...sleeps where the stones glow green, in the heart of the pines...'],
+  pin: () => ({ x: SHR.cx, z: SHR.cz, label: 'Root Shrine' }), onRead: () => { F.waystone = true; advance('waystone'); } }); } catch (e) { console.error('darkforest: waystone', e); }
 const runeGlowTex = charTex(64, 16, g => {
   const glyphs = [[[7, 2, 7, 13], [7, 3, 11, 7], [7, 7, 11, 11]], [[4, 2, 4, 13], [11, 2, 11, 13], [4, 3, 11, 12]], [[7, 2, 7, 13], [7, 4, 4, 7], [4, 7, 7, 10], [7, 10, 10, 7], [10, 7, 7, 4]],
     [[8, 2, 8, 13], [8, 5, 4, 2], [8, 5, 12, 2], [8, 9, 4, 6], [8, 9, 12, 6]]];
@@ -532,6 +539,7 @@ class Creature {
   center() { return new V3(this.pos.x, this.pos.y + this.height * .55, this.pos.z); }
   hit(dmg, dir) {
     if (this.dead > 0 || this.removed || this.immune) return;
+    if (this.isBoss && (dlgOpen() || cine)) return;
     this.hp -= +dmg || 0; this.flash = .35; this.aggro = 20;
     const kb = this.kbRes ?? 1;
     if (dir && kb > 0) { this.kb.x += (dir.x || 0) * 5 * kb; this.kb.z += (dir.z || 0) * 5 * kb; this.vy = Math.max(this.vy, 3.2 * kb); }
@@ -831,7 +839,7 @@ class OldRoot extends Creature {
     if (this.dying > 2.6) { const c = new V3(this.pos.x, this.pos.y + 2, this.pos.z); puff(c, 6, 50, BARKM, 1, 3); puff(c, 4, 30, GREENM, 1.5, 2);
       flashEl.style.background = '#c8ffb0'; fx.flash = Math.max(fx.flash, .6); this.loot(c); this.remove(); }
   }
-  loot(c) { drop('old_root_trophy', 1, c); drop('root_heart', 1, c); drop('wood', 12, c); }
+  loot(c) { drop('old_root_trophy', 1, c); drop('drowned_key', 1, c); drop('wood', 12, c); }
   remove() { if (this.vineAt) { this.vineAt.kill(); this.vineAt = null; } super.remove(); }
 }
 // root spike: three stacked bark boxes burst out of the ground
@@ -955,7 +963,7 @@ const ADV = {
   core: ['Living Ember', 'ember_core'], smelter: ['Hot Work', 'smelter'], bronze: ['Wed in Fire', 'bronze'], gear: ['Bronze Age', 'bronze_sword'],
   armor: ['Bright as a Bell', 'bronze_chestplate'], brute: ['Bigger They Come', 'greyling_trophy'], shaman: ['Seed Thief', 'ancient_seed'], bones: ['Bone Breaker', 'bone_fragments'],
   rune: ['Moss and Runes', 'ancient_seed'], lore: ['Forest Lore', 'ancient_seed', 1], shrine: ['The Root Shrine', 'ancient_seed'], summon: ['Waking the Keeper', 'ancient_seed'],
-  root: ['Heartwood', 'old_root_trophy', 1],
+  root: ['Heartwood', 'old_root_trophy', 1], waystone: ['Vesk Knows the Way', 'ancient_seed'],
 };
 const advDone = {}, advQ = []; let advT = 0;
 function advance(key) {
@@ -1004,14 +1012,16 @@ const STORY = {
   smelter: ['A smelter! Feed it ore and wood. Copper and tin first, then two copper and one tin make bronze.'],
   bronze: ['Bronze! It rings like a bell.', 'Now forge something worth swinging at a workbench. A mace cracks bones, a sword sings, a buckler keeps your teeth.'],
   gear: ['Now you look like a warrior and not a castaway. Kraa.',
-    'Listen. At the heart of the forest stands the Root Shrine, {dir} of here. Something old sleeps under it. Go and see.'],
+    'Something old sleeps at the heart of the forest, under a shrine of roots. The forest hides it well.',
+    'But Vesk knows the old stones. Follow him: he circles a Waystone, {dir} of here. Kraa.'],
   shrine: ['The Root Shrine. The ground breathes here.',
     'The grey shamans stole three seeds from the first tree. Lay them on this shrine, and its keeper, the Old Root, will rise to take them back.',
     'It is slow, but its roots run everywhere. When the ground boils in a line, step aside. When a green ring glows under you, get out of it. Kraa!'],
   seeds: ['Three seeds. They are warm, as if they are dreaming.', 'Go to the shrine when you are ready, {dir} of here. Eat well first: blueberries and mushrooms grow all over the forest.'],
-  end: ['The Old Root is down! Even the pines are quiet.', 'That glowing heart it carried... a Rootheart. Keep it close.',
-    'South, past the meadows, the ground turns to black water. Something there feeds on the drowned. The shamans call it Rotmaw.',
-    'Bronze will not be enough for that. Rest, {name}. Kraa!'],
+  end: ['The Old Root is down! Even the pines are quiet.', 'Carry its head to the Ring of Oaths and hang it on the second stone.',
+    'And that key it dropped... green bronze, cold as river water. A Drowned Key. It opens the sunken crypts of the Swamp.',
+    'The Swamp lies across the water, past the meadows. Something there feeds on the drowned. The shamans call it Rotmaw.',
+    'You will need a Skiff or a portal to get there, and iron after bronze. Kraa!'],
 };
 const HINT = {
   pick: ['Stuck, {name}? Stand at a workbench and open your inventory: ten wood and two hard antlers make the Antler Pickaxe.'],
@@ -1024,14 +1034,18 @@ const HINT = {
   shrine: ['The Root Shrine is {dir} of here, about {m} blocks, in a ring of glowing stones.'],
   seeds: ['Greyling Shamans carry the seeds: small, hooded, with a glowing staff. They hide behind the brutes. Hunt them in the forest.'],
   offer: ['You have the seeds. Go to the Root Shrine, {dir} of here, and use it.'],
+  waystone: ['Look up for Vesk. He circles the forest Waystone, {dir} of here, about {m} blocks.'],
+  hang: ['The Ring of Oaths is {dir} of here. Use the second stone\'s mount with the Old Root Trophy in your bag.'],
 };
-const QUEST_TARGET = { enter: () => FOREST_GATE, core: () => ({ x: CRY.cx, z: CRY.cz + 10 }), shrine: () => ({ x: SHR.cx, z: SHR.cz }), offer: () => ({ x: SHR.cx, z: SHR.cz }), ore: () => nearestOre() };
+const RINGP = () => { const r = MW() && MW().RING; return r ? { x: r.cx, z: r.cz } : { x: 70, z: 96 }; };
+const hungRoot = () => { const m = MW(); return !!(m && m.flags && m.flags.hung && m.flags.hung.old_root_trophy); };
+const QUEST_TARGET = { waystone: () => (WAY ? { x: WAY.cx, z: WAY.cz } : FOREST_GATE), hang: RINGP, enter: () => FOREST_GATE, core: () => ({ x: CRY.cx, z: CRY.cz + 10 }), shrine: () => ({ x: SHR.cx, z: SHR.cz }), offer: () => ({ x: SHR.cx, z: SHR.cz }), ore: () => nearestOre() };
 function nearestOre() { const P = PL(); let best = null, bd = 1e9; const want = mined.copper < 6 ? 'copper' : 'tin';
   for (const o of ORES) { if (o.kind !== want) continue; const d = Math.hypot(o.x - P.pos.x, o.z - P.pos.z); if (d < bd) { bd = d; best = o; } } return best; }
 const pickOk = () => ['antler_pickaxe', 'bronze_pickaxe', 'iron_pickaxe'].some(id => count(id) > 0) || ((heldTool() || {}).type === 'pickaxe' && heldTool().power >= 2);
 function step() {
   if (!F.started) return 'pre';
-  if (F.bossDead) return 'done';
+  if (F.bossDead) return hungRoot() ? 'done' : 'hang';
   if (boss && !boss.removed) return 'boss';
   if (!F.pick && pickOk()) F.pick = true;
   if (!F.pick) return 'pick';
@@ -1045,6 +1059,7 @@ function step() {
   if (!F.bronze) return 'bronze';
   if (!F.gear && hasAny(BRONZE_WEAPONS)) F.gear = true;
   if (!F.gear) return 'gear';
+  if (!F.waystone && !F.shrine && WAY) return 'waystone';
   if (!F.shrine) return 'shrine';
   return count('ancient_seed') >= 3 ? 'offer' : 'seeds';
 }
@@ -1057,15 +1072,17 @@ function questText(s = step()) {
     case 'smelter': return 'Craft a Smelter at a workbench (20 Stone, 4 Resin, 2 Ember Core) and place it';
     case 'bronze': return 'At the Smelter: smelt Copper Ore and Tin Ore (1 Wood each), then 2 Copper + 1 Tin make Bronze';
     case 'gear': return 'Forge a bronze weapon at a workbench (Sword, Mace or Axe)';
+    case 'waystone': return 'Find the Waystone in the Dark Forest (Vesk circles it)';
     case 'shrine': return `Find the Root Shrine (${where(SHR.cx, SHR.cz)})`;
     case 'seeds': return `Take Ancient Seeds from Greyling Shamans: ${count('ancient_seed')}/3`;
     case 'offer': return `Offer 3 Ancient Seeds at the Root Shrine (${where(SHR.cx, SHR.cz)})`;
     case 'boss': return 'Defeat The Old Root!';
-    case 'done': return 'Chapter II complete. The Swamp awaits...';
+    case 'hang': { const r = RINGP(); return `Hang the Old Root Trophy at the Ring of Oaths (${where(r.x, r.z)})`; }
+    case 'done': return 'Chapter II complete. Find the Swamp and its sunken crypts: the Drowned Key opens them';
   }
   return '';
 }
-const STEP_TALK = { core: 'ore', smelter: 'cores', bronze: 'smelter', gear: 'bronze', shrine: 'gear', offer: 'seeds' };
+const STEP_TALK = { core: 'ore', smelter: 'cores', bronze: 'smelter', gear: 'bronze', waystone: 'gear', offer: 'seeds' };
 let lastStep = '', stuckT = 0, ch1T = 0, sawEnd = false;
 function startChapter() {
   if (F.started) return; F.started = true; lastStep = '';
@@ -1076,19 +1093,23 @@ function questTick(dt) {
   const m = MW();
   // Chapter I ends with Stormhorn; wait for Korra's farewell and the chapter title, then begin
   if (!F.started) {
-    if (m && m.stage >= 3) { ch1T += dt; if (m.dialog.open) sawEnd = true;
+    // Chapter I now ends when the Stormhorn head hangs at the Ring and its power was used once (Meadows.questDone)
+    if (m && m.stage >= 3 && m.questDone !== false) { ch1T += dt;
       const quiet = !m.dialog.open && (!m.raven || m.raven.mode === 'gone');
-      if ((sawEnd && quiet && ch1T > 20) || ch1T > 100) startChapter(); }
+      if ((quiet && ch1T > 14) || ch1T > 90) startChapter(); }
     return;
   }
   const s = step();
   if (s !== lastStep) {
     const prev = lastStep; lastStep = s; stuckT = 0;
+    if (m && m.vesk) { if (s === 'waystone' && WAY) m.vesk.circle({ x: WAY.cx, y: WAY.y + 4, z: WAY.cz }); else if (prev === 'waystone') m.vesk.leave(); }
+    if (s === 'hang' && !F.said_hang) { F.said_hang = true; }
     if (prev && STEP_TALK[s] && !F['said_' + s]) { F['said_' + s] = true; const tg = QUEST_TARGET[s] && QUEST_TARGET[s]();
-      later(1.2, () => korra(STORY[STEP_TALK[s]], null, s === 'core' ? { x: CRY.cx, z: CRY.cz + 10 } : tg)); }
+      later(1.2, () => korra(STORY[STEP_TALK[s]], null, s === 'core' ? { x: CRY.cx, z: CRY.cz + 10 } : s === 'waystone' ? QUEST_TARGET.waystone() : tg)); }
     if (s === 'core' && prev) advance('copper');
   }
   if (s === 'boss' || s === 'done' || dlgOpen() || cine) return;
+  if (s === 'hang' && m && m.RING && !F.said_hang2 && Math.hypot(PL().pos.x - m.RING.cx, PL().pos.z - m.RING.cz) < 14) { F.said_hang2 = true; if (m.tip) m.tip('Hang it. Let the Watcher see.'); }
   stuckT += dt;
   if (stuckT > 150 && HINT[s]) { stuckT = -150; const tg = QUEST_TARGET[s] && QUEST_TARGET[s](); korra(HINT[s], null, tg); }
 }
@@ -1100,7 +1121,7 @@ function milestones() {
   }
   if (F.started && !F.cryptSeen && Math.hypot(P.pos.x - CRY.cx, P.pos.z - (CRY.cz + 8)) < 9) { F.cryptSeen = true; advance('crypt'); if (!F.core) korra(STORY.crypt); }
   if (!F.shrine && Math.hypot(P.pos.x - SHR.cx, P.pos.z - SHR.cz) < 11) {
-    if (F.started && F.gear) { F.shrine = true; advance('shrine'); korra(STORY.shrine); }
+    if (F.started && F.gear) { F.shrine = true; F.waystone = true; advance('shrine'); korra(STORY.shrine); }
     else if (!F.shrinePeek) { F.shrinePeek = true; say('A ring of glowing stones around a shrine of roots. The ground breathes here... You are not ready yet.', 5); }
   }
   if (count('ember_core') > 0) advance('core');
@@ -1155,12 +1176,11 @@ function despawnBoss(refund) {
 }
 function bossDefeated(b) {
   F.bossDead = true; chat(`The Old Root was slain by ${DEFS[cur].name}`);
-  title('THE OLD ROOT HAS FALLEN', 'The Dark Forest is quiet', 4.5, '#8cff6a');
+  title('THE OLD ROOT HAS FALLEN', 'Carry its head to the Ring of Oaths', 4.5, '#8cff6a');
   later(.3, () => advance('root'));
-  later(6, () => korra(STORY.end, () => {
-    title('CHAPTER II COMPLETE', 'Next: The Swamp. Rotmaw stirs in the black water...', 8, '#ffaa00');
-    later(1.5, () => say('To be continued...', 6));
-  }));
+  later(6, () => korra(STORY.end));
+  const waitHang = () => { if (hungRoot()) later(6, () => { title('CHAPTER II COMPLETE', 'Next: The Swamp. Rotmaw stirs in the black water...', 8, '#ffaa00'); later(1.5, () => say('To be continued...', 6)); }); else later(2, waitHang); };
+  later(8, waitHang);
   later(3, () => { if (boss === b) boss = null; });
 }
 

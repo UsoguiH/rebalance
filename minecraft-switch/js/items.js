@@ -2,8 +2,10 @@
 // =====================================================================
 //  Items & inventory module (js/items.js)
 //  - ITEMS registry (string ids) with 16x16 pixel-art icons drawn in code and Valheim-style stats
-//  - Inv: 36 slots (0-8 = hotbar), 4 armor slots and 1 off-hand slot; one bag per character, saved to localStorage
-//  - Minecraft inventory screen (E): armor, off hand, 2x2 crafting or 3x3 at a Workbench, recipe book, tooltips
+//  - Inv: 36 slots (0-8 = hotbar), 4 armor slots and 1 off-hand slot; one bag (the castaway starts with nothing), saved to localStorage
+//  - Minecraft inventory screen (E / Tab): armor, off hand, 2x2 grid for the no-station recipes (club, torch, hammer), recipe book, tooltips
+//  - Valheim-style stations in a Minecraft panel: recipe list + Craft button, station levels, Upgrade tab (quality 1-4), Repair button
+//  - Valheim tiers (wood, flint, antler, bronze, iron) with weights; broken items stay in the bag until repaired
 //  - Survival block breaking: hardness x tool break times, 10-stage crack overlay, drops, tool wear
 //  - First-person held item: block cube, flat pixel sprite for items, the bare arm for an empty hand
 //  Uses the main script's globals (BLOCK, ATLAS, drawIcon, camera, state, hotSel, ...) and its on/emit hooks.
@@ -14,6 +16,9 @@ const Inv = {};
 (() => {
 // inventory screen state (declared first: recipes and item changes check it)
 let isOpen = false, mode = 'inv', gridN = 4, guiScale = 2, selRecipe = null, nearBench = false, onlyCraftable = false, mx = 0, my = 0, tipT = 0, hoverSlot = null;
+let curSt = null, stTab = 'craft', stSel = null;          // station screen: { name, p, level, why }, 'craft' | 'upgrade', selected recipe or upgrade slot ref
+// one castaway: the main script's character entry (look of the arm and the preview), whatever the character setup is
+const charDef = () => (typeof DEFS !== 'undefined' && DEFS[typeof cur !== 'undefined' ? cur : 0]) || { sleeve: 4, top: '#6b8f3a', skin: '#c8956b', pants: '#4a3a2a', shoes: '#3a2a1a' };
 
 // ---------------------------------------------------------------------
 //  Workbench and torch blocks (the ids WORKBENCH / TORCH are declared in index.html)
@@ -96,6 +101,15 @@ const TOOL_ART = {
     if (a >= 4 && a <= 5 && Math.abs(c - .5) <= 1.5) return '#7a5a3a';            // leather binding
     if (a < 4) return handle(c, h);
   }),
+  hammer: (m, h) => DIAG((a, c) => {                                            // a stone head lashed across the top of the haft
+    if (a >= 6 && a <= 12 && c >= -6 && c <= 5) return a === 6 || c === 5 ? m[2] : a === 12 || c === -6 ? m[0] : m[1];
+    if (a === 5 && Math.abs(c - .5) <= 1.5) return '#7a5a3a';
+    if (a <= 6) return handle(c, h);
+  }),
+  hoe: (m, h) => DIAG((a, c) => {                                               // a flat blade hanging to the upper left
+    if (a >= 10 && a <= 12 && c >= -7 && c <= 0) return a === 12 ? m[0] : c <= -6 ? m[2] : m[1];
+    if (a <= 11) return handle(c, h);
+  }),
   club: (m, h) => DIAG((a, c, x, y) => {
     if (a >= -2 && a <= 12) { const w = 1.2 + (a + 2) / 6 - (a > 9 ? (a - 9) * .9 : 0);
       if (Math.abs(c - .5) <= w + .1) return hash2(x * 7, y * 13) < .18 ? m[2] : c <= 0 ? m[0] : m[1]; }
@@ -139,6 +153,8 @@ const T_SCRAPS = ['................', '................', '...oo...........', '.
   '....oMLMMMMo....', '...oMLMooMMMo...', '..oMLMo..oMMMo..', '..oMMo....oMMo..', '...oo......oo...', '................', '................', '................'];
 const T_ANTLER = ['................', '..o.......o.....', '.oLo..o..oLo....', '.oLo.oLo.oLo..o.', '.oLMooLo.oLMooLo', '..oLMMLo..oLMMLo', '...oLMMo...oLMo.', '....oLMo..oLMo..',
   '.....oLMooLMo...', '......oLMMMo....', '.......oLMo.....', '.......oLMo.....', '......oLMMo.....', '......oDDDo.....', '.......ooo......', '................'];
+const T_BOWL = ['................', '................', '................', '................', '................', '...SSSSSSSSSS...', '..SSWWSSSSSSSS..', '..LMMMMMMMMMMD..',
+  '..LMMMMMMMMMMD..', '...LMMMMMMMMD...', '....LMMMMMMD....', '.....DDDDDD.....', '................', '................', '................', '................'];
 const T_INGOT = ['................', '................', '................', '................', '................', '.....LLLLLLLL...', '....LMMMMMMMMD..', '...LMMMMMMMMDD..',
   '..LLLLLLLLLMDD..', '..MMMMMMMMMMDD..', '..MMMMMMMMMMD...', '..DDDDDDDDDD....', '................', '................', '................', '................'];
 const ARMOR_PAL = { leather: { L: '#c58c56', M: '#9b6a3c', D: '#6f4a28', A: '#e0c49a' }, troll: { L: '#86a3c7', M: '#5b7ba3', D: '#3c5577', A: '#f2ead2' },
@@ -170,6 +186,24 @@ function defineItem(d) {
   if (it.block != null && BI[it.block] === undefined) BI[it.block] = it.id;
   return it;
 }
+// Item quality 1-4 (Valheim upgrades): quality 2+ is its own hidden item id 'base@q' with scaled stats, so every module that
+// reads ITEMS[stack.id] (combat, shields, armor) sees the upgraded numbers. matches()/count() treat it as the base item.
+const MAXQ = 4;
+const baseOf = id => { const k = typeof id === 'string' ? id.indexOf('@') : -1; return k > 0 ? id.slice(0, k) : id; };
+const qualityOf = id => { const it = ITEMS[id]; return it && it.q || 1; };
+function qid(base, q) {
+  if (q <= 1) return base;
+  const id = base + '@' + q; if (ITEMS[id]) return id;
+  const b = ITEMS[base]; if (!b) return base;
+  const k = q - 1, it = Object.assign({}, b, { id, base, q, hidden: true });
+  if (b.durability) it.durability = Math.round(b.durability * (1 + .5 * k));
+  if (b.weapon) it.weapon = Object.assign({}, b.weapon, { dmg: Math.round(b.weapon.dmg * (1 + .15 * k) * 10) / 10 });
+  if (b.armor) it.armor = Object.assign({}, b.armor, { armor: b.armor.armor + k });
+  if (b.shield) it.shield = Object.assign({}, b.shield, { block: Math.round(b.shield.block * (1 + .2 * k) * 10) / 10 });
+  it.icon = g => g.drawImage(icon16(base), 0, 0);
+  ITEMS[id] = it; return id;
+}
+const broken = s => !!s && s.dur != null && s.dur <= 0;
 const blockItem = (id, block, o = {}) => defineItem({ id, name: BLOCK[block].name, kind: 'block', block, ...o });
 blockItem('grass_block', GRASS); blockItem('dirt', DIRT);
 blockItem('stone', STONE, { weight: 2, desc: 'Smooth stone. Counts as stone in recipes.' });
@@ -180,19 +214,19 @@ blockItem('quartz_block', QUARTZ, { weight: 2 }); blockItem('gray_concrete', ROA
 blockItem('cactus', CACTUS); blockItem('bricks', BRICK, { weight: 2 }); blockItem('sandstone', SANDSTONE, { weight: 2 });
 blockItem('coal_ore', COAL, { weight: 2 }); blockItem('iron_ore', IRONORE, { weight: 2 });
 blockItem('tall_grass', TALLGRASS, { weight: .1 }); blockItem('poppy', POPPY, { weight: .1 }); blockItem('dandelion', DANDELION, { weight: .1 });
-blockItem('workbench', WORKBENCH, { kind: 'station', weight: 5, desc: 'Place it, then use it to craft on a 3x3 grid.' });
-blockItem('torch', TORCH, { weight: .5, desc: 'A burning stick. Place it on the ground.' });
+blockItem('workbench', WORKBENCH, { kind: 'station', weight: 5, desc: 'Build it with the Hammer. It needs a roof.' });
+blockItem('torch', TORCH, { weight: .5, desc: 'A burning stick. Stand it up with the Hammer.' });
 
 const mat = (id, name, icon, o = {}) => defineItem({ id, name, kind: 'material', icon, ...o });
 mat('wood', 'Wood', art(logs), { weight: 2, desc: 'Rough timber from felled trees.' });
-mat('stick', 'Stick', art(DIAG((a, c) => a >= -12 && a <= 12 ? handle(c, HND.wood) : null)), { weight: .2 });
-mat('flint', 'Flint', art(PXA(T_FLINT, { L: '#9a9aa6', M: '#5e5e6a', D: '#3a3a44', W: '#e8e8f0' })), { weight: .5, desc: 'A sharp stone. Look for it in sand by the shore.' });
+mat('stick', 'Stick', art(DIAG((a, c) => a >= -12 && a <= 12 ? handle(c, HND.wood) : null)), { weight: .2, desc: 'Kindling. Burns in a fire.' });
+mat('flint', 'Flint', art(PXA(T_FLINT, { L: '#9a9aa6', M: '#5e5e6a', D: '#3a3a44', W: '#e8e8f0' })), { weight: 1, tier: 'Flint', desc: 'A sharp stone. Look for it in sand by the shore.' });
 mat('resin', 'Resin', art(PXA(T_RESIN, { L: '#ffd27a', M: '#e8962a', D: '#a85a10', W: '#fff4c8' })), { weight: .3, desc: 'Sticky tree sap. Burns well.' });
-mat('coal', 'Coal', art(lump('#4a4a4a', '#2b2b2b', '#161616', '#5a5a5a')), { weight: .5 });
-mat('raw_iron', 'Raw Iron', art(lump('#e2c0a6', '#c8a58a', '#8c6a54', '#f0d8c4')), { weight: 1, desc: 'Smelt it with coal at a Workbench.' });
-mat('iron_ingot', 'Iron Ingot', art(PXA(T_INGOT, { L: '#ffffff', M: '#d8d8d8', D: '#9a9a9a' })), { weight: 1, rarity: 'uncommon' });
-mat('deer_hide', 'Deer Hide', art(PXA(T_HIDE, { M: '#a06a3a', L: '#c89a68' })), { weight: 1, desc: 'Soft hide from a forest deer.' });
-mat('leather_scraps', 'Leather Scraps', art(PXA(T_SCRAPS, { M: '#8b5a2b', L: '#b07a45' })), { weight: .5 });
+mat('coal', 'Coal', art(lump('#4a4a4a', '#2b2b2b', '#161616', '#5a5a5a')), { weight: 2, tags: ['charcoal'], desc: 'Burns hot. A Smelter takes it like charcoal.' });
+mat('raw_iron', 'Scrap Iron', art(lump('#e2c0a6', '#c8a58a', '#8c6a54', '#f0d8c4')), { weight: 10, tier: 'Iron', desc: 'Rusty iron. Smelt it in a Smelter.' });
+mat('iron_ingot', 'Iron', art(PXA(T_INGOT, { L: '#ffffff', M: '#d8d8d8', D: '#9a9a9a' })), { weight: 8, rarity: 'uncommon', tier: 'Iron', desc: 'Worked at a Forge.' });
+mat('deer_hide', 'Deer Hide', art(PXA(T_HIDE, { M: '#a06a3a', L: '#c89a68' })), { weight: 1, tags: ['leather'], desc: 'Soft hide from a forest deer. Counts as leather.' });
+mat('leather_scraps', 'Leather Scraps', art(PXA(T_SCRAPS, { M: '#8b5a2b', L: '#b07a45' })), { weight: .5, tags: ['leather'], desc: 'Counts as leather in recipes.' });
 mat('troll_hide', 'Troll Hide', art(PXA(T_HIDE, { M: '#5b7ba3', L: '#86a3c7' })), { weight: 2, rarity: 'uncommon', desc: 'Thick blue hide. Light, tough, quiet.' });
 mat('raw_meat', 'Raw Meat', art(PXA(T_STEAK, { M: '#d4505a', L: '#f08088', D: '#9a2f38', F: '#f4d4d0' })), { weight: .5, desc: 'Cook it over a fire before eating.' });
 mat('hard_antler', 'Hard Antler', art(PXA(T_ANTLER, { L: '#f4ead2', M: '#cfc09a', D: '#8a7a5a' })), { weight: 1, rarity: 'rare', desc: 'Storm-charged antler, hard enough to split rock.' });
@@ -201,6 +235,10 @@ const food = (id, name, icon, f, o = {}) => defineItem({ id, name, kind: 'food',
 food('apple', 'Apple', art(PXA(T_APPLE, { R: '#d8231f', W: '#ff8a7a', D: '#9e1414', k: '#5a3a1a', G: '#3f8a2a' })), { heal: 2, hunger: 4, stamina: 10, secs: 300 });
 food('bread', 'Bread', art(PXA(T_BREAD, { L: '#e8b860', M: '#c98a35', D: '#8a5a1e' })), { heal: 5, hunger: 10, stamina: 30, secs: 1500 });
 food('cooked_meat', 'Cooked Meat', art(PXA(T_STEAK, { M: '#8a5230', L: '#b07040', D: '#5a3218', F: '#c89a6a' })), { heal: 6, hunger: 8, stamina: 20, secs: 1200 });
+const bowl = (S, W) => art(PXA(T_BOWL, { S, W, L: '#b08050', M: '#8a5a30', D: '#5a3818' }));
+food('hunters_stew', 'Hunter\'s Stew', bowl('#8a4a26', '#c07a4a'), { heal: 9, hunger: 12, stamina: 30, secs: 1500 }, { stack: 10, rarity: 'uncommon', desc: 'Made in a Cauldron.' });
+food('forest_jam', 'Forest Jam', bowl('#4a3a9a', '#8a7ad8'), { heal: 4, hunger: 6, stamina: 40, secs: 1500 }, { stack: 10, desc: 'Sweet. Made in a Cauldron.' });
+food('mushroom_broth', 'Mushroom Broth', bowl('#a08060', '#d8c0a0'), { heal: 7, hunger: 8, stamina: 20, secs: 1200 }, { stack: 10, desc: 'Earthy. Made in a Cauldron.' });
 
 const trophy = (id, name, head, rarity, desc) => defineItem({ id, name, kind: 'trophy', icon: art(HEADS[head]), stack: 20, weight: .5, rarity, desc });
 trophy('deer_trophy', 'Deer Trophy', 'deer', 'uncommon', 'A hunter\'s proof. Some altars hunger for it.');
@@ -211,60 +249,112 @@ trophy('stormhorn_trophy', 'Stormhorn Trophy', 'stormhorn', 'boss', 'The lightni
 
 // weapons, tools and shields. Damage is in hit points (player 20 HP, Forest Troll 60 HP); speed = seconds per swing
 const gear = (id, name, kind, icon, o) => defineItem({ id, name, kind, icon: art(icon), ...o });
-gear('wood_club', 'Wooden Club', 'weapon', TOOL_ART.club(MAT.club, HND.dark), { durability: 100, weight: 2, weapon: { dmg: 6, speed: .8, stamina: 6 }, desc: 'A knotted branch. Blunt but honest.' });
-gear('flint_axe', 'Flint Axe', 'tool', TOOL_ART.axe(MAT.flint, HND.wood), { durability: 120, weight: 1.5, weapon: { dmg: 7, speed: 1, stamina: 8 }, tool: { type: 'axe', power: 2 } });
-gear('flint_spear', 'Flint Spear', 'weapon', TOOL_ART.spear(MAT.flint, HND.dark), { durability: 150, weight: 1, weapon: { dmg: 9, speed: .7, stamina: 7 }, desc: 'Long reach, quick thrusts.' });
-gear('antler_pickaxe', 'Antler Pickaxe', 'tool', TOOL_ART.pickaxe(MAT.antler, HND.wood), { durability: 200, weight: 2.5, rarity: 'uncommon',
+gear('wood_club', 'Wooden Club', 'weapon', TOOL_ART.club(MAT.club, HND.dark), { durability: 100, weight: 2, tier: 'Wood', weapon: { dmg: 6, speed: .8, stamina: 6 }, desc: 'A knotted branch. Blunt but honest.' });
+gear('hammer', 'Hammer', 'tool', TOOL_ART.hammer(MAT.stone, HND.wood), { durability: 100, weight: 2, tier: 'Wood', weapon: { dmg: 3, speed: .8, stamina: 5 }, tool: { type: 'hammer', power: 0 },
+  desc: 'Right-click (tap) to open the build menu.' });
+gear('hoe', 'Hoe', 'tool', TOOL_ART.hoe(MAT.stone, HND.wood), { durability: 100, weight: 2, tier: 'Wood', weapon: { dmg: 3, speed: .8, stamina: 5 }, tool: { type: 'hoe', power: 0 },
+  desc: 'Right-click (tap) to level ground or lay a path.' });
+gear('flint_axe', 'Flint Axe', 'tool', TOOL_ART.axe(MAT.flint, HND.wood), { durability: 120, weight: 1.5, tier: 'Flint', weapon: { dmg: 7, speed: 1, stamina: 8 }, tool: { type: 'axe', power: 2 } });
+gear('flint_spear', 'Flint Spear', 'weapon', TOOL_ART.spear(MAT.flint, HND.dark), { durability: 150, weight: 1, tier: 'Flint', weapon: { dmg: 9, speed: .7, stamina: 7 }, desc: 'Long reach, quick thrusts.' });
+gear('antler_pickaxe', 'Antler Pickaxe', 'tool', TOOL_ART.pickaxe(MAT.antler, HND.wood), { durability: 200, weight: 2.5, rarity: 'uncommon', tier: 'Antler',
   weapon: { dmg: 5, speed: .85, stamina: 7 }, tool: { type: 'pickaxe', power: 2 }, desc: 'Breaks stone and ore.' });
-const TIERS = [['wooden', 'Wooden', 'wood', 60, 'common', 1, 0], ['stone', 'Stone', 'stone', 132, 'common', 2, 1], ['iron', 'Iron', 'iron', 250, 'uncommon', 3, 2]];
+// Minecraft's wooden and stone tiers do not exist on Skarnholm (they would skip Stormhorn). They stay defined only so an old
+// save still loads; nothing crafts them. Iron is the Valheim iron tier: made at a Forge from Scrap Iron.
+const TIERS = [['wooden', 'Wooden', 'wood', 60, 'common', 1, 0], ['stone', 'Stone', 'stone', 132, 'common', 2, 1], ['iron', 'Iron', 'iron', 400, 'rare', 4, 2]];
 for (const [tid, tname, m, dur, rarity, power, k] of TIERS) {
-  gear(tid + '_sword', tname + ' Sword', 'weapon', TOOL_ART.sword(MAT[m], HND.wood), { durability: dur, rarity, weight: [1, 2, 2.5][k], weapon: { dmg: [5, 7, 10][k], speed: .62, stamina: 5 } });
-  gear(tid + '_pickaxe', tname + ' Pickaxe', 'tool', TOOL_ART.pickaxe(MAT[m], HND.wood), { durability: dur, rarity, weight: [1.5, 2.5, 3][k], weapon: { dmg: [3, 4, 5][k], speed: .83, stamina: 6 }, tool: { type: 'pickaxe', power } });
-  gear(tid + '_axe', tname + ' Axe', 'tool', TOOL_ART.axe(MAT[m], HND.wood), { durability: dur, rarity, weight: [1.5, 2.5, 3][k], weapon: { dmg: [5, 7, 9][k], speed: 1.1, stamina: 8 }, tool: { type: 'axe', power } });
-  gear(tid + '_shovel', tname + ' Shovel', 'tool', TOOL_ART.shovel(MAT[m], HND.wood), { durability: dur, rarity, weight: [1, 1.5, 2][k], weapon: { dmg: [2.5, 3.5, 4.5][k], speed: 1, stamina: 5 }, tool: { type: 'shovel', power } });
+  const o = k < 2 ? { tier: 'Old world', desc: 'An old-world tool. Nobody on the isle knows how to make one.' } : { tier: 'Iron' };
+  gear(tid + '_sword', tname + ' Sword', 'weapon', TOOL_ART.sword(MAT[m], HND.wood), { durability: dur, rarity, weight: [1, 2, 2.5][k], weapon: { dmg: [5, 7, 16][k], speed: .62, stamina: 7 }, ...o });
+  gear(tid + '_pickaxe', tname + ' Pickaxe', 'tool', TOOL_ART.pickaxe(MAT[m], HND.wood), { durability: dur, rarity, weight: [1.5, 2.5, 3][k], weapon: { dmg: [3, 4, 7][k], speed: .83, stamina: 7 }, tool: { type: 'pickaxe', power }, ...o });
+  gear(tid + '_axe', tname + ' Axe', 'tool', TOOL_ART.axe(MAT[m], HND.wood), { durability: dur, rarity, weight: [1.5, 2.5, 3][k], weapon: { dmg: [5, 7, 13][k], speed: 1.1, stamina: 8 }, tool: { type: 'axe', power }, ...o });
+  if (k < 2) gear(tid + '_shovel', tname + ' Shovel', 'tool', TOOL_ART.shovel(MAT[m], HND.wood), { durability: dur, rarity, weight: [1, 1.5][k], weapon: { dmg: [2.5, 3.5][k], speed: 1, stamina: 5 }, tool: { type: 'shovel', power }, ...o });
 }
-gear('wood_shield', 'Wood Shield', 'shield', PXA(T_WSHIELD, { L: '#c9a46a', M: '#a17f4c', D: '#6e5530', I: '#9a9a9a', B: '#d8d8d8' }), { durability: 120, weight: 4, shield: { block: 4, parry: 2 }, desc: 'Hold it in your off hand.' });
-gear('shield', 'Shield', 'shield', PXA(T_SHIELD, { I: '#a8a8a8', P: '#a2834f', S: '#6e5530' }), { durability: 336, weight: 5, shield: { block: 6, parry: 1.5 }, desc: 'Hold it in your off hand.' });
+gear('wood_shield', 'Wood Shield', 'shield', PXA(T_WSHIELD, { L: '#c9a46a', M: '#a17f4c', D: '#6e5530', I: '#9a9a9a', B: '#d8d8d8' }), { durability: 120, weight: 4, tier: 'Wood', shield: { block: 4, parry: 2 }, desc: 'Hold it in your off hand.' });
+gear('shield', 'Banded Shield', 'shield', PXA(T_SHIELD, { I: '#a8a8a8', P: '#a2834f', S: '#6e5530' }), { durability: 336, weight: 5, tier: 'Iron', shield: { block: 9, parry: 1.5 }, desc: 'Hold it in your off hand.' });
 // armor sets (Minecraft armor points: 20 = the most)
 const ARMOR_SETS = [['leather', 'leather', [['leather_cap', 'Leather Cap'], ['leather_tunic', 'Leather Tunic'], ['leather_pants', 'Leather Pants'], ['leather_boots', 'Leather Boots']], [1, 3, 2, 1], [55, 80, 75, 65], 'common', '#8b5a2b'],
   ['troll', 'troll', [['troll_hood', 'Troll Hide Hood'], ['troll_tunic', 'Troll Hide Tunic'], ['troll_leggings', 'Troll Hide Leggings'], ['troll_boots', 'Troll Hide Boots']], [2, 5, 4, 2], [120, 160, 150, 120], 'uncommon', '#5b7ba3'],
   ['iron', 'iron', [['iron_helmet', 'Iron Helmet'], ['iron_chestplate', 'Iron Chestplate'], ['iron_leggings', 'Iron Leggings'], ['iron_boots', 'Iron Boots']], [2, 6, 5, 2], [165, 240, 225, 195], 'uncommon', '#d8d8d8']];
 const SLOT_NAMES = ['head', 'chest', 'legs', 'feet'];
 for (const [, pal, pieces, pts, durs, rarity, tint] of ARMOR_SETS) pieces.forEach(([id, name], k) => defineItem({ id, name, kind: 'armor', icon: art(PXA(ARMOR_T[SLOT_NAMES[k]], ARMOR_PAL[pal])),
-  armor: { slot: SLOT_NAMES[k], armor: pts[k] }, durability: durs[k], rarity, tint, weight: [1, 3, 2.5, 1][k] * (pal === 'iron' ? 2.5 : pal === 'troll' ? 1.2 : 1),
+  armor: { slot: SLOT_NAMES[k], armor: pts[k] }, durability: durs[k], rarity, tint, weight: [1, 3, 2.5, 1][k] * (pal === 'iron' ? 2.5 : pal === 'troll' ? 1.2 : 1), tier: { leather: 'Leather', troll: 'Troll hide', iron: 'Iron' }[pal],
   desc: pal === 'troll' ? 'Light and quiet. Good for sneaking.' : undefined }));
 
 // ---------------------------------------------------------------------
-//  Recipes: shapeless, with Valheim-style counts. needs keys are item ids or tags ('wood' accepts Oak Logs, 'stone' Cobblestone).
-//  The grid matches the recipe chosen in the recipe book first, then one whose counts match exactly, then the smallest one.
+//  Recipes, Valheim style: no station (the 2x2 grid in the inventory) only for the first tools; everything else is made from a
+//  station's recipe list while you stand near it, and needs that station at a high enough level (lvl). needs keys are item ids
+//  or tags ('wood' accepts Oak Logs, 'stone' Cobblestone, 'leather' Deer Hide or Leather Scraps, 'charcoal' Coal).
+//  addRecipe also cleans what other modules add: Minecraft recipes (planks, sticks, string) are dropped, bronze goes to the
+//  Forge, leather scraps become 'leather' (boars are not the only source), and placed things come from the Hammer instead.
 // ---------------------------------------------------------------------
 const RECIPES = [];
-function addRecipe(r) { const rec = { out: r.out, n: r.n || 1, needs: r.needs, station: r.station || null }; RECIPES.push(rec); if (isOpen) buildBook(); return rec; }
-const WB = 'workbench';
-[{ out: 'oak_planks', n: 4, needs: { wood: 1 } }, { out: 'stick', n: 4, needs: { oak_planks: 2 } }, { out: 'workbench', needs: { oak_planks: 4 } },
- { out: 'torch', n: 4, needs: { stick: 1, coal: 1 } }, { out: 'torch', n: 2, needs: { wood: 1, resin: 1 } }, { out: 'wood_club', needs: { wood: 6 } },
- { out: 'flint_axe', needs: { wood: 5, flint: 4 }, station: WB }, { out: 'flint_spear', needs: { wood: 5, flint: 10, leather_scraps: 2 }, station: WB },
- { out: 'antler_pickaxe', needs: { wood: 10, hard_antler: 2 }, station: WB }, { out: 'wood_shield', needs: { wood: 8, resin: 4, leather_scraps: 2 }, station: WB },
- { out: 'iron_ingot', needs: { raw_iron: 1, coal: 1 }, station: WB }, { out: 'shield', needs: { oak_planks: 6, iron_ingot: 1 }, station: WB },
+const WB = 'workbench', FG = 'forge', CA = 'cauldron';
+const MC_ONLY = new Set(['stick', 'oak_planks', 'string']);
+const NOT_CRAFTED = new Set(['oak_planks', 'stick', 'workbench', 'furnace', 'chest', 'bed', 'oak_door', 'ladder', 'oak_slab', 'cobblestone_slab', 'oak_stairs',
+  'cobblestone_stairs', 'oak_fence', 'smelter', 'iron_ingot', 'copper', 'tin', 'glass', 'charcoal']);
+for (const t of ['wooden', 'stone']) for (const k of ['sword', 'axe', 'pickaxe', 'shovel']) NOT_CRAFTED.add(t + '_' + k);
+function cleanRecipe(r) {
+  if (!r || !r.out || !r.needs) return null;
+  if (NOT_CRAFTED.has(r.out) || Object.keys(r.needs).some(k => MC_ONLY.has(k))) return null;
+  if (/^cooked_/.test(r.out) && r.needs.coal) return null;                 // Minecraft furnace fallbacks: meat cooks on a spit now
+  const needs = {};
+  for (const k in r.needs) { const key = k === 'leather_scraps' ? 'leather' : k; needs[key] = (needs[key] || 0) + r.needs[k]; }
+  let station = r.station || null, lvl = r.lvl || 1;
+  if ((r.out === 'bronze' || /^bronze_/.test(r.out)) && station !== FG) { station = FG; lvl = 1; }
+  return { out: r.out, n: r.n || 1, needs, station, lvl };
+}
+function addRecipe(r) {
+  const rec = cleanRecipe(r); if (!rec) return null;
+  if (RECIPES.some(o => o.out === rec.out && o.station === rec.station && JSON.stringify(o.needs) === JSON.stringify(rec.needs))) return null;
+  RECIPES.push(rec); if (isOpen) buildBook(); return rec;
+}
+[{ out: 'wood_club', needs: { wood: 6 } }, { out: 'torch', needs: { wood: 1, resin: 1 } }, { out: 'hammer', needs: { wood: 3, stone: 2 } },
+ { out: 'hoe', needs: { wood: 5, stone: 2 }, station: WB },
+ { out: 'flint_axe', needs: { wood: 5, flint: 4 }, station: WB }, { out: 'flint_spear', needs: { wood: 5, flint: 10, leather: 2 }, station: WB },
+ { out: 'wood_shield', needs: { wood: 10, resin: 4, leather: 2 }, station: WB }, { out: 'antler_pickaxe', needs: { wood: 10, hard_antler: 2 }, station: WB },
+ { out: 'shield', needs: { wood: 10, iron_ingot: 4 }, station: FG, lvl: 2 },
+ { out: 'iron_sword', needs: { wood: 2, iron_ingot: 6, leather: 2 }, station: FG, lvl: 2 }, { out: 'iron_axe', needs: { wood: 4, iron_ingot: 6 }, station: FG, lvl: 2 },
+ { out: 'iron_pickaxe', needs: { wood: 3, iron_ingot: 6 }, station: FG, lvl: 2 },
 ].forEach(addRecipe);
-for (const [tid, head] of [['wooden', 'oak_planks'], ['stone', 'stone'], ['iron', 'iron_ingot']]) {
-  addRecipe({ out: tid + '_sword', needs: { [head]: 2, stick: 1 }, station: WB });
-  addRecipe({ out: tid + '_axe', needs: { [head]: 3, stick: 1 }, station: WB });
-  addRecipe({ out: tid + '_pickaxe', needs: { [head]: 3, stick: 2 }, station: WB });
-  addRecipe({ out: tid + '_shovel', needs: { [head]: 1, stick: 2 }, station: WB });
+for (const [id, n] of [['leather_cap', 4], ['leather_tunic', 6], ['leather_pants', 5], ['leather_boots', 3]]) addRecipe({ out: id, needs: { deer_hide: n }, station: WB });
+for (const [id, n] of [['troll_hood', 5], ['troll_tunic', 7], ['troll_leggings', 6], ['troll_boots', 4]]) addRecipe({ out: id, needs: { troll_hide: n, leather: 3 }, station: WB, lvl: 2 });
+for (const [id, n] of [['iron_helmet', 5], ['iron_chestplate', 8], ['iron_leggings', 7], ['iron_boots', 4]]) addRecipe({ out: id, needs: { iron_ingot: n, deer_hide: 2 }, station: FG, lvl: 2 });
+// things made by other modules: added once everything has loaded
+function lateRecipes() {
+  if (ITEMS.bow) { ITEMS.bow.name = 'Crude Bow'; ITEMS.bow.tier = 'Wood'; addRecipe({ out: 'bow', needs: { wood: 10, leather: 8 }, station: WB }); }
+  if (ITEMS.arrow) { ITEMS.arrow.name = 'Wood Arrow'; addRecipe({ out: 'arrow', n: 20, needs: { wood: 8 } }); }
+  if (ITEMS.mushroom && ITEMS.blueberries) {
+    addRecipe({ out: 'hunters_stew', needs: { cooked_meat: 2, mushroom: 2, blueberries: 1 }, station: CA });
+    addRecipe({ out: 'forest_jam', needs: { blueberries: 6, apple: 2 }, station: CA });
+    addRecipe({ out: 'mushroom_broth', needs: { mushroom: 4, cooked_meat: 1 }, station: CA });
+  } else addRecipe({ out: 'hunters_stew', needs: { cooked_meat: 2, apple: 2 }, station: CA });
+  // Valheim weights and tiers for items other modules define (ore 10, metal 8, stone and wood 2)
+  const W = { copper_ore: 10, tin_ore: 10, copper: 8, tin: 8, bronze: 8, ember_core: 1, oak_log: 2, cobblestone: 2, charcoal: 2 };
+  for (const id in W) if (ITEMS[id]) ITEMS[id].weight = W[id];
+  for (const id in ITEMS) { const it = ITEMS[id]; if (!it.tier && /^bronze/.test(id)) it.tier = 'Bronze'; if (!it.tier && /^(copper|tin)/.test(id)) it.tier = 'Bronze'; }
+  if (isOpen) buildBook();
 }
-for (const [id, n] of [['iron_helmet', 5], ['iron_chestplate', 8], ['iron_leggings', 7], ['iron_boots', 4]]) addRecipe({ out: id, needs: { iron_ingot: n }, station: WB });
-for (const [id, n] of [['leather_cap', 4], ['leather_tunic', 6], ['leather_pants', 5], ['leather_boots', 3]]) addRecipe({ out: id, needs: { deer_hide: n, leather_scraps: 2 }, station: WB });
-for (const [id, n] of [['troll_hood', 5], ['troll_tunic', 7], ['troll_leggings', 6], ['troll_boots', 4]]) addRecipe({ out: id, needs: { troll_hide: n, leather_scraps: 3 }, station: WB });
 
-// crafting stations: a block that must be within reach, or a custom test (other modules can add their own)
-const STATIONS = { workbench: { name: 'Workbench', block: WORKBENCH, r: 4 } };
-function nearStation(name) {
-  const st = STATIONS[name]; if (!st) return false; if (st.test) return !!st.test();
-  const p = PL().pos, r = st.r || 4, bx = Math.floor(p.x), by = Math.floor(p.y), bz = Math.floor(p.z);
-  for (let y = -2; y <= 3; y++) for (let z = -r; z <= r; z++) for (let x = -r; x <= r; x++) if (get(bx + x, by + y, bz + z) === st.block) return true;
-  return false;
+// Crafting stations. A station is found within r blocks of the player; it can report a level (upgrades around it) and a reason
+// it cannot be used ("Needs a roof"). blocks.js describes the real stations; other modules add their own (block, or test()).
+const STATIONS = { workbench: { name: 'Workbench', block: WORKBENCH, r: 5, icon: 'workbench' } };
+let stCache = null;                                          // station lookups, cleared whenever the screen redraws
+function stationFind(name) {
+  const st = STATIONS[name]; if (!st) return null;
+  if (st.find) return st.find() || null;
+  if (st.test) return st.test() ? { x: 0, y: 0, z: 0 } : null;
+  const p = PL().pos, r = st.r || 4, bx = Math.floor(p.x), by = Math.floor(p.y), bz = Math.floor(p.z), ids = [].concat(st.block);
+  for (let y = -2; y <= 3; y++) for (let z = -r; z <= r; z++) for (let x = -r; x <= r; x++) if (ids.includes(get(bx + x, by + y, bz + z))) return { x: bx + x, y: by + y, z: bz + z };
+  return null;
 }
+function stationInfo(name) {
+  if (!name) return null;
+  if (!stCache) stCache = {};
+  if (name in stCache) return stCache[name];
+  const st = STATIONS[name], p = stationFind(name);
+  return stCache[name] = p ? { name, p, level: st.level ? st.level(p) : 1, why: st.check ? st.check(p) || '' : '' } : null;
+}
+function nearStation(name) { stCache = null; const s = stationInfo(name); return !!s && !s.why; }
+const stName = name => STATIONS[name] ? STATIONS[name].name : name ? name[0].toUpperCase() + name.slice(1) : '';
 
 // ---------------------------------------------------------------------
 //  Icons
@@ -290,16 +380,14 @@ function icon32(id) {
 }
 
 // ---------------------------------------------------------------------
-//  Bags: one per character. A stack is { id, n, dur? } (dur only on items with durability)
+//  The bag: one castaway, who arrives with nothing (Valheim). A stack is { id, n, dur? } (dur only on items with durability)
 // ---------------------------------------------------------------------
 const newBag = () => ({ main: Array(36).fill(null), armor: Array(4).fill(null), off: [null], sel: 0 });
-function starterBag() { const b = newBag(); b.main[0] = mk('wood_club'); b.main[1] = mk('oak_planks', 8); b.main[2] = mk('torch', 4); b.main[3] = mk('apple', 4); return b; }
-const bags = DEFS.map(() => starterBag());
-let bagCur = cur, bag = bags[cur], carry = null, lastHeldId, dirty = false, saveT = 0;
+let bag = newBag(), carry = null, lastHeldId, dirty = false, saveT = 0;
 const grid = Array(9).fill(null);
 const maxStack = id => ITEMS[id] ? ITEMS[id].stack : 64;
 function mk(id, n = 1) { const s = { id, n }; const d = ITEMS[id] && ITEMS[id].durability; if (d) s.dur = d; return s; }
-const matches = (id, key) => id === key || !!(ITEMS[id] && ITEMS[id].tags && ITEMS[id].tags.includes(key));
+const matches = (id, key) => id === key || baseOf(id) === key || !!(ITEMS[id] && ITEMS[id].tags && ITEMS[id].tags.includes(key));
 const held = () => bag.main[hotSel] || null;
 const ALL = [...Array(36).keys()], STORAGE = ALL.slice(9), HOTBAR_I = ALL.slice(0, 9);
 
@@ -327,11 +415,12 @@ function remove(id, n = 1) {
   }
   changed(); return true;
 }
+// Valheim rule: a worn-out item does not vanish. It stays "Broken" (useless) until it is repaired at its station.
 function wearOut(arr, i, n) {
-  const s = arr[i]; if (!s || s.dur == null || !(n > 0)) return;
-  s.dur -= n;
-  if (s.dur <= 0) { arr[i] = null; if (AC) { const t = AC.currentTime; noiseSweep(t, .25, 2600, 900, .3, 2, .004); click(t, 900, .08); click(t + .06, 600, .06); }
-    if (state === 'play' || state === 'inv') chat(`${ITEMS[s.id] ? ITEMS[s.id].name : s.id} broke!`); }
+  const s = arr[i]; if (!s || s.dur == null || !(n > 0) || s.dur <= 0) return;
+  s.dur = Math.max(0, s.dur - n);
+  if (s.dur <= 0) { if (AC) { const t = AC.currentTime; noiseSweep(t, .25, 2600, 900, .3, 2, .004); click(t, 900, .08); click(t + .06, 600, .06); }
+    if (state === 'play' || state === 'inv') chat(`${ITEMS[s.id] ? ITEMS[s.id].name : s.id} broke! Repair it at a ${stName(repairStation(s.id)) || 'Workbench'}.`); }
   changed();
 }
 function pop() { if (AC) click(AC.currentTime, 1700 + Math.random() * 500, .025); }
@@ -347,22 +436,27 @@ function changed() {
 }
 
 // ---------------------------------------------------------------------
-//  Saving (per character, in localStorage)
+//  Saving (one bag, in localStorage; version 1 saves of the old three bags load the current character's bag)
 // ---------------------------------------------------------------------
 const SAVE_KEY = 'blockcraft.inventory.v1';
 const packS = s => s ? [s.id, s.n, s.dur] : 0;
-const unpackS = a => { if (!Array.isArray(a) || !ITEMS[a[0]]) return null; const s = { id: a[0], n: Math.max(1, Math.min(a[1] | 0, maxStack(a[0]))) }; if (ITEMS[a[0]].durability) s.dur = a[2] > 0 ? a[2] : ITEMS[a[0]].durability; return s; };
+const unpackS = a => {
+  if (!Array.isArray(a)) return null; let id = a[0];
+  if (typeof id === 'string' && !ITEMS[id] && id.indexOf('@') > 0) id = qid(baseOf(id), +id.split('@')[1] || 1);
+  if (!ITEMS[id]) return null;
+  const s = { id, n: Math.max(1, Math.min(a[1] | 0, maxStack(id))) }; if (ITEMS[id].durability) s.dur = a[2] >= 0 && a[2] != null ? Math.min(a[2], ITEMS[id].durability) : ITEMS[id].durability; return s;
+};
 function save() {
   dirty = false; saveT = 0;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, bags: Object.fromEntries(DEFS.map((d, i) => [d.name,
-    { main: bags[i].main.map(packS), armor: bags[i].armor.map(packS), off: bags[i].off.map(packS), sel: bags[i].sel }])) })); } catch (e) { /* storage blocked or full */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, bag: { main: bag.main.map(packS), armor: bag.armor.map(packS), off: bag.off.map(packS), sel: bag.sel } })); } catch (e) { /* storage blocked or full */ }
 }
 function load() {
   let data = null; try { data = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { data = null; }
-  DEFS.forEach((d, i) => { const s = data && data.bags && data.bags[d.name]; if (!s) return;
-    const b = newBag(); (s.main || []).slice(0, 36).forEach((a, k) => b.main[k] = unpackS(a)); (s.armor || []).slice(0, 4).forEach((a, k) => b.armor[k] = unpackS(a));
-    b.off[0] = unpackS((s.off || [])[0]); b.sel = (s.sel | 0) % 9; bags[i] = b; });
-  bag = bags[cur]; bagCur = cur; changed(); dirty = false;
+  let s = data && data.bag;
+  if (!s && data && data.bags) { const d = charDef(); s = data.bags[d.name] || Object.values(data.bags)[0]; }
+  if (s) { const b = newBag(); (s.main || []).slice(0, 36).forEach((a, k) => b.main[k] = unpackS(a)); (s.armor || []).slice(0, 4).forEach((a, k) => b.armor[k] = unpackS(a));
+    b.off[0] = unpackS((s.off || [])[0]); b.sel = (s.sel | 0) % 9; bag = b; }
+  changed(); dirty = false;
 }
 addEventListener('pagehide', () => { if (dirty) save(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && dirty) save(); });
@@ -393,6 +487,7 @@ function drawHotbar() {
     p.ic.textContent = s && s.n > 1 ? s.n : '';
     const max = s && ITEMS[s.id] && ITEMS[s.id].durability, show = !!(max && s.dur < max); p.du.hidden = !show;
     if (show) { const f = Math.max(0, s.dur / max); p.u.style.width = Math.max(1, Math.round(f * 100)) + '%'; p.u.style.background = durColor(f); }
+    p.g.canvas.style.opacity = broken(s) ? .45 : '';
   });
 }
 
@@ -401,22 +496,34 @@ function drawHotbar() {
 // ---------------------------------------------------------------------
 const HARD = { [GRASS]: .6, [DIRT]: .5, [STONE]: 1.5, [SAND]: .5, [LOG]: 2, [LEAVES]: .2, [PLANKS]: 2, [GLASS]: .3, [QUARTZ]: .8, [ROAD]: 1.8, [IRON]: 5,
   [CACTUS]: .4, [BRICK]: 2, [SANDSTONE]: .8, [COBBLE]: 2, [COAL]: 3, [IRONORE]: 3, [WORKBENCH]: 2.5 };
-const TOOLFOR = {}, PICK_ONLY = new Set([STONE, QUARTZ, ROAD, IRON, BRICK, SANDSTONE, COBBLE, COAL, IRONORE]), MIN_POWER = { [IRONORE]: 2, [IRON]: 2 };
+// Valheim: rock needs a pickaxe (the first one is the Antler Pickaxe from Stormhorn), and scrap iron needs bronze and the
+// Old Root's death. Without the right tool these blocks cannot be damaged at all, and a tip says why.
+const TOOLFOR = {}, PICK_ONLY = new Set([STONE, QUARTZ, ROAD, IRON, BRICK, SANDSTONE, COBBLE, COAL, IRONORE]), MIN_POWER = { [IRONORE]: 3, [IRON]: 3 };
+const ironLocked = () => typeof DarkForest !== 'undefined' && DarkForest && DarkForest.flags && !DarkForest.flags.bossDead;
+let hintT = 0;
+function hardHint(t) {
+  if (performance.now() < hintT) return; hintT = performance.now() + 7000;
+  const tl = heldTool(), need = MIN_POWER[t] || 1, name = BLOCK[t] ? BLOCK[t].name : 'This';
+  if (!tl || tl.type !== 'pickaxe') chat(`${name} needs a pickaxe. Pick up loose stones from the ground instead.`, 'join');
+  else if (tl.power < need) chat(`${name} is too hard for your ${ITEMS[baseOf(held().id)].name}. You need a stronger pickaxe.`, 'join');
+  else if (t === IRONORE && ironLocked()) chat('The iron here is bound under old roots. It will not break while The Old Root lives.', 'join');
+}
 for (const t of PICK_ONLY) TOOLFOR[t] = 'pickaxe';
 for (const t of [LOG, PLANKS, WORKBENCH]) TOOLFOR[t] = 'axe';
 for (const t of [GRASS, DIRT, SAND]) TOOLFOR[t] = 'shovel';
 const TIER_SPEED = [1, 2, 4, 6, 8, 10];               // tool power -> mining speed multiplier (wood 2, stone/flint 4, iron 6)
-const heldTool = () => { const s = held(); return s && ITEMS[s.id] && ITEMS[s.id].tool || null; };
+const heldTool = () => { const s = held(); return s && !broken(s) && ITEMS[s.id] && ITEMS[s.id].tool || null; };
 // seconds to break block t with the held item: 0 = instant, Infinity = unbreakable
 function breakTime(t) {
   const b = BLOCK[t]; if (!b || t === BEDROCK || b.kind === 'air' || b.kind === 'water') return Infinity;
   if (b.kind === 'cross') return 0;
+  if (PICK_ONLY.has(t) && !canHarvest(t)) return Infinity;
   const hard = HARD[t] ?? 1, tl = heldTool();
   if (tl && TOOLFOR[t] === tl.type) return hard * 1.5 / (TIER_SPEED[tl.power] || 2);
-  return hard * (PICK_ONLY.has(t) ? 5 : 1.5);
+  return hard * 1.5;
 }
-// stone-like blocks only drop when mined with a strong enough pickaxe
-function canHarvest(t) { if (!PICK_ONLY.has(t)) return true; const tl = heldTool(); return !!tl && tl.type === 'pickaxe' && tl.power >= (MIN_POWER[t] || 1); }
+// stone-like blocks only break (and drop) with a strong enough pickaxe
+function canHarvest(t) { if (!PICK_ONLY.has(t)) return true; const tl = heldTool(); return !!tl && tl.type === 'pickaxe' && tl.power >= (MIN_POWER[t] || 1) && !(t === IRONORE && ironLocked()); }
 function dropsFor(h) {
   const t = h.t; if (!canHarvest(t)) return [];
   const r = Math.random();
@@ -424,7 +531,7 @@ function dropsFor(h) {
     case GRASS: return [['dirt', 1]];
     case STONE: return [['cobblestone', 1]];
     case GLASS: case TALLGRASS: return [];
-    case LEAVES: return r < .1 ? [['apple', 1]] : r < .16 ? [['stick', 1]] : [];
+    case LEAVES: return r < .1 ? [['apple', 1]] : r < .16 ? [['wood', 1]] : [];
     case LOG: return r < .15 ? [['oak_log', 1], ['resin', 1]] : [['oak_log', 1]];
     case SAND: return r < .1 ? [['sand', 1], ['flint', 1]] : [['sand', 1]];
     case COAL: return [['coal', 1]];
@@ -461,7 +568,7 @@ function mine(h, dt) {
   if (key !== mineKey) { mineKey = key; mineT = 0; mineTotal = breakTime(h.t); mineSnd = 0; }
   mineFrame = frameNo;
   if (mineTotal === 0) { breakBlock(h); mineKey = ''; return true; }
-  if (!isFinite(mineTotal)) { if ((mineSnd -= dt) <= 0) { mineSnd = .3; PL().swing = 1; swingT = 1; } return false; }
+  if (!isFinite(mineTotal)) { if ((mineSnd -= dt) <= 0) { mineSnd = .3; PL().swing = 1; swingT = 1; } if (PICK_ONLY.has(h.t)) hardHint(h.t); return false; }
   mineT += dt; mineSnd -= dt;
   if (mineSnd <= 0) { mineSnd = .24; SFX.block(h.t, 'step'); PL().swing = 1; swingT = 1; }
   if (mineT >= mineTotal) { breakBlock(h); mineKey = ''; crackMesh.visible = false; return true; }
@@ -514,7 +621,7 @@ function model(stack, left) {
   const g = new THREE.Group(), it = stack && ITEMS[stack.id], b = it && it.block != null ? BLOCK[it.block] : null;
   const add3 = m => { m.renderOrder = 50; g.add(m); return m; };
   if (!stack) {                                         // bare arm: sleeve and skin of the current character
-    const d = DEFS[cur], sl = d.sleeve / 12 * .75, sk = .75 - sl, arm = new THREE.Group();
+    const d = charDef(), sl = d.sleeve / 12 * .75, sk = .75 - sl, arm = new THREE.Group();
     if (sl > 0) { const a = shadedBox(.25, sl, .25, d.top); a.position.y = -sl / 2; arm.add(a); }
     const hand = shadedBox(.25, sk, .25, d.skin); hand.position.y = -sl - sk / 2; arm.add(hand);
     arm.children.forEach(m => m.renderOrder = 50);
@@ -582,7 +689,16 @@ css.textContent = `
   #invTip { position: absolute; pointer-events: none; background: rgba(16,0,16,.94); padding: calc(2px * var(--s)) calc(3px * var(--s));
     border: calc(1px * var(--s)) solid; border-image: linear-gradient(#5000ff, #28007f) 1; box-shadow: 0 0 0 calc(1px * var(--s)) rgba(16,0,16,.94);
     font-size: calc(8px * var(--s)); line-height: 1.3; color: #aaa; white-space: nowrap; text-shadow: calc(1px * var(--s)) calc(1px * var(--s)) 0 rgba(0,0,0,.55); }
-  #invTip .tn { margin-bottom: calc(2px * var(--s)); } #invTip .bl { color: #5555ff; } #invTip .rd { color: #ff5555; } #invTip .ds { font-style: italic; }`;
+  #invTip .tn { margin-bottom: calc(2px * var(--s)); } #invTip .bl { color: #5555ff; } #invTip .rd { color: #ff5555; } #invTip .ds { font-style: italic; }
+  #invTip .gd { color: #ffaa00; } #invTip .gr { color: #55ff55; }
+  .is.miss::before { content: ""; position: absolute; inset: 1px; background: rgba(255,40,40,.38); pointer-events: none; z-index: 1; }
+  .is.show { background: #8b8b8b; }
+  .ibtn.wide.on { background: #4a4a4a; box-shadow: inset 1px 1px 0 #2a2a2a, inset -1px -1px 0 #6a6a6a, 0 0 0 1px #000; color: #ffffa0; }
+  .ibtn.mcb { width: 40px; height: 18px; padding: 0; font-size: 8px; line-height: 18px; background: #6f6f6f;
+    box-shadow: inset 1px 1px 0 #aaa, inset -1px -2px 0 #4a4a4a, 0 0 0 1px #000; }
+  .ibtn.mcb.off { color: #a0a0a0; background: #5a5a5a; box-shadow: inset 1px 1px 0 #777, inset -1px -2px 0 #3a3a3a, 0 0 0 1px #000; }
+  .ilb.ids { white-space: normal; width: 134px; font-size: 6px; line-height: 7px; height: 14px; overflow: hidden; }
+  .ilb.ilv { color: #404040; }`;
 document.head.appendChild(css);
 const mkEl = (tag, cls, parent, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; if (parent) parent.appendChild(e); return e; };
 const root = mkEl('div', '', document.body); root.id = 'inv'; root.hidden = true;
@@ -605,9 +721,30 @@ function slotEl(x, y, ref, big) {
   const S = { d, c, g: c.getContext('2d'), b, bar, u, ref }; slots.push(S); hookSlot(S); return S;
 }
 const label = (txt, x, y) => { const l = mkEl('div', 'ilb', panel, txt); l.style.left = x + 'px'; l.style.top = y + 'px'; return l; };
+let stEls = null;                                   // station screen parts that change with the selection
+function stButton(txt, x, y, cls, fn, title) {
+  const b = mkEl('div', 'ibtn ' + cls, panel, txt); b.style.left = x + 'px'; b.style.top = y + 'px'; if (title) b.title = title;
+  b.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); fn(e); }); return b;
+}
+const ANVIL = pixCanvas(16, 16, R([['#3a3a3a', 2, 4, 12, 3], ['#5a5a5a', 2, 4, 12, 1], ['#2a2a2a', 5, 7, 6, 3], ['#3a3a3a', 3, 10, 10, 3], ['#5a5a5a', 3, 10, 10, 1], ['#1a1a1a', 1, 5, 1, 1]]));
 function buildPanel() {
-  panel.innerHTML = ''; slots = []; preview = null;
-  if (mode === 'inv') {
+  panel.innerHTML = ''; slots = []; preview = null; stEls = null;
+  if (mode === 'station' && curSt) {
+    const S = STATIONS[curSt.name] || {};
+    label(S.name || stName(curSt.name), 8, 6);
+    const lv = label('Level ' + curSt.level, 8, 6); lv.classList.add('ilv'); lv.style.left = 'auto'; lv.style.right = '44px';
+    stButton('Craft', 8, 16, 'wide' + (stTab === 'craft' ? ' on' : ''), () => setTab('craft'));
+    stButton('Upgrade', 36, 16, 'wide' + (stTab === 'upgrade' ? ' on' : ''), () => setTab('upgrade'));
+    const rp = stButton('', 137, 4, '', () => doRepair(), 'Repair'); const rc = mkEl('canvas', '', rp); rc.width = rc.height = 16; rc.getContext('2d').drawImage(ANVIL, 0, 0);
+    rp.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') showTip(`<div class="tn">Repair</div><div>Mends every item made at this ${esc(stName(curSt.name))}</div>`); });
+    rp.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideTip(); });
+    const show = slotEl(8, 32, { kind: 'show' }, true); show.d.classList.add('show');
+    const name = label('', 40, 31), desc = label('', 40, 40); desc.classList.add('ids');
+    const costs = []; for (let k = 0; k < 4; k++) costs.push(slotEl(40 + k * 18, 54, { kind: 'cost', k }));
+    const go = stButton(stTab === 'craft' ? 'Craft' : 'Upgrade', 128, 55, 'mcb', () => doCraft());
+    stEls = { show, name, desc, costs, go };
+    label('Inventory', 8, 73);
+  } else if (mode === 'inv') {
     SLOT_NAMES.forEach((n, k) => slotEl(7, 7 + k * 18, { arr: bag.armor, i: k, kind: 'armor', sil: SIL[k] }));
     const pv = mkEl('div', 'ipv', panel); const pc = mkEl('canvas', '', pv); pc.width = 16; pc.height = 32; preview = pc.getContext('2d');
     slotEl(76, 61, { arr: bag.off, i: 0, kind: 'off', sil: SIL[4] });
@@ -615,22 +752,17 @@ function buildPanel() {
     for (let k = 0; k < 4; k++) slotEl(97 + (k % 2) * 18, 17 + (k >> 1) * 18, { arr: grid, i: k, kind: 'grid' });
     const ar = mkEl('canvas', 'iar', panel); ar.width = 22; ar.height = 15; ar.getContext('2d').drawImage(ARROW, 0, 0); ar.style.left = '134px'; ar.style.top = '28px';
     slotEl(153, 27, { kind: 'result' });
-  } else {
-    label('Crafting', 28, 6);
-    for (let k = 0; k < 9; k++) slotEl(29 + (k % 3) * 18, 16 + Math.floor(k / 3) * 18, { arr: grid, i: k, kind: 'grid' });
-    const ar = mkEl('canvas', 'iar', panel); ar.width = 22; ar.height = 15; ar.getContext('2d').drawImage(ARROW, 0, 0); ar.style.left = '89px'; ar.style.top = '35px';
-    slotEl(119, 30, { kind: 'result' }, true);
-    label('Inventory', 8, 73);
   }
   for (let k = 0; k < 27; k++) slotEl(7 + (k % 9) * 18, 83 + Math.floor(k / 9) * 18, { arr: bag.main, i: 9 + k, kind: 'main' });
   for (let k = 0; k < 9; k++) slotEl(7 + k * 18, 141, { arr: bag.main, i: k, kind: 'main' });
-  if (nearBench) {                                      // switch between the equipment view and the workbench grid
-    const b = mkEl('div', 'ibtn', panel); b.style.left = '155px'; b.style.top = '5px'; b.title = mode === 'inv' ? 'Workbench' : 'Equipment';
-    const c = mkEl('canvas', '', b); c.width = c.height = 32; c.getContext('2d').drawImage(icon32(mode === 'inv' ? 'workbench' : 'iron_chestplate'), 0, 0);
-    b.addEventListener('pointerdown', e => { e.stopPropagation(); setMode(mode === 'inv' ? 'table' : 'inv'); });
+  if (curSt) {                                          // switch between the equipment view and the station's recipe list
+    const S = STATIONS[curSt.name] || {}, b = mkEl('div', 'ibtn', panel); b.style.left = '155px'; b.style.top = '4px'; b.title = mode === 'inv' ? S.name : 'Equipment';
+    const c = mkEl('canvas', '', b); c.width = c.height = 32; c.getContext('2d').drawImage(icon32(mode === 'inv' ? (S.icon || 'workbench') : 'leather_tunic'), 0, 0);
+    b.addEventListener('pointerdown', e => { e.stopPropagation(); setMode(mode === 'inv' ? 'station' : 'inv'); });
   }
 }
-function setMode(m) { returnGrid(); mode = m; gridN = m === 'table' ? 9 : 4; selRecipe = null; uiTick(); buildPanel(); buildBook(); render(); }
+function setMode(m) { returnGrid(); mode = m; gridN = 4; selRecipe = null; uiTick(); buildPanel(); buildBook(); render(); }
+function setTab(t) { if (stTab === t) return; stTab = t; stSel = null; uiTick(); buildPanel(); buildBook(); render(); }
 
 // recipe book: tap a recipe to move its ingredients into the grid (again to add another set, shift / long-press for as many as fit)
 const bookHead = mkEl('div', '', book), bookList = mkEl('div', 'ibl', book), bookInner = mkEl('div', '', bookList);
@@ -640,31 +772,112 @@ filterBtn.addEventListener('pointerdown', e => { e.stopPropagation(); onlyCrafta
 const closeBtn = mkEl('div', 'ibtn', bookHead, 'X'); closeBtn.style.left = '113px'; closeBtn.style.top = '3px'; closeBtn.title = 'Close';
 closeBtn.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); closeInv(false); });
 let rows = [];
-function stationOk(r) { return !r.station || (r.station === WB ? nearBench : nearStation(r.station)); }
+// the grid only makes no-station recipes; a station recipe needs that station near, usable and at its level
+function stationOk(r) { if (!r.station) return true; const s = stationInfo(r.station); return !!s && !s.why && s.level >= (r.lvl || 1); }
 function haveFor(k) { let n = count(k); for (let i = 0; i < gridN; i++) if (grid[i] && matches(grid[i].id, k)) n += grid[i].n; return n; }
 const canMake = r => Object.keys(r.needs).every(k => haveFor(k) >= r.needs[k]);
 const fits = r => Object.keys(r.needs).length <= gridN;
+// station screen entries: { r } to craft, or { r, ref } to upgrade the stack at ref
+const upCost = r => { const o = {}; for (const k in r.needs) o[k] = Math.max(1, Math.ceil(r.needs[k] / 2)); return o; };
+const entryNeeds = e => e.ref ? upCost(e.r) : e.r.needs;
+const entryLevel = e => (e.r.lvl || 1) + (e.ref ? qualityOf(e.ref.arr[e.ref.i].id) : 0);
+const entryLevelOk = e => !!curSt && curSt.level >= entryLevel(e);
+const entryCan = e => entryLevelOk(e) && Object.entries(entryNeeds(e)).every(([k, n]) => count(k) >= n) && (!e.ref || !!e.ref.arr[e.ref.i]);
+function stationEntries() {
+  const name = curSt.name;
+  if (stTab === 'craft') return RECIPES.filter(r => r.station === name).map(r => ({ r }));
+  const out = [];
+  for (const [arr, n] of [[bag.main, 36], [bag.armor, 4], [bag.off, 1]]) for (let i = 0; i < n; i++) {
+    const s = arr[i]; if (!s || !ITEMS[s.id] || !ITEMS[s.id].durability || qualityOf(s.id) >= MAXQ) continue;
+    const r = RECIPES.find(o => o.out === baseOf(s.id) && o.station === name); if (r) out.push({ r, ref: { arr, i } });
+  }
+  return out;
+}
+function bookRow(out, n, needs, station, label2) {
+  const d = mkEl('div', 'ir', bookInner); const c = mkEl('canvas', '', d); c.width = c.height = 32; c.getContext('2d').drawImage(icon32(out), 0, 0);
+  mkEl('div', 'irn', d, (n > 1 ? n + ' ' : '') + (ITEMS[out] ? ITEMS[out].name : out) + (label2 || ''));
+  const q = mkEl('div', 'irq', d), parts = [];
+  for (const k in needs) { const sp = mkEl('span', '', q); const ic = mkEl('canvas', '', sp); ic.width = ic.height = 16; ic.getContext('2d').drawImage(icon16(ITEMS[k] ? k : tagIcon(k)), 0, 0);
+    sp.appendChild(document.createTextNode(needs[k])); parts.push([k, sp]); }
+  if (station) { const s = mkEl('canvas', 'irs', d); s.width = s.height = 32; s.getContext('2d').drawImage(icon32((STATIONS[station] && STATIONS[station].icon) || 'workbench'), 0, 0); }
+  return { d, parts };
+}
 function buildBook() {
-  bookInner.innerHTML = '';
-  const rank = r => !stationOk(r) || !fits(r) ? 2 : canMake(r) ? 0 : 1;
+  bookInner.innerHTML = ''; stCache = null;
+  if (mode === 'station' && curSt) {
+    const list = stationEntries().map((e, i) => ({ e, i, k: entryCan(e) ? 0 : entryLevelOk(e) ? 1 : 2 })).filter(o => !onlyCraftable || o.k === 0).sort((a, b) => a.k - b.k || a.i - b.i);
+    if (stSel && !list.some(o => o.e.r === stSel.r && (!stSel.ref || (o.e.ref && o.e.ref.arr === stSel.ref.arr && o.e.ref.i === stSel.ref.i)))) stSel = null;
+    rows = list.map(({ e }) => {
+      const s = e.ref && e.ref.arr[e.ref.i], q = s ? qualityOf(s.id) : 0;
+      const row = bookRow(e.ref ? s.id : e.r.out, e.ref ? 1 : e.r.n, entryNeeds(e), null, e.ref ? ` ${q}>${q + 1}` : '');
+      if (stSel && stSel.r === e.r && (!e.ref || (stSel.ref && stSel.ref.i === e.ref.i && stSel.ref.arr === e.ref.arr))) stSel = e;
+      return { d: row.d, r: e.r, e, parts: row.parts };
+    });
+    if (!stSel && rows.length) stSel = rows[0].e;
+    updateBook(); return;
+  }
+  const rank = r => r.station ? 2 : !fits(r) ? 2 : canMake(r) ? 0 : 1;
   const list = RECIPES.map((r, i) => ({ r, i, k: rank(r) })).filter(o => !onlyCraftable || o.k === 0).sort((a, b) => a.k - b.k || a.i - b.i);
-  rows = list.map(({ r }) => {
-    const d = mkEl('div', 'ir', bookInner); const c = mkEl('canvas', '', d); c.width = c.height = 32; c.getContext('2d').drawImage(icon32(r.out), 0, 0);
-    mkEl('div', 'irn', d, (r.n > 1 ? r.n + ' ' : '') + (ITEMS[r.out] ? ITEMS[r.out].name : r.out));
-    const q = mkEl('div', 'irq', d), parts = [];
-    for (const k in r.needs) { const sp = mkEl('span', '', q); const ic = mkEl('canvas', '', sp); ic.width = ic.height = 16; ic.getContext('2d').drawImage(icon16(ITEMS[k] ? k : tagIcon(k)), 0, 0);
-      sp.appendChild(document.createTextNode(r.needs[k])); parts.push([k, sp]); }
-    if (r.station) { const s = mkEl('canvas', 'irs', d); s.width = s.height = 32; s.getContext('2d').drawImage(icon32(r.station === WB ? 'workbench' : (STATIONS[r.station] && STATIONS[r.station].icon) || 'workbench'), 0, 0); }
-    return { d, r, parts };
-  });
+  rows = list.map(({ r }) => { const row = bookRow(r.out, r.n, r.needs, r.station); return { d: row.d, r, parts: row.parts }; });
   updateBook();
 }
 const tagIcon = k => Object.keys(ITEMS).find(id => matches(id, k)) || k;
 function updateBook() {
-  for (const { d, r, parts } of rows) {
-    const far = !stationOk(r) || !fits(r); d.classList.toggle('far', far); d.classList.toggle('no', !far && !canMake(r));
+  for (const { d, r, e, parts } of rows) {
+    if (e) { const lv = entryLevelOk(e), nd = entryNeeds(e); d.classList.toggle('far', !lv); d.classList.toggle('no', lv && !entryCan(e));
+      d.style.outline = stSel === e ? '1px solid #fff' : ''; for (const [k, sp] of parts) sp.classList.toggle('miss', count(k) < nd[k]); continue; }
+    const far = !!r.station || !fits(r); d.classList.toggle('far', far); d.classList.toggle('no', !far && !canMake(r));
     for (const [k, sp] of parts) sp.classList.toggle('miss', haveFor(k) < r.needs[k]);
   }
+  if (stEls) drawStationTop();
+}
+// the top half of the station screen: the selected recipe (or upgrade), its costs and the Craft / Upgrade button
+function drawStationTop() {
+  const e = stSel, E = stEls;
+  if (!e) { E.name.textContent = stTab === 'craft' ? 'Nothing to make here yet' : 'Nothing to upgrade'; E.desc.textContent = stTab === 'upgrade' ? 'Items made here show up in this list.' : '';
+    E.go.classList.add('off'); for (const S of E.costs) S.d.classList.remove('miss'); return; }
+  const out = e.ref ? e.ref.arr[e.ref.i] : null, it = ITEMS[out ? out.id : e.r.out] || { name: e.r.out };
+  E.name.textContent = e.ref ? `${it.name} ${qualityOf(out.id)} > ${qualityOf(out.id) + 1}` : (e.r.n > 1 ? e.r.n + ' ' : '') + it.name;
+  E.desc.textContent = !entryLevelOk(e) ? `Requires ${stName(curSt.name)} level ${entryLevel(e)}` : (e.ref ? 'Better damage, armor and durability.' : it.desc || (it.tier ? it.tier + ' tier' : ''));
+  E.desc.style.color = entryLevelOk(e) ? '' : '#a02020';
+  const nd = Object.entries(entryNeeds(e));
+  E.costs.forEach((S, k) => { S.d.style.visibility = k < nd.length ? '' : 'hidden'; S.d.classList.toggle('miss', k < nd.length && count(nd[k][0]) < nd[k][1]); });
+  E.go.textContent = stTab === 'craft' ? 'Craft' : 'Upgrade'; E.go.classList.toggle('off', !entryCan(e));
+}
+function stNeedStack(k) { const e = stSel; if (!e) return null; const nd = Object.entries(entryNeeds(e))[k]; return nd ? { id: ITEMS[nd[0]] ? nd[0] : tagIcon(nd[0]), n: nd[1], key: nd[0] } : null; }
+function doCraft() {
+  const e = stSel; if (!e || !curSt) return;
+  stCache = null; const fresh = stationInfo(curSt.name);
+  if (!fresh || fresh.why) { flashTip(`<span class="rd">${esc(fresh ? fresh.why : 'Too far from the ' + stName(curSt.name))}</span>`); return; }
+  curSt.level = fresh.level;
+  if (!entryLevelOk(e)) { flashTip(`<span class="rd">Requires ${esc(stName(curSt.name))} level ${entryLevel(e)}</span>`); return; }
+  if (!entryCan(e)) { flashTip(entryTip(e)); return; }
+  for (const [k, n] of Object.entries(entryNeeds(e))) remove(k, n);
+  if (e.ref) { const s = e.ref.arr[e.ref.i], q = qualityOf(s.id) + 1, id = qid(baseOf(s.id), q); s.id = id; if (ITEMS[id].durability) s.dur = ITEMS[id].durability;
+    chat(`${ITEMS[id].name} is now quality ${q}`); }
+  else { const left = add(e.r.out, e.r.n); if (left > 0 && typeof World !== 'undefined' && World.spawnDrop) World.spawnDrop(e.r.out, left, PL().eye); }
+  if (AC) { const t = AC.currentTime; click(t, 900, .05); click(t + .05, 1300, .04); if (e.ref) { click(t + .1, 1800, .05); } }
+  emit('craft', 1, e.ref ? null : e.r.out); changed(); buildBook(); render();
+}
+// Valheim: the station mends everything it could make (no-station items at the Workbench), if its level is high enough
+function repairStation(id) { const r = RECIPES.find(o => o.out === baseOf(id) && o.station) || null; return r ? r.station : WB; }
+function repairLevel(id) { const r = RECIPES.find(o => o.out === baseOf(id) && o.station); return (r ? r.lvl || 1 : 1) + qualityOf(id) - 1; }
+function doRepair() {
+  if (!curSt) return; let n = 0, low = 0;
+  for (const arr of [bag.main, bag.armor, bag.off]) for (const s of arr) {
+    const max = s && ITEMS[s.id] && ITEMS[s.id].durability; if (!max || s.dur >= max || repairStation(s.id) !== curSt.name) continue;
+    if (curSt.level >= repairLevel(s.id)) { s.dur = max; n++; } else low = Math.max(low, repairLevel(s.id));
+  }
+  if (n) { if (AC) { const t = AC.currentTime; for (let k = 0; k < 3; k++) click(t + k * .09, 1500 + k * 300, .06); } changed(); }
+  flashTip(n ? `<span class="gr">Repaired ${n} item${n > 1 ? 's' : ''}</span>` : low ? `<span class="rd">Requires ${esc(stName(curSt.name))} level ${low}</span>` : 'Nothing here needs repair');
+}
+function entryTip(e) {
+  const it = ITEMS[e.ref ? e.ref.arr[e.ref.i].id : e.r.out] || { name: e.r.out, rarity: 'common' };
+  const L = [`<div class="tn" style="color:${RARITY[it.rarity] || '#fff'}">${esc(it.name)}</div>`];
+  for (const [k, n] of Object.entries(entryNeeds(e))) { const h = count(k), name = ITEMS[k] ? ITEMS[k].name : k[0].toUpperCase() + k.slice(1);
+    L.push(`<div class="${h < n ? 'rd' : 'gr'}">${esc(name)}: ${Math.min(h, n)} / ${n}</div>`); }
+  if (!entryLevelOk(e)) L.push(`<div class="rd">Requires ${esc(stName(curSt.name))} level ${entryLevel(e)}</div>`);
+  return L.join('');
 }
 // scroll the list by dragging (touch or mouse) or with the wheel; a short press is a tap on the row
 let bookDrag = null;
@@ -675,10 +888,19 @@ root.addEventListener('pointermove', e => {
 });
 addEventListener('pointerup', e => {
   if (!bookDrag || e.pointerId !== bookDrag.id) return; const b = bookDrag; bookDrag = null;
-  if (b.moved <= 5 && b.row && isOpen) { const row = rows.find(o => o.d === b.row); if (row) fillRecipe(row.r, e.shiftKey); }
+  if (b.moved <= 5 && b.row && isOpen) { const row = rows.find(o => o.d === b.row); if (row) pickRow(row, e.shiftKey); }
 });
+function pickRow(row, shift) {
+  if (row.e) { stSel = row.e; uiTick(); updateBook(); if (shift) doCraft(); else if (TOUCH) flashTip(entryTip(row.e)); return; }
+  if (row.r.station) {                 // a station recipe from the inventory: jump to that station's list when it is near
+    stCache = null; const s = stationInfo(row.r.station);
+    if (s && !s.why) { curSt = s; stTab = 'craft'; stSel = { r: row.r }; returnGrid(); mode = 'station'; uiTick(); buildPanel(); buildBook(); render(); return; }
+    flashTip(recipeTip(row.r)); return;
+  }
+  fillRecipe(row.r, shift);
+}
 bookList.addEventListener('wheel', e => { bookList.scrollTop += e.deltaY / guiScale; e.preventDefault(); }, { passive: false });
-bookList.addEventListener('pointerover', e => { const d = e.target.closest('.ir'); if (e.pointerType === 'mouse' && d) { const row = rows.find(o => o.d === d); if (row) showTip(recipeTip(row.r)); } });
+bookList.addEventListener('pointerover', e => { const d = e.target.closest('.ir'); if (e.pointerType === 'mouse' && d) { const row = rows.find(o => o.d === d); if (row) showTip(row.e ? entryTip(row.e) : recipeTip(row.r)); } });
 bookList.addEventListener('pointerout', e => { if (e.pointerType === 'mouse') hideTip(); });
 
 // ---- crafting logic
@@ -692,7 +914,7 @@ function satisfies(r, tot, exact) {
 const recipeSize = r => Object.values(r.needs).reduce((a, b) => a + b, 0);
 function currentRecipe() {
   const tot = gridTotals(); if (!Object.keys(tot).length) return null;
-  const ok = RECIPES.filter(r => stationOk(r) && satisfies(r, tot)); if (!ok.length) return null;
+  const ok = RECIPES.filter(r => !r.station && satisfies(r, tot)); if (!ok.length) return null;
   if (selRecipe && ok.includes(selRecipe)) return selRecipe;
   return ok.find(r => satisfies(r, tot, true)) || ok.reduce((a, b) => recipeSize(b) < recipeSize(a) ? b : a);
 }
@@ -702,11 +924,12 @@ function consumeGrid(r) {
 }
 function resultStack() { const r = currentRecipe(); return r ? mk(r.out, r.n) : null; }
 // take the crafted item: 'cursor' (click), 'one' (tap: straight into the inventory) or 'all' (shift-click / long-press)
+let lastOut = null;
 function takeResult(how) {
   let made = 0;
   for (let guard = 0; guard < 64; guard++) {
     const r = currentRecipe(); if (!r) break;
-    const out = mk(r.out, r.n);
+    const out = mk(r.out, r.n); lastOut = r.out;
     if (how === 'cursor') {
       if (carry && !(carry.id === out.id && maxStack(out.id) > 1 && carry.n + out.n <= maxStack(out.id))) break;
       consumeGrid(r); if (carry) carry.n += out.n; else carry = out; made++; break;
@@ -716,7 +939,7 @@ function takeResult(how) {
     consumeGrid(r); moveInto(out); made++;
     if (how === 'one') break;
   }
-  if (made) { if (AC) { click(AC.currentTime, 900, .05); click(AC.currentTime + .05, 1300, .04); } emit('craft', made); changed(); }
+  if (made) { if (AC) { click(AC.currentTime, 900, .05); click(AC.currentTime + .05, 1300, .04); } emit('craft', made, lastOut); changed(); }
 }
 function returnGrid() {
   for (let i = 0; i < 9; i++) if (grid[i]) { const left = moveInto(grid[i]); grid[i] = null;
@@ -741,7 +964,7 @@ function pullSet(r) {
   return true;
 }
 function fillRecipe(r, all) {
-  if (!stationOk(r)) { flashTip(recipeTip(r)); return; }
+  if (r.station) { flashTip(recipeTip(r)); return; }
   if (selRecipe !== r || !satisfies(r, gridTotals())) returnGrid();
   selRecipe = r; let sets = 0;
   do { if (!pullSet(r)) break; sets++; } while (all && sets < 64);
@@ -752,7 +975,7 @@ function fillRecipe(r, all) {
 // ---- slot clicks (Minecraft rules)
 function accepts(ref, st) {
   if (ref.kind === 'armor') { const a = ITEMS[st.id] && ITEMS[st.id].armor; return !!a && a.slot === SLOT_NAMES[ref.i]; }
-  return ref.kind !== 'result';
+  return ref.kind !== 'result' && ref.kind !== 'show' && ref.kind !== 'cost';
 }
 function quickMove(ref) {
   const s = ref.arr[ref.i]; if (!s) return;
@@ -766,6 +989,7 @@ function quickMove(ref) {
 }
 function act(S, right, shift, touch) {
   const ref = S.ref;
+  if (ref.kind === 'show' || ref.kind === 'cost') { if (touch) { const st = slotStack(S); if (st) flashTip(ref.kind === 'cost' ? costTip(st) : stSel ? entryTip(stSel) : ''); } return; }
   if (ref.kind === 'result') { takeResult(touch ? (right ? 'all' : 'one') : shift ? 'all' : 'cursor'); return; }
   if (shift) { quickMove(ref); uiTick(); changed(); return; }
   const s = ref.arr[ref.i];
@@ -793,14 +1017,22 @@ function hookSlot(S) {
   S.d.addEventListener('pointerup', e => {
     if (e.pointerType !== 'touch' || !timer) return;
     clearTimeout(timer); timer = null; if (fired) return;
-    act(S, false, false, true); const st = slotStack(S); if (st && !carry) flashTip(itemTip(st)); else hideTip();
+    act(S, false, false, true); const st = slotStack(S); if (S.ref.kind === 'show' || S.ref.kind === 'cost') return; if (st && !carry) flashTip(itemTip(st)); else hideTip();
   });
   S.d.addEventListener('pointercancel', () => { clearTimeout(timer); timer = null; });
   S.d.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { hoverSlot = S; showSlotTip(S); } });
   S.d.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { if (hoverSlot === S) hoverSlot = null; hideTip(); } });
 }
-const slotStack = S => S.ref.kind === 'result' ? resultStack() : S.ref.arr[S.ref.i];
-function showSlotTip(S) { const st = slotStack(S); if (st && !carry) showTip(itemTip(st)); else hideTip(); }
+function slotStack(S) {
+  const k = S.ref.kind;
+  if (k === 'result') return resultStack();
+  if (k === 'show') return !stSel ? null : stSel.ref ? stSel.ref.arr[stSel.ref.i] : mk(stSel.r.out, stSel.r.n);
+  if (k === 'cost') return stNeedStack(S.ref.k);
+  return S.ref.arr[S.ref.i];
+}
+const costTip = st => { const h = count(st.key), it = ITEMS[st.id], name = ITEMS[st.key] ? it.name : st.key[0].toUpperCase() + st.key.slice(1);
+  return `<div class="tn" style="color:${RARITY[it ? it.rarity : 'common'] || '#fff'}">${esc(name)}</div><div class="${h < st.n ? 'rd' : 'gr'}">${Math.min(h, st.n)} / ${st.n}</div>`; };
+function showSlotTip(S) { const st = slotStack(S); if (st && !carry) showTip(S.ref.kind === 'cost' ? costTip(st) : itemTip(st)); else hideTip(); }
 
 // ---- tooltips
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -808,8 +1040,11 @@ const fmt = n => Number.isInteger(n) ? String(n) : n.toFixed(1);
 function itemTip(st) {
   const it = ITEMS[st.id]; if (!it) return esc(st.id);
   const L = [`<div class="tn" style="color:${RARITY[it.rarity] || '#fff'}">${esc(it.name)}</div>`];
+  if (broken(st)) L.push(`<div class="rd">Broken: repair it at a ${esc(stName(repairStation(st.id)))}</div>`);
+  if (it.durability && (it.weapon || it.armor || it.shield || it.tool)) L.push(`<div class="gd">Quality ${qualityOf(st.id)}/${MAXQ}</div>`);
+  if (it.tier) L.push(`<div>Tier: ${esc(it.tier)}</div>`);
   if (it.weapon) L.push(`<div class="bl">Damage: ${fmt(it.weapon.dmg)}</div>`, `<div>Attack speed: ${fmt(it.weapon.speed)} s</div>`, `<div>Stamina: ${fmt(it.weapon.stamina)} per swing</div>`);
-  if (it.tool) L.push(`<div>${it.tool.type[0].toUpperCase() + it.tool.type.slice(1)}, tier ${it.tool.power}</div>`);
+  if (it.tool && it.tool.power) L.push(`<div>${it.tool.type[0].toUpperCase() + it.tool.type.slice(1)}, tier ${it.tool.power}</div>`);
   if (it.armor) L.push(`<div class="bl">+${it.armor.armor} Armor</div>`, `<div>Slot: ${it.armor.slot}</div>`);
   if (it.shield) L.push(`<div class="bl">Block power: ${fmt(it.shield.block)}</div>`, `<div>Parry bonus: ${fmt(it.shield.parry)}x</div>`);
   if (it.food) L.push(`<div>Food: +${it.food.heal} health, +${it.food.stamina} stamina, ${Math.round(it.food.secs / 60)} min</div>`, `<div>Hunger: +${it.food.hunger}</div>`);
@@ -823,7 +1058,11 @@ function recipeTip(r) {
   const L = [`<div class="tn" style="color:${RARITY[it.rarity] || '#fff'}">${esc((r.n > 1 ? r.n + ' x ' : '') + it.name)}</div>`];
   for (const k in r.needs) { const h = haveFor(k), name = ITEMS[k] ? ITEMS[k].name : k[0].toUpperCase() + k.slice(1);
     L.push(`<div class="${h < r.needs[k] ? 'rd' : ''}">${esc(name)}: ${Math.min(h, r.needs[k])} / ${r.needs[k]}</div>`); }
-  if (r.station && !stationOk(r)) L.push(`<div class="rd">Needs a ${esc(STATIONS[r.station] ? STATIONS[r.station].name : r.station)} nearby</div>`);
+  if (r.station) { const s = stationInfo(r.station), lv = r.lvl || 1;
+    if (!s) L.push(`<div class="rd">Craft it at a ${esc(stName(r.station))}${lv > 1 ? ' (level ' + lv + ')' : ''}</div>`);
+    else if (s.why) L.push(`<div class="rd">${esc(stName(r.station))}: ${esc(s.why)}</div>`);
+    else if (s.level < lv) L.push(`<div class="rd">Requires ${esc(stName(r.station))} level ${lv}</div>`);
+    else L.push(`<div class="gr">Open the ${esc(stName(r.station))} list to craft it</div>`); }
   else if (!fits(r)) L.push(`<div class="rd">Needs a bigger crafting grid</div>`);
   if (it.weapon) L.push(`<div class="bl">Damage: ${fmt(it.weapon.dmg)}</div>`);
   if (it.armor) L.push(`<div class="bl">+${it.armor.armor} Armor</div>`);
@@ -848,11 +1087,12 @@ function drawSlot(S) {
   const st = slotStack(S), g = S.g; g.clearRect(0, 0, 32, 32); S.c.classList.toggle('sil', !st && !!S.ref.sil);
   if (st) g.drawImage(icon32(st.id), 0, 0); else if (S.ref.sil) { g.imageSmoothingEnabled = false; g.drawImage(S.ref.sil, 0, 0, 32, 32); }
   S.b.textContent = st && st.n > 1 ? st.n : '';
-  const max = st && ITEMS[st.id] && ITEMS[st.id].durability, show = !!(max && st.dur < max); S.bar.hidden = !show;
+  const max = st && ITEMS[st.id] && ITEMS[st.id].durability, show = !!(max && st.dur < max && S.ref.kind !== 'show'); S.bar.hidden = !show;
   if (show) { const f = Math.max(0, st.dur / max); S.u.style.width = Math.max(1, Math.round(13 * f)) + 'px'; S.u.style.background = durColor(f); }
+  S.c.style.opacity = broken(st) ? .45 : '';
 }
 function drawPreview() {
-  if (!preview) return; const d = DEFS[cur], g = preview; g.clearRect(0, 0, 16, 32);
+  if (!preview) return; const d = charDef(), g = preview; g.clearRect(0, 0, 16, 32);
   g.drawImage(pixCanvas(8, 8, gg => drawFace(gg, d)), 4, 0);
   g.fillStyle = d.top; g.fillRect(4, 8, 8, 12);
   for (const x of [0, 12]) { g.fillStyle = d.top; g.fillRect(x, 8, 4, d.sleeve); g.fillStyle = d.skin; g.fillRect(x, 8 + d.sleeve, 4, 12 - d.sleeve); }
@@ -873,13 +1113,30 @@ function render() {
 }
 
 // ---- open / close
-function openInv(forceMode) {
+// E / Tab opens the inventory; standing at a usable station (one with recipes) opens that station's list instead
+function closestStation() {
+  stCache = null; let best = null, bd = 1e9; const p = PL().pos;
+  for (const name in STATIONS) { if (!RECIPES.some(r => r.station === name)) continue; const s = stationInfo(name); if (!s || s.why) continue;
+    const d = s.p ? Math.hypot(s.p.x + .5 - p.x, s.p.z + .5 - p.z) : 99; if (d < bd) { bd = d; best = s; } }
+  return best;
+}
+function openInv(forceMode, station) {
   if (state !== 'play' || isOpen) return;
+  const st = station || (forceMode === 'inv' ? null : closestStation());
   isOpen = true; state = 'inv'; mining = false; root.hidden = false;
   if (document.pointerLockElement) try { document.exitPointerLock(); } catch (e) { /* already unlocked */ }
-  nearBench = nearStation(WB); mode = forceMode || (nearBench ? 'table' : 'inv'); gridN = mode === 'table' ? 9 : 4; selRecipe = null;
+  curSt = st; nearBench = !!st; mode = st && forceMode !== 'inv' ? 'station' : 'inv'; gridN = 4; selRecipe = null;
+  if (!st || !station) { stTab = 'craft'; stSel = null; }
   layout(); buildPanel(); buildBook(); render(); hideTip(); bookList.scrollTop = 0;
   if (AC) { const t = AC.currentTime; click(t, 700, .04); }
+}
+// right-click a station block (or call Inv.openStation): its recipe list, or the reason it cannot be used
+function openStation(name) {
+  if (state !== 'play' || isOpen) return false;
+  stCache = null; const s = stationInfo(name);
+  if (!s) return false;
+  if (s.why) { chat(`${stName(name)}: ${s.why}`, 'join'); if (AC) click(AC.currentTime, 300, .06); return true; }
+  stTab = 'craft'; stSel = null; openInv(null, s); return true;
 }
 function closeInv(relock) {
   if (!isOpen) return;
@@ -901,7 +1158,7 @@ addEventListener('resize', () => { if (isOpen) { layout(); placeFloat(); } });
 // ---------------------------------------------------------------------
 on('key', e => {
   if (state === 'inv') {
-    if (e.code === 'KeyE' || e.code === 'Escape') closeInv(e.code === 'KeyE');
+    if (e.code === 'KeyE' || e.code === 'Escape' || e.code === 'Tab') closeInv(e.code !== 'Escape');
     else if (/^Digit[1-9]$/.test(e.code) && hoverSlot && hoverSlot.ref.arr) {     // Minecraft: hover a slot and press 1-9 to swap with the hotbar
       const k = +e.code.slice(5) - 1, ref = hoverSlot.ref, a = ref.arr[ref.i], b = bag.main[k];
       if ((!b || accepts(ref, b)) && !(ref.arr === bag.main && ref.i === k)) { ref.arr[ref.i] = b; bag.main[k] = a; uiTick(); changed(); showSlotTip(hoverSlot); }
@@ -909,17 +1166,21 @@ on('key', e => {
     return true;
   }
   if (state !== 'play') return false;
-  if (e.code === 'KeyE') { openInv(); return true; }
+  if (e.code === 'KeyE' || e.code === 'Tab') { openInv(); return true; }
   if (e.code === 'KeyF') { const a = bag.main[hotSel]; bag.main[hotSel] = bag.off[0]; bag.off[0] = a; uiTick(); changed(); return true; }
   return false;
 });
-// right-click / tap a placed workbench to open the 3x3 grid (sneak to place a block against it instead)
+// right-click / tap a station block (Workbench, Forge, Cauldron...) to open its recipe list
 on('use', () => {
   if (state !== 'play' || PL().sneak) return false;
-  const h = targetBlock(); if (!h || h.t !== WORKBENCH) return false;
-  openInv('table'); return true;
+  const h = targetBlock(); if (!h) return false;
+  for (const name in STATIONS) { const st = STATIONS[name]; if (st.block == null || ![].concat(st.block).includes(h.t)) continue;
+    if (!RECIPES.some(r => r.station === name)) continue;
+    const sv = st.find; st.find = () => ({ x: h.x, y: h.y, z: h.z });         // the clicked one, not just the closest
+    try { stCache = null; return openStation(name); } finally { st.find = sv; stCache = null; } }
+  return false;
 });
-on('start', () => { selectHot(bag.sel || 0); });
+on('start', () => { lateRecipes(); selectHot(bag.sel || 0); });
 // desktop without pointer lock: holding the left button still mines (a quick click only breaks plants)
 let hold = null;
 canvas.addEventListener('pointerdown', e => { if (e.pointerType !== 'touch' && noLock && e.button === 0 && state === 'play') hold = { t0: performance.now(), x: e.clientX, y: e.clientY, on: false }; });
@@ -931,8 +1192,7 @@ on('tick', rawDt => {
   frameNo++;
   if (hold && !hold.on && state === 'play' && performance.now() - hold.t0 > 220) { hold.on = true; mining = true; mineCd = 0; }
   // character switched: swap to that character's bag
-  bags[bagCur].sel = hotSel;
-  if (cur !== bagCur) { if (isOpen) closeInv(false); bagCur = cur; bag = bags[cur]; carry = null; save(); selectHot(bag.sel); lastHeldId = undefined; changed(); }
+  if (bag.sel !== hotSel) { bag.sel = hotSel; dirty = true; }
   // off-hand item on the left, raised to the middle while blocking
   syncOffhand();
   if (offMesh) {
@@ -952,11 +1212,17 @@ on('tick', rawDt => {
 // ---------------------------------------------------------------------
 Object.assign(Inv, {
   defineItem, addRecipe, add, remove, count,
-  held, offhand: () => bag.off[0] || null,
-  armor: () => bag.armor.reduce((a, s) => a + (s && ITEMS[s.id] && ITEMS[s.id].armor ? ITEMS[s.id].armor.armor : 0), 0),
-  armorPieces: () => bag.armor.slice(),                  // [head, chest, legs, feet] stacks or null
-  weapon: () => { const s = held(), w = s && ITEMS[s.id] && ITEMS[s.id].weapon; return w ? { id: s.id, ...w } : { id: null, dmg: 2, speed: .5, stamina: 4 }; },   // bare fist fallback
-  shield: () => { const s = bag.off[0], sh = s && ITEMS[s.id] && ITEMS[s.id].shield; return sh ? { id: s.id, ...sh } : null; },
+  // a broken item counts as an empty hand for everyone else (combat, bows, altars) until it is repaired
+  held: () => { const s = held(); return broken(s) ? null : s; }, offhand: () => broken(bag.off[0]) ? null : bag.off[0] || null,
+  heldRaw: held, isBroken: broken,
+  armor: () => bag.armor.reduce((a, s) => a + (s && !broken(s) && ITEMS[s.id] && ITEMS[s.id].armor ? ITEMS[s.id].armor.armor : 0), 0),
+  armorPieces: () => bag.armor.map(s => s && !broken(s) ? (s.id.indexOf('@') > 0 ? { ...s, id: baseOf(s.id) } : s) : null),   // [head, chest, legs, feet] stacks or null
+  weapon: () => { const s = held(), w = s && !broken(s) && ITEMS[s.id] && ITEMS[s.id].weapon; return w ? { id: s.id, ...w } : { id: null, dmg: 2, speed: .5, stamina: 4 }; },   // bare fist fallback
+  shield: () => { const s = bag.off[0], sh = s && !broken(s) && ITEMS[s.id] && ITEMS[s.id].shield; return sh ? { id: s.id, ...sh } : null; },
+  // Valheim crafting: stations, levels, quality
+  openStation, station: name => { stCache = null; return stationInfo(name); }, stations: () => STATIONS,
+  quality: s => s ? qualityOf(s.id) : 0, qualityId: qid, baseId: baseOf, repairStation,
+  removeRecipe: fn => { for (let i = RECIPES.length - 1; i >= 0; i--) if (fn(RECIPES[i])) RECIPES.splice(i, 1); if (isOpen) buildBook(); },
   damageHeld: (n = 1) => wearOut(bag.main, hotSel, n),
   damageOffhand: (n = 1) => wearOut(bag.off, 0, n),
   damageArmor: (n = 1) => { for (let k = 0; k < 4; k++) wearOut(bag.armor, k, n); },
@@ -966,11 +1232,12 @@ Object.assign(Inv, {
   heldBlock: () => { const s = held(), it = s && ITEMS[s.id]; return it && it.block != null ? it.block : AIR; },
   heldModel: () => model(held(), false),
   breakTime, mine, onBreak, icon: icon32, icon16, nearStation,
-  defineStation: (name, d) => { STATIONS[name] = d; },   // { name, block, r } or { name, test: () => bool, icon: itemId }
+  // { name, block (id or ids), r, icon } or { name, test: () => bool, icon }; optional find() -> {x,y,z}, level(p), check(p) -> '' or a reason
+  defineStation: (name, d) => { STATIONS[name] = Object.assign({}, STATIONS[name], d); },
   itemForBlock: t => BI[t] || null,
   bag: () => bag, save, recipes: () => RECIPES.slice(),
-  reset() { DEFS.forEach((d, i) => { bags[i] = starterBag(); }); bag = bags[cur]; bagCur = cur; carry = null; lastHeldId = undefined; save(); changed(); },   // New World: every character starts over
+  reset() { if (isOpen) closeInv(false); bag = newBag(); carry = null; grid.fill(null); lastHeldId = undefined; save(); selectHot(0); changed(); },   // New World: an empty bag, like Valheim
 });
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { lateRecipes(); load(); }); else { lateRecipes(); load(); }
 changed();
 })();

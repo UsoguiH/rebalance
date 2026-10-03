@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Blockcraft Switch</title>
+<title>Blockcraft</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Pixelify+Sans:wght@400;600&family=Press+Start+2P&display=swap">
 <style>
-  /* Layout: full-screen WebGL world, Minecraft HUD pinned to the bottom, GTA switch wheel centered */
+  /* Layout: full-screen WebGL world, Minecraft HUD pinned to the bottom */
   :root {
     --michael: #65b4d4; --franklin: #abedab; --trevor: #ffa357;
     --ui: "Pixelify Sans", "Courier New", monospace;
@@ -60,19 +60,7 @@
   .mcbtn { font: 20px var(--ui); color: #fff; text-shadow: 2px 2px 0 var(--mc-shadow); background: var(--btn); border: 2px solid #000; cursor: pointer;
     box-shadow: inset 2px 2px 0 var(--btn-hi), inset -2px -4px 0 var(--btn-lo); padding: 8px 14px 10px; pointer-events: auto; }
   .mcbtn:hover, .mcbtn:focus-visible { background: var(--btn-hover); border-color: #fff; outline: none; }
-  #swBtn { position: absolute; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); font-size: 16px; }
 
-  /* GTA-style character wheel */
-  #wheel { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .12s; }
-  #wheel.on { opacity: 1; pointer-events: auto; }
-  #wheel svg { width: min(86vmin, 440px); height: min(86vmin, 440px); overflow: visible; filter: drop-shadow(0 4px 18px rgba(0,0,0,.6)); }
-  #wheel .ws path { fill: rgba(0,0,0,.62); stroke: rgba(255,255,255,.18); stroke-width: 2; transition: fill .08s; cursor: pointer; }
-  #wheel .ws.sel path { stroke-width: 5; }
-  #wheel .ws.locked { opacity: .55; }
-  #wheel .ws image { image-rendering: pixelated; pointer-events: none; }
-  #wheel .ws text { font: 700 13px Arial, sans-serif; fill: #fff; text-anchor: middle; pointer-events: none; letter-spacing: 1px; }
-  #wheel .centerName { font: 22px "Anton", Impact, sans-serif; fill: #fff; text-anchor: middle; letter-spacing: 2px; }
-  #wheel .centerSub { font: 700 11px Arial, sans-serif; fill: rgba(255,255,255,.7); text-anchor: middle; letter-spacing: 2px; }
 
   /* Title + pause screens */
   .screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
@@ -98,7 +86,6 @@
   #touchUI { position: fixed; inset: 0; pointer-events: none; }
   #joyBase { position: absolute; width: 132px; height: 132px; margin: -66px 0 0 -66px; border-radius: 50%; background: rgba(40,40,40,.35); border: 3px solid rgba(255,255,255,.35); transition: opacity .2s; }
   #joyKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(230,230,230,.55); border: 3px solid rgba(0,0,0,.4); }
-  html.touch #swBtn { top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; right: calc(10px + env(safe-area-inset-right, 0px)); }
   html.touch #toast { top: calc(60px + env(safe-area-inset-top, 0px)); width: min(250px, 44vw); padding: 8px; }
   html.touch #toast span { font-size: 13px; }
   html.touch #chat { top: calc(8px + env(safe-area-inset-top, 0px)); bottom: auto; max-width: calc(50vw - 64px); }
@@ -128,14 +115,13 @@
   <div id="crosshair"></div>
   <div id="boss" hidden><div class="mc">Forest Troll</div><i><b id="bossFill"></b></i></div>
   <div id="debug" hidden></div>
-  <div id="toast" class="out"><canvas id="toastIcon" width="32" height="32"></canvas><div><b>Switch character</b><span>Hold <kbd>TAB</kbd> or <kbd>Q</kbd>, point, release</span></div></div>
+  <div id="toast" class="out"><canvas id="toastIcon" width="32" height="32"></canvas><div><b>Blockcraft</b><span></span></div></div>
   <div id="chat"></div>
   <div id="bottom">
     <div id="itemName" class="mc"></div>
     <canvas id="stats" width="182" height="22"></canvas>
     <div id="hotbar"></div>
   </div>
-  <button id="swBtn" class="mcbtn" type="button">Switch</button>
 </div>
 
 <div id="touchUI" hidden>
@@ -143,13 +129,12 @@
   <div id="rotate" hidden>Turn your phone sideways for the best view</div>
 </div>
 
-<div id="wheel"><svg viewBox="-210 -210 420 420" id="wheelSvg"></svg></div>
 
 <div id="title" class="screen">
   <div class="logoWrap">
     <div id="logo">BLOCKCRAFT</div>
-    <div id="edition">SWITCH EDITION</div>
-    <div id="splash">Now with sky-cam!</div>
+    <div id="edition">SKARNHOLM</div>
+    <div id="splash">Seven stones!</div>
   </div>
   <div class="menu">
     <button class="mcbtn" id="playBtn" type="button">Singleplayer</button>
@@ -158,13 +143,13 @@
   <div class="panel" id="ctrlPanel" hidden>
     <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>SPACE</kbd> jump/swim · <kbd>CTRL</kbd> or double-tap <kbd>W</kbd> sprint · <kbd>SHIFT</kbd> sneak</p>
     <p>Mouse to look · left click: break · right click: place · middle click: pick block</p>
-    <p><kbd>1</kbd>–<kbd>9</kbd> or scroll: hotbar · <kbd>F5</kbd> camera view · <kbd>F3</kbd> debug · <kbd>F1</kbd> hide HUD · <kbd>M</kbd> music</p>
+    <p><kbd>1</kbd>–<kbd>9</kbd> or scroll: hotbar · <kbd>F5</kbd> camera view · <kbd>F3</kbd> debug · <kbd>F1</kbd> hide HUD · <kbd>M</kbd> map</p>
     <p><kbd>E</kbd> inventory and crafting · <kbd>F</kbd> swap item to off hand · hold left click to mine · right click a Workbench for 3x3 crafting</p>
-    <p>Hold <kbd>TAB</kbd> or <kbd>Q</kbd>: character wheel. Point at Saif, Rakan or Fahad and let go.</p>
-    <p><b>Touch:</b> left thumb joystick moves · drag the right side to look · tap to place · hold to break · tap a hotbar slot · Switch button for the wheel</p>
+    <p><kbd>R</kbd> call on your Oath power (hang a boss head at the Ring of Oaths first)</p>
+    <p><b>Touch:</b> left thumb joystick moves · drag the right side to look · tap to place · hold to break · tap a hotbar slot · power button (top) for your Oath power</p>
   </div>
   <div class="corner l">Blockcraft 1.0</div>
-  <div class="corner r">Fan-made. Not affiliated with Mojang or Rockstar.</div>
+  <div class="corner r">Fan-made. Not affiliated with Mojang.</div>
 </div>
 
 <div id="pause" class="screen" hidden>
@@ -326,36 +311,34 @@ const get = (x, y, z) => inb(x, y, z) ? world[(y * WZ + z) * WX + x] : AIR;
 const set = (x, y, z, t) => { if (inb(x, y, z)) world[(y * WZ + z) * WX + x] = t; };
 const hmap = new Int16Array(WX * WZ), biome = new Uint8Array(WX * WZ), reserved = new Uint8Array(WX * WZ);
 
+// Biomes: 0 = Meadows, 1 = plains edge (the east coast), 2 = swamp edge (the south-east, across a channel; Chapter III)
+const SWAMP = { cx: 138, cz: 138, r: 19 };
 for (let z = 0; z < WZ; z++) for (let x = 0; x < WX; x++) {
   const n = fbm(x * .035 + 11, z * .035 + 7);
   let h = 3 + n * 13;
   const dm = Math.hypot(x - 30, z - 30); h += 14 * Math.exp(-(dm * dm) / (2 * 21 * 21));      // hills in the north-west
-  const desert = smoothstep(106, 122, x + (vnoise(z * .1, 3) - .5) * 12);                  // desert to the east
-  h = h * (1 - desert) + (9 + n * 5) * desert;
+  const plains = smoothstep(106, 122, x + (vnoise(z * .1, 3) - .5) * 12);                  // flat plains edge to the east
+  h = h * (1 - plains) + (8 + n * 4) * plains;
+  const ds = Math.hypot(x - SWAMP.cx, z - SWAMP.cz) + (vnoise(x * .12, z * .12) - .5) * 6;  // swamp: low, wet ground behind a channel
+  const sw = smoothstep(SWAMP.r + 2, SWAMP.r - 4, ds);
+  h = h * (1 - sw) + (SEA + (fbm(x * .2 + 3, z * .2 + 5) > .52 ? 1 : 0)) * sw;
+  if (ds > SWAMP.r && ds < SWAMP.r + 4) h = Math.min(h, SEA - 2);                          // the channel
   const dl = Math.hypot(x - 64, z - 48); h -= 8 * Math.exp(-(dl * dl) / (2 * 11 * 11));    // lake
   const edge = Math.min(x, z, WX - 1 - x, WZ - 1 - z); if (edge < 6) h = lerp(SEA - 3, h, edge / 6); // island shore
   hmap[z * WX + x] = clamp(Math.round(h), 1, WY - 20);
-  biome[z * WX + x] = desert > .5 ? 1 : 0;
+  biome[z * WX + x] = sw > .5 ? 2 : plains > .5 ? 1 : 0;
 }
 function flatten(x0, z0, x1, z1, h) { for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) { hmap[z * WX + x] = h; reserved[z * WX + x] = 1; } }
 const H = (x, z) => hmap[z * WX + x];
-const SITE = { michael: Math.max(H(30, 32), SEA + 2), franklin: Math.max(H(88, 106), SEA + 2), trevor: Math.max(H(136, 64), SEA + 2) };
-flatten(18, 18, 43, 45, SITE.michael);
-flatten(78, 98, 98, 118, SITE.franklin);
-flatten(126, 54, 146, 74, SITE.trevor);
-const isRoad = (x, z) => (Math.abs(z - 80) <= 1 && x > 4 && x < WX - 5) || (Math.abs(x - 86) <= 1 && z > 4 && z < WZ - 5) || (Math.abs(x - 31) <= 1 && z > 45 && z < 80);
-for (let z = 0; z < WZ; z++) for (let x = 0; x < WX; x++) if (isRoad(x, z)) {
-  if (!reserved[z * WX + x]) hmap[z * WX + x] = Math.max(hmap[z * WX + x], SEA + 1); reserved[z * WX + x] = 2;
-}
 for (let z = 0; z < WZ; z++) for (let x = 0; x < WX; x++) {
-  const h = hmap[z * WX + x], des = biome[z * WX + x];
-  const top = reserved[z * WX + x] === 2 ? ROAD : des ? SAND : (h <= SEA + 1 ? SAND : GRASS);
+  const h = hmap[z * WX + x];
+  const top = h <= SEA + 1 && biome[z * WX + x] !== 2 ? SAND : GRASS;
   for (let y = 0; y <= h; y++) {
     let t;
     if (y === 0) t = BEDROCK;
     else if (y === h) t = top;
-    else if (y > h - 4) t = top === GRASS ? DIRT : top === SAND ? (des && y < h - 1 ? SANDSTONE : SAND) : STONE;
-    else { const r = rand(); t = r < .014 ? COAL : r < .02 ? IRONORE : STONE; }
+    else if (y > h - 4) t = top === GRASS ? DIRT : top === SAND ? SAND : STONE;
+    else t = STONE;
     set(x, y, z, t);
   }
   for (let y = h + 1; y <= SEA; y++) set(x, y, z, WATER);
@@ -372,54 +355,16 @@ function tree(x, y, z) {
   }
 }
 for (let z = 3; z < WZ - 3; z++) for (let x = 3; x < WX - 3; x++) {
-  let near = false; for (let dz = -3; dz <= 3 && !near; dz++) for (let dx = -3; dx <= 3; dx++) if (reserved[(z + dz) * WX + x + dx]) { near = true; break; }
-  if (near) continue;
-  const h = H(x, z), t = get(x, h, z);
-  if (t === GRASS && rand() < .022) tree(x, h, z);
-  else if (t === SAND && biome[z * WX + x] && rand() < .006) { const ch = 2 + (rand() * 2 | 0); for (let i = 1; i <= ch; i++) set(x, h + i, z, CACTUS); }
+  const h = H(x, z), t = get(x, h, z), b = biome[z * WX + x];
+  if (t === GRASS && b !== 2 && rand() < (b === 1 ? .004 : .022)) tree(x, h, z);
 }
 function box(x0, y0, z0, x1, y1, z1, t) { for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) set(x, y, z, t); }
 function shell(x0, y0, z0, x1, y1, z1, wall) { box(x0, y0, z0, x1, y1, z1, wall); box(x0 + 1, y0, z0 + 1, x1 - 1, y1, z1 - 1, AIR); }
-// Saif's hillside villa
-{ const y = SITE.michael;
-  box(22, y, 22, 38, y, 30, PLANKS);
-  shell(21, y + 1, 21, 39, y + 4, 31, QUARTZ);
-  for (let x = 22; x <= 38; x++) if (x % 3 !== 0) { set(x, y + 2, 31, GLASS); set(x, y + 3, 31, GLASS); set(x, y + 2, 21, GLASS); set(x, y + 3, 21, GLASS); }
-  for (let z = 23; z <= 29; z += 3) { set(21, y + 2, z, GLASS); set(21, y + 3, z, GLASS); set(39, y + 2, z, GLASS); set(39, y + 3, z, GLASS); }
-  box(20, y + 5, 20, 40, y + 5, 33, QUARTZ);
-  shell(25, y + 6, 22, 37, y + 8, 30, QUARTZ);
-  for (let x = 26; x <= 36; x++) if (x % 2) { set(x, y + 7, 30, GLASS); set(x, y + 7, 22, GLASS); }
-  box(24, y + 9, 21, 38, y + 9, 31, QUARTZ);
-  box(29, y + 1, 31, 30, y + 2, 31, AIR);
-  box(24, y, 36, 37, y, 42, QUARTZ); box(25, y, 37, 36, y, 41, WATER);
-  box(24, y - 1, 36, 37, y - 1, 42, QUARTZ);
-  for (const [px, pz] of [[20, 44], [42, 36], [41, 44]]) { for (let i = 1; i <= 6; i++) set(px, y + i, pz, LOG); for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2], [0, 0]]) set(px + dx, y + 7, pz + dz, LEAVES); }
-}
-// Rakan's house
-{ const y = SITE.franklin;
-  box(83, y, 102, 93, y, 109, PLANKS);
-  shell(82, y + 1, 101, 94, y + 4, 110, COBBLE);
-  box(83, y + 2, 101, 93, y + 4, 101, PLANKS); box(83, y + 2, 110, 93, y + 4, 110, PLANKS);
-  for (const x of [84, 85, 91, 92]) { set(x, y + 2, 110, GLASS); set(x, y + 3, 110, GLASS); set(x, y + 2, 101, GLASS); set(x, y + 3, 101, GLASS); }
-  for (const z of [104, 107]) { set(82, y + 2, z, GLASS); set(94, y + 2, z, GLASS); }
-  box(88, y + 1, 110, 88, y + 2, 110, AIR);
-  for (let i = 0; i <= 5; i++) { box(81, y + 5 + i, 100 + i, 95, y + 5 + i, 100 + i, BRICK); box(81, y + 5 + i, 111 - i, 95, y + 5 + i, 111 - i, BRICK); }
-  for (let i = 0; i < 5; i++) { box(82, y + 5 + i, 101 + i, 82, y + 5 + i, 110 - i, PLANKS); box(94, y + 5 + i, 101 + i, 94, y + 5 + i, 110 - i, PLANKS); }
-  box(87, y, 111, 89, y, 115, COBBLE);
-}
-// Fahad's desert camp
-{ const y = SITE.trevor;
-  shell(131, y + 1, 60, 142, y + 3, 65, IRON); box(131, y + 4, 60, 142, y + 4, 65, IRON);
-  for (const x of [133, 134, 139, 140]) set(x, y + 2, 65, GLASS);
-  box(136, y + 1, 65, 136, y + 2, 65, AIR);
-  box(129, y + 1, 68, 130, y + 1, 69, PLANKS); set(143, y + 1, 67, LOG); set(143, y + 2, 67, LOG); set(129, y + 1, 58, IRON);
-  set(144, y + 1, 70, IRON); set(145, y + 1, 70, IRON); set(144, y + 2, 70, IRON);
-}
 // flowers and tall grass
 for (let z = 1; z < WZ - 1; z++) for (let x = 1; x < WX - 1; x++) {
   if (reserved[z * WX + x]) continue;
   const h = H(x, z); if (get(x, h, z) !== GRASS || get(x, h + 1, z) !== AIR) continue;
-  const r = rand(); if (r < .09) set(x, h + 1, z, TALLGRASS); else if (r < .097) set(x, h + 1, z, POPPY); else if (r < .104) set(x, h + 1, z, DANDELION);
+  const r = rand() * (biome[z * WX + x] === 1 ? .55 : 1); if (r < .09) set(x, h + 1, z, TALLGRASS); else if (r < .097) set(x, h + 1, z, POPPY); else if (r < .104) set(x, h + 1, z, DANDELION);
 }
 function groundY(x, z) {
   x = Math.floor(x); z = Math.floor(z);
@@ -553,12 +498,8 @@ clouds.rotation.x = -Math.PI / 2; clouds.position.set(WX / 2, 110, WZ / 2); scen
 //  Players (Minecraft-style skins drawn in code) with name tags
 // =====================================================================
 const DEFS = [
-  { name: 'Saif', color: '#65b4d4', skin: '#c68e62', hair: '#1c1410', shirt: '#f4f4f0', top: '#f4f4f0', pants: '#f4f4f0', shoes: '#6b4a2a', sleeve: 11, hairStyle: 'ghutra',
-    pos: [30.5, 34.5], yaw: Math.PI + .5, idle: 'cross', hp: 20, food: 18, lvl: 30, xp: .42, line: 'Yalla, the view from up here is the best.' },
-  { name: 'Rakan', color: '#abedab', skin: '#a8754f', hair: '#141010', shirt: '#1d1d22', top: '#1d1d22', pants: '#3a3f4a', shoes: '#e8e8e8', sleeve: 11, hairStyle: 'hood',
-    pos: [88.5, 113.5], yaw: Math.PI - .35, idle: 'phone', hp: 18, food: 20, lvl: 12, xp: .7, line: 'Who wants to race to the desert?' },
-  { name: 'Fahad', color: '#ffa357', skin: '#d9a47c', hair: '#2a1d14', shirt: '#1f5fbf', top: '#1f5fbf', pants: '#f2f2f2', shoes: '#111111', sleeve: 4, hairStyle: 'short',
-    pos: [136.5, 68.5], yaw: Math.PI + .45, idle: 'twitch', hp: 11, food: 7, lvl: 45, xp: .15, line: 'Goal! ...wait, wrong game.' },
+  { name: 'Hakon', color: '#d8a24a', skin: '#e0ac84', hair: '#b8642a', shirt: '#6e4a2c', top: '#6e4a2c', pants: '#4a3a2c', shoes: '#3a2a1e', sleeve: 5, hairStyle: 'viking',
+    pos: [70.5, 98.5], yaw: Math.PI, idle: 'none', hp: 20, food: 20, lvl: 0, xp: 0, line: '' },
 ];
 function charTex(w, h, draw) { const t = new THREE.CanvasTexture(pixCanvas(w, h, draw)); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; }
 function drawFace(g, d) {
@@ -569,11 +510,14 @@ function drawFace(g, d) {
   if (d.hairStyle === 'short') { g.fillRect(0, 0, 8, 1); g.fillRect(0, 1, 1, 1); g.fillRect(7, 1, 1, 1); g.fillRect(1, 1, 2, 1); g.fillRect(5, 1, 2, 1); }
   if (d.hairStyle === 'ghutra') { for (let x = 0; x < 8; x++) { g.fillStyle = x % 2 ? '#d22b2b' : '#f4f4f4'; g.fillRect(x, 0, 1, 2); } g.fillStyle = '#111'; g.fillRect(0, 2, 8, 1); g.fillStyle = '#d22b2b'; g.fillRect(0, 3, 1, 5); g.fillRect(7, 3, 1, 5); g.fillStyle = d.hair; }
   if (d.hairStyle === 'hood') { g.fillStyle = d.top; g.fillRect(0, 0, 8, 2); g.fillRect(0, 2, 1, 6); g.fillRect(7, 2, 1, 6); g.fillStyle = d.hair; }
+  if (d.hairStyle === 'viking') { g.fillRect(0, 0, 8, 2); g.fillRect(0, 2, 1, 2); g.fillRect(7, 2, 1, 2); }
   g.fillStyle = shade(d.hair, -.2); g.fillRect(1, 3, 2, 1); g.fillRect(5, 3, 2, 1);
   g.fillStyle = '#fff'; g.fillRect(1, 4, 1, 1); g.fillRect(6, 4, 1, 1);
   g.fillStyle = d.hairStyle === 'short' ? '#2b1a10' : '#3b5870'; g.fillRect(2, 4, 1, 1); g.fillRect(5, 4, 1, 1);
   if (d.hairStyle === 'ghutra') { g.fillStyle = 'rgba(20,14,10,.55)'; g.fillRect(1, 6, 6, 2); }
   g.fillStyle = shade(d.skin, -.4); g.fillRect(2, 6, 4, 1);
+  if (d.hairStyle === 'viking') { g.fillStyle = d.hair; g.fillRect(1, 5, 1, 3); g.fillRect(6, 5, 1, 3); g.fillRect(2, 6, 4, 2); g.fillStyle = shade(d.hair, -.25); g.fillRect(2, 5, 1, 1); g.fillRect(5, 5, 1, 1); g.fillRect(3, 7, 2, 1);
+    g.fillStyle = shade(d.skin, -.45); g.fillRect(3, 6, 2, 1); }
 }
 function portrait(d) { return pixCanvas(64, 64, g => { g.imageSmoothingEnabled = false; g.drawImage(pixCanvas(8, 8, gg => drawFace(gg, d)), 0, 0, 64, 64); }).toDataURL(); }
 function nameTag(text) {
@@ -600,15 +544,17 @@ class Character {
     headMesh.position.y = .25; this.head.add(headMesh);
     const bodyFront = Tm(8, 12, gg => {
       gg.fillStyle = d.top; gg.fillRect(0, 0, 8, 12);
-      if (d.name === 'Saif') { gg.fillStyle = '#dcdcd6'; gg.fillRect(3, 0, 2, 1); gg.fillRect(4, 1, 1, 6); gg.fillStyle = '#c9a54a'; gg.fillRect(4, 2, 1, 1); gg.fillRect(4, 4, 1, 1); }
-      if (d.name === 'Rakan') { gg.fillStyle = '#e8c547'; gg.fillRect(2, 0, 1, 2); gg.fillRect(5, 0, 1, 2); gg.fillRect(3, 2, 2, 1); gg.fillStyle = '#34343c'; gg.fillRect(1, 7, 6, 3); }
-      if (d.name === 'Fahad') { gg.fillStyle = '#f2f2f2'; gg.fillRect(2, 0, 4, 1); gg.fillRect(3, 3, 2, 3); gg.fillStyle = '#ffd23f'; gg.fillRect(1, 1, 1, 1); gg.fillStyle = '#10408a'; gg.fillRect(0, 10, 8, 2); }
-      if (d.name !== 'Saif') { gg.fillStyle = '#2a2018'; gg.fillRect(0, 11, 8, 1); }
+      if (d.hairStyle === 'viking') {   // fur collar, braided beard, leather belt with an iron buckle
+        gg.fillStyle = '#8a7a64'; gg.fillRect(0, 0, 8, 2); gg.fillStyle = '#a89878'; gg.fillRect(1, 0, 1, 1); gg.fillRect(4, 1, 1, 1); gg.fillRect(6, 0, 1, 1);
+        gg.fillStyle = d.hair; gg.fillRect(3, 2, 2, 3); gg.fillStyle = shade(d.hair, -.25); gg.fillRect(3, 3, 2, 1);
+        gg.fillStyle = shade(d.top, -.18); gg.fillRect(0, 5, 1, 4); gg.fillRect(7, 5, 1, 4);
+        gg.fillStyle = '#2a1c12'; gg.fillRect(0, 9, 8, 2); gg.fillStyle = '#9aa0a6'; gg.fillRect(3, 9, 2, 2); gg.fillStyle = '#2a1c12'; gg.fillRect(0, 11, 8, 1);
+      }
     });
     const bodySide = M(d.top);
     this.body = new THREE.Mesh(new THREE.BoxGeometry(.5, .75, .25), [bodySide, bodySide, bodySide, M(d.pants), bodyFront, bodySide]);
     this.body.position.y = 1.125;
-    const armTex = Tm(4, 12, gg => { gg.fillStyle = d.top; gg.fillRect(0, 0, 4, 12); gg.fillStyle = d.skin; gg.fillRect(0, d.sleeve, 4, 12 - d.sleeve); if (d.name === 'Fahad') { gg.fillStyle = '#f2f2f2'; gg.fillRect(0, 3, 4, 1); } });
+    const armTex = Tm(4, 12, gg => { gg.fillStyle = d.top; gg.fillRect(0, 0, 4, 12); gg.fillStyle = d.skin; gg.fillRect(0, d.sleeve, 4, 12 - d.sleeve); if (d.hairStyle === 'viking') { gg.fillStyle = '#4a3220'; gg.fillRect(0, 8, 4, 2); gg.fillStyle = '#9aa0a6'; gg.fillRect(0, 8, 4, 1); } });
     const legTex = Tm(4, 12, gg => { gg.fillStyle = d.pants; gg.fillRect(0, 0, 4, 12); gg.fillStyle = shade(d.pants, -.2); gg.fillRect(0, 0, 1, 12); gg.fillStyle = d.shoes; gg.fillRect(0, 10, 4, 2); });
     const limb = (tex, topC, botC) => new THREE.Mesh(new THREE.BoxGeometry(.25, .75, .25), [tex, tex, M(topC), M(botC), tex, tex]);
     this.arms = []; this.legs = [];
@@ -648,7 +594,7 @@ class Character {
   }
 }
 const chars = DEFS.map(d => new Character(d));
-let cur = 1; // start as Franklin
+let cur = 0; // one hero: the castaway of Skarnholm
 
 // Passive mobs: pigs and sheep that wander around
 class Mob {
@@ -931,13 +877,12 @@ function updateHeld() {
 // =====================================================================
 const keys = {};
 let state = 'title', viewMode = 0, locked = false, noLock = false, mining = false, mineCd = 0, lastWTap = 0;
-let sel = -1, wheelSticky = false;
 const look = new V3();
 const PL = () => chars[cur];
 function lockPointer() { if (noLock) return; try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { noLock = true; hidePause(); }); } catch (e) { noLock = true; } }
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
-  if (!locked && !noLock && (state === 'play' || (state === 'wheel' && !wheelSticky))) { if (state === 'wheel') closeWheel(false); showPause(); }
+  if (!locked && !noLock && state === 'play') showPause();
 });
 document.addEventListener('pointerlockerror', () => { noLock = true; hidePause(); });
 const pauseEl = document.getElementById('pause'), titleEl = document.getElementById('title');
@@ -955,27 +900,16 @@ addEventListener('keydown', e => {
   if (e.code === 'F3') { showDebug = !showDebug; debugEl.hidden = !showDebug; }
   if (e.code === 'F1') hudHidden = !hudHidden;
   if (e.code === 'KeyM') { musicOn = !musicOn; chat(musicOn ? 'Music: ON' : 'Music: OFF'); }
-  if ((e.code === 'Tab' || e.code === 'KeyQ') && state === 'play') openWheel(false);
   if (state === 'play' && /^Digit[1-9]$/.test(e.code)) selectHot(+e.code.slice(5) - 1);
-  if (state === 'wheel') {
-    const dir = { ArrowLeft: 1, ArrowUp: 0, ArrowRight: 2, ArrowDown: 3, KeyA: 1, KeyW: 0, KeyD: 2, KeyS: 3 }[e.code];
-    if (dir !== undefined) setSel(dir);
-  }
 });
 addEventListener('keyup', e => {
   keys[e.code] = false;
   if (e.code === 'KeyW') PL().sprint = false;
-  if ((e.code === 'Tab' || e.code === 'KeyQ') && state === 'wheel' && !wheelSticky) closeWheel(true);
 });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; mining = false; });
-const wv = { x: 0, y: 0 };
 let dragging = false, dragMoved = 0, lastPX = 0, lastPY = 0;
 addEventListener('mousemove', e => {
   if (state === 'play' && locked) { PL().yaw -= e.movementX * .0024; PL().pitch = clamp(PL().pitch - e.movementY * .0024, -1.55, 1.55); }
-  if (state === 'wheel' && locked) {
-    wv.x += e.movementX; wv.y += e.movementY; const l = Math.hypot(wv.x, wv.y); if (l > 120) { wv.x *= 120 / l; wv.y *= 120 / l; }
-    if (l > 25) wheelPick(Math.atan2(wv.y, wv.x) * 180 / Math.PI);
-  }
 });
 canvas.addEventListener('pointerdown', e => {
   canvas.focus();
@@ -1144,70 +1078,15 @@ function useItem() {
 }
 
 // =====================================================================
-//  GTA-style character wheel
+//  One hero only: the old character wheel is gone. These no-op stubs keep older module calls safe.
 // =====================================================================
-const wheelEl = document.getElementById('wheel'), svg = document.getElementById('wheelSvg');
-const SLOTS = [{ ang: -90, ci: 1 }, { ang: 180, ci: 0 }, { ang: 0, ci: 2 }, { ang: 90, ci: -1 }];
-const NS = 'http://www.w3.org/2000/svg';
-function arc(r1, r2, a0, a1) {
-  const p = (r, a) => `${(r * Math.cos(a * Math.PI / 180)).toFixed(2)} ${(r * Math.sin(a * Math.PI / 180)).toFixed(2)}`;
-  return `M${p(r2, a0)} A${r2} ${r2} 0 0 1 ${p(r2, a1)} L${p(r1, a1)} A${r1} ${r1} 0 0 0 ${p(r1, a0)} Z`;
-}
-const slotEls = SLOTS.map((s, i) => {
-  const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'ws' + (s.ci < 0 ? ' locked' : ''));
-  const path = document.createElementNS(NS, 'path'); path.setAttribute('d', arc(78, 196, s.ang - 43, s.ang + 43)); g.appendChild(path);
-  const cx = Math.cos(s.ang * Math.PI / 180) * 137, cy = Math.sin(s.ang * Math.PI / 180) * 137;
-  if (s.ci >= 0) {
-    const d = DEFS[s.ci];
-    const ring = document.createElementNS(NS, 'rect'); ring.setAttribute('x', cx - 36); ring.setAttribute('y', cy - 44); ring.setAttribute('width', 72); ring.setAttribute('height', 72);
-    ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', d.color); ring.setAttribute('stroke-width', 3); g.appendChild(ring);
-    const img = document.createElementNS(NS, 'image'); img.setAttribute('href', portrait(d)); img.setAttribute('x', cx - 34); img.setAttribute('y', cy - 42); img.setAttribute('width', 68); img.setAttribute('height', 68); g.appendChild(img);
-    const tx = document.createElementNS(NS, 'text'); tx.setAttribute('x', cx); tx.setAttribute('y', cy + 46); tx.textContent = d.name.toUpperCase(); g.appendChild(tx);
-  } else {
-    const tx = document.createElementNS(NS, 'text'); tx.setAttribute('x', cx); tx.setAttribute('y', cy + 5); tx.textContent = 'LOCKED'; g.appendChild(tx);
-  }
-  path.addEventListener('pointerenter', () => { if (state === 'wheel') setSel(i); });
-  path.addEventListener('click', () => { if (state === 'wheel') { setSel(i); closeWheel(true); } });
-  svg.appendChild(g); return { g, path };
-});
-const centerName = document.createElementNS(NS, 'text'); centerName.setAttribute('class', 'centerName'); centerName.setAttribute('y', 6); svg.appendChild(centerName);
-const centerSub = document.createElementNS(NS, 'text'); centerSub.setAttribute('class', 'centerSub'); centerSub.setAttribute('y', 26); svg.appendChild(centerSub);
-function setSel(i) {
-  if (i === sel) return; sel = i; SFX.tick();
-  slotEls.forEach((s, k) => {
-    const ci = SLOTS[k].ci, on = k === sel, isCur = ci === cur;
-    s.g.classList.toggle('sel', on);
-    const c = ci >= 0 ? DEFS[ci].color : '#888888';
-    s.path.style.fill = on ? c + (ci >= 0 ? 'cc' : '55') : isCur ? c + '44' : '';
-    s.path.style.stroke = on ? '#fff' : '';
-  });
-  const ci = SLOTS[sel].ci;
-  centerName.textContent = ci >= 0 ? DEFS[ci].name.toUpperCase() : '—';
-  centerName.style.fill = ci >= 0 ? DEFS[ci].color : '#aaa';
-  centerSub.textContent = ci === cur ? 'CURRENT' : ci < 0 ? 'UNAVAILABLE' : 'SWITCH';
-}
-function wheelPick(a) { let best = 0, bd = 1e9; SLOTS.forEach((s, i) => { const d = Math.abs(((a - s.ang) % 360 + 540) % 360 - 180); if (d < bd) { bd = d; best = i; } }); setSel(best); }
-function openWheel(sticky) {
-  state = 'wheel'; wheelSticky = sticky; sel = -1; wv.x = wv.y = 0; mining = false; wheelEl.classList.add('on');
-  setSel(SLOTS.findIndex(s => s.ci === cur)); SFX.wheelOpen();
-}
-function closeWheel(commit) {
-  wheelEl.classList.remove('on');
-  const ci = sel >= 0 ? SLOTS[sel].ci : -1;
-  if (commit && ci >= 0 && ci !== cur) { SFX.select(); startSwitch(ci); } else state = 'play';
-}
-addEventListener('pointermove', e => {
-  if (state !== 'wheel' || wheelSticky || locked) return;
-  const dx = e.clientX - innerWidth / 2, dy = e.clientY - innerHeight / 2;
-  if (Math.hypot(dx, dy) > 50) wheelPick(Math.atan2(dy, dx) * 180 / Math.PI);
-});
-document.getElementById('swBtn').addEventListener('click', e => { e.stopPropagation(); if (state === 'play') openWheel(true); else if (state === 'wheel') closeWheel(false); });
-wheelEl.addEventListener('click', e => { if (e.target === wheelEl || e.target === svg) closeWheel(false); });
+function openWheel() {}
+function closeWheel() {}
+
 
 // =====================================================================
-//  THE SWITCH: sky-cam out, pan across the map, sky-cam in
+//  Camera helpers (third-person collision, view modes) and screen effects
 // =====================================================================
-let sw = null;
 function camCollide(from, to) {
   const dir = to.clone().sub(from), L = dir.length(); if (L < 1e-3) return; dir.divideScalar(L);
   for (let s = .2; s < L; s += .1) {
@@ -1220,63 +1099,11 @@ function viewCam(ch, outPos, outLook, mode = viewMode) {
   if (mode === 0) { outPos.copy(eye); outLook.copy(eye).add(d); return; }
   outPos.copy(eye).addScaledVector(d, mode === 1 ? -4 : 4); camCollide(eye, outPos); outLook.copy(eye);
 }
-function startSwitch(to) {
-  const A = chars[cur], B = chars[to];
-  const d = Math.hypot(B.pos.x - A.pos.x, B.pos.z - A.pos.z);
-  // like GTA V: short hops use fewer levels, cross-map switches climb all the way up
-  const levels = d < 26 ? [14] : d < 60 ? [14, 42] : [14, 42, 96];
-  const tilt = [.5, .24, .1];
-  const high = (p, h, yw, k) => new V3(p.x + Math.sin(yw) * h * k, p.y + h, p.z + Math.cos(yw) * h * k);
-  const keysList = [{ pos: camera.position.clone(), look: look.clone(), fov: camera.fov }];
-  levels.forEach((h, i) => keysList.push({ pos: high(A.pos, h, A.yaw, tilt[i]), look: A.pos.clone(), type: 'up', dur: .48, hold: i === levels.length - 1 ? .22 : .38, fov: 60 }));
-  const top = levels.length - 1;
-  keysList.push({ pos: high(B.pos, levels[top], B.yaw, tilt[top]), look: B.pos.clone(), type: 'pan', dur: clamp(.8 + d / 75, 1, 2.6), hold: .32, fov: 60, arrive: true });
-  for (let i = top - 1; i >= 0; i--) keysList.push({ pos: high(B.pos, levels[i], B.yaw, tilt[i]), look: B.pos.clone(), type: 'down', dur: .48, hold: .38, fov: 60 });
-  const fp = new V3(), fl = new V3(); viewCam(B, fp, fl);
-  keysList.push({ pos: fp, look: fl, type: 'land', dur: .55, hold: .05, fov: 70 });
-  sw = { keys: keysList, seg: 0, t: 0, phase: 'pre', to, preT: 0 };
-  state = 'switching'; mining = false;
-  for (const c of chars) { c.vel.x = c.vel.z = 0; c.sprint = false; }
-}
 const fx = { amt: 0, target: 0, blur: 0, flash: 0 };
-function updateSwitch(dt) {
-  if (sw.phase === 'pre') { fx.target = 1; sw.preT += dt; if (sw.preT > .16) { sw.phase = 'move'; sw.t = 0; SFX.jump(true); } return; }
-  const k0 = sw.keys[sw.seg], k1 = sw.keys[sw.seg + 1];
-  if (sw.phase === 'move') {
-    sw.t = Math.min(1, sw.t + dt / k1.dur);
-    const e = k1.type === 'pan' ? easeInOutSine(sw.t) : k1.type === 'land' ? easeInOutCubic(sw.t) : easeInOutQuint(sw.t);
-    camera.position.lerpVectors(k0.pos, k1.pos, e); look.lerpVectors(k0.look, k1.look, e);
-    const pulse = Math.sin(Math.PI * sw.t);
-    fx.blur = k1.type === 'pan' ? 1.4 + pulse * 1.2 : Math.pow(pulse, 1.4) * 7;
-    camera.fov = lerp(k0.fov, k1.fov, e) + (k1.type === 'pan' ? 0 : pulse * 14);
-    if (k1.type === 'land') fx.target = 1 - e;
-    if (sw.t >= 1) {
-      sw.phase = 'hold'; sw.t = 0;
-      if (k1.arrive) { cur = sw.to; drawStats(); }
-      if (k1.type === 'land') { fx.flash = .55; fx.amt = 0; fx.target = 0; SFX.land(); }
-    }
-  } else {
-    sw.t += dt; fx.blur = lerp(fx.blur, .6, .2);
-    if (k1.type !== 'land') { camera.position.y += dt * .6; look.y += dt * .6; }
-    if (sw.t >= k1.hold) {
-      sw.seg++;
-      if (sw.seg >= sw.keys.length - 1) { finishSwitch(); return; }
-      const nk = sw.keys[sw.seg + 1]; sw.keys[sw.seg].pos = camera.position.clone(); sw.keys[sw.seg].look = look.clone();
-      sw.phase = 'move'; sw.t = 0;
-      if (nk.type === 'pan') SFX.pan(nk.dur); else SFX.jump(nk.type === 'up');
-    }
-  }
-}
-function finishSwitch() {
-  camera.fov = 70; fx.blur = 0; sw = null; state = 'play';
-  chat(`<${DEFS[cur].name}> ${DEFS[cur].line}`);
-  if (!locked && !noLock) showPause();
-}
-
 // =====================================================================
 //  Title screen, pause menu
 // =====================================================================
-const SPLASHES = ['Saif, Rakan and Fahad!', 'Now with sky-cam!', 'Hold TAB!', 'Three players, one world!', 'Also try the desert!', '100% blocks!', 'Whoosh... BOOM!', 'Pigs included!'];
+const SPLASHES = ['Seven stones!', 'Mind the ravens!', 'Kraa!', 'Bring back their heads!', 'Now with storm-gulls!', '100% blocks!', 'Loose stones in the grass!', 'Deer included!'];
 document.getElementById('splash').textContent = SPLASHES[(Math.random() * SPLASHES.length) | 0];
 const ctrlPanel = document.getElementById('ctrlPanel'), ctrlPanel2 = document.getElementById('ctrlPanel2');
 ctrlPanel2.innerHTML = ctrlPanel.innerHTML;
@@ -1288,13 +1115,11 @@ document.getElementById('playBtn').addEventListener('click', () => {
   selectHot(0); drawStats();
   if (TOUCH) {
     noLock = true; touchUI.hidden = false; joyHome(); rotateEl.hidden = true;
-    toastEl.querySelector('span').textContent = 'Tap Switch at the top right';
     goFull();
   } else lockPointer();
   canvas.focus();
   for (const d of DEFS) chat(d.name + ' joined the game', 'join');
   emit('start');
-  setTimeout(() => toastEl.classList.remove('out'), 1200); setTimeout(() => toastEl.classList.add('out'), 12000);
 });
 document.getElementById('resumeBtn').addEventListener('click', () => { SFX.uiClick(); pauseEl.hidden = true; state = 'play'; ctrlPanel2.hidden = true; lockPointer(); canvas.focus(); });
 if (document.fonts) document.fonts.ready.then(() => { drawStats(); for (const c of chars) { const t = nameTag(c.def.name); c.group.remove(c.tag); t.position.y = 2.2; c.group.add(t); c.tag = t; } });
@@ -1351,8 +1176,7 @@ function frame(now) {
   if (state === 'title') {
     titleT += rawDt;
     camera.position.set(76, 30, 96); const a = titleT * .05; look.set(76 - Math.sin(a) * 10, 28.2, 96 - Math.cos(a) * 10); camera.fov = 70;
-  } else if (state === 'switching') updateSwitch(rawDt);
-  else {
+  } else {
     viewCam(P0, camera.position, look);
     if (viewMode === 0 && P0.onGround) { const b = Math.min(P0.hspeed / 4.3, 1.3) * .05, s = Math.abs(Math.sin(P0.phase)) * b;
       camera.position.y += s; look.y += s; }
@@ -1390,7 +1214,7 @@ function frame(now) {
 
   dbgT -= rawDt;
   if (showDebug && dbgT <= 0) { dbgT = .2; const p = P0.pos, f = ['north', 'west', 'south', 'east'][((Math.round(P0.yaw / (Math.PI / 2)) % 4) + 4) % 4];
-    const lines = [`Blockcraft 1.0 (switch edition)`, `${fps} fps`, `Player: ${DEFS[cur].name}`, `XYZ: ${p.x.toFixed(3)} / ${p.y.toFixed(5)} / ${p.z.toFixed(3)}`,
+    const lines = [`Blockcraft 1.0`, `${fps} fps`, `Player: ${DEFS[cur].name}`, `XYZ: ${p.x.toFixed(3)} / ${p.y.toFixed(5)} / ${p.z.toFixed(3)}`,
       `Block: ${Math.floor(p.x)} ${Math.floor(p.y)} ${Math.floor(p.z)}`, `Chunk: ${Math.floor(p.x / 16)} ${Math.floor(p.z / 16)}`, `Facing: ${f}`,
       hit ? `Targeted block: ${BLOCK[hit.t].name} (${hit.x}, ${hit.y}, ${hit.z})` : 'Targeted block: none'];
     debugEl.innerHTML = lines.map(l => `<div class="mc">${l.replace(/</g, '&lt;')}</div>`).join(''); }

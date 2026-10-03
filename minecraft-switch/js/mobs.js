@@ -1,7 +1,9 @@
 /* Blockcraft — Minecraft mobs & world  (js/mobs.js)
- * Hostile mobs (Zombie, Skeleton, Creeper, Spider) that spawn at night and in dark caves, passive animals
- * (Pig, Sheep, Cow, Chicken) with drops, breeding, shearing and eggs, the Bow with real arrows,
- * cave tunnels + a ravine carved into the world, and the Save API (world diff, time, players, other modules).
+ * Hostile mobs (Zombie, Skeleton, Creeper, Spider) that come out only at night (Valheim-style: the dark belongs to
+ * the monsters, the day to the hunter) and melt away at dawn, passive herds (Sheep, Cow) on the plains edge,
+ * Wolves in the north-west highlands, creature star levels (1-2 stars: tougher, harder hitting, better drops) for
+ * every creature in the game, taming (boars and wolves: feed them, hearts, then follow/stay), the Bow with real
+ * arrows, cave tunnels + a ravine carved into the world, and the Save API (world diff, time, players, other modules).
  * Public API: window.Mobs, window.Save. Everything is drawn in code. */
 (() => {
 'use strict';
@@ -21,8 +23,8 @@ function groundAt(x, z, fromY) { const xi = Math.floor(x), zi = Math.floor(z);
   for (let y = Math.min(WY - 1, Math.floor(fromY)); y >= 0; y--) if (BLOCK[get(xi, y, zi)].solid) return y + 1; return 0; }
 function covered(x, y, z) { const xi = Math.floor(x), zi = Math.floor(z);           // any opaque block between here and the sky
   for (let yy = Math.floor(y); yy < WY; yy++) { const t = get(xi, yy, zi); if (t && BLOCK[t].opaque && t !== LEAVES) return true; } return false; }
-const HOMES = [[18, 18, 43, 45], [78, 98, 98, 118], [126, 54, 146, 74]];      // the three character homes (flattened plots in index.html)
-const isHome = (x, z) => HOMES.some(([x0, z0, x1, z1]) => x >= x0 && x < x1 + 1 && z >= z0 && z < z1 + 1);
+const isHome = () => false;                       // the old character homes are gone (Valheim lands have only ruins)
+const biomeAt = (x, z) => { x = Math.floor(x); z = Math.floor(z); return x < 0 || z < 0 || x >= WX || z >= WZ ? 0 : biome[z * WX + x]; };
 function torchNear(x, y, z, r = 7) {
   if (typeof Light !== 'undefined' && Light && typeof Light.level === 'function') { try { return Light.level(Math.floor(x), Math.floor(y), Math.floor(z)) > 7; } catch (e) { /* fall through */ } }
   x = Math.floor(x); y = Math.floor(y); z = Math.floor(z);
@@ -517,7 +519,66 @@ class Chicken extends Animal {
   loot(c) { drop('feather', ri(0, 2), c); drop('chicken', 1, c); }
 }
 
-const KINDS = { zombie: Zombie, skeleton: Skeleton, creeper: Creeper, spider: Spider, pig: Pig, cow: Cow, sheep: Sheep, chicken: Chicken };
+// ---- Wolf: grey highland hunter (Minecraft wolf look). Neutral by day (it watches you), hunts at night or when hurt,
+//      and the whole pack answers. Tame it with meat (see Taming below); a tame wolf wears a red collar.
+const WOLFP = ['#d6d6d2', '#cbcbc6', '#e0e0dc', '#c2c2bd'];
+Object.assign(TEX, {
+  wolf: () => T('wolf', 8, 8, WOLFP),
+  wolfB: () => T('wolfB', 8, 8, ['#bdbdb8', '#b2b2ad', '#c8c8c3'], g => { px(g, '#8f8f8a', 0, 0, 8, 2); }),
+  wolfFace: () => T('wolfFace', 8, 8, WOLFP, g => { px(g, '#1d1d1d', 1, 3, 2, 1); px(g, '#1d1d1d', 5, 3, 2, 1); px(g, '#f4f4f4', 1, 3, 1, 1); px(g, '#f4f4f4', 6, 3, 1, 1); px(g, '#9a9a96', 0, 0, 8, 1); }),
+  wolfSnout: () => T('wolfSnout', 4, 4, '#cfcfca', g => { px(g, '#1a1a1a', 1, 0, 2, 1); px(g, '#8a8a86', 0, 3, 4, 1); }),
+  collar: () => T('collar', 4, 2, '#c02020', null, false),
+});
+Object.assign(S, {
+  growl(p) { const v = vol(p); if (!v) return; const t = AC.currentTime; thump(t, 110, 90, .7, .16 * v, 'sawtooth'); noiseSweep(t, .6, 500, 300, .06 * v, 2, .2); },
+  bite(p) { const v = vol(p); if (!v) return; const t = AC.currentTime; thump(t, 420, 160, .12, .2 * v, 'square'); click(t + .04, 1200, .06 * v); },
+  howl(p) { const v = vol(p); if (!v) return; const t = AC.currentTime; thump(t, 380, 560, 1.6, .1 * v, 'triangle'); thump(t + .9, 560, 420, 1.2, .08 * v, 'triangle'); },
+});
+class Wolf extends Animal {
+  constructor() {
+    super('wolf', 'Wolf', 26); this.height = .85; this.rad = .35; this.atkCd = 0; this.xp = .1; this.angry = false;
+    const w = TEX.wolf(), b = TEX.wolfB(); this.legs = [];
+    for (const [lx, lz] of [[-.1, .24], [.1, .24], [-.1, -.3], [.1, -.3]]) { const p = this.pivot(lx, .48, lz); this.box(.13, .48, .13, w, 0, -.24, 0, p); this.legs.push(p); }
+    this.body = this.box(.36, .36, .66, b, 0, .64, -.06);
+    this.box(.5, .46, .32, w, 0, .68, .24);
+    this.head = this.pivot(0, .78, .4);
+    this.box(.38, .34, .26, [w, w, w, w, TEX.wolfFace(), w], 0, 0, .12, this.head);
+    this.box(.18, .14, .18, TEX.wolfSnout(), 0, -.08, .33, this.head);
+    for (const s of [-1, 1]) this.box(.1, .13, .05, w, s * .12, .22, .05, this.head);
+    this.eyes = [-1, 1].map(s => { const e = new THREE.Mesh(bgeo(.07, .035, .02), glow(0xff3020)); e.position.set(s * .1, .045, .256); e.visible = false; this.head.add(e); return e; });
+    this.tail = this.pivot(0, .76, -.38); this.box(.12, .12, .42, w, 0, 0, -.2, this.tail); this.tail.rotation.x = .7;
+    this.collar = this.box(.42, .08, .3, TEX.collar(), 0, -.15, .1, this.head); this.collar.visible = false;
+  }
+  ambient() { if (this.angry) S.growl(this.pos); else if (isNight() && !this.tame && R() < .3) S.howl(this.pos); }
+  hurtSound() { S.hurtAnimal(this.pos); }
+  onHurt(dir, src) {
+    if (this.tame) return; this.aggro = 22; this.fedT = 0;
+    for (const o of MOBS) if (o.kind === 'wolf' && !o.tame && o !== this && o.pos.distanceTo(this.pos) < 14) o.aggro = 22;    // the pack answers
+  }
+  think(dt, P, dx, dz, d) {
+    this.atkCd -= dt; this.lunge = Math.max(0, (this.lunge || 0) - dt);
+    if (this.tame) { this.angry = false; this.eyes.forEach(e => (e.visible = false)); return petThink(this, dt, P, dx, dz, d); }
+    if (this.fedT > 0) { this.angry = false; this.aggro = 0; this.eyes.forEach(e => (e.visible = false)); return; }
+    this.angry = canAttack() && (this.aggro > 0 || (isNight() && d < 14));
+    this.eyes.forEach(e => (e.visible = this.angry));
+    if (this.angry) {
+      this.aggro = Math.max(0, (this.aggro || 0) - dt);
+      if (d > 1.3) this.chase(dx, dz, 4.4); else this.yaw = Math.atan2(dx, dz);
+      if (d < 1.7 && Math.abs(P.pos.y - this.pos.y) < 1.6 && this.atkCd <= 0) { this.atkCd = 1.25; this.lunge = .25; S.bite(this.pos); hurt(4, 'Wolf', dx / (d || 1) * .5, dz / (d || 1) * .5); }
+      return;
+    }
+    if (d < 6 && state === 'play' && !P.sneak) { this.yaw = Math.atan2(dx, dz); if ((this.growlT = (this.growlT || 0) - dt) <= 0) { this.growlT = 3 + R() * 3; S.growl(this.pos); } return; }
+    this.wander(dt, 1.1);
+  }
+  animate(dt, sp) {
+    super.animate(dt, sp);
+    this.tail.rotation.x = this.angry ? .2 : this.tame ? .9 : .6; this.tail.rotation.y = this.tame && sp < .1 ? Math.sin(this.t * 9) * .5 : 0;
+    this.head.rotation.x = this.lunge > 0 ? .35 : this.angry ? .15 : 0;
+  }
+  loot(c) { drop('raw_meat', ri(1, 2), c); drop('wolf_pelt', 1, c); }
+}
+const KINDS = { zombie: Zombie, skeleton: Skeleton, creeper: Creeper, spider: Spider, pig: Pig, cow: Cow, sheep: Sheep, chicken: Chicken, wolf: Wolf };
+
 function spawn(kind, x, z, y) {
   const C = KINDS[kind]; if (!C) return null;
   const e = new C(); e.uid = uidN++;
@@ -584,7 +645,7 @@ function updateArrows(dt) {
 }
 
 // =====================================================================================================
-//  Explosions (creepers): remove blocks (never inside the three homes), damage, knockback
+//  Explosions (creepers): damage and knockback; blocks only break when asked
 // =====================================================================================================
 const BLAST_PROOF = new Set([BEDROCK, WATER, AIR]);
 function blastProof(t) {
@@ -593,14 +654,14 @@ function blastProof(t) {
   if (typeof Meadows !== 'undefined' && Meadows.blocks && (t === Meadows.blocks.RUNE || t === Meadows.blocks.ALTAR)) return true;
   return t === WORKBENCH;
 }
-function explode(c, power, by) {
+function explode(c, power, by, breakBlocks = false) {
   S.boom(c); shakeT = Math.max(shakeT, .7 * vol(c) + .1);
   flashEl.style.background = '#ffffff'; fx.flash = Math.max(fx.flash, .35 * vol(c));
   for (let i = 0; i < 26; i++) { const q = part(SMOKE[i % 4], c.clone().add(new V3((R() - .5) * 2, (R() - .5) * 2, (R() - .5) * 2)), new V3((R() - .5) * 7, R() * 5, (R() - .5) * 7), .3 + R() * .4, .6 + R() * .7, -1, .25); if (q) q.drag = 3; }
   for (let i = 0; i < 10; i++) part(FIRE[i % 3], c.clone(), new V3((R() - .5) * 9, R() * 6, (R() - .5) * 9), .25, .35, 0);
-  // blocks
+  // blocks: only when asked (creepers no longer blow up builds: the building loop must stay safe)
   const r = power, cells = [], cx = Math.floor(c.x), cy = Math.floor(c.y), cz = Math.floor(c.z);
-  for (let y = -r; y <= r; y++) for (let z = -r; z <= r; z++) for (let x = -r; x <= r; x++) {
+  if (breakBlocks) for (let y = -r; y <= r; y++) for (let z = -r; z <= r; z++) for (let x = -r; x <= r; x++) {
     const d = Math.hypot(x, y * 1.1, z); if (d > r * (.75 + R() * .45)) continue;
     const X = cx + x, Y = cy + y, Z = cz + z; if (!inb(X, Y, Z) || isHome(X, Z)) continue;
     const t = get(X, Y, Z); if (blastProof(t)) continue;
@@ -612,7 +673,7 @@ function explode(c, power, by) {
   // damage
   const P = PL(), pc = P.pos.clone(); pc.y += .9; const pd = pc.distanceTo(c), reach = power * 2;
   if (pd < reach && state === 'play') { const k = 1 - pd / reach, l = Math.hypot(pc.x - c.x, pc.z - c.z) || 1;
-    hurt(Math.max(1, Math.round(k * 20)), by, (pc.x - c.x) / l * (.6 + k), (pc.z - c.z) / l * (.6 + k)); }
+    hurt(Math.max(1, Math.round(k * 12)), by, (pc.x - c.x) / l * (.6 + k), (pc.z - c.z) / l * (.6 + k)); }
   for (const e of ENTITIES.slice()) { if (e.dead > 0 || e.removed || !e.center) continue; const ec = e.center(), d = ec.distanceTo(c);
     if (d < reach) { const k = 1 - d / reach, dir = new V3(ec.x - c.x, 0, ec.z - c.z).normalize(); e.hit(Math.round(k * 20), dir, 'explosion'); } }
 }
@@ -657,6 +718,8 @@ const ICONS = {
   wheat_seeds: art(g => { for (const [x, y] of [[4, 6], [8, 4], [10, 9], [5, 11], [12, 12], [7, 8]]) { px(g, '#5aa02a', x, y, 2, 1); px(g, '#3a7a1a', x, y + 1, 1, 1); } }),
   carrot: art(g => { line(g, '#f08a1a', 3, 13, 10, 6, 2); line(g, '#c86a10', 4, 13, 10, 7); px(g, '#ffb050', 6, 9, 1, 1); px(g, '#3a9a2a', 11, 3, 1, 3); px(g, '#3a9a2a', 12, 4, 3, 1); px(g, '#5ac83a', 12, 2, 1, 2); px(g, '#5ac83a', 13, 3, 2, 1); }),
   spider_eye: art(g => { blob(g, 8, 8, 5, 4.5, '#b02838', '#e05060', '#701820'); px(g, '#2a0a0e', 7, 7, 2, 2); }),
+  greyling_eye: art(g => { blob(g, 8, 8, 5.5, 5, '#3a4a2c', '#5a6a40', '#26301c'); blob(g, 8, 8, 3, 3, '#d8ff4a', '#f4ffb0', '#9ad020'); px(g, '#1a2010', 8, 7, 1, 3); }),
+  wolf_pelt: art(g => { blob(g, 8, 9, 6.5, 4.5, '#c8c8c3', '#e8e8e4', '#8f8f8a'); px(g, '#c8c8c3', 2, 3, 3, 3); px(g, '#c8c8c3', 11, 3, 3, 3); for (const [x, y] of [[5, 8], [8, 10], [11, 8]]) px(g, '#a8a8a3', x, y, 2, 1); }),
   white_wool: art(g => { noise(g, 16, 16, ['#f0f0f0', '#e4e4e4', '#d8d8d8', '#fafafa']); g.clearRect(0, 0, 16, 1); g.clearRect(0, 15, 16, 1); g.clearRect(0, 0, 1, 16); g.clearRect(15, 0, 1, 16); }),
 };
 function defineItems() {
@@ -670,6 +733,8 @@ function defineItems() {
   def('feather', { name: 'Feather', weight: .1 }); def('egg', { name: 'Egg', stack: 16, weight: .2 }); def('leather', { name: 'Leather', weight: .5 });
   def('spider_eye', { name: 'Spider Eye', weight: .2 }); def('wheat', { name: 'Wheat', weight: .2 }); def('wheat_seeds', { name: 'Wheat Seeds', weight: .1 });
   if (!ITEMS.white_wool) def('white_wool', { name: 'White Wool', weight: .5 });
+  def('greyling_eye', { name: 'Greyling Eye', weight: .2, stack: 50, desc: 'It still glows faintly. Portals are framed with them.' });
+  def('wolf_pelt', { name: 'Wolf Pelt', weight: 1, rarity: 'uncommon', desc: 'Thick grey fur from the highland wolves.' });
   food('rotten_flesh', 'Rotten Flesh', 1, 4, 5, 120, 'It smells awful.');
   food('beef', 'Raw Beef', 1, 3, 5, 300); food('cooked_beef', 'Steak', 4, 8, 25, 1500);
   food('porkchop', 'Raw Porkchop', 1, 3, 5, 300); food('cooked_porkchop', 'Cooked Porkchop', 4, 8, 25, 1500);
@@ -748,6 +813,7 @@ function animalInFront() {
   if (state !== 'play') return false;
   if (typeof Meadows !== 'undefined' && Meadows.dialog && Meadows.dialog.open) return false;
   const id = heldId();
+  const pet = petInFront(); if (pet && hasInv() && petUse(pet, id)) return true;      // taming, follow / stay
   if (id === 'bow') { if (!bow.on) startBow(); return true; }
   if (!id) return false;
   const a = animalInFront(); if (!a) return false;
@@ -783,10 +849,7 @@ function carveWorld() {
     for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let z = Math.floor(cz - r); z <= cz + r; z++) for (let x = Math.floor(cx - r); x <= cx + r; x++) {
       const dx = x + .5 - cx, dy = (y + .5 - cy) * 1.3, dz = z + .5 - cz; if (dx * dx + dy * dy + dz * dz <= r * r) carveCell(x, y, z, surface); }
   }
-  function oreAt(x, y, z) {               // a small ore cluster in a wall
-    const t = y < 9 && rng() < .45 ? IRONORE : COAL, n = 2 + (rng() * 4 | 0);
-    for (let i = 0; i < n; i++) { const X = x + ((rng() * 3 | 0) - 1), Y = y + ((rng() * 3 | 0) - 1), Z = z + ((rng() * 3 | 0) - 1); if (get(X, Y, Z) === STONE) { set(X, Y, Z, t); mark(X, Z); } }
-  }
+  function oreAt() {}                     // no coal or Minecraft iron in the walls: charcoal comes from the kiln, iron from the swamp
   function wallOre(cx, cy, cz, r) {
     const a = rng() * Math.PI * 2, b = (rng() - .5) * 1.4;
     for (let s = r; s < r + 3; s += .5) { const x = Math.floor(cx + Math.cos(a) * Math.cos(b) * s), y = Math.floor(cy + Math.sin(b) * s), z = Math.floor(cz + Math.sin(a) * Math.cos(b) * s);
@@ -854,65 +917,190 @@ const carveT0 = performance.now(), carvedChunks = carveWorld(), carveMs = Math.r
 // =====================================================================================================
 //  Animals at start (replace the old wander-only pigs and sheep) and the spawner
 // =====================================================================================================
-function grassSpot(cx, cz, r0, r1) {
+function grassSpot(cx, cz, r0, r1, test) {
   for (let k = 0; k < 14; k++) {
     const a = R() * Math.PI * 2, r = r0 + R() * (r1 - r0), x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
     if (x < 5 || z < 5 || x > WX - 5 || z > WZ - 5) continue; const xi = Math.floor(x), zi = Math.floor(z); if (reserved[zi * WX + xi]) continue;
+    if (test && !test(x, z)) continue;
     const g = groundY(x, z); if (g.t !== GRASS || g.y <= SEA + 1) continue; return { x: xi + .5, z: zi + .5, y: g.y };
   }
   return null;
 }
+// The Meadows belong to deer and boars (valheim.js). Minecraft herds graze only on the plains edge (the east coast),
+// wolves roam the north-west highlands, and the Minecraft monsters own the night.
+const plainsOk = (x, z) => biomeAt(x, z) === 1;
+const highOk = (x, z) => { const xi = Math.floor(x), zi = Math.floor(z); return hmap[zi * WX + xi] >= 14 && biomeAt(x, z) === 0 && !(typeof DarkForest !== 'undefined' && DarkForest.inForest && DarkForest.inForest(x, z)); };
+function plainsCentre() { for (let k = 0; k < 80; k++) { const x = 110 + R() * 44, z = 6 + R() * 112; if (!plainsOk(x, z)) continue; const g = groundY(x, z); if (g.t === GRASS && g.y > SEA + 1) return { x, z }; } return null; }
 function initAnimals() {
   const old = (typeof mobs !== 'undefined' && Array.isArray(mobs)) ? mobs.splice(0) : [];
   for (const m of old) if (m.group) scene.remove(m.group);
-  const plan = ['pig', 'sheep', 'cow', 'chicken', 'pig', 'sheep', 'cow', 'chicken', 'pig', 'sheep'];
-  plan.forEach((k, i) => { const o = old[i]; let s = o ? { x: o.pos.x, z: o.pos.z } : null;
-    if (!s) { const c = grassSpot(WX / 2, WZ / 2, 10, 70); if (c) s = c; }
-    if (s) spawn(k, s.x, s.z); });
+  for (let h = 0; h < 3; h++) { const c = plainsCentre(); if (!c) continue; const k = h === 1 ? 'cow' : 'sheep';
+    for (let i = 0; i < 3; i++) { const s = grassSpot(c.x, c.z, 0, 5, plainsOk); if (s) spawn(k, s.x, s.z); } }
 }
 initAnimals();
-function caveSpot(P) {
-  for (let k = 0; k < 10; k++) {
-    const a = R() * Math.PI * 2, r = 10 + R() * 16, x = Math.floor(P.pos.x + Math.cos(a) * r), z = Math.floor(P.pos.z + Math.sin(a) * r);
-    if (x < 3 || z < 3 || x > WX - 4 || z > WZ - 4 || isHome(x, z)) continue;
-    const top = Math.min(WY - 3, Math.floor(P.pos.y) + 8);
-    for (let y = top; y >= 1; y--) {
-      if (!solidAt(x, y - 1, z) || solidAt(x, y, z) || solidAt(x, y + 1, z) || get(x, y, z) === WATER) continue;
-      if (y > hmap[z * WX + x] - 2 || !covered(x, y + 2, z) || torchNear(x, y, z, 6)) continue;
-      return { x: x + .5, y, z: z + .5 };
-    }
-  }
-  return null;
-}
 function nightSpot(P) {
   for (let k = 0; k < 10; k++) {
-    const a = R() * Math.PI * 2, r = 16 + R() * 18, x = P.pos.x + Math.cos(a) * r, z = P.pos.z + Math.sin(a) * r;
-    if (x < 4 || z < 4 || x > WX - 4 || z > WZ - 4 || isHome(x, z)) continue;
-    const g = groundY(x, z); if (![GRASS, SAND, DIRT, STONE, SANDSTONE, ROAD].includes(g.t) || g.y <= SEA) continue;
-    if (torchNear(x, g.y, z, 7)) continue;
+    const a = R() * Math.PI * 2, r = 18 + R() * 18, x = P.pos.x + Math.cos(a) * r, z = P.pos.z + Math.sin(a) * r;
+    if (x < 4 || z < 4 || x > WX - 4 || z > WZ - 4) continue;
+    const g = groundY(x, z); if (![GRASS, SAND, DIRT, STONE].includes(g.t) || g.y <= SEA) continue;
+    if (torchNear(x, g.y, z, 8)) continue;
+    if (typeof Story !== 'undefined' && Story && typeof Story.safe === 'function' && Story.safe(x, z)) continue;   // WP-A: the Ring stays enemy-free
     return { x: Math.floor(x) + .5, y: g.y, z: Math.floor(z) + .5 };
   }
   return null;
 }
-const HOSTILE_W = [['zombie', .36], ['skeleton', .26], ['creeper', .22], ['spider', .16]];
+const HOSTILE_W = [['zombie', .34], ['skeleton', .28], ['spider', .24], ['creeper', .14]];
 const pickHostile = () => { let q = R(); for (const [k, w] of HOSTILE_W) if ((q -= w) < 0) return k; return 'zombie'; };
-let spawnT = 2, animalT = 30, enabled = true;
+const wildWolves = () => MOBS.filter(m => m.kind === 'wolf' && !m.tame && !(m.dead > 0)).length;
+const herdCount = () => MOBS.filter(m => (m.kind === 'sheep' || m.kind === 'cow') && !(m.dead > 0)).length;
+let spawnT = 2, animalT = 30, wolfT = 12, enabled = true;
 function spawnTick(dt) {
   if ((spawnT -= dt) > 0) return; spawnT = 1.5;
-  const P = PL(), night = isNight(); let alive = 0, surf = 0, cave = 0;
+  const P = PL(), night = isNight(); let alive = 0, surf = 0;
   for (const e of ENTITIES) if (!(e.dead > 0) && !e.removed) alive++;
   for (const m of MOBS.slice()) {
-    if (!m.hostile || m.dead > 0) continue;
+    if (m.dead > 0 || m.tame) continue;
     const d = Math.hypot(m.pos.x - P.pos.x, m.pos.z - P.pos.z);
-    if (d > 64 || (!night && !m.cave && d > 28 && R() < .08)) { m.remove(); continue; }
-    if (m.cave) cave++; else surf++;
+    if (m.hostile) {
+      if (d > 64) { m.remove(); continue; }
+      if (!night && !m.raid) {           // dawn: the night's monsters sink back into the ground
+        if (m.dawnT == null) m.dawnT = 1 + R() * 14;
+        else if ((m.dawnT -= 1.5) <= 0 && !(m.aggro > 0 && d < 8)) { const c = m.center(); puff(c, m.height, 10); S.poof(c); m.remove(); continue; }
+      } else m.dawnT = null;
+      surf++;
+    } else if (m.kind === 'wolf' && d > 84) m.remove();
   }
   if (!enabled || alive >= 24) return;
-  if (night && surf < 5 && R() < .6) { const s = nightSpot(P); if (s) { const k = pickHostile(), e = spawn(k, s.x, s.z, s.y); if (e && k === 'zombie' && R() < .05) { e.remove(); spawn('zombie', s.x, s.z, s.y); } return; } }
-  if (cave < 3 && R() < .35) { const s = caveSpot(P); if (s) { const e = spawn(pickHostile(), s.x, s.z, s.y); if (e) e.cave = true; return; } }
-  if ((animalT -= 1.5) <= 0) { animalT = 60; if (!night && animalCount() < 6) { const s = grassSpot(P.pos.x, P.pos.z, 30, 50); if (s) spawn(['pig', 'sheep', 'cow', 'chicken'][ri(0, 3)], s.x, s.z); } }
+  if (night && surf < 3 && R() < .45) { const s = nightSpot(P); if (s) { spawn(pickHostile(), s.x, s.z, s.y); return; } }
+  if ((wolfT -= 1.5) <= 0) { wolfT = 25;
+    if (wildWolves() < 3) { const s = grassSpot(P.pos.x, P.pos.z, 24, 46, highOk); if (s) { spawn('wolf', s.x, s.z); const s2 = grassSpot(s.x, s.z, 1, 3, highOk); if (s2 && R() < .6) spawn('wolf', s2.x, s2.z); return; } } }
+  if ((animalT -= 1.5) <= 0) { animalT = 45; if (!night && herdCount() < 9) { const s = grassSpot(P.pos.x, P.pos.z, 26, 48, plainsOk); if (s) { const k = R() < .6 ? 'sheep' : 'cow'; spawn(k, s.x, s.z); const s2 = grassSpot(s.x, s.z, 1, 3, plainsOk); if (s2) spawn(k, s2.x, s2.z); } } }
 }
 
+// =====================================================================================================
+//  Creature stars (Valheim levels): 1 star = 2x health, +50% damage, 2x loot; 2 stars = 3x health, +100%, 3x loot.
+//  Works for every creature in the game (this file, valheim.js, darkforest.js) without touching their code.
+// =====================================================================================================
+const NO_STAR = new Set(['stormhorn', 'old_root']);
+const starTex = n => { const k = 'stars' + n; if (TX[k]) return TX[k];
+  const rows = ['...y...', '..yyy..', 'yyyYyyy', '.yYYYy.', '..yyy..', '.yy.yy.', 'y.....y'];
+  return (TX[k] = charTex(8 * n, 8, g => { for (let s = 0; s < n; s++) rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '.') return; g.fillStyle = c === 'Y' ? '#fff3a0' : '#ffaa00'; g.fillRect(s * 8 + x, y, 1, 1); })); })); };
+function setStars(e, n) {
+  if (!e || !n || e.stars) return;
+  e.stars = n; const f = 1 + n; e.max = Math.round(e.max * f); e.hp = Math.round(e.hp * f);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex(n), transparent: true, depthWrite: false, fog: false }));
+  sp.scale.set(.32 * n, .32, 1); sp.position.y = (e.height || 1) / (e.sc || 1) + .45; sp.renderOrder = 15; e.group.add(sp); e.starSprite = sp;
+}
+function prepCreature(e) {
+  e._prep = true;
+  if (typeof e.loot === 'function') {
+    const L = e.loot;
+    e.loot = function (c) { const n = 1 + (this.stars || 0); for (let i = 0; i < n; i++) L.call(this, c);
+      if (/greyling/.test(this.kind || '') && R() < .45) drop('greyling_eye', 1, c); };
+  }
+  if (e.isBoss || e.tame || e.isBaby || !e.kind || NO_STAR.has(e.kind) || !e.group || !(e.max > 0) || e.noStars) return;
+  const k = (isNight() ? 1.6 : 1) * (e.raid ? 1.5 : 1), q = R();
+  if (q < .012 * k) setStars(e, 2); else if (q < .1 * k) setStars(e, 1);
+}
+// a starred creature hits harder: scale the damage it deals (the nearest creature of that name is the attacker)
+(HOOKS.damage || (HOOKS.damage = [])).unshift((n, by) => {
+  if (!(n > 0) || !by) return n;
+  const P = PL(); let best = null, bd = 30;
+  for (const e of ENTITIES) { if (e.name !== by || e.dead > 0 || e.removed || !e.pos) continue; const d = e.pos.distanceTo(P.pos); if (d < bd) { bd = d; best = e; } }
+  return best && best.stars ? n * (1 + .5 * best.stars) : n;
+});
+
+// =====================================================================================================
+//  Taming (Valheim): feed a calm boar or wolf (right-click with its food). While it is fed, hearts rise and the
+//  taming bar fills; when full it is tame. Right-click a tame animal: follow / stay. Tame animals fight your enemies.
+// =====================================================================================================
+const TAMEABLE = {
+  boar: { foods: ['mushroom', 'blueberries', 'raspberries', 'carrot'], need: 90, word: 'boar' },
+  wolf: { foods: ['raw_meat', 'cooked_meat', 'beef', 'mutton', 'porkchop', 'bone'], need: 120, word: 'wolf' },
+};
+const ENEMY = new Set(['greyling', 'greyling_brute', 'greyling_shaman', 'skeleton', 'zombie', 'spider', 'creeper', 'drowner']);
+const say = (t, s = 3) => { if (typeof Meadows !== 'undefined' && Meadows.subtitle) Meadows.subtitle(t, s); else chat(t); };
+function isEnemyOf(o, pet) {
+  if (o === pet || o.removed || o.dead > 0 || o.tame || !o.pos) return false;
+  if (o.isBoss) return false;
+  if (o.hostile || ENEMY.has(o.kind) || o.name === 'Forest Troll') return true;
+  return o.kind === 'wolf' && o.angry;
+}
+function findEnemy(pet) {
+  let best = null, bd = 11; const P = PL();
+  for (const o of ENTITIES) { if (!isEnemyOf(o, pet)) continue; const d = Math.min(o.pos.distanceTo(pet.pos), o.pos.distanceTo(P.pos) + 2); if (d < bd) { bd = d; best = o; } }
+  return best;
+}
+function petThink(e, dt, P, dx, dz, d) {
+  e.atkCd = (e.atkCd || 0) - dt;
+  if ((e.scanT = (e.scanT || 0) - dt) <= 0) { e.scanT = .5; e.target = findEnemy(e); }
+  const t = e.target;
+  if (t && !t.removed && !(t.dead > 0) && state === 'play') {
+    const tx = t.pos.x - e.pos.x, tz = t.pos.z - e.pos.z, td = Math.hypot(tx, tz) || 1;
+    e.yaw = Math.atan2(tx, tz);
+    if (td > 1.6) e.speed = e.kind === 'wolf' ? 5.2 : 4.4;
+    else if (e.atkCd <= 0) { e.atkCd = 1.1; e.lunge = .25; try { t.hit((e.kind === 'wolf' ? 7 : 5) * (1 + .5 * (e.stars || 0)), new V3(tx / td, 0, tz / td), 'pet'); } catch (err) { /* ignore */ } }
+    return;
+  }
+  if (!e.follow) return;                                   // stay
+  if (d > 40) { const a = P.yaw + Math.PI, x = P.pos.x + Math.sin(a) * 2, z = P.pos.z + Math.cos(a) * 2; e.pos.set(x, groundAt(x, z, P.pos.y + 2), z); return; }
+  if (d > 3.2) { e.yaw = Math.atan2(dx, dz); e.speed = d > 8 ? 5.6 : 3.1; }
+}
+function petName(e) { return (e.stars ? '' : '') + (e.kind === 'wolf' ? 'wolf' : 'boar'); }
+function becomeTame(e, quiet) {
+  e.tame = true; e.follow = !quiet || e.follow !== false; e.aggro = 0; e.fedT = 0; e.panic = 0; e.isBoss = true;   // isBoss: valheim.js never despawns it
+  if (e.collar) e.collar.visible = true;
+  if (!e.petTag) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: heartTex, transparent: true, depthWrite: false, fog: false })); sp.scale.set(.22, .19, 1); sp.position.y = (e.height || 1) / (e.sc || 1) + (e.stars ? .8 : .45); e.group.add(sp); e.petTag = sp; }
+  if (quiet) return;
+  const c = e.center(); for (let i = 0; i < 10; i++) heart(c.clone().add(new V3((R() - .5) * 1.2, R() * .6, (R() - .5) * 1.2)));
+  S.pop(); say(`The ${petName(e)} is tame! Right-click it to make it follow or stay.`, 4.5);
+  if (typeof Meadows !== 'undefined' && Meadows.advance) try { Meadows.advance('tame'); } catch (err) { /* unknown advancement */ }
+}
+function patchCreature(e) {        // valheim.js boars: wrap their brain once
+  if (e._petPatched || typeof e.think !== 'function') return; e._petPatched = true;
+  const orig = e.think;
+  e.think = function (dt, P, dx, dz, d) {
+    if (this.tame) return petThink(this, dt, P, dx, dz, d);
+    if (this.fedT > 0) { this.aggro = 0; return; }        // eating: stands still and calm
+    return orig.call(this, dt, P, dx, dz, d);
+  };
+  const die = e.die; if (typeof die === 'function') e.die = function () { if (this.tame) say(`Your tame ${petName(this)} has died.`, 3.5); return die.apply(this, arguments); };
+}
+function petInFront() {
+  const P = PL(), eye = P.eye, dir = lookDir(P.yaw, P.pitch); let best = null, bd = 1e9;
+  for (const e of ENTITIES) { if (!TAMEABLE[e.kind] || e.dead > 0 || e.removed || !e.center || e.isBaby) continue; const to = e.center().sub(eye), d = to.length();
+    if (d < 4.2 && d < bd && to.normalize().dot(dir) > (d < 1.6 ? .5 : .78)) { best = e; bd = d; } }
+  return best;
+}
+let tameHint = false;
+function petUse(e, id) {
+  const T = TAMEABLE[e.kind], food = id && T.foods.includes(id);
+  if (e.tame) {
+    if (food) { if (e.hp < e.max) { e.hp = Math.min(e.max, e.hp + 10); Inv.consumeHeld(1); S.munch(); heart(e.center()); PL().swing = 1; return true; } }
+    e.follow = !e.follow; say(e.follow ? `The ${petName(e)} follows you.` : `The ${petName(e)} stays here.`, 2.5); S.pop(); PL().swing = 1; return true;
+  }
+  if (!food) return false;
+  if (e.aggro > 0 || e.angry || e.fleeT > 0) { say(`The ${petName(e)} is too wild to eat. Let it calm down.`, 2.5); return true; }
+  if (e.fedT > 5) { say(`The ${petName(e)} is not hungry yet.`, 2); return true; }
+  Inv.consumeHeld(1); PL().swing = 1; S.munch(); e.fedT = 60; e.tameP = e.tameP || 0;
+  const c = e.center(); for (let i = 0; i < 4; i++) heart(c.clone().add(new V3((R() - .5) * .6, .3, (R() - .5) * .6)));
+  if (!tameHint) { tameHint = true; say(`The ${petName(e)} eats. Keep it fed and calm to tame it.`, 4); }
+  return true;
+}
+let prepT = 0;
+function tameTick(dt) {
+  if ((prepT -= dt) <= 0) { prepT = .4; for (const e of ENTITIES) { if (!e._prep && e.kind) prepCreature(e); if (TAMEABLE[e.kind] && !(e instanceof MCMob)) patchCreature(e); } }
+  for (const e of ENTITIES) {
+    if (!TAMEABLE[e.kind] || e.dead > 0 || e.removed) continue;
+    if (e.tame) { if (e.lunge > 0) e.lunge -= dt; continue; }
+    if (e.fedT > 0) {
+      e.fedT -= dt; e.tameP = (e.tameP || 0) + dt;
+      if ((e.heartT2 = (e.heartT2 || 0) - dt) <= 0) { e.heartT2 = 1.3; const c = e.center(); c.y += .4; heart(c); }
+      if (e.tameP >= TAMEABLE[e.kind].need) becomeTame(e);
+    }
+  }
+}
+const pets = () => ENTITIES.filter(e => e.tame && !(e.dead > 0) && !e.removed);
 // =====================================================================================================
 //  Save / Load: world diff (run-length), time, character, positions, stats, animals and other modules
 // =====================================================================================================
@@ -954,7 +1142,8 @@ function save(quiet) {
     time: hasWorld() ? World.time01() : null, day: hasWorld() && World.day ? World.day() : 1,
     chars: chars.map((c, i) => ({ p: [+c.pos.x.toFixed(2), +c.pos.y.toFixed(2), +c.pos.z.toFixed(2)], yaw: +c.yaw.toFixed(3), pitch: +c.pitch.toFixed(3),
       hp: DEFS[i].hp, food: DEFS[i].food, lvl: DEFS[i].lvl, xp: DEFS[i].xp, stamina: DEFS[i].stamina })),
-    animals: MOBS.filter(m => m.animal && !(m.dead > 0)).map(m => [m.kind, +m.pos.x.toFixed(2), +m.pos.y.toFixed(2), +m.pos.z.toFixed(2), Math.round(m.age), m.sheared ? 1 : 0, Math.round(m.hp)]),
+    animals: MOBS.filter(m => m.animal && !m.tame && !(m.dead > 0)).map(m => [m.kind, +m.pos.x.toFixed(2), +m.pos.y.toFixed(2), +m.pos.z.toFixed(2), Math.round(m.age), m.sheared ? 1 : 0, Math.round(m.hp), m.stars || 0]),
+    pets: pets().map(e => [e.kind, +e.pos.x.toFixed(2), +e.pos.y.toFixed(2), +e.pos.z.toFixed(2), Math.round(e.hp), e.stars || 0, e.follow ? 1 : 0]),
   };
   if (typeof Meadows !== 'undefined' && Meadows.flags) data.meadows = { flags: Object.assign({}, Meadows.flags), stage: Meadows.stage };
   try { emit('save', data); } catch (e) { console.error(e); }
@@ -974,7 +1163,12 @@ function load(data) {
   if (data.cur != null && chars[data.cur]) cur = data.cur;
   if (Array.isArray(data.animals)) {
     for (const m of MOBS.slice()) if (m.animal) m.remove();
-    for (const [k, x, y, z, age, sheared, hp] of data.animals) { const e = spawn(k, x, z, y); if (!e) continue; e.pos.y = y; e.age = age || 0; if (e.age < 0) e.setBaby(true); if (sheared && e.setSheared) e.setSheared(true); if (hp) e.hp = Math.min(e.max, hp); }
+    for (const [k, x, y, z, age, sheared, hp, st] of data.animals) { const e = spawn(k, x, z, y); if (!e) continue; e.pos.y = y; e.age = age || 0; if (e.age < 0) e.setBaby(true); if (sheared && e.setSheared) e.setSheared(true); if (st) setStars(e, st); if (hp) e.hp = Math.min(e.max, hp); }
+  }
+  for (const e of pets()) e.remove();
+  for (const [k, x, y, z, hp, st, f] of data.pets || []) {      // tame animals come back where they were left
+    let e = null; try { e = k === 'boar' ? (typeof Meadows !== 'undefined' && Meadows.spawn ? Meadows.spawn('boar', x, z) : null) : spawn(k, x, z, y); } catch (err) { e = null; }
+    if (!e) continue; e.pos.y = y; if (st) setStars(e, st); if (!(e instanceof MCMob)) patchCreature(e); e.follow = !!f; becomeTame(e, true); if (hp) e.hp = Math.min(e.max, hp);
   }
   if (data.meadows && typeof Meadows !== 'undefined') { Object.assign(Meadows.flags, data.meadows.flags || {}); if ((data.meadows.stage || 0) >= 1 || (data.meadows.flags || {}).intro) Meadows.skipIntro(); if (Meadows.restore) Meadows.restore(data.meadows.stage || 0); }
   for (const m of MOBS.slice()) if (m.hostile) m.remove();
@@ -1019,7 +1213,7 @@ on('start', () => {
 });
 on('frame', dt => {
   if (state === 'title') return;
-  if (state === 'play') spawnTick(dt);
+  if (state === 'play') { spawnTick(dt); tameTick(dt); }
   updateArrows(dt); updateParts(dt);
 });
 on('tick', rawDt => {
@@ -1037,6 +1231,17 @@ window.Mobs = {
   spawn, kinds: Object.keys(KINDS), get list() { return MOBS; }, get arrows() { return ARROWS; }, explode, shootArrow,
   get bow() { return bow; }, get ravine() { return RAVINE; }, carvedChunks, carveMs, setSpawning(v) { enabled = !!v; },
   animals: () => MOBS.filter(m => m.animal), hostiles: () => MOBS.filter(m => m.hostile),
+  setStars, pets, tame: e => { if (e && TAMEABLE[e.kind] && !e.tame) { if (!(e instanceof MCMob)) patchCreature(e); becomeTame(e); } return !!(e && e.tame); },
+  feed: (e, id) => !!(e && TAMEABLE[e.kind] && hasInv() && petUse(e, id)), TAMEABLE, biomeAt,
 };
-window.Save = { save: () => save(), load: d => load(d), has: () => !!readSave(), clear: clearSave, read: readSave, encodeDiff, applyDiff, get started() { return started; } };
+// pieces the player built (world blocks that differ from the generated world) near a spot, and whether a station is among them
+function placedNear(cx, cz, r = 30) {
+  const out = { pieces: 0, station: false }; if (!GEN) return out;
+  const x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(WX - 1, Math.floor(cx + r)), z0 = Math.max(0, Math.floor(cz - r)), z1 = Math.min(WZ - 1, Math.floor(cz + r));
+  for (let y = 1; y < WY; y++) for (let z = z0; z <= z1; z++) { let i = (y * WZ + z) * WX + x0;
+    for (let x = x0; x <= x1; x++, i++) { const t = world[i]; if (t === GEN[i] || t === AIR || t === WATER) continue; out.pieces++;
+      if (!out.station && hasInv() && Inv.itemForBlock) { const id = Inv.itemForBlock(t), it = id && ITEMS[id]; if (it && it.kind === 'station') out.station = true; } } }
+  return out;
+}
+window.Save = { save: () => save(), load: d => load(d), has: () => !!readSave(), clear: clearSave, read: readSave, encodeDiff, applyDiff, placedNear, get started() { return started; } };
 })();

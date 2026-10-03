@@ -1,7 +1,8 @@
-/* Blockcraft — Chapter I: The Meadows of Skarnholm  (js/valheim.js)
- * Day/night cycle and the shared World API (time, night, item drops), meadow creatures
- * (Deer, Boar, Greyling), Forest Troll loot, the Stag Altar and the Stormhorn boss,
- * Korra the raven guide, rune stones, quest tracker and advancement toasts.
+/* Blockcraft — Chapter 0 + I: Arrival and the Meadows of Skarnholm  (js/valheim.js)
+ * Day/night cycle and the shared World API (time, night, item drops), the storm-gull arrival, the Ring of Oaths
+ * (7 trophy mounts, Oath powers: `Powers`), ground pickups (branches, pebbles, flint, resin), meadow creatures
+ * (Deer, Boar, Greyling), the Stag Altar and the Stormhorn boss, the ravens Korra and Vesk, rune stones and
+ * Waystones, the first-30-minutes quest line with its tracker, and advancement toasts.
  * Valheim-STYLE progression with our own names and text. Everything is drawn in code. */
 (() => {
 'use strict';
@@ -302,6 +303,7 @@ class Creature {
   center() { return new V3(this.pos.x, this.pos.y + this.height * .55, this.pos.z); }
   hit(dmg, dir) {
     if (this.dead > 0 || this.removed || this.immune) return;
+    if (this.isBoss && (dlg.open || arrival || cine)) return;        // no free hits while a dialog or cut-scene is up
     dmg = +dmg || 0; this.hp -= dmg; this.flash = .35;
     const kb = this.kbRes ?? 1;
     if (dir && kb > 0) { this.kb.x += (dir.x || 0) * 5 * kb; this.kb.z += (dir.z || 0) * 5 * kb; this.vy = Math.max(this.vy, 3.2 * kb); }
@@ -539,7 +541,7 @@ function stagT() { return {
 }; }
 class Stormhorn extends Creature {
   constructor() {
-    super('stormhorn', 'Stormhorn', 280); this.isBoss = true; this.S = 2.4; this.height = 6; this.step = 1.6; this.kbRes = 0; this.turn = 3.2; this.stride = .95;
+    super('stormhorn', 'Stormhorn', 140); this.isBoss = true; this.S = 2.4; this.height = 6; this.step = 1.6; this.kbRes = 0; this.turn = 3.2; this.stride = .95;
     this.mode = 'intro'; this.mt = 0; this.cd = 1.5; this.tips = []; this.markers = []; this.sparkT = 0; this.awayT = 0;
     const T = stagT(), cyan = 0x7ff6ff;
     this.tipMat = new THREE.MeshBasicMaterial({ color: cyan, fog: false });
@@ -706,10 +708,18 @@ const tAltarTop = addTile('vh_altar_top', g => { noiseFill(g, 0, 0, 16, 16, '#6e
   ln(g, '#2e3238', 8, 12, 8, 7); ln(g, '#2e3238', 8, 7, 4, 3); ln(g, '#2e3238', 8, 7, 12, 3); ln(g, '#2e3238', 6, 5, 4, 6); ln(g, '#2e3238', 10, 5, 12, 6); });
 const tAltarSide = addTile('vh_altar_side', g => { noiseFill(g, 0, 0, 16, 16, '#6e7178', .14); rr(g, '#8a8d94', 0, 0, 16, 2); rr(g, '#3a3d44', 0, 2, 16, 1); rr(g, '#3a3d44', 0, 13, 16, 1);
   for (let x = 1; x < 16; x += 3) dots(g, '#2e3238', [x, 7, x + 1, 8]); dots(g, MOSS[0], [2, 14, 3, 15, 11, 14, 12, 15, 13, 14]); });
+const tStand = addTile('vh_standing_stone', g => { noiseFill(g, 0, 0, 16, 16, '#6c7068', .2); ln(g, '#4c504a', 3, 0, 4, 15); ln(g, '#4c504a', 12, 0, 11, 15);
+  rr(g, '#868a82', 0, 0, 16, 1); for (let i = 0; i < 34; i++) rr(g, MOSS[i % 3], (R() * 16) | 0, (R() * 16) | 0, 1, 1 + (R() < .5 ? 1 : 0)); });
+const tOath = addTile('vh_oath_stone', g => { noiseFill(g, 0, 0, 16, 16, '#5c6068', .14); rr(g, '#34373e', 0, 0, 16, 1); rr(g, '#34373e', 0, 15, 16, 1); rr(g, '#34373e', 0, 0, 1, 16); rr(g, '#34373e', 15, 0, 1, 16);
+  for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2 - Math.PI / 2; rr(g, '#2a2d33', 7 + Math.round(Math.cos(a) * 5), 7 + Math.round(Math.sin(a) * 5), 2, 2); } rr(g, '#2a2d33', 6, 6, 4, 4); });
+const tWay = addTile('vh_waystone', g => { noiseFill(g, 0, 0, 16, 16, '#3b4048', .16); rr(g, '#4e545e', 0, 0, 16, 1); rr(g, '#262a30', 0, 15, 16, 1); ln(g, '#262a30', 8, 1, 8, 14); ln(g, '#262a30', 8, 3, 4, 7); dots(g, '#2f6f7a', [8, 5, 8, 9, 8, 12]); });
 atlasTex.needsUpdate = true;
 const MOSSY = BLOCK.length; def(MOSSY, 'Mossy Stone Bricks', cube(tMoss), 'stone');
 const RUNE = BLOCK.length; def(RUNE, 'Rune Stone', cube(tRune), 'stone');
 const ALTAR = BLOCK.length; def(ALTAR, 'Stag Altar', cube(tAltarSide, tAltarTop, tAltarSide), 'stone');
+const STANDING = BLOCK.length; def(STANDING, 'Standing Stone', cube(tStand, tMoss, tStand), 'stone');
+const OATH = BLOCK.length; def(OATH, 'Oath Stone', cube(tMoss, tOath, tMoss), 'stone');
+const WAYSTONE = BLOCK.length; def(WAYSTONE, 'Waystone', cube(tWay, tMoss, tWay), 'stone');
 
 // glow overlays: unlit, additive rune quads that sit just outside rune faces
 const runeGlowTex = charTex(80, 16, g => {
@@ -775,13 +785,63 @@ function buildAltar() {
     const h = halo(0x5ff0ff, 3.2, .35); h.position.set(cx + px + .5, y0 + 6.3, cz + pz + .5); scene.add(h); haloSprites.push(h);
   }
 }
+// ---- The Ring of Oaths: 7 mossy standing stones (radius 6) around a 3x3 oath stone; each stone carries a trophy mount
+const RING = { cx: 70.5, cz: 96.5, x: 70, z: 96, y: 10, safe: 24 };
+const BOUND = [                                      // the seven heads, in the order the mounts want them
+  { trophy: 'stormhorn_trophy', bound: 'Stormhorn', power: 'stormstride' },
+  { trophy: 'old_root_trophy', bound: 'The Old Root', power: 'rootgrip' },
+  { trophy: 'rotmaw_trophy', bound: 'Rotmaw', power: 'ironhide' },
+  { trophy: 'frostwing_trophy', bound: 'Frostwing', power: 'tailwind' },
+  { trophy: 'colossus_trophy', bound: 'The Brass Colossus', power: 'warded' },
+  { trophy: 'hollow_knight_trophy', bound: 'The Hollow Knight', power: 'deepbreath' },
+  { trophy: 'ember_warden_trophy', bound: 'The Ember Warden', power: 'cinderstep' },
+];
+const MOUNTS = [];
+function buildRing() {
+  let best = null, bs = 1e9;
+  for (let cz = 72; cz <= 118; cz += 2) for (let cx = 44; cx <= 98; cx += 2) {
+    if (Math.hypot(cx - ALT.cx, cz - ALT.cz) < 32) continue;
+    let mn = 99, mx = -99, bad = 0, grass = 0;
+    for (let dz = -9; dz <= 9; dz++) for (let dx = -9; dx <= 9; dx++) { if (dx * dx + dz * dz > 81) continue; const x = cx + dx, z = cz + dz, i = z * WX + x;
+      if (reserved[i]) { bad++; continue; } const h = hmap[i]; mn = Math.min(mn, h); mx = Math.max(mx, h); if (h <= SEA + 1) bad++; else if (get(x, h, z) === GRASS) grass++; }
+    const s = bad * 50 + (mx - mn) * 6 - grass * .3 + Math.hypot(cx - 70, cz - 96) * .35;
+    if (s < bs) { bs = s; best = { cx, cz, mn, mx }; }
+  }
+  const cx = best.cx, cz = best.cz, y0 = Math.max(SEA + 2, Math.round((best.mn + best.mx) / 2));
+  Object.assign(RING, { cx: cx + .5, cz: cz + .5, x: cx, z: cz, y: y0 });
+  for (let dz = -13; dz <= 13; dz++) for (let dx = -13; dx <= 13; dx++) { if (dx * dx + dz * dz > 169) continue;
+    for (let y = 1; y < WY; y++) { const t = get(cx + dx, y, cz + dz); if (t === LOG || t === LEAVES) setB(cx + dx, y, cz + dz, AIR); } }
+  for (let dz = -10; dz <= 10; dz++) for (let dx = -10; dx <= 10; dx++) {
+    const r = Math.hypot(dx, dz); if (r > 9.4) continue; const x = cx + dx, z = cz + dz, centre = Math.abs(dx) <= 1 && Math.abs(dz) <= 1;
+    for (let y = y0 - 3; y <= y0; y++) setB(x, y, z, y === y0 ? (centre ? OATH : GRASS) : y === y0 - 1 ? DIRT : STONE);
+    for (let y = y0 + 1; y < y0 + 16; y++) setB(x, y, z, AIR);
+    hmap[z * WX + x] = y0; reserved[z * WX + x] = 1;
+    if (centre) glowFace(x, y0, z, 3, (dx + dz + 4) % 4);
+  }
+  for (let i = 0; i < 7; i++) {
+    const a = -Math.PI / 2 + i * Math.PI * 2 / 7, px = cx + Math.round(Math.cos(a) * 6), pz = cz + Math.round(Math.sin(a) * 6);
+    for (let y = y0 + 1; y <= y0 + 4; y++) setB(px, y, pz, y === y0 + 4 ? MOSSY : STANDING);
+    const dx = cx - px, dz = cz - pz, onX = Math.abs(dx) > Math.abs(dz), nx = onX ? Math.sign(dx) : 0, nz = onX ? 0 : Math.sign(dz);
+    MOUNTS.push({ i, x: px, z: pz, y: y0 + 2, nx, nz, ...BOUND[i] });
+  }
+}
+// ---- Waystones: a tall dark stone with a glowing rune; reading one pins a boss altar
+const WAYS = [];
+function makeWaystone(cx, cz, opt) {
+  const p = findSpot(cx, cz, 10) || { x: Math.round(cx), z: Math.round(cz) }; const h = groundY(p.x, p.z).y - 1;
+  for (const [a, b] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { setB(p.x + a, h, p.z + b, MOSSY); for (let y = h + 1; y <= h + 4; y++) if (a || b) setB(p.x + a, y, p.z + b, AIR); }
+  for (let y = h + 1; y <= h + 4; y++) { setB(p.x, y, p.z, WAYSTONE); if (y > h + 1) for (const f of SIDES) glowFace(p.x, y, p.z, f, (y + f) % 5); }
+  const hs = halo(0x9fe8ff, 2.6, .32); hs.position.set(p.x + .5, h + 5.6, p.z + .5); scene.add(hs); haloSprites.push(hs);
+  const w = Object.assign({ x: p.x, z: p.z, y: h, cx: p.x + .5, cz: p.z + .5, read: false }, opt); WAYS.push(w); return w;
+}
+let wayMeadow = null;
 const LORE_TEXT = [
-  { name: 'Stone of Landing', lines: ['The runes are worn, but they still glow:', '"Many ships found Skarnholm. None sailed away. The isle keeps the weak and lets only the proven go."'] },
-  { name: 'Stone of the Stag', lines: ['A great stag is carved under the runes:', '"The stag drank the lightning and never stopped. Lay two crowns of its kin upon the altar stone, and the storm will walk."'] },
+  { name: 'Stone of the Ring', lines: ['Vesk lands on the stone and reads, slowly:', '"Seven stones, seven mounts. Seven who served the Watcher, and grew too great, and were bound."', '"Hang their heads where they once knelt. Then the door opens."'] },
+  { name: 'Stone of the Stag', lines: ['A great stag is carved under the runes. Vesk reads:', '"The first of the Bound was his hunting beast. It drank the lightning and never stopped running."', '"Two crowns of its kin, laid on the altar stone, will call it."'] },
   { name: 'Stone of the Grey Folk', lines: ['Small grey figures are scratched into the rock:', '"When the sun sleeps, the grey folk wake. They hoard pine sap and throw stones at the bold. Meet them with steel."'] },
 ];
 function buildLore() {
-  const start = DEFS[1] ? DEFS[1].pos : [88, 113];
+  const start = [RING.cx, RING.cz];
   const spots = [[start[0] + 14, start[1] + 12], [54, 64], [(start[0] + ALT.cx) / 2, (start[1] + ALT.cz) / 2 - 6]];
   spots.forEach((s, i) => { const p = findSpot(s[0], s[1], 12); if (!p) return; const h = groundY(p.x, p.z).y - 1;
     for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { setB(p.x + a, h, p.z + b, MOSSY); if (BLOCK[get(p.x + a, h + 1, p.z + b)].kind === 'cross') setB(p.x + a, h + 1, p.z + b, AIR); }
@@ -789,11 +849,25 @@ function buildLore() {
     const hs = halo(0x5ff0ff, 2.2, .3); hs.position.set(p.x + .5, h + 4.4, p.z + .5); scene.add(hs); haloSprites.push(hs);
     LORE.push({ x: p.x, z: p.z, y: h, ...LORE_TEXT[i], read: false }); });
 }
-try { buildAltar(); buildLore(); } catch (e) { console.error('valheim: build failed', e); }
+try { buildAltar(); buildRing(); buildLore();
+  const wx = RING.cx + (ALT.cx - RING.cx) * .5, wz = RING.cz + (ALT.cz - RING.cz) * .5;
+  wayMeadow = makeWaystone(wx + 6, wz - 4, { name: 'Waystone', who: 'Vesk', lines: ['...a stag of storm...', '...drinks where the stones stand tall...'], pin: () => ({ x: ALT.cx, z: ALT.cz, label: 'Stag Altar' }) });
+} catch (e) { console.error('valheim: build failed', e); }
+DEFS[0].pos = [RING.cx + .01, RING.cz + 2.5];        // the Ring is the spawn point (a bed moves it later)
+{ const P = chars[0]; P.pos.set(DEFS[0].pos[0], RING.y + 1, DEFS[0].pos[1]); P.yaw = 0; P.vel.set(0, 0, 0); }
 for (const k of touched) { const [a, b] = k.split(',').map(Number); buildChunk(a, b); }
-const glowMesh = (() => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(glowQuads.pos, 3));
+let glowMesh = null;
+function rebuildGlow() {                               // waystones added later (Dark Forest) rebuild the glow overlay
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(glowQuads.pos, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(glowQuads.uv, 2)); g.setIndex(glowQuads.idx); g.computeBoundingSphere();
-  const m = new THREE.Mesh(g, runeGlowMat); m.renderOrder = 3; scene.add(m); return m; })();
+  if (glowMesh) { glowMesh.geometry.dispose(); glowMesh.geometry = g; return; }
+  glowMesh = new THREE.Mesh(g, runeGlowMat); glowMesh.renderOrder = 3; scene.add(glowMesh);
+}
+rebuildGlow();
+function addWaystone(cx, cz, opt) {                    // public: build one more waystone after world generation
+  touched.clear(); const w = makeWaystone(cx, cz, opt); rebuildGlow();
+  for (const k of touched) { const [a, b] = k.split(',').map(Number); buildChunk(a, b); } return w;
+}
 const loreAt = (x, z) => LORE.find(l => Math.abs(l.x - x) <= 1 && Math.abs(l.z - z) <= 1);
 const isAltarBlock = h => Math.abs(h.x - ALT.x) <= 4 && Math.abs(h.z - ALT.z) <= 4 && h.y > ALT.y && (h.t === ALTAR || h.t === MOSSY || h.t === RUNE);
 
@@ -836,6 +910,16 @@ html.touch #vhAdv { top: calc(56px + env(safe-area-inset-top, 0px)); right: 10px
 html.touch #vhAdv b { font-size: 14px; } html.touch #vhAdv span { font-size: 13px; }
 html.touch #vhGoal { left: auto; top: auto; bottom: calc(184px + env(safe-area-inset-bottom, 0px)); right: 8px; max-width: 30%; font-size: 13px; }
 html.touch #vhTitle { top: 20%; }
+#vhPow { position: absolute; left: 10px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); width: 44px; height: 44px; background: #8b8b8b; border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #555; overflow: hidden; }
+#vhPow canvas { position: absolute; left: 4px; top: 4px; width: 32px; height: 32px; image-rendering: pixelated; }
+#vhPow i { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.55); }
+#vhPow span { position: absolute; left: 0; right: 0; bottom: 1px; text-align: center; font-size: 12px; text-shadow: 1px 1px 0 #3f3f3f; }
+#vhPow kbd { position: absolute; right: 1px; top: 0; font: 11px var(--ui); color: #ffff55; text-shadow: 1px 1px 0 #3f3f00; }
+#vhPow.on { box-shadow: inset 2px 2px 0 #fff, inset -2px -2px 0 #555, 0 0 10px 3px rgba(127,246,255,.75); }
+#tSwitch .vhPowCv { position: absolute; left: 18%; top: 14%; width: 64%; height: 64%; image-rendering: pixelated; pointer-events: none; }
+#tSwitch .vhPowT { position: absolute; left: 0; right: 0; bottom: 1px; text-align: center; font: 10px var(--ui); color: #fff; text-shadow: 1px 1px 0 #3f3f3f; pointer-events: none; }
+#tSwitch.vhOn { box-shadow: 0 0 10px 3px rgba(127,246,255,.75); }
 `;
 document.head.appendChild(css);
 const ui = document.createElement('div'); ui.id = 'vhUI'; ui.hidden = true;
@@ -848,11 +932,14 @@ const $ = s => ui.querySelector(s);
 const fadeEl = $('#vhFade'), titleBox = $('#vhTitle'), subEl = $('#vhSub'), goalEl = $('#vhGoal'), advEl = $('#vhAdv'), dlgEl = $('#vhDlg');
 $('#vhDlg .more').textContent = TOUCH ? 'Tap to continue ▼' : 'Click or Enter ▼';
 const PORTRAIT = { korra: g => { rr(g, '#38485e', 0, 0, 16, 16); rr(g, '#4a5d78', 0, 0, 16, 3); drawRavenHead(g); },
+  vesk: g => { rr(g, '#24242c', 0, 0, 16, 16); rr(g, '#34343e', 0, 0, 16, 3); drawRavenHead(g); rr(g, '#d8d8e0', 8, 5, 3, 3); rr(g, '#ffffff', 9, 6, 1, 1); rr(g, '#14141c', 4, 1, 2, 3); rr(g, '#14141c', 7, 2, 1, 2); },
   rune: g => { rr(g, '#1c2230', 0, 0, 16, 16); ICON.rune(g); }, altar: g => { rr(g, '#1c2230', 0, 0, 16, 16); ICON.hard_antler(g); } };
 
 const dlg = { open: false, q: [], cur: null, idx: 0, text: '', shown: 0, openedAt: 0 };
 function talk(who, portrait, lines, done) { dlg.q.push({ who, portrait, lines, done }); if (!dlg.open) nextConv(); }
-function fill(s) { const a = ALT, P = PL(); return s.replace(/\{name\}/g, DEFS[cur].name).replace(/\{dir\}/g, compass(a.cx - P.pos.x, a.cz - P.pos.z)); }
+function fill(s) { const a = ALT, P = PL(), D = (typeof DarkForest !== 'undefined' && DarkForest && DarkForest.DF) || { cx: 92, cz: 24 }, w = wayMeadow || a;
+  return s.replace(/\{name\}/g, DEFS[cur].name).replace(/\{dir\}/g, compass(a.cx - P.pos.x, a.cz - P.pos.z)).replace(/\{fdir\}/g, compass(D.cx - P.pos.x, D.cz - P.pos.z))
+    .replace(/\{rdir\}/g, compass(RING.cx - P.pos.x, RING.cz - P.pos.z)).replace(/\{wdir\}/g, compass(w.cx - P.pos.x, w.cz - P.pos.z)); }
 function nextConv() {
   const c = dlg.q.shift(); if (!c) { dlg.open = false; dlgEl.hidden = true; return; }
   dlg.cur = c; dlg.idx = 0; dlg.open = true; dlgEl.hidden = false; dlg.openedAt = performance.now(); mining = false;
@@ -882,7 +969,7 @@ function subtitle(text, secs = 4) { subEl.textContent = text; subT = secs; }
 function bigTitle(title, sub, secs = 4, color = '#fff') { titleBox.querySelector('b').textContent = title; titleBox.querySelector('b').style.color = color; titleBox.querySelector('span').textContent = sub || ''; titleT = secs; }
 
 const ADV = {
-  washed: ['Washed Ashore', 'raven'], hunt: ['First Hunt', 'raw_meat'], trophy: ['Proof of Strength', 'deer_trophy'], rune: ['Old Words', 'rune'],
+  washed: ['Dropped by the Gull', 'raven'], waystone: ['Where Stones Stand Tall', 'rune'], oath: ['First Oath Kept', 'stormhorn_trophy', 1], hunt: ['First Hunt', 'raw_meat'], trophy: ['Proof of Strength', 'deer_trophy'], rune: ['Old Words', 'rune'],
   lore: ['Lore Keeper', 'rune'], night: ['Sunrise Survivor', 'moon'], greyling: ['Stones and Sap', 'resin'], altar: ['The Stag Altar', 'rune'],
   summon: ['Storm Caller', 'hard_antler'], troll: ['Giant Slayer', 'troll_trophy', 1], boss: ['Stormbreaker', 'stormhorn_trophy', 1],
 };
@@ -896,7 +983,7 @@ function advTick(dt) {
 
   if (advT > 0) { advT -= dt; if (advT <= 0) { advEl.classList.add('out'); advT = -.7; } return; }
   if (advT < 0) { advT = Math.min(0, advT + dt); return; }
-  if (!advQ.length || state === 'switching' || !toastEl.classList.contains('out')) return;   // wait for the main game's toast to leave
+  if (!advQ.length || arrival || !toastEl.classList.contains('out')) return;   // wait for the main game's toast to leave
   const a = advQ.shift();
   advEl.classList.toggle('ch', a.ch); advEl.querySelector('b').textContent = a.ch ? 'Challenge Complete!' : 'Advancement Made!'; advEl.querySelector('span').textContent = a.title;
   const g = advEl.querySelector('canvas').getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, 32, 32); g.drawImage(iconCanvas(a.icon), 0, 0, 32, 32);
@@ -907,7 +994,7 @@ function advTick(dt) {
 //  Korra, the raven guide
 // =====================================================================================================
 class Raven {
-  constructor() {
+  constructor(opt = {}) {
     const g = this.group = new THREE.Group(); g.visible = false; scene.add(g);
     const M = t => new THREE.MeshLambertMaterial({ map: t });
     const black = M(tx('r_black', 8, 8, '#17171f', g2 => dots(g2, '#2c2c44', [1, 1, 2, 1, 1, 2, 5, 3])));
@@ -921,11 +1008,12 @@ class Raven {
     this.head = new THREE.Group(); this.head.position.set(0, .42, .18); this.body.add(this.head);
     B(.2, .2, .2, [black, black, black, black, face, black], 0, .05, .04, this.head);
     B(.07, .06, .16, beak, 0, .02, .2, this.head);
-    for (const s of [-1, 1]) B(.02, .04, .04, glowMat(0x6ff3ff), s * .101, .08, .08, this.head);
+    for (const s of [-1, 1]) B(.02, .04, .04, glowMat(opt.eye || 0x6ff3ff), s * .101, .08, .08, this.head);
+    if (opt.ragged) for (const s of [-1, 1]) B(.05, .1, .05, black, s * .07, .14, -.06, this.head);     // Vesk: ragged crest
     this.wings = [];
     for (const s of [-1, 1]) { const p = new THREE.Group(); p.position.set(s * .13, .4, .02); this.body.add(p); B(.42, .03, .3, wingT, s * .21, 0, -.02, p); this.wings.push(p); }
     for (const s of [-1, 1]) B(.03, .16, .03, beak, s * .06, .08, .03, this.body);
-    g.scale.setScalar(1.15);
+    g.scale.setScalar(opt.scale || 1.15);
     this.mode = 'gone'; this.t = 0; this.p0 = new V3(); this.p1 = new V3();
   }
   arrive(cb) {
@@ -935,12 +1023,32 @@ class Raven {
     this.p1.set(lx, ly, lz); this.p0.set(lx - fx0 * 7 + rx * 5, ly + 10, lz - fz0 * 7 + rz * 5);
     this.group.position.copy(this.p0); this.group.visible = true; this.mode = 'in'; this.t = 0; this.cb = cb; VS.caw();
   }
-  leave() { if (this.mode === 'gone') return; const P = PL(); this.p0.copy(this.group.position);
+  arriveAt(p, cb) {                                   // fly in and land on a given spot (Korra on the Ring's first stone)
+    const P = PL(); this.p1.set(p.x, p.y, p.z); const dx = p.x - P.pos.x, dz = p.z - P.pos.z, l = Math.hypot(dx, dz) || 1;
+    this.p0.set(p.x + dx / l * 9, p.y + 10, p.z + dz / l * 9); this.group.position.copy(this.p0); this.group.visible = true; this.mode = 'in'; this.t = 0; this.cb = cb; this.stay = true; VS.caw();
+  }
+  circle(c) {                                         // Vesk: circle high over a spot until told to stop
+    this.cc = { x: c.x, y: c.y, z: c.z };
+    if (this.mode === 'circle') return;
+    if (this.mode === 'gone') { this.group.position.set(c.x + 30, c.y + 22, c.z + 30); this.group.visible = true; }
+    this.mode = 'circle'; this.t = 0;
+  }
+  leave() { this.stay = false; if (this.mode === 'gone') return; const P = PL(); this.p0.copy(this.group.position);
     const dx = this.p0.x - P.pos.x, dz = this.p0.z - P.pos.z, l = Math.hypot(dx, dz) || 1;
     this.p1.set(this.p0.x + dx / l * 16, this.p0.y + 14, this.p0.z + dz / l * 16); this.mode = 'out'; this.t = 0; VS.caw(); }
   update(dt) {
     if (this.mode === 'gone') return;
     const g = this.group, P = PL(); this.t += dt;
+    if (this.mode === 'circle') {
+      const c = this.cc, a = this.t * .55, tx = c.x + Math.cos(a) * 4, tz = c.z + Math.sin(a) * 4, ty = c.y + 7 + Math.sin(this.t * .8) * .6;
+      const k = Math.min(1, dt * 1.6), px = g.position.x, pz = g.position.z;
+      g.position.x += (tx - px) * k; g.position.y += (ty - g.position.y) * k; g.position.z += (tz - pz) * k;
+      const mx = g.position.x - px, mz = g.position.z - pz; if (Math.abs(mx) + Math.abs(mz) > 1e-4) g.rotation.y = Math.atan2(mx, mz);
+      const fl = Math.sin(this.t * 9) * .7; this.wings[0].rotation.z = fl; this.wings[1].rotation.z = -fl; this.body.rotation.x = -.1; this.body.rotation.z = .25;
+      if (this.t % 6 < dt) VS.caw();
+      return;
+    }
+    this.body.rotation.z = 0;
     if (this.mode === 'in' || this.mode === 'out') {
       const k = clamp(this.t / (this.mode === 'in' ? 1.8 : 2.6), 0, 1), e = this.mode === 'in' ? 1 - Math.pow(1 - k, 2) : k * k;
       const px = g.position.x, pz = g.position.z;
@@ -953,73 +1061,194 @@ class Raven {
       this.wings[0].rotation.z = lerp(this.wings[0].rotation.z, -1.3, .3); this.wings[1].rotation.z = lerp(this.wings[1].rotation.z, 1.3, .3);
       this.body.rotation.x = 0; this.head.rotation.x = Math.sin(this.t * 3) > .7 ? .35 : 0; this.head.rotation.y = Math.sin(this.t * 1.3) * .3;
       const hop = (this.t % 2.6) < .25; g.position.y = this.p1.y + (hop ? Math.sin((this.t % 2.6) / .25 * Math.PI) * .18 : 0);
-      if (P.pos.distanceTo(g.position) > 16) this.leave();
+      if (!this.stay && P.pos.distanceTo(g.position) > 16) this.leave();
     }
   }
 }
-const raven = new Raven();
+const raven = new Raven();                                       // Korra: talkative, practical
+const vesk = new Raven({ eye: 0xffffff, ragged: true, scale: 1.3 });   // Vesk: silent, reads the old stones
 const korraQ = []; let korraBusy = false;
-function korra(lines, done) { korraQ.push({ lines, done }); }
+function korra(lines, done, at) { korraQ.push({ lines, done, at }); }
 function korraTick() {
-  if (korraBusy || !korraQ.length || state !== 'play' || dlg.open || cine) return;
+  if (korraBusy || !korraQ.length || state !== 'play' || dlg.open || cine || arrival) return;
   korraBusy = true; const v = korraQ.shift();
-  raven.arrive(() => talk('Korra', 'korra', v.lines, () => { raven.leave(); korraBusy = false; if (v.done) v.done(); }));
+  const go = () => talk('Korra', 'korra', v.lines, () => { raven.leave(); korraBusy = false; if (v.done) v.done(); });
+  if (v.at) raven.arriveAt(v.at, go); else raven.arrive(go);
 }
+// short spoken tips (no dialog box, you keep playing): chat line + subtitle, spaced out
+const tipQ = []; let tipT = 0;
+function tip(line, who = 'Korra') { if (line && !tipQ.some(q => q.line === line)) tipQ.push({ line, who }); }
+function tipTick(dt) {
+  tipT -= dt; if (tipT > 0 || !tipQ.length || dlg.open || arrival || cine || state !== 'play') return;
+  const q = tipQ.shift(), t = fill(q.line); tipT = 6.5;
+  chat(`<${q.who}> ${t}`); subtitle(`${q.who}: ${t}`, 6); if (q.who === 'Korra') VS.caw(); else VS.rune();
+}
+const K = (key, touch) => TOUCH ? touch : key;
 const STORY = {
-  intro: ['Kraa! Awake at last, {name}. The sea spat you onto Skarnholm, the island at the edge of the north.',
-    'No ship leaves this place by luck. The isle keeps the weak. Only the proven may sail away.',
-    'So prove yourself. Hunt the deer of the meadows and take their crowned heads as trophies.',
-    'Your hands still work. Break trees for wood, open your bag and make planks and a workbench. Torches and a bed make the nights kinder.',
-    'Bring two to the Stag Altar, {dir} of here. What answers there... you will see. I am Korra. I watch. Kraa!'],
-  night: ['Night falls, {name}. Listen... the grey folk are crawling out of the pines.',
-    'Greylings. Small and sneaky, and they throw stones. Keep moving and hit back hard. Kraa!'],
-  trophy1: ['A trophy! The isle has noticed you, {name}.', 'One more deer crown and the Stag Altar will listen.'],
-  trophy2: ['A trophy! The isle has noticed you, {name}.', 'You carry enough now. Go to the Stag Altar, {dir} of here.'],
+  intro: ['Kraa! Up, up. The gull doesn\'t come back for anyone.',
+    'You\'re on Skarnholm, in the Ring of Oaths. Seven stones, seven empty mounts.',
+    'Somewhere on these isles the Bound are waking. Hunt them. Bring their heads here.',
+    'But you have nothing, not even a stick. Start there. Kraa!',
+    `Branches lie under every tree, and loose stones lie in the grass. Walk over them, or ${K('press E', 'tap them')}.`],
+  night: ['Night falls. Listen... the grey folk are crawling out of the pines.',
+    'Greylings. Small and sneaky, and they throw stones. Keep a fire close and hit back hard. Kraa!'],
   altar: ['This is the Stag Altar. Feel the air buzz? The storm sleeps under these stones.',
-    'Lay two deer trophies on the altar (use it) and stand ready. It wakes angry. Kraa!'],
+    'Lay two deer trophies on the altar (use it) and stand ready.',
+    'It charges with its head down. Roll to the side. When the ground crackles, run. Kraa!'],
   end: ['The storm is broken! Did you feel the isle loosen its grip? Only a little. Kraa.',
-    'Those antlers are harder than iron. At a workbench they will make a pick that bites stone.',
-    'But past the meadows the pines grow dark and old, and something there has roots deeper than this isle.',
-    'Rest, {name}. Then we go on.'],
+    'Carry the head to the Ring of Oaths and hang it on the first stone. The Watcher wants to see it.',
+    'Those antlers are harder than iron. At a workbench they make a pickaxe that bites copper and tin.',
+    'Copper sleeps in the Dark Forest, {fdir} of here, where the pines grow black. That is where we go next.'],
 };
 
 // =====================================================================================================
-//  Quest progress, milestones, kills and pickups
+//  The first 30 minutes: the quest line (§2 of STORY_FLOW.md). flags.q is the current step (saved).
 // =====================================================================================================
 const flags = {}; let stage = 0;
+const has = id => countItem(id) > 0;
+const upTo = (id, n) => Math.min(n, countItem(id));
+function needs(out, pref) {                             // live recipe text, so it follows items.js changes
+  try { if (!hasInv() || !Inv.recipes) return '';
+    const rs = Inv.recipes().filter(r => r && r.out === out); if (!rs.length) return '';
+    const r = rs.find(q => pref && q.needs && q.needs[pref]) || rs[0];
+    return Object.entries(r.needs || {}).map(([k, n]) => `${n} ${itemName(k)}`).join(', ');
+  } catch (e) { return ''; } }
+const idsCache = {};
+const blockIds = (key, re) => idsCache[key] || (idsCache[key] = BLOCK.map((b, i) => (b && re.test(b.name) ? i : -1)).filter(i => i >= 0));
+function blockNear(ids, r, p = PL().pos) {
+  if (!ids.length) return false; const bx = Math.floor(p.x), by = Math.floor(p.y), bz = Math.floor(p.z);
+  for (let y = -2; y <= 3; y++) for (let z = -r; z <= r; z++) for (let x = -r; x <= r; x++) if (ids.includes(get(bx + x, by + y, bz + z))) return true;
+  return false;
+}
+function sheltered(p = PL().pos) {                       // a roof above and walls on at least three sides
+  const x = Math.floor(p.x), y = Math.floor(p.y), z = Math.floor(p.z);
+  let roof = false; for (let k = 2; k <= 8; k++) if (BLOCK[get(x, y + k, z)].solid) { roof = true; break; }
+  if (!roof) return false;
+  let walls = 0;
+  for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) for (let k = 1; k <= 6; k++) if (BLOCK[get(x + a * k, y, z + b * k)].solid || BLOCK[get(x + a * k, y + 1, z + b * k)].solid) { walls++; break; }
+  return walls >= 3;
+}
+const fireIds = () => (itemDef('campfire') || itemDef('hearth')) ? blockIds('fire', /campfire|hearth|fire ?pit|bonfire/i) : blockIds('fire2', /campfire|hearth|fire ?pit|bonfire|furnace|torch/i);
+function restedNow() { try { if (typeof Combat !== 'undefined' && Combat) { if (typeof Combat.isRested === 'function') return !!Combat.isRested(); if ('rested' in Combat) return !!Combat.rested; } } catch (e) { /* ignore */ } return false; }
+function foodsActive() {
+  try { if (typeof Combat !== 'undefined' && Combat) { const f = typeof Combat.foods === 'function' ? Combat.foods() : Combat.foods; if (Array.isArray(f)) return f.length; }
+    const s = DEFS[cur]._cb; if (s && Array.isArray(s.foods)) return s.foods.length; } catch (e) { /* ignore */ }
+  return -1;
+}
+function heldTool() { try { const s = hasInv() && Inv.held ? Inv.held() : null, d = s && itemDef(s.id); return (d && d.tool) || null; } catch (e) { return null; } }
+const where = (x, z) => { const P = PL(), dx = x - P.pos.x, dz = z - P.pos.z; return `${Math.round(Math.hypot(dx, dz))} m ${compass(dx, dz)}`; };
+let restT = 0, detectT = 0;
+function detect(dt) {                                    // sticky camp milestones, checked once a second
+  if ((detectT -= dt) > 0) return; detectT = 1;
+  if (!flags.workbench && blockNear([WORKBENCH, ...blockIds('bench', /workbench|crafting table/i)], 8)) flags.workbench = true;
+  if (!flags.bed && blockNear(blockIds('bed', /^bed$/i), 8)) flags.bed = true;
+  const roof = sheltered(), fire = roof && blockNear(fireIds(), 5);
+  if (!flags.shelter && fire) flags.shelter = true;
+  restT = fire ? restT + 1 : 0;
+  if (!flags.rested && (restedNow() || restT >= 20)) flags.rested = true;
+  if (!flags.cooked && has('cooked_meat')) flags.cooked = true;
+}
+const STEPS = [
+  { id: 'arrive', text: () => '', done: () => !!flags.intro },
+  { id: 'gather', text: () => `Pick up branches and stones: Wood ${upTo('wood', 3)}/3, Stone ${upTo('stone', 3)}/3`,
+    done: () => countItem('wood') >= 3 && countItem('stone') >= 3, stuck: 'Look down! Grey pebbles and brown sticks lie on the ground near the Ring.' },
+  { id: 'club', text: () => `Craft a Club: open your inventory (${K('E', 'bag button')}), ${needs('wood_club') || '6 Wood'}`, done: () => has('wood_club'),
+    end: 'That\'s a club. Ugly, but it cracks skulls.', stuck: 'Open your inventory. The recipe book shows what you can make; the club needs only wood.' },
+  { id: 'torch', text: () => `Craft a Torch: ${needs('torch', 'resin') || '1 Wood, 1 Resin'} (Greylings drop resin, and pine trees bleed it)`, done: () => has('torch'),
+    start: 'Night here is very dark. Fire keeps the grey folk away.', stuck: 'One lump of resin lies by the Ring\'s centre stone. Greylings drop more at night.' },
+  { id: 'hammer', skip: () => !itemDef('hammer'), text: () => `Craft a Hammer: ${needs('hammer') || '3 Wood, 2 Stone'}`, done: () => has('hammer'),
+    end: 'A hammer! With it you build, not just break.' },
+  { id: 'chop', text: () => `Gather wood: ${upTo('wood', 10)}/10 (hit a tree)`, done: () => countItem('wood') >= 10 || flags.workbench,
+    start: 'Trees fall slowly with a club. An axe needs flint.', stuck: 'Hold attack on a tree trunk. Every log you break gives wood.' },
+  { id: 'workbench', text: () => itemDef('hammer') ? `Build a Workbench: equip the Hammer, ${K('right-click', 'tap Use')} to open the build menu` : `Build a Workbench (${needs('workbench') || '10 Wood'}) and place it`,
+    done: () => !!flags.workbench, end: 'The bench is the heart of a camp. Near it you can build walls, roofs and tools.',
+    stuck: 'Make the workbench from your inventory, then put it on the ground. Your camp grows around it.' },
+  { id: 'shelter', text: () => 'Build a shelter: walls, a roof and a campfire inside', done: () => !!flags.shelter,
+    start: 'Rain, wind, the grey folk... a roof stops two of them.', stuck: 'Walls on three sides at least, a roof over your head, and a fire within five blocks. Then stand inside.' },
+  { id: 'rested', text: () => 'Rest by the fire under a roof (Rested)', done: () => !!flags.rested,
+    end: 'Feel that? Warm, dry, Rested. Your stamina comes back faster now.', after: () => later(7, () => subtitle('Rested: +50% stamina regen. Comfort level adds time.', 5)) },
+  { id: 'flint', text: () => `Find flint on the shore and craft a Flint Axe at the Workbench (${needs('flint_axe') || 'Wood 5, Flint 4'})`, done: () => has('flint_axe') || has('flint_spear'),
+    start: 'Flint sits on the beaches: grey-black stones at the water\'s edge.', stuck: 'Walk to the sea. Flint lies near the waves.' },
+  { id: 'hunt', text: () => 'Hunt a deer (they flee: sneak, or use the bow)', done: () => !!flags.deerKill,
+    start: 'Low and slow. Deer can hear your boots.', stuck: 'Deer graze in the open meadows. Sneak close, then strike. Deer run; arrows don\'t care.' },
+  { id: 'cook', text: () => itemDef('cooking_spit') ? `Cook meat: build a Cooking Spit over the fire (${needs('cooking_spit') || 'Wood 2'})` : 'Cook meat over a fire', done: () => !!flags.cooked,
+    start: 'Raw meat is a bellyache. Hang it over the fire, and take it off before it burns!' },
+  { id: 'eat', skip: () => foodsActive() < 0, text: () => `Eat two different foods (berries + cooked meat): ${Math.min(2, Math.max(0, foodsActive()))}/2`, done: () => foodsActive() >= 2,
+    start: 'One food fills one slot. Three different foods make you strong.' },
+  { id: 'bed', skip: () => !itemDef('bed'), text: () => `Build a Bed under the roof, near the fire (${needs('bed') || 'Wood 8'})`, done: () => !!flags.bed,
+    end: 'If you fall, you wake there instead of at the Ring.' },
+  { id: 'waystone', text: () => 'Find the Waystone in the meadows (Vesk circles it)', done: () => !!flags.waystone,
+    enter: () => { if (wayMeadow) vesk.circle({ x: wayMeadow.cx, y: wayMeadow.y + 4, z: wayMeadow.cz }); },
+    start: 'See Vesk circling? He only does that over old stones. Go and read it.', stuck: 'Look up for Vesk. He circles the Waystone, {wdir} of here.' },
+  { id: 'trophies', text: () => `Deer Trophies: ${upTo('deer_trophy', 2)}/2`, done: () => countItem('deer_trophy') >= 2 || stage >= 2,
+    stuck: 'Deer drop their crowned heads now and then. Keep hunting in the open meadows.' },
+  { id: 'summon', text: () => `Offer 2 Deer Trophies at the Stag Altar (${where(ALT.cx, ALT.cz)})`, done: () => stage >= 2 },
+  { id: 'boss', text: () => 'Defeat Stormhorn!', done: () => stage >= 3 },
+  { id: 'hang', text: () => `Hang the Stormhorn Trophy at the Ring of Oaths (${where(RING.cx, RING.cz)})`, done: () => !!(flags.hung && flags.hung.stormhorn_trophy),
+    stuck: 'The Ring of Oaths is {rdir} of here. Use the first stone\'s mount with the trophy in your bag.' },
+  { id: 'power', text: () => TOUCH ? 'Tap the power button (top) to call on Stormstride' : 'Press R to call on Stormstride', done: () => !!flags.usedPower,
+    end: 'It doesn\'t last, and the Ring needs time to recharge it. Use it when it matters. Kraa!',
+    after: () => later(6, () => { bigTitle('CHAPTER I COMPLETE', 'Next: The Dark Forest. The Old Root stirs beneath the pines...', 7, '#ffaa00'); VS.chime(true); }) },
+];
+const stepIdx = id => STEPS.findIndex(s => s.id === id);
+let qStuck = 0, lastQ = -1;
+function questTick(dt) {
+  if (!flags.arrived || arrival) return;
+  if (!(flags.q >= 0)) flags.q = 0;
+  if (stage >= 2 && flags.q < stepIdx('summon')) flags.q = stepIdx('summon');                      // fought the stag early: jump ahead
+  else if (stage < 2 && flags.q > stepIdx('summon') && flags.q <= stepIdx('boss')) flags.q = stepIdx('trophies');   // the boss left and the offering came back
+  if (flags.intro && countItem('deer_trophy') >= 2 && flags.q < stepIdx('waystone')) flags.q = stepIdx('waystone');
+  for (let guard = 0; guard <= STEPS.length; guard++) {
+    const s = STEPS[flags.q]; if (!s) break;
+    if (s.skip && s.skip()) { flags.q++; continue; }
+    const done = s.done();
+    if (flags.q !== lastQ) { lastQ = flags.q; qStuck = 0; if (s.enter) s.enter(); if (!done && s.start && !flags['s_' + s.id]) { flags['s_' + s.id] = true; tip(s.start); } }
+    if (!done) break;
+    if (s.end && !flags['e_' + s.id]) { flags['e_' + s.id] = true; tip(s.end); }
+    if (s.after) s.after();
+    flags.q++;
+  }
+  const s = STEPS[flags.q];
+  if (s && s.stuck && !dlg.open) { qStuck += dt; if (qStuck > 120) { qStuck = -60; tip(s.stuck); } }
+}
+const questDone = () => (flags.q | 0) >= STEPS.length;
+
+// =====================================================================================================
+//  Milestones, kills and pickups
+// =====================================================================================================
 function addXP(k) { const d = DEFS[cur]; d.xp += k; while (d.xp >= 1) { d.xp -= 1; d.lvl++; } drawStats(); }
 function onKill(e) {
   const k = e.kind;
-  if (k === 'deer' || k === 'boar') { advance('hunt'); addXP(k === 'deer' ? .12 : .15); }
+  if (k === 'deer' || k === 'boar') { advance('hunt'); addXP(k === 'deer' ? .12 : .15); if (k === 'deer') flags.deerKill = true; }
   if (k === 'greyling') { advance('greyling'); addXP(.2); }
   if (k === 'troll') { advance('troll'); addXP(.6); }
   if (k === 'stormhorn') bossDefeated(e);
 }
 function onPickup(id) {
   if (/_trophy$/.test(id)) advance('trophy');
-  if (id === 'deer_trophy' && !flags.trophy && stage < 2) { flags.trophy = true; const two = countItem('deer_trophy') >= 2; if (two) flags.trophy2 = true; korra(two ? STORY.trophy2 : STORY.trophy1); }
-  else if (id === 'deer_trophy' && !flags.trophy2 && stage < 2 && countItem('deer_trophy') >= 2) { flags.trophy2 = true; const q = korraQ.find(o => o.lines === STORY.trophy1); if (q) q.lines = STORY.trophy2; else korra(STORY.trophy2.slice(1)); }
+  if (id === 'deer_trophy' && stage < 2) {
+    const n = countItem('deer_trophy');
+    if (n >= 2 && !flags.tr2) { flags.tr1 = flags.tr2 = true; tip(flags.waystone ? 'Enough. To the Stag Altar, {dir} of here.' : 'Enough. Now find the Waystone; it knows where the altar stands.'); }
+    else if (n === 1 && !flags.tr1) { flags.tr1 = true; tip('The isle has noticed you.'); }
+  }
 }
 function milestones() {
   const P = PL(), night = isNight();
   if (night && !flags.night && flags.intro) { flags.night = true; korra(STORY.night); }
   if (!night && flags.night && !flags.dawn) { flags.dawn = true; advance('night'); }
   if (!flags.altar && Math.hypot(P.pos.x - ALT.cx, P.pos.z - ALT.cz) < 13) { flags.altar = true; advance('altar'); if (stage < 2) korra(STORY.altar); }
+  if (!flags.hangSaid && stage >= 3 && !(flags.hung && flags.hung.stormhorn_trophy) && Math.hypot(P.pos.x - RING.cx, P.pos.z - RING.cz) < 14) { flags.hangSaid = true; tip('Hang it. Let the Watcher see.'); }
 }
 let goalT = 0;
 function updateGoal() {
-  let txt;
-  const P = PL(), dx = ALT.cx - P.pos.x, dz = ALT.cz - P.pos.z, dist = Math.round(Math.hypot(dx, dz));
-  if (stage >= 3) txt = 'Chapter I complete. The Dark Forest awaits...';
-  else if (boss && !boss.removed) txt = 'Defeat Stormhorn!';
-  else { const n = countItem('deer_trophy');
-    txt = n < 2 ? `Hunt deer for trophies: ${n}/2` : `Offer 2 deer trophies at the Stag Altar (${dist} m ${compass(dx, dz)})`; }
-  goalEl.hidden = !flags.intro || showDebug || (TOUCH && dlg.open);   // phones: the dialog box would cover it
-  goalEl.querySelector('span').textContent = txt;
+  const dfOn = typeof DarkForest !== 'undefined' && DarkForest && DarkForest.flags && DarkForest.flags.started;
+  let txt = '';
+  if (!dfOn) { const s = STEPS[flags.q | 0]; txt = s ? s.text() : stage >= 3 ? 'Chapter I complete. The Dark Forest awaits...' : ''; goalEl.querySelector('span').textContent = txt; }
+  goalEl.hidden = !flags.intro || !!arrival || showDebug || (!txt && !dfOn) || (TOUCH && dlg.open);   // phones: the dialog box would cover it
 }
 
 // =====================================================================================================
-//  The altar, rune stones and the boss fight
+//  The altar, rune stones, waystones and the boss fight
 // =====================================================================================================
 function useAltar() {
   if (boss && !boss.removed) { subtitle('The altar crackles. Stormhorn is already here!', 3); return; }
@@ -1031,9 +1260,19 @@ function useAltar() {
   } else { subtitle(`The stone is cold. Two deer trophies must be laid here (${countItem('deer_trophy')}/2).`, 3.5); VS.rune(); }
 }
 function readRune(l) {
-  VS.rune(); talk(l.name, 'rune', l.lines);
+  VS.rune(); talk('Vesk: ' + l.name, 'vesk', l.lines);
   if (!l.read) { l.read = true; advance('rune'); if (LORE.every(o => o.read)) advance('lore'); }
 }
+function readWaystone(w) {
+  VS.rune(); talk(w.who || 'Vesk', 'vesk', w.lines, () => {
+    if (w.read) return; w.read = true; vesk.leave();
+    const pin = w.pin && w.pin();
+    if (pin) { try { if (typeof MapUI !== 'undefined' && MapUI && MapUI.pin) MapUI.pin(pin.x, pin.z, pin.label); } catch (e) { /* no map yet */ }
+      subtitle(`${pin.label} marked on your map (${where(pin.x, pin.z)}).`, 5); }
+    try { if (w.onRead) w.onRead(w); } catch (e) { console.error(e); }
+  });
+}
+wayMeadow && (wayMeadow.onRead = () => { flags.waystone = true; advance('waystone'); });
 function summonBoss() {
   const P = PL(); let dx = P.pos.x - ALT.cx, dz = P.pos.z - ALT.cz; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
   const bx = ALT.cx + dx * 3.6, bz = ALT.cz + dz * 3.6;
@@ -1052,13 +1291,326 @@ function despawnBoss(refund) {
 }
 function bossDefeated(b) {
   stage = 3; chat(`Stormhorn was slain by ${DEFS[cur].name}`); addXP(3);
-  bigTitle('STORMHORN DEFEATED', 'The storm over Skarnholm breaks', 4.5, '#7ff6ff');
+  bigTitle('STORMHORN DEFEATED', 'Carry its head to the Ring of Oaths', 4.5, '#7ff6ff');
   later(.3, () => advance('boss'));
-  later(5, () => korra(STORY.end, () => {
-    bigTitle('CHAPTER I COMPLETE', 'Next: The Dark Forest. The Old Root stirs beneath the pines...', 8, '#ffaa00');
-    later(1.5, () => subtitle('To be continued...', 6));
-  }));
+  later(5, () => korra(STORY.end));
   later(2.2, () => { if (boss === b) boss = null; });
+}
+
+// =====================================================================================================
+//  The Ring of Oaths: trophy mounts and Oath powers
+// =====================================================================================================
+const POWERS = {
+  stormstride: { name: 'Stormstride', col: '#7ff6ff', secs: 300, cd: 1200, desc: 'Running and jumping cost 60% less stamina for 5 minutes', lore: 'First of seven. The stag ran for him once.' },
+  rootgrip: { name: 'Rootgrip', col: '#8cff6a', secs: 300, cd: 1200, desc: '+50% damage to trees and +1 wood from every log for 5 minutes', lore: 'Second of seven. The root held up his hall... until it wanted the hall.' },
+  ironhide: { name: 'Ironhide', col: '#c8c8d0', secs: 300, cd: 1200, desc: '-80% blunt, slash and pierce damage for 5 minutes', lore: 'The maw ate the drowned to stay young. The Watcher fed it once.' },
+  tailwind: { name: 'Tailwind', col: '#bfe8ff', secs: 300, cd: 1200, desc: 'The wind is always at your back for 5 minutes', lore: 'Frost on its wings. It carried his storms.' },
+  warded: { name: 'Warded', col: '#ffd24a', secs: 300, cd: 1200, desc: '-50% fire, frost, lightning and poison damage for 5 minutes', lore: 'Brass does not tire. It guarded his door.' },
+  deepbreath: { name: 'Deep Breath', col: '#4adfd0', secs: 300, cd: 1200, desc: '+100% Wyrdlight and +30% stamina regen for 5 minutes', lore: 'The knight swore first and broke last.' },
+  cinderstep: { name: 'Cinderstep', col: '#ff8a3c', secs: 300, cd: 1200, desc: '+10% speed, fire immunity and less fall damage for 5 minutes', lore: 'Seven. He made you for this seat.' },
+};
+for (const b of BOUND) POWERS[b.power].trophy = b.trophy;
+const PW = { sel: null, act: null, actT: 0, cd: 0 };
+const fmt = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const hungOn = trophy => !!(flags.hung && flags.hung[trophy]);
+const Powers = {
+  defs: POWERS,
+  get active() { return PW.act && PW.actT > 0 ? PW.act : null; },     // id of the power running right now, or null
+  get selected() { return PW.sel; }, get remaining() { return Math.max(0, PW.actT); }, get cooldown() { return Math.max(0, PW.cd); },
+  isActive: id => Powers.active === id,
+  unlocked: () => Object.keys(POWERS).filter(id => hungOn(POWERS[id].trophy)),
+  select(id, quiet) {
+    if (!POWERS[id] || !hungOn(POWERS[id].trophy)) return false;
+    PW.sel = id; flags.power = id;
+    if (!quiet) { VS.rune(); subtitle(`Oath power chosen: ${POWERS[id].name}. ${TOUCH ? 'Tap the power button' : 'Press R'} to call on it.`, 4); }
+    return true;
+  },
+  use() {
+    if (state !== 'play' || arrival) return false;
+    if (!PW.sel) { subtitle(Powers.unlocked().length ? 'Choose a power at the Ring of Oaths first.' : 'You have no Oath power yet. Hang a Bound\'s head at the Ring of Oaths.', 3.5); VS.pebble(); return false; }
+    if (PW.cd > 0) { subtitle(`Not ready (${fmt(PW.cd)})`, 2.5); VS.pebble(); return false; }
+    const d = POWERS[PW.sel]; PW.act = PW.sel; PW.actT = d.secs; PW.cd = d.cd; flags.usedPower = true;
+    VS.thunder(.4); VS.zap(); flashScreen(d.col, .35); bigTitle(d.name.toUpperCase(), d.desc, 3, d.col); sparks(PL().pos.clone().add(new V3(0, 1, 0)), 14, 4);
+    try { emit('power', PW.sel); } catch (e) { console.error(e); }
+    return true;
+  },
+  activate() { return Powers.use(); },
+  // multipliers other modules can apply: 'runStamina', 'jumpStamina', 'treeDamage', 'physicalDamage', 'elementDamage'
+  mod(key, v = 1) {
+    const a = Powers.active; if (!a) return v;
+    if (a === 'stormstride' && (key === 'runStamina' || key === 'jumpStamina')) return v * .4;
+    if (a === 'rootgrip' && key === 'treeDamage') return v * 1.5;
+    if (a === 'ironhide' && key === 'physicalDamage') return v * .2;
+    if (a === 'warded' && key === 'elementDamage') return v * .5;
+    return v;
+  },
+};
+window.Powers = Powers;
+
+const plaqueMat = new THREE.MeshLambertMaterial({ map: tx('vh_plaque', 16, 16, '#5a3c22', g => { for (let y = 0; y < 16; y += 4) rr(g, '#3e2914', 0, y + 3, 16, 1); dots(g, '#9aa0a6', [1, 1, 14, 1, 1, 14, 14, 14]); }, .25) });
+const PLAQUE_GEO = new THREE.BoxGeometry(.86, .86, .06), HEAD_GEO = new THREE.PlaneGeometry(.74, .74);
+function silhouette(id) {
+  return charTex(16, 16, g => {
+    if (itemDef(id) || ICON[id]) g.drawImage(iconCanvas(id), 0, 0);
+    else { rr(g, '#000', 4, 5, 8, 8); rr(g, '#000', 2, 2, 2, 5); rr(g, '#000', 12, 2, 2, 5); rr(g, '#000', 6, 13, 4, 2); }
+    const d = g.getImageData(0, 0, 16, 16); for (let i = 0; i < d.data.length; i += 4) { const on = d.data[i + 3] > 100; d.data[i] = 12; d.data[i + 1] = 14; d.data[i + 2] = 18; d.data[i + 3] = on ? 150 : 0; }
+    g.putImageData(d, 0, 0);
+  });
+}
+let mountsBuilt = false;
+function buildMounts() {                                 // lazily: the Dark Forest defines its trophy after this file loads
+  if (mountsBuilt) return; mountsBuilt = true;
+  for (const m of MOUNTS) {
+    const g = new THREE.Group(); g.position.set(m.x + .5 + m.nx * .54, m.y + .5, m.z + .5 + m.nz * .54);
+    g.rotation.y = m.nx ? m.nx * Math.PI / 2 : m.nz > 0 ? 0 : Math.PI;
+    g.add(new THREE.Mesh(PLAQUE_GEO, plaqueMat));
+    m.ghost = new THREE.Mesh(HEAD_GEO, new THREE.MeshBasicMaterial({ map: silhouette(m.trophy), transparent: true, depthWrite: false })); m.ghost.position.z = .04; g.add(m.ghost);
+    const tex = new THREE.CanvasTexture(iconCanvas(m.trophy)); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+    m.head = new THREE.Mesh(HEAD_GEO, new THREE.MeshLambertMaterial({ map: tex, alphaTest: .5, side: THREE.DoubleSide, emissive: 0x222222 })); m.head.position.z = .05; m.head.scale.setScalar(1.15); g.add(m.head);
+    m.halo = halo(new THREE.Color(POWERS[m.power].col).getHex(), 2.4, .4); m.halo.position.set(0, .2, .3); g.add(m.halo);
+    scene.add(g); m.group = g;
+  }
+  refreshMounts();
+}
+function refreshMounts() { if (!mountsBuilt) return; for (const m of MOUNTS) { const h = hungOn(m.trophy); m.head.visible = h; m.ghost.visible = !h; m.halo.visible = h; } }
+const mountAt = h => h && h.t === STANDING ? MOUNTS.find(m => m.x === h.x && m.z === h.z) : null;
+function mountHint(m) { return hungOn(m.trophy) ? `${m.bound}'s head. Oath power: ${POWERS[m.power].name}.` : `An empty mount. It waits for a Bound's head${m.i < 2 ? ': ' + m.bound : ''}.`; }
+function useMount(m) {
+  if (hungOn(m.trophy)) { if (PW.sel === m.power) subtitle(`${POWERS[m.power].name} is already yours. ${TOUCH ? 'Tap the power button' : 'Press R'} to call on it.`, 3.5); else Powers.select(m.power); return; }
+  if (countItem(m.trophy) > 0 && removeItem(m.trophy, 1)) { hangHead(m); return; }
+  VS.rune(); subtitle(mountHint(m), 3.5);
+}
+function hangHead(m) {
+  flags.hung = Object.assign({}, flags.hung, { [m.trophy]: true }); refreshMounts();
+  const d = POWERS[m.power], p = m.group.position;
+  VS.thunder(.5); VS.chime(true); flashScreen('#e8fbff', .35); sparks(p.clone(), 12, 3); puff(p.clone(), 1, 10);
+  Powers.select(m.power, true);
+  bigTitle(`OATH POWER: ${d.name.toUpperCase()}`, d.desc, 5, d.col);
+  advance('oath');
+  talk('Vesk', 'vesk', [d.lore], () => later(.8, () => tip(`The power is yours. ${TOUCH ? 'Tap the power button' : 'Press R'} to call on ${d.name}.`)));
+  if (BOUND.every(b => hungOn(b.trophy))) later(6, () => korra(['Seven heads. Seven oaths kept. The Watcher\'s door is open.', 'Will you walk through... or will you sit on his seat?']));
+}
+
+// ---- power HUD: an icon with the time left (desktop: bottom-left; touch: the old top-bar character button)
+const powEl = document.createElement('div'); powEl.id = 'vhPow'; powEl.hidden = true;
+powEl.innerHTML = '<canvas width="32" height="32"></canvas><i></i><span class="mc"></span><kbd>R</kbd>';
+ui.appendChild(powEl);
+let powFor = null, powBtn = null, powBtnCv = null;
+function powerHud() {
+  const sel = PW.sel, show = !!sel && state !== 'title' && !arrival;
+  if (sel !== powFor) {
+    powFor = sel;
+    for (const cv of [powEl.querySelector('canvas'), powBtnCv]) if (cv && sel) { const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, 32, 32); g.drawImage(iconCanvas(POWERS[sel].trophy, 32), 0, 0); }
+  }
+  powEl.hidden = !show || TOUCH;
+  const act = Powers.active, k = act ? PW.actT / POWERS[act].secs : PW.cd > 0 ? PW.cd / POWERS[sel || 'stormstride'].cd : 0;
+  if (show) {
+    powEl.classList.toggle('on', !!act); powEl.classList.toggle('cd', !act && PW.cd > 0);
+    powEl.querySelector('i').style.height = (act ? 0 : k * 100).toFixed(1) + '%';
+    powEl.querySelector('span').textContent = act ? fmt(PW.actT) : PW.cd > 0 ? fmt(PW.cd) : '';
+  }
+  if (!powBtn && TOUCH) {                                 // take over mobile.js's old "switch character" button
+    powBtn = document.getElementById('tSwitch');
+    if (powBtn) { powBtn.setAttribute('aria-label', 'Oath power'); const img = powBtn.querySelector('img'); if (img) img.style.display = 'none';
+      for (const s of powBtn.querySelectorAll('svg')) s.style.display = 'none';
+      powBtnCv = document.createElement('canvas'); powBtnCv.width = powBtnCv.height = 32; powBtnCv.className = 'vhPowCv'; powBtn.appendChild(powBtnCv);
+      const t = document.createElement('span'); t.className = 'vhPowT'; powBtn.appendChild(t); powFor = undefined; }
+  }
+  if (powBtn) { powBtn.style.visibility = show ? '' : 'hidden'; powBtn.classList.toggle('vhOn', !!act);
+    const t = powBtn.querySelector('.vhPowT'); if (t) t.textContent = act ? fmt(PW.actT) : PW.cd > 0 ? fmt(PW.cd) : ''; }
+}
+addEventListener('pointerdown', e => {                   // touch power button: handled here so mobile.js's old wheel code never runs
+  const b = e.target && e.target.closest && e.target.closest('#tSwitch'); if (!b) return;
+  e.preventDefault(); e.stopImmediatePropagation(); if (state === 'play') Powers.use();
+}, true);
+let ssLast = null;
+function powerTick(dt) {
+  if (PW.actT > 0) { PW.actT -= dt; if (PW.actT <= 0) { PW.actT = 0; subtitle(`${POWERS[PW.act].name} fades.`, 2.5); PW.act = null; } }
+  if (PW.cd > 0) PW.cd = Math.max(0, PW.cd - dt);
+  // Stormstride stand-in: give back 60% of the stamina spent while sprinting or in the air, unless combat.js applies Powers.mod itself
+  const s = DEFS[cur]._cb, P = PL();
+  if (Powers.active === 'stormstride' && s && !(typeof Combat !== 'undefined' && Combat && Combat.handlesPowers)) {
+    if (ssLast != null && s.stamina < ssLast && (P.sprint || !P.onGround)) s.stamina += (ssLast - s.stamina) * .6;
+    ssLast = s.stamina;
+  } else ssLast = null;
+}
+
+// =====================================================================================================
+//  Ground pickups: branches, pebbles, flint on the shore, resin (walk over them, or E / tap)
+// =====================================================================================================
+const PICK = {
+  branch: { item: 'wood', geo: new THREE.BoxGeometry(.78, .09, .11), mat: new THREE.MeshLambertMaterial({ map: tx('pk_branch', 8, 2, '#6b4a2a', g => rr(g, '#4a3220', 0, 1, 8, 1), .3) }), y: .05 },
+  pebble: { item: 'stone', geo: new THREE.BoxGeometry(.28, .19, .24), mat: new THREE.MeshLambertMaterial({ map: tx('pk_pebble', 4, 4, '#8a8a86', null, .35) }), y: .095 },
+  flint: { item: 'flint', geo: new THREE.BoxGeometry(.24, .13, .32), mat: new THREE.MeshLambertMaterial({ map: tx('pk_flint', 4, 4, '#34363c', g => dots(g, '#6a6e78', [1, 1, 2, 2]), .3) }), y: .065 },
+  resin: { item: 'resin', geo: new THREE.BoxGeometry(.2, .17, .2), mat: new THREE.MeshLambertMaterial({ map: tx('pk_resin', 4, 4, '#c86a0a', g => dots(g, '#ffb84a', [1, 1]), .3), emissive: 0x2a1000 }), y: .085 },
+};
+const PICKS = [];
+function treeNear(x, z, r = 3) { const h = surfaceAt(x, z); for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) { const t = get(Math.floor(x) + dx, h, Math.floor(z) + dz); if (t === LOG || (typeof DarkForest !== 'undefined' && DarkForest && t === DarkForest.blocks.PINE)) return true; } return false; }
+function addPick(kind, x, z) {
+  const K0 = PICK[kind], y = surfaceAt(x, z); if (!y) return null;
+  const m = new THREE.Mesh(K0.geo, K0.mat); m.position.set(x, y + K0.y, z); m.rotation.y = R() * Math.PI; if (kind === 'pebble') m.rotation.z = (R() - .5) * .3;
+  scene.add(m); const p = { kind, item: K0.item, m, x, z, y }; PICKS.push(p); return p;
+}
+function grassSpot(cx, cz, r0, r1, wantTree) {
+  for (let k = 0; k < 14; k++) {
+    const a = R() * Math.PI * 2, r = r0 + R() * (r1 - r0), x = Math.floor(cx + Math.cos(a) * r) + .2 + R() * .6, z = Math.floor(cz + Math.sin(a) * r) + .2 + R() * .6;
+    if (x < 4 || z < 4 || x > WX - 4 || z > WZ - 4) continue;
+    const y = surfaceAt(x, z); if (!y || get(Math.floor(x), y - 1, Math.floor(z)) !== GRASS || get(Math.floor(x), y, Math.floor(z)) === WATER) continue;
+    if (Math.abs(x - RING.cx) < 2 && Math.abs(z - RING.cz) < 2) continue;
+    if (wantTree && !treeNear(x, z) && R() < .7) continue;
+    return { x, z };
+  }
+  return null;
+}
+let shore = null;
+function shoreSpots() {                                  // sand at the water's edge, found once
+  if (shore) return shore; shore = [];
+  for (let z = 3; z < WZ - 3; z += 1) for (let x = 3; x < WX - 3; x += 1) {
+    const y = surfaceAt(x + .5, z + .5); if (get(x, y - 1, z) !== SAND || y - 1 > SEA + 2) continue;
+    if ([[2, 0], [-2, 0], [0, 2], [0, -2]].some(([a, b]) => get(x + a, SEA, z + b) === WATER)) shore.push([x + .5, z + .5]);
+  }
+  return shore;
+}
+function flintSpot(cx, cz, rmax) { const s = shoreSpots().filter(([x, z]) => Math.hypot(x - cx, z - cz) < rmax); if (!s.length) return null; const p = s[(R() * s.length) | 0]; return { x: p[0] - .3 + R() * .6, z: p[1] - .3 + R() * .6 }; }
+let picksInit = false;
+function initPicks() {
+  if (picksInit) return; picksInit = true;
+  for (let i = 0; i < 40; i++) { const s = grassSpot(RING.cx, RING.cz, 4, 44, true); if (s) addPick('branch', s.x, s.z); }
+  for (let i = 0; i < 40; i++) { const s = grassSpot(RING.cx, RING.cz, 3, 42, false); if (s) addPick('pebble', s.x, s.z); }
+  for (const [a, b] of [[2.3, .6], [-2.2, -.8], [.7, 2.4]]) addPick(a === 2.3 ? 'branch' : 'pebble', RING.cx + a, RING.cz + b);   // a few right at the Ring
+  addPick('resin', RING.cx + 1.7, RING.cz - .3);
+  for (let i = 0; i < 3; i++) { const s = grassSpot(RING.cx, RING.cz, 8, 40, true); if (s) addPick('resin', s.x, s.z); }
+  for (let i = 0; i < 14; i++) { const s = flintSpot(RING.cx, RING.cz, 90); if (s) addPick('flint', s.x, s.z); }
+}
+function collectPick(p) {
+  let left = 1;
+  if (hasInv()) { try { const r = Inv.add(p.item, 1); left = typeof r === 'number' ? r : 0; } catch (e) { left = 1; } } else { bag[p.item] = (bag[p.item] | 0) + 1; left = 0; }
+  if (left > 0) { subtitle('Your bag is full.', 2); return false; }
+  scene.remove(p.m); PICKS.splice(PICKS.indexOf(p), 1); VS.pop(); if (PL().swing < .2) PL().swing = .6;
+  try { itemNameEl.textContent = `+1 ${itemName(p.item)}`; itemNameEl.style.opacity = 1; itemNameT = 1.6; } catch (e) { /* ignore */ }
+  onPickup(p.item);
+  return true;
+}
+function pickAimed() {
+  const P = PL(), eye = P.eye, dir = lookDir(P.yaw, P.pitch); let best = null, bd = .9;
+  for (const p of PICKS) { const to = p.m.position.clone().sub(eye), d = to.length(); if (d > 3.6) continue; const dot = to.normalize().dot(dir); if (dot > bd) { bd = dot; best = p; } }
+  return best;
+}
+let pickT = 0, respawnT = 8;
+function picksTick(dt) {
+  if (!picksInit) return;
+  const P = PL().pos;
+  for (let i = PICKS.length - 1; i >= 0; i--) { const p = PICKS[i]; if (Math.abs(p.x - P.x) < .9 && Math.abs(p.z - P.z) < .9 && Math.abs(p.y - P.y) < 1.4) collectPick(p); }
+  if ((pickT -= dt) <= 0) { pickT = .5; for (const p of PICKS) { const d = Math.abs(p.x - P.x) + Math.abs(p.z - P.z); p.m.visible = d < 56;
+    if (p.m.visible && get(Math.floor(p.x), Math.floor(p.y) - 1, Math.floor(p.z)) === AIR) { p.y = surfaceAt(p.x, p.z); p.m.position.y = p.y + PICK[p.kind].y; } } }
+  if ((respawnT -= dt) <= 0) {                           // they grow back over time, under trees and in the grass near you
+    respawnT = 12; if (PICKS.length > 150) return;
+    const n = { branch: 0, pebble: 0, flint: 0 };
+    for (const p of PICKS) if (n[p.kind] !== undefined && Math.hypot(p.x - P.x, p.z - P.z) < 50) n[p.kind]++;
+    if (n.branch < 18) { const s = grassSpot(P.x, P.z, 14, 44, true); if (s) addPick('branch', s.x, s.z); }
+    if (n.pebble < 16) { const s = grassSpot(P.x, P.z, 14, 44, false); if (s) addPick('pebble', s.x, s.z); }
+    if (n.flint < 5) { const s = flintSpot(P.x, P.z, 60); if (s && Math.hypot(s.x - P.x, s.z - P.z) > 12) addPick('flint', s.x, s.z); }
+    if (R() < .15) { const s = grassSpot(P.x, P.z, 14, 40, true); if (s) addPick('resin', s.x, s.z); }
+  }
+}
+// stone needs a pickaxe: say so (PLAYTEST #10), and Rootgrip makes trees fall faster
+let hintT = 0;
+function stoneHint() {
+  if (performance.now() - hintT < 9000) return; hintT = performance.now();
+  subtitle('Too hard for bare hands. Rock needs a pickaxe. Pick up the loose stones lying in the grass instead.', 4.5);
+  if (!flags.stoneTip) { flags.stoneTip = true; later(5, () => tip('Kraa! A pickaxe comes much later. For now, grey pebbles in the grass are all the stone you need.')); }
+}
+if (hasInv() && typeof Inv.mine === 'function') {
+  const oMine = Inv.mine;
+  Inv.mine = function (h, dt) {
+    if (h && arrival) return false;
+    if (h && BLOCK[h.t]) { const b = BLOCK[h.t], tl = heldTool();
+      if (b.sound === 'stone' && b.kind !== 'cross' && !(tl && tl.type === 'pickaxe')) stoneHint();
+      if (Powers.active === 'rootgrip' && /log/i.test(b.name)) dt *= 1.5; }
+    return oMine.call(this, h, dt);
+  };
+}
+
+// =====================================================================================================
+//  Chapter 0: the storm-gull arrival (8-10 s; Esc, Space, Enter, a click or a tap skips it)
+// =====================================================================================================
+let arrival = null, pendingArrival = false;
+const gull = (() => {
+  const g = new THREE.Group(), M = (c, map) => new THREE.MeshLambertMaterial(map ? { map } : { color: c });
+  const white = M(0, tx('gull_w', 8, 8, '#f2f2f0', g2 => dots(g2, '#d8d8d4', [1, 2, 5, 5, 3, 6]))), grey = M(0, tx('gull_g', 8, 8, '#9aa2ac', g2 => { for (let x = 0; x < 8; x += 2) rr(g2, '#7a828c', x, 0, 1, 8); })),
+    wtip = M('#1a1a1e'), beak = M('#f2c23a'), eye = new THREE.MeshBasicMaterial({ color: 0x111111 });
+  const B = (w, h, d, m, x, y, z, p = g) => { const b = new THREE.Mesh(boxGeo(w, h, d), m); b.position.set(x, y, z); p.add(b); return b; };
+  B(1.1, .9, 2.4, white, 0, 0, 0); B(.8, .75, .8, white, 0, .35, 1.45); B(.24, .2, .55, beak, 0, .28, 2.05); B(.1, .12, .12, eye, .41, .48, 1.6); B(.1, .12, .12, eye, -.41, .48, 1.6);
+  B(.8, .2, .9, grey, 0, .1, -1.55);
+  const wings = [];
+  for (const s of [-1, 1]) { const p = new THREE.Group(); p.position.set(s * .55, .3, .2); g.add(p); B(2.6, .14, 1.2, grey, s * 1.3, 0, 0, p); B(.9, .12, .9, wtip, s * 2.9, 0, -.1, p); wings.push(p); }
+  const feet = [B(.12, .5, .12, beak, .25, -.65, -.2), B(.12, .5, .12, beak, -.25, -.65, -.2)];
+  g.scale.setScalar(1.6); g.visible = false; scene.add(g); return { g, wings, feet };
+})();
+let dummy = null;
+function startArrival() {
+  const P = PL(), c = new V3(RING.cx, RING.y, RING.cz);
+  let dx = c.x - WX / 2, dz = c.z - WZ / 2; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+  const end = new V3(P.pos.x, RING.y + 11, P.pos.z), start = new V3(c.x + dx * 110 - dz * 30, RING.y + 20, c.z + dz * 110 + dx * 30);
+  try { dummy = new Character(DEFS[0]); dummy.tag.visible = false; dummy.group.visible = false; } catch (e) { dummy = null; }
+  arrival = { t: 0, start, end, drop: null, landT: -1, titled: false };
+  fadeT = 0; fadeEl.style.opacity = 1; gull.g.visible = false;
+  later(.4, () => subtitle('You fell with your blade in hand. The All-Watcher saw.', 3.6));
+}
+function endArrival(skipped) {
+  if (!arrival) return; arrival = null; flags.arrived = true;
+  gull.g.visible = false; if (dummy) { scene.remove(dummy.group); dummy = null; }
+  const P = PL(); P.vel.set(0, 0, 0); P.yaw = Math.atan2(-(MOUNTS[0] ? MOUNTS[0].x + .5 - P.pos.x : 0), -(MOUNTS[0] ? MOUNTS[0].z + .5 - P.pos.z : -1)); P.pitch = -.05;
+  if (skipped) { fadeT = 1.2; if (!flagsTitle) bigTitle('SKARNHOLM', 'The isle at the edge of the north', 3.5); subT = 0; }
+  flagsTitle = true; advance('washed');
+  const m0 = MOUNTS[0], at = m0 ? new V3(m0.x + .5, m0.y + 3, m0.z + .5) : null;
+  later(skipped ? 1.6 : .8, () => korra(STORY.intro, () => { flags.intro = true; stage = Math.max(stage, 1); updateGoal(); }, at));
+}
+let flagsTitle = false;
+const camT = new V3(), camL = new V3();
+function arrivalTick(dt) {
+  const a = arrival, P = PL(); a.t += dt;
+  P.vel.set(0, 0, 0); P.pos.x = DEFS[0].pos[0]; P.pos.z = DEFS[0].pos[1];
+  const fwd = a.end.clone().sub(a.start).setY(0).normalize(), right = new V3(-fwd.z, 0, fwd.x), yaw = Math.atan2(fwd.x, fwd.z);
+  const FLY0 = 1.8, FLY1 = 7.0;
+  fadeEl.style.opacity = a.t < FLY0 ? 1 : a.t < FLY0 + 1 ? (1 - (a.t - FLY0)).toFixed(3) : 0;
+  const k = clamp((a.t - FLY0) / (FLY1 - FLY0), 0, 1), e = 1 - Math.pow(1 - k, 1.6);
+  if (!a.drop) {
+    gull.g.visible = a.t > FLY0 - .2;
+    gull.g.position.lerpVectors(a.start, a.end, e); gull.g.position.y += Math.sin(a.t * 1.7) * .5 + (1 - k) * 4;
+    gull.g.rotation.set(-.05, yaw, Math.sin(a.t * .9) * .12);
+    const fl = Math.sin(a.t * 6) * .55; gull.wings[0].rotation.z = fl; gull.wings[1].rotation.z = -fl;
+    if (dummy) { dummy.group.visible = gull.g.visible; dummy.pos.copy(gull.g.position).add(new V3(0, -3.2, 0)); dummy.group.rotation.y = yaw + Math.PI;
+      for (const arm of dummy.arms) { arm.rotation.x = Math.PI; arm.rotation.z = 0; } for (const [i, leg] of dummy.legs.entries()) leg.rotation.x = Math.sin(a.t * 3 + i * 3) * .25; }
+    camT.copy(gull.g.position).addScaledVector(fwd, -9).addScaledVector(right, 5).add(new V3(0, 2.5, 0)); camL.copy(gull.g.position).add(new V3(0, -1.6, 0));
+    if (k >= 1) { a.drop = { y: dummy ? dummy.pos.y : P.pos.y + 8, vy: 0, x0: dummy ? dummy.pos.x : P.pos.x, z0: dummy ? dummy.pos.z : P.pos.z, t: 0 }; VS.caw(); VS.toss(); }
+  } else {
+    const d = a.drop; d.t += dt;
+    gull.g.position.addScaledVector(fwd, dt * 9); gull.g.position.y += dt * 4; const fl = Math.sin(a.t * 7) * .6; gull.wings[0].rotation.z = fl; gull.wings[1].rotation.z = -fl;
+    if (gull.g.position.distanceTo(P.pos) > 60) gull.g.visible = false;
+    const gy = RING.y + 1;
+    if (a.landT < 0) {
+      d.vy -= 26 * dt; d.y += d.vy * dt; const q = clamp(d.t / .9, 0, 1);
+      if (dummy) { dummy.pos.set(lerp(d.x0, P.pos.x, q), Math.max(gy, d.y), lerp(d.z0, P.pos.z, q)); for (const arm of dummy.arms) { arm.rotation.x = -2.6; arm.rotation.z = 0; } }
+      if (d.y <= gy) { a.landT = 0; VS.stomp(); shakeT = Math.max(shakeT, .7); puff(new V3(P.pos.x, gy + .2, P.pos.z), 2, 26); flashScreen('#ffffff', .15);
+        bigTitle('SKARNHOLM', 'The isle at the edge of the north', 4); flagsTitle = true;
+        if (dummy) { for (const arm of dummy.arms) arm.rotation.x = 0; dummy.legs[0].rotation.x = -.6; dummy.legs[1].rotation.x = .3; } }
+    } else a.landT += dt;
+    const lookAt = dummy ? dummy.pos : P.pos;
+    camT.set(RING.cx, RING.y + 4.5, RING.cz).addScaledVector(right, 7).addScaledVector(fwd, 4); camL.copy(lookAt).add(new V3(0, 1, 0));
+    if (a.landT > 1.8) { endArrival(false); return; }
+  }
+  camera.position.copy(camT);
+  if (shakeT > 0) { camera.position.x += (Math.random() - .5) * shakeT * .6; camera.position.y += (Math.random() - .5) * shakeT * .6; }
+  camera.lookAt(camL); camera.fov = 66; camera.updateProjectionMatrix();
+  if (heldMesh) heldMesh.visible = false; P.group.visible = false; hudEl.style.opacity = 0; touchUI.style.opacity = 0; outline.visible = false;
+}
+function emptyBag() {                                    // a castaway arrives with nothing
+  try { if (!hasInv() || !Inv.bag) return; const b = Inv.bag();
+    for (const s of (b.main || []).slice()) if (s) Inv.remove(s.id, s.n);
+    for (const arr of [b.armor, b.off]) if (Array.isArray(arr)) arr.fill(null);
+    if (typeof selectHot === 'function') selectHot(hotSel);
+  } catch (e) { console.error(e); }
 }
 
 // =====================================================================================================
@@ -1072,7 +1624,7 @@ function spawnSpot(P, r0, r1) {
     const a = R() * Math.PI * 2, r = r0 + R() * (r1 - r0), x = P.pos.x + Math.cos(a) * r, z = P.pos.z + Math.sin(a) * r;
     if (x < 5 || z < 5 || x > WX - 5 || z > WZ - 5) continue;
     const xi = Math.floor(x), zi = Math.floor(z); if (reserved[zi * WX + xi]) continue;
-    if (Math.hypot(x - ALT.cx, z - ALT.cz) < 11) continue;
+    if (Math.hypot(x - ALT.cx, z - ALT.cz) < 11 || Math.hypot(x - RING.cx, z - RING.cz) < RING.safe) continue;
     const gy = groundY(x, z); if (gy.t !== GRASS || gy.y <= SEA + 1) continue;
     return { x: xi + .5, z: zi + .5 };
   }
@@ -1088,7 +1640,9 @@ function spawnTick(dt) {
     if (!e.isBoss && Math.hypot(e.pos.x - P.pos.x, e.pos.z - P.pos.z) > 76) { e.remove(); continue; }
     if (cnt[e.kind] !== undefined) cnt[e.kind]++;
   }
-  if (total >= TOTAL_CAP || cine) return;
+  // the Ring of Oaths is a safe place: hostiles that other modules spawn inside it are sent away at once
+  if (typeof Mobs !== 'undefined' && Mobs && Mobs.hostiles) try { for (const m of Mobs.hostiles()) if (!m._ringOk) { m._ringOk = true; if (m.pos && Math.hypot(m.pos.x - RING.cx, m.pos.z - RING.cz) < RING.safe && m.remove) m.remove(); } } catch (e) { /* ignore */ }
+  if (total >= TOTAL_CAP || cine || arrival) return;
   const night = isNight();
   const want = night ? [['greyling', CAP.greyling, 14, 26], ['deer', 3, 26, 44], ['boar', 3, 26, 44]] : [['deer', CAP.deer, 22, 42], ['boar', CAP.boar, 22, 42]];
   for (const [k, cap, r0, r1] of want) if (cnt[k] < cap && R() < (k === 'greyling' ? .55 : .35)) { const s = spawnSpot(P, r0, r1); if (s) { spawn(k, s.x, s.z); return; } }
@@ -1097,10 +1651,15 @@ function spawnTick(dt) {
 // =====================================================================================================
 //  Hooks into the main game
 // =====================================================================================================
+const PROTECTED = h => h && (h.t === STANDING || h.t === OATH || h.t === WAYSTONE || (h.t === MOSSY && Math.hypot(h.x + .5 - RING.cx, h.z + .5 - RING.cz) < 8));
 (HOOKS.use || (HOOKS.use = [])).unshift(() => {
   if (state !== 'play') return false;
+  if (arrival) { endArrival(true); return true; }
   if (dlg.open) { dlgAdvance(); return true; }
+  const pk = pickAimed(); if (pk) { collectPick(pk); return true; }
   const h = targetBlock(); if (!h) return false;
+  const m = mountAt(h); if (m) { useMount(m); return true; }
+  if (h.t === WAYSTONE) { const w = WAYS.find(q => Math.abs(q.x - h.x) <= 1 && Math.abs(q.z - h.z) <= 1); if (w) { readWaystone(w); return true; } }
   if (h.t === RUNE) { const l = loreAt(h.x, h.z); if (l) { readRune(l); return true; } }
   if (isAltarBlock(h)) {
     if (h.t === RUNE && (Math.abs(h.x - ALT.x) === 4 && Math.abs(h.z - ALT.z) === 4)) { VS.rune(); talk('Rune Pillar', 'rune', ['The pillar hums with stored lightning:', '"Two crowns of the deer, laid upon the stone, wake the storm."']); return true; }
@@ -1112,36 +1671,53 @@ const entityInFront = () => { const P = PL(), eye = P.eye, dir = lookDir(P.yaw, 
   return ENTITIES.some(e => { if (e.dead > 0) return false; const to = e.center().sub(eye), d = to.length(); return d < 4.2 && to.normalize().dot(dir) > .8; }); };
 (HOOKS.attack || (HOOKS.attack = [])).unshift(() => {
   if (state !== 'play') return false;
+  if (arrival) { endArrival(true); return true; }
   if (dlg.open) return true;                                     // no swinging while reading
   if (entityInFront()) return false;
-  const h = targetBlock();                                       // the altar and rune stones can't be broken
-  if (h && (h.t === RUNE || h.t === ALTAR || isAltarBlock(h))) { mining = false; if (AC) VS.pebble(); return true; }
+  const h = targetBlock();                                       // the Ring, the altar, waystones and rune stones can't be broken
+  if (h && (h.t === RUNE || h.t === ALTAR || isAltarBlock(h) || PROTECTED(h))) { mining = false; if (AC) VS.pebble(); return true; }
   return false;
 });
 (HOOKS.key || (HOOKS.key = [])).unshift(e => {
-  if (!dlg.open) return false;
-  if (['Enter', 'NumpadEnter', 'KeyE', 'KeyF', 'Space'].includes(e.code)) { dlgAdvance(); return true; }
+  if (arrival) { if (['Escape', 'Space', 'Enter', 'NumpadEnter'].includes(e.code)) endArrival(true); return true; }
+  if (dlg.open) { if (['Enter', 'NumpadEnter', 'KeyE', 'KeyF', 'Space'].includes(e.code)) { dlgAdvance(); return true; } return false; }
+  if (e.code === 'KeyR' && state === 'play') { Powers.use(); return true; }
+  if (e.code === 'KeyE' && state === 'play') { const pk = pickAimed(); if (pk) { collectPick(pk); return true; } }
   return false;
 });
+addEventListener('pointerdown', e => {                       // a click or a tap skips the arrival
+  if (!arrival || state !== 'play' || (e.target && e.target.closest && e.target.closest('#pause, #title'))) return;
+  e.stopPropagation(); e.preventDefault(); endArrival(true);
+}, true);
 
+let rgHooked = false;
 on('start', () => {
-  fadeT = 3.2;
-  later(.9, () => subtitle('You wake on a cold shore. The wind smells of salt and pine.', 4));
+  const cont = typeof Save !== 'undefined' && Save && Save.has && Save.has();
+  if (!cont) { emptyBag(); phase = tToPhase(.02); applyDay(true); }
+  pendingArrival = true; initPicks();
   const P = PL();
-  for (const k of ['deer', 'deer', 'deer', 'boar', 'boar']) { const s = spawnSpot(P, 12, 30); if (s) spawn(k, s.x, s.z); }
-  later(3.6, () => korra(STORY.intro, () => { flags.intro = true; stage = Math.max(stage, 1); advance('washed'); updateGoal(); }));
+  for (const k of ['deer', 'deer', 'deer', 'boar']) { const s = spawnSpot(P, 26, 40); if (s) spawn(k, s.x, s.z); }
+  if (!rgHooked) { rgHooked = true;                          // registered last so it sees the Dark Forest's own log drops
+    on('blockDrops', (drops, h) => { if (Powers.active === 'rootgrip' && h && BLOCK[h.t] && /log/i.test(BLOCK[h.t].name) && Array.isArray(drops)) return drops.concat([['wood', 1]]); return drops; }); }
+});
+on('save', data => { if (data) data.powers = { sel: PW.sel, act: PW.act, actT: Math.round(PW.actT), cd: Math.round(PW.cd) }; });
+on('load', data => {
+  const p = data && data.powers; if (p) { PW.sel = p.sel || null; PW.act = p.act || null; PW.actT = +p.actT || 0; PW.cd = +p.cd || 0; }
+  if (!PW.sel && flags.power) PW.sel = flags.power;
+  if (wayMeadow) wayMeadow.read = !!flags.waystone; flags.arrived = true; lastQ = -1; refreshMounts();
 });
 
-let lastBossName = '';
+let lastBossName = '', hoverM = null;
 const bossNameEl = bossEl.querySelector('.mc'), bossTrack = bossEl.querySelector('i');
 on('frame', (dt) => {
   if (state === 'title') return;
   const ph = phase + dt / DAY_LEN; if (ph >= 1) dayN++; phase = ph % 1;
   skyT -= dt; applyDay(false);
-  updateDrops(dt); updateStones(dt); updateParts(dt); raven.update(dt);
+  updateDrops(dt); updateStones(dt); updateParts(dt); raven.update(dt); vesk.update(dt);
   const pulse = .7 + .3 * Math.sin(performance.now() / 600); runeGlowMat.opacity = pulse * lerp(1, .75, dayK);
   for (const h of haloSprites) h.material.opacity = lerp(.55, .18, dayK) * pulse;
-  if (state === 'play') { spawnTick(dt); milestones(); korraTick(); }
+  if (pendingArrival) { pendingArrival = false; buildMounts(); if (!flags.arrived) startArrival(); else refreshMounts(); }
+  if (state === 'play') { spawnTick(dt); milestones(); korraTick(); tipTick(dt); detect(dt); questTick(dt); picksTick(dt); powerTick(dt); }
   for (let i = ENTITIES.length - 1; i >= 0; i--) if (ENTITIES[i].removed) ENTITIES.splice(i, 1);
   for (let i = CREATURES.length - 1; i >= 0; i--) if (CREATURES[i].removed) CREATURES.splice(i, 1);
   if (boss && boss.removed) boss = null;
@@ -1149,25 +1725,29 @@ on('frame', (dt) => {
 
 on('tick', rawDt => {
   ui.hidden = state === 'title';
-  ui.style.visibility = state === 'switching' || state === 'wheel' ? 'hidden' : '';
   if (state !== 'pause' && state !== 'title') runTimers(rawDt);
+  if (arrival && state === 'pause') endArrival(true);           // Esc releases the mouse and opens the menu: treat it as a skip
   // dialog typewriter
   if (dlg.open && dlg.shown < dlg.text.length) { const n0 = Math.floor(dlg.shown); dlg.shown = Math.min(dlg.text.length, dlg.shown + rawDt * 48);
     if (Math.floor(dlg.shown) !== n0) $('#vhDlg .txt').textContent = dlg.text.slice(0, Math.floor(dlg.shown)); }
   if (subT > 0) subT -= rawDt; subEl.style.opacity = subT > 0 && !dlg.open ? 1 : 0;
   if (titleT > 0) titleT -= rawDt; titleBox.style.opacity = titleT > 0 ? 1 : 0;
-  if (fadeT > 0 && state !== 'pause') { fadeT -= rawDt; fadeEl.style.opacity = clamp(fadeT / 2.6, 0, 1).toFixed(3); }
+  if (fadeT > 0 && state !== 'pause') { fadeT -= rawDt; fadeEl.style.opacity = clamp(fadeT / 1.2, 0, 1).toFixed(3); }
   advTick(rawDt);
   goalT -= rawDt; if (goalT <= 0 && state !== 'title') { goalT = .5; updateGoal(); }
+  powerHud();
+  // hovering a trophy mount says what it wants
+  if (state === 'play' && !arrival && !dlg.open) { const m = mountAt(targetBlock()); if (m !== hoverM) { hoverM = m; if (m) subtitle(mountHint(m), 3); } }
   // sky: moon and stars follow the camera
   moon.position.copy(camera.position).addScaledVector(moonDir, 560); moon.lookAt(camera.position);
   stars.position.copy(camera.position); stars.rotation.set(.4, 0, time01() * Math.PI * 2);
   // boss bar: Stormhorn when it is up, otherwise the main game's Forest Troll bar
   const P0 = PL();
-  if (boss && !boss.removed && boss.dead <= 0 && (state === 'play' || state === 'wheel') && boss.pos.distanceTo(P0.pos) < 70) {
+  if (boss && !boss.removed && boss.dead <= 0 && state === 'play' && boss.pos.distanceTo(P0.pos) < 70) {
     bossEl.hidden = false; bossFill.style.width = Math.max(0, boss.hp / boss.max * 100) + '%';
     if (lastBossName !== 'storm') { lastBossName = 'storm'; bossNameEl.textContent = 'Stormhorn'; bossFill.style.background = 'linear-gradient(#b4fbff, #1fa3c6)'; bossTrack.style.background = '#0b2f3a'; bossTrack.style.borderColor = '#03141a'; }
   } else if (lastBossName !== 'troll') { lastBossName = 'troll'; bossNameEl.textContent = 'Forest Troll'; bossFill.style.background = ''; bossTrack.style.background = ''; bossTrack.style.borderColor = ''; }
+  if (arrival && state === 'play') { arrivalTick(rawDt); return; }
   // boss intro: low dramatic camera
   if (cine) {
     if (state === 'play' && cine.boss && !cine.boss.removed) {
@@ -1196,14 +1776,21 @@ const World = {
   setTime(t) { phase = tToPhase(((t % 1) + 1) % 1); applyDay(true); },
   day: () => dayN, light: () => lightK,
   altar: () => ({ x: ALT.cx, y: ALT.y, z: ALT.cz }),
+  ring: () => ({ x: RING.cx, y: RING.y, z: RING.cz, safe: RING.safe }),
+  safe: (x, z) => Math.hypot(x - RING.cx, z - RING.cz) < RING.safe,      // no enemy may spawn here
 };
 window.World = World;
 window.Meadows = {
-  skipIntro() { fadeT = 0; fadeEl.style.opacity = 0; korraQ.length = 0; timers.length = 0; flags.intro = true; stage = Math.max(stage, 1); },
+  skipIntro() { if (arrival) { arrival = null; gull.g.visible = false; if (dummy) { scene.remove(dummy.group); dummy = null; } }
+    fadeT = 0; fadeEl.style.opacity = 0; korraQ.length = 0; timers.length = 0; flags.intro = true; flags.arrived = true; stage = Math.max(stage, 1); },
+  skipArrival: () => endArrival(true),
   // Continue: put the quest back where it was; a save made mid-fight gets the offering back (the boss is not saved)
   restore(s) { s = s | 0; if (s === 2) { s = 1; if (hasInv()) try { Inv.add('deer_trophy', 2); } catch (e) { /* ignore */ } } stage = Math.max(stage, s); updateGoal(); },
-  spawn, summonBoss, despawnBoss, advance, korra, talk, subtitle, bigTitle, bolt,
+  spawn, summonBoss, despawnBoss, advance, korra, talk, tip, subtitle, bigTitle, bolt, addWaystone, readWaystone,
   get boss() { return boss; }, get stones() { return stones; }, get creatures() { return CREATURES; }, get drops() { return drops; }, get dialog() { return dlg; },
-  get stage() { return stage; }, flags, bag, LORE, ALT, raven, dlgAdvance, blocks: { MOSSY, RUNE, ALTAR },
+  get stage() { return stage; }, get step() { const s = STEPS[flags.q | 0]; return s ? s.id : 'done'; }, get questDone() { return questDone(); }, get arrival() { return arrival; },
+  goalText: () => { const s = STEPS[flags.q | 0]; return s ? s.text() : ''; }, steps: STEPS.map(s => s.id),
+  flags, bag, LORE, ALT, RING, MOUNTS, WAYS, PICKS, raven, vesk, dlgAdvance, hangHead: i => hangHead(MOUNTS[i]), useMount: i => useMount(MOUNTS[i]),
+  blocks: { MOSSY, RUNE, ALTAR, STANDING, OATH, WAYSTONE },
 };
 })();
