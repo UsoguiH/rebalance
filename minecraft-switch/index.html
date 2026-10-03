@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
@@ -7,13 +7,17 @@
 <title>Blockcraft</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Pixelify+Sans:wght@400;600&family=Press+Start+2P&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Pixelify+Sans:wght@400;600&family=Press+Start+2P&family=Reem+Kufi:wght@400..700&display=swap">
 <style>
+  /* Arabic: Reem Kufi (blocky Kufi) drawn a little larger than the Latin pixel font; Latin letters and digits stay Pixelify Sans */
+  @font-face { font-family: "BC Kufi"; font-style: normal; font-weight: 400 700; font-display: swap; size-adjust: 112%;
+    src: url(https://fonts.gstatic.com/s/reemkufi/v28/2sDcZGJLip7W2J7v7wQzbWW5O7w.woff2) format("woff2"), local("Reem Kufi");
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200E, U+FB50-FDFF, U+FE70-FEFC; }
   /* Layout: full-screen WebGL world, Minecraft HUD pinned to the bottom */
   :root {
     --michael: #65b4d4; --franklin: #abedab; --trevor: #ffa357;
-    --ui: "Pixelify Sans", "Courier New", monospace;
-    --logo: "Press Start 2P", "Courier New", monospace;
+    --ui: "Pixelify Sans", "BC Kufi", "Reem Kufi", "Courier New", monospace;
+    --logo: "Press Start 2P", "BC Kufi", "Reem Kufi", "Courier New", monospace;
     --mc-shadow: #3f3f3f; --btn: #727272; --btn-hi: #aaaaaa; --btn-lo: #4a4a4a; --btn-hover: #7e88c4;
     color-scheme: dark;
   }
@@ -103,6 +107,15 @@
     #toast { width: 230px; } #chat { bottom: 110px; } .msg { font-size: 15px; }
     #splash { right: 2%; bottom: -26px; font-size: 13px; }
   }
+  /* Arabic (dir=rtl): the world, hotbar, hearts/food bars and the pixel GUIs keep the Minecraft layout; only blocks of text read right to left */
+  html[dir="rtl"] body { direction: ltr; }
+  html[dir="rtl"] :is(.msg, #toast > div, #vhDlg, #vhGoal, #vhSub, #vhTitle, #vhAdv > div, #dfAdv > div, #swAdv > div, .panel, #invTip, #bcTip, #bmTip, #bmInfo,
+    #bmMsg, #cbDeath, #cbToasts, #rotate, #itemName, #boss .mc, #tSet, .menu, #pause h2, #splash, #edition, .corner) { direction: rtl; }
+  html[dir="rtl"] .panel p { text-align: right; }
+  /* everything else (pixel GUIs, labels, tooltips) picks its reading direction from its own first letter */
+  html[dir="rtl"] body :is(div, span, p, b, i, h1, h2, h3, button, label) { unicode-bidi: plaintext; }
+  /* small HUD text drawn crisp, like the pixel font it stands in for */
+  #hud, #vhGoal, #vhSub, #cbStatus, .msg { -webkit-font-smoothing: none; font-smooth: never; }
 </style>
 </head>
 <body>
@@ -158,11 +171,13 @@
   <div class="menu">
     <button class="mcbtn" id="resumeBtn" type="button">Back to Game</button>
     <button class="mcbtn" id="ctrlBtn2" type="button">Controls</button>
+    <button class="mcbtn" id="langBtn" type="button">اللغة: العربية</button>
   </div>
   <div class="panel" id="ctrlPanel2" hidden></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/i18n.js"></script>
 <script>
 "use strict";
 // =====================================================================
@@ -522,7 +537,8 @@ function drawFace(g, d) {
 }
 function portrait(d) { return pixCanvas(64, 64, g => { g.imageSmoothingEnabled = false; g.drawImage(pixCanvas(8, 8, gg => drawFace(gg, d)), 0, 0, 64, 64); }).toDataURL(); }
 function nameTag(text) {
-  const c = pixCanvas(256, 48, g => { g.font = '600 30px "Pixelify Sans", monospace'; const w = Math.ceil(g.measureText(text).width) + 16;
+  text = L(text);
+  const c = pixCanvas(256, 48, g => { g.font = '600 30px "Pixelify Sans", "BC Kufi", "Reem Kufi", monospace'; const w = Math.ceil(g.measureText(text).width) + 16;
     g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(128 - w / 2, 4, w, 40); g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 25); });
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, fog: false, transparent: true }));
   s.scale.set(1.6, .3, 1); s.renderOrder = 20; return s;
@@ -857,7 +873,7 @@ function drawStats() {
   sg.fillStyle = '#000'; for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) sg.fillText(s, 91 + ox, 15 + oy); sg.fillStyle = '#80ff20'; sg.fillText(s, 91, 15);
 }
 const chatEl = document.getElementById('chat');
-function chat(text, cls = '') { const m = document.createElement('div'); m.className = 'msg mc ' + cls; m.textContent = text; chatEl.appendChild(m);
+function chat(text, cls = '') { const m = document.createElement('div'); m.className = 'msg mc ' + cls; m.textContent = L(text); chatEl.appendChild(m);
   while (chatEl.children.length > 6) chatEl.firstChild.remove();
   setTimeout(() => m.style.opacity = 0, 8000); setTimeout(() => m.remove(), 9200); }
 const bossEl = document.getElementById('boss'), bossFill = document.getElementById('bossFill');
@@ -1123,7 +1139,13 @@ document.getElementById('playBtn').addEventListener('click', () => {
   emit('start');
 });
 document.getElementById('resumeBtn').addEventListener('click', () => { SFX.uiClick(); pauseEl.hidden = true; state = 'play'; ctrlPanel2.hidden = true; lockPointer(); canvas.focus(); });
-if (document.fonts) document.fonts.ready.then(() => { drawStats(); for (const c of chars) { const t = nameTag(c.def.name); c.group.remove(c.tag); t.position.y = 2.2; c.group.add(t); c.tag = t; } });
+const retag = () => { drawStats(); for (const c of chars) { const t = nameTag(c.def.name); c.group.remove(c.tag); t.position.y = 2.2; c.group.add(t); c.tag = t; } };
+if (document.fonts) document.fonts.ready.then(retag);
+// language toggle (pause menu): Arabic by default, remembered by i18n.js
+const langBtn = document.getElementById('langBtn');
+const langLabel = () => { langBtn.textContent = I18N.lang === 'ar' ? 'اللغة: العربية' : 'Language: English'; };
+langLabel();
+langBtn.addEventListener('click', () => { SFX.uiClick(); I18N.setLang(I18N.lang === 'ar' ? 'en' : 'ar'); langLabel(); retag(); });
 
 // =====================================================================
 //  Main loop

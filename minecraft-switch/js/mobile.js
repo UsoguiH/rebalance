@@ -436,7 +436,7 @@ function applySet() { if (TJ.id === null) joyHome(); else layout(); }
 // ---- misc: help text, toast, no zoom / long-press menus
 const help = '<b>Touch:</b> left stick moves (push to the edge to sprint) · drag anywhere to look · tap the world to place, hold it to break · ' +
   'right buttons: jump, attack (hold to keep mining), use, block, sneak · tap a hotbar slot, "..." opens the inventory · Touch Controls in the pause menu';
-for (const p of [ctrlPanel, ctrlPanel2]) for (const el of p.querySelectorAll('p')) if (el.textContent.startsWith('Touch:')) el.innerHTML = help;
+for (const p of [ctrlPanel, ctrlPanel2]) for (const el of p.querySelectorAll('p')) if (el.textContent.startsWith('Touch:') || el.textContent.startsWith(L('Touch:'))) el.innerHTML = help;
 on('start', () => { const sp = toastEl.querySelector('span'); if (sp) sp.textContent = 'Tap your face at the top right'; joyHome(); });
 for (const ev of ['gesturestart', 'gesturechange', 'dblclick']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
 document.addEventListener('contextmenu', e => e.preventDefault());

@@ -20,7 +20,7 @@ const dlgOpen = () => { const m = MW(); return !!(m && m.dialog && m.dialog.open
 let cine = null;
 const calm = () => state !== 'play' || dlgOpen() || !!cine;
 function compass(dx, dz) { const a = Math.atan2(dx, -dz) * 180 / Math.PI;
-  return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][((Math.round(a / 45) % 8) + 8) % 8]; }
+  return I18N.L(['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][((Math.round(a / 45) % 8) + 8) % 8]); }
 const timers = [];
 const later = (s, fn) => timers.push({ t: s, fn });
 
@@ -995,7 +995,7 @@ const FOREST_GATE = { x: 91, z: 38 };
 function korra(lines, done, target) {
   const m = MW(); if (!m) { chat('Korra: ' + lines.join(' ')); if (done) done(); return; }
   const t = target ? dirTo(target.x, target.z) : null;
-  m.korra(lines.map(s => t ? s.replace(/\{dir\}/g, t.dir).replace(/\{m\}/g, t.m) : s), done);
+  m.korra(lines.map(s => { s = I18N.L(s); return t ? s.replace(/\{dir\}/g, t.dir).replace(/\{m\}/g, t.m) : s; }), done);
 }
 const STORY = {
   start: ['Kraa! {name}. While you rested, the isle shifted its weight. Can you feel it?',

@@ -75,7 +75,7 @@ function surfaceAt(x, z) { const xi = Math.floor(x), zi = Math.floor(z);        
 function groundAt(x, z, fromY) { const xi = Math.floor(x), zi = Math.floor(z);
   for (let y = Math.min(WY - 1, Math.floor(fromY)); y >= 0; y--) if (BLOCK[get(xi, y, zi)].solid) return y + 1; return 0; }
 function compass(dx, dz) { const a = Math.atan2(dx, -dz) * 180 / Math.PI;
-  return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][((Math.round(a / 45) % 8) + 8) % 8]; }
+  return I18N.L(['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][((Math.round(a / 45) % 8) + 8) % 8]); }
 
 // ---------------------------------------------------------------- 16x16 icons (fallbacks when items.js has none)
 function head(g, out, base, x, y, w, h) { rr(g, out, x, y, w, h); rr(g, base, x + 1, y + 1, w - 2, h - 2); rr(g, shade(base, .18), x + 1, y + 1, w - 2, 1); }
@@ -938,7 +938,7 @@ const PORTRAIT = { korra: g => { rr(g, '#38485e', 0, 0, 16, 16); rr(g, '#4a5d78'
 const dlg = { open: false, q: [], cur: null, idx: 0, text: '', shown: 0, openedAt: 0 };
 function talk(who, portrait, lines, done) { dlg.q.push({ who, portrait, lines, done }); if (!dlg.open) nextConv(); }
 function fill(s) { const a = ALT, P = PL(), D = (typeof DarkForest !== 'undefined' && DarkForest && DarkForest.DF) || { cx: 92, cz: 24 }, w = wayMeadow || a;
-  return s.replace(/\{name\}/g, DEFS[cur].name).replace(/\{dir\}/g, compass(a.cx - P.pos.x, a.cz - P.pos.z)).replace(/\{fdir\}/g, compass(D.cx - P.pos.x, D.cz - P.pos.z))
+  return s.replace(/\{name\}/g, L(DEFS[cur].name)).replace(/\{dir\}/g, compass(a.cx - P.pos.x, a.cz - P.pos.z)).replace(/\{fdir\}/g, compass(D.cx - P.pos.x, D.cz - P.pos.z))
     .replace(/\{rdir\}/g, compass(RING.cx - P.pos.x, RING.cz - P.pos.z)).replace(/\{wdir\}/g, compass(w.cx - P.pos.x, w.cz - P.pos.z)); }
 function nextConv() {
   const c = dlg.q.shift(); if (!c) { dlg.open = false; dlgEl.hidden = true; return; }
@@ -947,7 +947,7 @@ function nextConv() {
   const cv = $('#vhDlg canvas'), g = cv.getContext('2d'); g.clearRect(0, 0, 16, 16); (PORTRAIT[c.portrait] || PORTRAIT.korra)(g);
   showLine();
 }
-function showLine() { dlg.text = fill(dlg.cur.lines[dlg.idx]); dlg.shown = 0; $('#vhDlg .txt').textContent = ''; }
+function showLine() { dlg.text = fill(L(dlg.cur.lines[dlg.idx])); dlg.shown = 0; $('#vhDlg .txt').textContent = ''; }
 function dlgAdvance() {
   if (!dlg.open || performance.now() - dlg.openedAt < 180) return;
   if (dlg.shown < dlg.text.length) { dlg.shown = dlg.text.length; $('#vhDlg .txt').textContent = dlg.text; return; }
@@ -965,7 +965,7 @@ addEventListener('pointerdown', e => {                       // desktop: any cli
 }, true);
 
 let subT = 0, titleT = 0, fadeT = 0;
-function subtitle(text, secs = 4) { subEl.textContent = text; subT = secs; }
+function subtitle(text, secs = 4) { subEl.textContent = L(text); subT = secs; }
 function bigTitle(title, sub, secs = 4, color = '#fff') { titleBox.querySelector('b').textContent = title; titleBox.querySelector('b').style.color = color; titleBox.querySelector('span').textContent = sub || ''; titleT = secs; }
 
 const ADV = {

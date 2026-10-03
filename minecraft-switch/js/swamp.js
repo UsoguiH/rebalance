@@ -24,7 +24,7 @@ const isNight = () => typeof World !== 'undefined' && World.isNight ? World.isNi
 let cine = null;
 const calm = () => state !== 'play' || dlgOpen() || !!cine;
 function compass(dx, dz) { const a = Math.atan2(dx, -dz) * 180 / Math.PI;
-  return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][((Math.round(a / 45) % 8) + 8) % 8]; }
+  return I18N.L(['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][((Math.round(a / 45) % 8) + 8) % 8]); }
 const timers = [];
 const later = (s, fn) => timers.push({ t: s, fn });
 
@@ -890,7 +890,7 @@ const K = (pc, touch) => TOUCH ? touch : pc;
 function korra(lines, done, target) {
   const m = MW(); if (!m) { chat('Korra: ' + lines.join(' ')); if (done) done(); return; }
   const t = target ? dirTo(target.x, target.z) : null;
-  m.korra(lines.map(s => (t ? s.replace(/\{dir\}/g, t.dir).replace(/\{m\}/g, t.m) : s).replace(/\{st\}/g, stName(GEAR_ST)).replace(/\{mst\}/g, stName(MEAD_ST))), done);
+  m.korra(lines.map(s => (s = I18N.L(s), t ? s.replace(/\{dir\}/g, t.dir).replace(/\{m\}/g, t.m) : s).replace(/\{st\}/g, I18N.L(stName(GEAR_ST))).replace(/\{mst\}/g, I18N.L(stName(MEAD_ST)))), done);
 }
 const STORY = {
   start: ['Kraa! Two heads on the stones, {name}. Hear how the Ring hums now?',
