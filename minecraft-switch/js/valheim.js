@@ -403,7 +403,7 @@ class Deer extends Creature {
     this.head.rotation.x = lerp(this.head.rotation.x, this.graze ? -.5 : -.3, k);
     this.head.rotation.y = this.graze ? Math.sin(this.t * 3) * .15 : 0;
   }
-  loot(c) { spawnDrop('raw_meat', 1 + (R() < .5 ? 1 : 0), c); spawnDrop('deer_hide', 1 + (R() < .3 ? 1 : 0), c); if (R() < .5) spawnDrop('deer_trophy', 1, c); }
+  loot(c) { spawnDrop('raw_meat', 1 + (R() < .5 ? 1 : 0), c); spawnDrop('deer_hide', 1 + (R() < .3 ? 1 : 0), c); if (countItem('deer_trophy') < 2 || R() < .5) spawnDrop('deer_trophy', 1, c); }
 }
 
 // ---- Boar: neutral; charges back when hit
