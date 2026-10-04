@@ -947,10 +947,10 @@ function nextConv() {
   const cv = $('#vhDlg canvas'), g = cv.getContext('2d'); g.clearRect(0, 0, 16, 16); (PORTRAIT[c.portrait] || PORTRAIT.korra)(g);
   showLine();
 }
-function showLine() { dlg.text = fill(L(dlg.cur.lines[dlg.idx])); dlg.shown = 0; $('#vhDlg .txt').textContent = ''; }
+function showLine() { dlg.text = fill(L(dlg.cur.lines[dlg.idx])); dlg.shown = 0; I18N.words($('#vhDlg .txt'), dlg.text, { cps: 48 }); }   // word by word
 function dlgAdvance() {
   if (!dlg.open || performance.now() - dlg.openedAt < 180) return;
-  if (dlg.shown < dlg.text.length) { dlg.shown = dlg.text.length; $('#vhDlg .txt').textContent = dlg.text; return; }
+  if (dlg.shown < dlg.text.length) { dlg.shown = dlg.text.length; I18N.words($('#vhDlg .txt'), dlg.text, { instant: true }); return; }
   VS.page(); dlg.idx++;
   if (dlg.idx < dlg.cur.lines.length) { showLine(); return; }
   const done = dlg.cur.done; dlg.cur = null; dlg.open = false; dlgEl.hidden = true;
@@ -966,7 +966,7 @@ addEventListener('pointerdown', e => {                       // desktop: any cli
 
 let subT = 0, titleT = 0, fadeT = 0;
 function subtitle(text, secs = 4) { subEl.textContent = L(text); subT = secs; }
-function bigTitle(title, sub, secs = 4, color = '#fff') { titleBox.querySelector('b').textContent = title; titleBox.querySelector('b').style.color = color; titleBox.querySelector('span').textContent = sub || ''; titleT = secs; }
+function bigTitle(title, sub, secs = 4, color = '#fff') { titleBox.querySelector('b').textContent = title; titleBox.querySelector('b').style.color = color; I18N.glow(titleBox.querySelector('b')); I18N.words(titleBox.querySelector('span'), sub || '', { cps: 40 }); titleT = secs; }
 
 const ADV = {
   washed: ['Dropped by the Gull', 'raven'], waystone: ['Where Stones Stand Tall', 'rune'], oath: ['First Oath Kept', 'stormhorn_trophy', 1], hunt: ['First Hunt', 'raw_meat'], trophy: ['Proof of Strength', 'deer_trophy'], rune: ['Old Words', 'rune'],
@@ -985,7 +985,7 @@ function advTick(dt) {
   if (advT < 0) { advT = Math.min(0, advT + dt); return; }
   if (!advQ.length || arrival || !toastEl.classList.contains('out')) return;   // wait for the main game's toast to leave
   const a = advQ.shift();
-  advEl.classList.toggle('ch', a.ch); advEl.querySelector('b').textContent = a.ch ? 'Challenge Complete!' : 'Advancement Made!'; advEl.querySelector('span').textContent = a.title;
+  advEl.classList.toggle('ch', a.ch); advEl.querySelector('b').textContent = a.ch ? 'Challenge Complete!' : 'Advancement Made!'; advEl.querySelector('span').textContent = a.title; I18N.glow(advEl.querySelector('span'));
   const g = advEl.querySelector('canvas').getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, 32, 32); g.drawImage(iconCanvas(a.icon), 0, 0, 32, 32);
   advEl.classList.remove('out'); advT = 4.5; VS.chime(a.ch);
 }
@@ -1240,10 +1240,14 @@ function milestones() {
   if (!flags.hangSaid && stage >= 3 && !(flags.hung && flags.hung.stormhorn_trophy) && Math.hypot(P.pos.x - RING.cx, P.pos.z - RING.cz) < 14) { flags.hangSaid = true; tip('Hang it. Let the Watcher see.'); }
 }
 let goalT = 0;
+// quest line: a new text appears word by word (kept until it changes or the language does)
+function questText(el, txt) { const k = I18N.lang + '|' + txt; if (el._qk === k) return;
+  const shape = k.replace(/\d+/g, '#'), fresh = el._qs != null && el._qs !== shape && txt;   // a counter or distance ticking is not a new quest line
+  el._qk = k; el._qs = shape; I18N.words(el, txt, { instant: !fresh, cps: 70 }); }
 function updateGoal() {
   const dfOn = typeof DarkForest !== 'undefined' && DarkForest && DarkForest.flags && DarkForest.flags.started;
   let txt = '';
-  if (!dfOn) { const s = STEPS[flags.q | 0]; txt = s ? s.text() : stage >= 3 ? 'Chapter I complete. The Dark Forest awaits...' : ''; goalEl.querySelector('span').textContent = txt; }
+  if (!dfOn) { const s = STEPS[flags.q | 0]; txt = s ? s.text() : stage >= 3 ? 'Chapter I complete. The Dark Forest awaits...' : ''; questText(goalEl.querySelector('span'), txt); }
   goalEl.hidden = !flags.intro || !!arrival || showDebug || (!txt && !dfOn) || (TOUCH && dlg.open);   // phones: the dialog box would cover it
 }
 
@@ -1728,8 +1732,7 @@ on('tick', rawDt => {
   if (state !== 'pause' && state !== 'title') runTimers(rawDt);
   if (arrival && state === 'pause') endArrival(true);           // Esc releases the mouse and opens the menu: treat it as a skip
   // dialog typewriter
-  if (dlg.open && dlg.shown < dlg.text.length) { const n0 = Math.floor(dlg.shown); dlg.shown = Math.min(dlg.text.length, dlg.shown + rawDt * 48);
-    if (Math.floor(dlg.shown) !== n0) $('#vhDlg .txt').textContent = dlg.text.slice(0, Math.floor(dlg.shown)); }
+  if (dlg.open && dlg.shown < dlg.text.length) dlg.shown = Math.min(dlg.text.length, dlg.shown + rawDt * 48);   // the words animate in CSS at the same pace
   if (subT > 0) subT -= rawDt; subEl.style.opacity = subT > 0 && !dlg.open ? 1 : 0;
   if (titleT > 0) titleT -= rawDt; titleBox.style.opacity = titleT > 0 ? 1 : 0;
   if (fadeT > 0 && state !== 'pause') { fadeT -= rawDt; fadeEl.style.opacity = clamp(fadeT / 1.2, 0, 1).toFixed(3); }
@@ -1745,7 +1748,7 @@ on('tick', rawDt => {
   const P0 = PL();
   if (boss && !boss.removed && boss.dead <= 0 && state === 'play' && boss.pos.distanceTo(P0.pos) < 70) {
     bossEl.hidden = false; bossFill.style.width = Math.max(0, boss.hp / boss.max * 100) + '%';
-    if (lastBossName !== 'storm') { lastBossName = 'storm'; bossNameEl.textContent = 'Stormhorn'; bossFill.style.background = 'linear-gradient(#b4fbff, #1fa3c6)'; bossTrack.style.background = '#0b2f3a'; bossTrack.style.borderColor = '#03141a'; }
+    if (lastBossName !== 'storm') { lastBossName = 'storm'; bossNameEl.textContent = 'Stormhorn'; I18N.glow(bossNameEl); bossFill.style.background = 'linear-gradient(#b4fbff, #1fa3c6)'; bossTrack.style.background = '#0b2f3a'; bossTrack.style.borderColor = '#03141a'; }
   } else if (lastBossName !== 'troll') { lastBossName = 'troll'; bossNameEl.textContent = 'Forest Troll'; bossFill.style.background = ''; bossTrack.style.background = ''; bossTrack.style.borderColor = ''; }
   if (arrival && state === 'play') { arrivalTick(rawDt); return; }
   // boss intro: low dramatic camera
@@ -1780,7 +1783,7 @@ const World = {
   safe: (x, z) => Math.hypot(x - RING.cx, z - RING.cz) < RING.safe,      // no enemy may spawn here
 };
 window.World = World;
-window.Meadows = {
+window.Meadows = { questText,
   skipIntro() { if (arrival) { arrival = null; gull.g.visible = false; if (dummy) { scene.remove(dummy.group); dummy = null; } }
     fadeT = 0; fadeEl.style.opacity = 0; korraQ.length = 0; timers.length = 0; flags.intro = true; flags.arrived = true; stage = Math.max(stage, 1); },
   skipArrival: () => endArrival(true),

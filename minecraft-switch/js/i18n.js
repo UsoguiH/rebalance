@@ -487,7 +487,7 @@ const I18N = (() => {
   "Continue": "متابعة",
   "New World": "عالم جديد",
   "Singleplayer": "لعب فردي",
-  "Save and Quit to Title": "احفظ واخرج إلى الشاشة الرئيسية",
+  "Save and Quit to Title": "احفظ واخرج للقائمة",
   "Loaded saved world": "تم تحميل العالم المحفوظ",
   "Dark Pine Log": "جذع صنوبر داكن",
   "Dark Pine Needles": "إبر صنوبر داكن",
@@ -741,7 +741,7 @@ const I18N = (() => {
   "Tap a piece, tap again to pick it": "المس قطعة، ثم المسها مجددًا لاختيارها",
   "Click a piece to pick it": "انقر على قطعة لاختيارها",
   "Attack builds it": "الهجوم يبنيها",
-  "Left-click builds, Q turns it": "النقر الأيسر يبني، و Q يدير",
+  "Left-click builds, Q turns it": "النقر الأيسر يبني، وزر Q يديرها",
   "Remove: aim at a piece you built and attack": "الإزالة: صوّب على قطعة بنيتها واهجم",
   "The kiln burns wood into charcoal": "الفرن يحرق الخشب ويحوله إلى فحم نباتي",
   "The kiln is full": "الفرن ممتلئ",
@@ -1110,7 +1110,43 @@ const I18N = (() => {
   const ORIG = new WeakMap();                    // text node -> its English text, for switching back
   const tc = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
   const ih = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-  function trNode(n) { const v = n.nodeValue, t = L(v); if (t !== v) { ORIG.set(n, v); n.nodeValue = t; } }
+  // ---- pixel look: Arabic text elements get the #bcPxM / #bcPxT SVG filter (CSS classes bcpx / bcpxT, see index.html).
+  // The filter's alpha threshold would turn a semi-transparent box solid, so such boxes (and mixed containers) get their
+  // text nodes wrapped in <bc-t> instead, and only that inner text is filtered. Big text (30px+) uses the title filter.
+  const AR_RE = /[؀-ۿ]/, INLINE = { B: 1, I: 1, SPAN: 1, KBD: 1, BR: 1, EM: 1, STRONG: 1, 'BC-T': 1, 'BC-W': 1, SMALL: 1, U: 1 };
+  const KIND = new WeakMap(), pend = new Set();
+  function semi(cs) {
+    if (cs.backgroundImage !== 'none') return true;
+    const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(cs.backgroundColor); return !!m && +m[1] > 0 && +m[1] < 1;
+  }
+  function kind(el) {
+    let k = KIND.get(el); if (k) return k;
+    if (!el.isConnected || el.closest('svg')) return null;
+    const h = el.offsetHeight; if (!h) return null;              // not laid out yet (hidden): try again later
+    const cs = getComputedStyle(el);
+    // pixel GUIs drawn small and scaled up with a transform: the filter would work at their tiny local size, so leave them smooth
+    if (el.getBoundingClientRect().height / h > 1.4 || parseFloat(cs.fontSize) < 12) k = 'n';
+    else if (cs.filter !== 'none' && !/\bbc(px|pxT|Glow)\b/.test(el.className)) k = 'n';
+    else if (semi(cs) || [...el.children].some(c => !INLINE[c.nodeName])) k = 'w';
+    else k = 'f';
+    k += (parseFloat(cs.fontSize) >= 30 ? 'T' : '-') + (cs.display === 'inline' ? 'I' : '');
+    KIND.set(el, k); return k;
+  }
+  function mark(el) {
+    const k = kind(el); if (!k || k[0] === 'n') return;
+    const cls = k[1] === 'T' ? 'bcpxT' : 'bcpx';
+    if (k[0] === 'f') { if (!el.classList.contains(cls)) el.classList.add(cls); if (k[2] && !el.classList.contains('bcpxI')) el.classList.add('bcpxI'); return; }
+    for (const n of [...el.childNodes]) if (n.nodeType === 3 && AR_RE.test(n.nodeValue)) {
+      const w = document.createElement('bc-t'); w.className = cls; el.insertBefore(w, n); w.appendChild(n); }
+  }
+  const later = new Set(); let laterT = 0;
+  function flush() {
+    for (const el of pend) if (kind(el) === null) { if (el.isConnected) later.add(el); } else mark(el);
+    pend.clear();
+    if (later.size && !laterT) laterT = setTimeout(() => { laterT = 0; for (const el of later) pend.add(el); later.clear(); flush(); }, 600);
+  }
+  function queue(el) { if (!el || el.nodeType !== 1 || el.nodeName === 'BC-T') return; if (!pend.size) queueMicrotask(flush); pend.add(el); }
+  function trNode(n) { const v = n.nodeValue, t = L(v); if (t !== v) { ORIG.set(n, v); n.nodeValue = t; } if (AR_RE.test(n.nodeValue)) queue(n.parentNode); }
   function trTree(root) {
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentNode && SKIP[n.parentNode.nodeName] ? 2 : 1 });
     for (let n = w.nextNode(); n; n = w.nextNode()) trNode(n);
@@ -1118,12 +1154,33 @@ const I18N = (() => {
   Object.defineProperty(Node.prototype, 'textContent', { configurable: true, enumerable: tc.enumerable, get: tc.get,
     set(v) {
       if (lang === 'ar' && typeof v === 'string' && this.nodeType === 1 && !SKIP[this.nodeName]) {
-        const t = L(v); tc.set.call(this, t); if (t !== v && this.firstChild) ORIG.set(this.firstChild, v); return;
+        const t = L(v); tc.set.call(this, t); if (t !== v && this.firstChild) ORIG.set(this.firstChild, v); if (AR_RE.test(t)) queue(this); return;
       }
       tc.set.call(this, v);
     } });
   Object.defineProperty(Element.prototype, 'innerHTML', { configurable: true, enumerable: ih.enumerable, get: ih.get,
     set(v) { ih.set.call(this, v); if (lang === 'ar' && typeof v === 'string' && !SKIP[this.nodeName] && LATIN.test(v)) trTree(this); } });
+
+  // ---- text appearance (letters of a word are never split, so Arabic stays joined)
+  const still = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+  // words(el, text, {cps, instant}): show text word by word; cps = characters per second of the old typewriter
+  function words(el, text, o = {}) {
+    text = L(String(text == null ? '' : text)); tc.set.call(el, '');
+    el.classList.toggle('bcDone', !!o.instant || still());
+    if (AR_RE.test(text)) { el.dir = 'rtl'; el.style.unicodeBidi = 'isolate'; } else { el.removeAttribute('dir'); el.style.unicodeBidi = ''; }
+    const cps = o.cps || 60; let i = 0;
+    for (const part of text.split(/(\s+)/)) {
+      if (part) {
+        if (/^\s+$/.test(part)) el.appendChild(document.createTextNode(part));
+        else { const w = document.createElement('bc-w'); w.style.animationDelay = (i / cps).toFixed(2) + 's'; w.appendChild(document.createTextNode(part)); el.appendChild(w); }
+      }
+      i += part.length;
+    }
+    if (lang === 'ar' && AR_RE.test(text)) queue(el);
+    return text;
+  }
+  // glow(el): replay the title flash (scale 1.25 -> 1 with a bright glow)
+  function glow(el) { if (!el) return; el.classList.remove('bcGlow'); void el.offsetWidth; el.classList.add('bcGlow'); }
 
   function applyDoc() {
     const h = document.documentElement; h.lang = lang; h.dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -1140,6 +1197,6 @@ const I18N = (() => {
   applyDoc();
   // the static page text is translated once every script has built its UI
   addEventListener('DOMContentLoaded', () => { if (lang === 'ar') trTree(document.body); });
-  return { L, setLang, get lang() { return lang; }, missing, AR };
+  return { L, setLang, get lang() { return lang; }, missing, AR, words, glow };
 })();
 const L = I18N.L;

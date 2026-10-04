@@ -7,17 +7,26 @@
 <title>Blockcraft</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Pixelify+Sans:wght@400;600&family=Press+Start+2P&family=Reem+Kufi:wght@400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Pixelify+Sans:wght@400;600&family=Press+Start+2P&family=Noto+Kufi+Arabic:wght@300;400&display=swap">
 <style>
-  /* Arabic: Reem Kufi (blocky Kufi) drawn a little larger than the Latin pixel font; Latin letters and digits stay Pixelify Sans */
-  @font-face { font-family: "BC Kufi"; font-style: normal; font-weight: 400 700; font-display: swap; size-adjust: 112%;
-    src: url(https://fonts.gstatic.com/s/reemkufi/v28/2sDcZGJLip7W2J7v7wQzbWW5O7w.woff2) format("woff2"), local("Reem Kufi");
+  /* Arabic: Noto Kufi Arabic (400 for text, 300 for titles), drawn larger than the Latin pixel font and pixelated by the
+     #bcPxM / #bcPxT SVG filters (see i18n.js: only text elements get them, never semi-transparent boxes).
+     Latin letters and digits stay Pixelify Sans / Press Start 2P. */
+  @font-face { font-family: "BC Kufi"; font-style: normal; font-weight: 300; font-display: swap; size-adjust: 140%;
+    src: url(https://fonts.gstatic.com/s/notokufiarabic/v27/CSRk4ydQnPyaDxEXLFF6LZVLKrodrOYFFlKp.woff2) format("woff2"), local("Noto Kufi Arabic Light");
     unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200E, U+FB50-FDFF, U+FE70-FEFC; }
+  @font-face { font-family: "BC Kufi"; font-style: normal; font-weight: 400; font-display: swap; size-adjust: 140%;
+    src: url(https://fonts.gstatic.com/s/notokufiarabic/v27/CSRk4ydQnPyaDxEXLFF6LZVLKrodrOYFFlKp.woff2) format("woff2"), local("Noto Kufi Arabic");
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200E, U+FB50-FDFF, U+FE70-FEFC; }
+  /* digits and their punctuation inside Arabic text: Kufi's own Western digits, at the same size as the Arabic letters */
+  @font-face { font-family: "BC Num"; font-style: normal; font-weight: 300 400; font-display: swap; size-adjust: 140%;
+    src: url(https://fonts.gstatic.com/s/notokufiarabic/v27/CSRk4ydQnPyaDxEXLFF6LZVLKrodrOMFFg.woff2) format("woff2");
+    unicode-range: U+0025, U+002B-002F, U+0030-003A; }
   /* Layout: full-screen WebGL world, Minecraft HUD pinned to the bottom */
   :root {
     --michael: #65b4d4; --franklin: #abedab; --trevor: #ffa357;
-    --ui: "Pixelify Sans", "BC Kufi", "Reem Kufi", "Courier New", monospace;
-    --logo: "Press Start 2P", "BC Kufi", "Reem Kufi", "Courier New", monospace;
+    --ui: "Pixelify Sans", "BC Kufi", "Noto Kufi Arabic", "Courier New", monospace;
+    --logo: "Press Start 2P", "BC Kufi", "Noto Kufi Arabic", "Courier New", monospace;
     --mc-shadow: #3f3f3f; --btn: #727272; --btn-hi: #aaaaaa; --btn-lo: #4a4a4a; --btn-hover: #7e88c4;
     color-scheme: dark;
   }
@@ -114,11 +123,35 @@
   html[dir="rtl"] .panel p { text-align: right; }
   /* everything else (pixel GUIs, labels, tooltips) picks its reading direction from its own first letter */
   html[dir="rtl"] body :is(div, span, p, b, i, h1, h2, h3, button, label) { unicode-bidi: plaintext; }
+  /* Arabic text: one weight (no synthetic bold), pixelated by an SVG filter on the text element itself */
+  html[lang="ar"] body { font-synthesis-weight: none; }
+  html[lang="ar"] .bcpx { filter: url(#bcPxM); }
+  html[lang="ar"] :is(.bcpx, .bcpxT) { font-family: "BC Num", "Pixelify Sans", "BC Kufi", "Noto Kufi Arabic", monospace !important; }
+  html[lang="ar"] .bcpxT { filter: url(#bcPxT); font-weight: 300 !important; }
+  .bcpxI { display: inline-block; }
+  bc-t { display: inline-block; max-width: 100%; }   /* the filter needs a box of its own (on an inline box its pixel grid lands outside) */
+  html[lang="ar"] #vhTitle b { font-size: clamp(30px, 6vmin, 46px); letter-spacing: 0; line-height: 1.5; }
+  html[lang="ar"] #logo { letter-spacing: 0; }
+  /* text appearance: big titles flash in with a glow, dialog and quest text appear word by word (letters stay joined) */
+  bc-w { display: inline-block; opacity: 0; animation: bcPop .45s steps(5) forwards; }
+  @keyframes bcPop { 0% { opacity: 0; transform: translateY(10px) scale(.6); } 60% { opacity: 1; transform: translateY(-4px) scale(1.12); } 100% { opacity: 1; transform: none; } }
+  .bcGlow { animation: bcGlow 1.8s ease-out both; }
+  @keyframes bcGlow { 0% { opacity: 0; filter: brightness(3); transform: scale(1.25); } 40% { opacity: 1; } 100% { transform: scale(1); filter: none; } }
+  html[lang="ar"] .bcGlow.bcpxT { animation-name: bcGlowT; }
+  @keyframes bcGlowT { 0% { opacity: 0; filter: url(#bcPxT) brightness(3); transform: scale(1.25); } 40% { opacity: 1; } 100% { transform: scale(1); filter: url(#bcPxT); } }
+  html[lang="ar"] .bcGlow.bcpx { animation-name: bcGlowM; }
+  @keyframes bcGlowM { 0% { opacity: 0; filter: url(#bcPxM) brightness(3); transform: scale(1.25); } 40% { opacity: 1; } 100% { transform: scale(1); filter: url(#bcPxM); } }
+  .bcDone bc-w { animation: none; opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { bc-w, .bcGlow { animation: none !important; opacity: 1 !important; } }
   /* small HUD text drawn crisp, like the pixel font it stands in for */
   #hud, #vhGoal, #vhSub, #cbStatus, .msg { -webkit-font-smoothing: none; font-smooth: never; }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <filter id="bcPxM" x="0" y="0" width="100%" height="100%"><feFlood x="1" y="1" width="1" height="1"/><feComposite width="2" height="2"/><feTile result="t"/><feComposite in="SourceGraphic" in2="t" operator="in"/><feMorphology operator="dilate" radius="1"/><feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer></filter>
+ <filter id="bcPxT" x="0" y="0" width="100%" height="100%"><feFlood x="1" y="1" width="1" height="1"/><feComposite width="2" height="2"/><feTile result="t"/><feComposite in="SourceGraphic" in2="t" operator="in"/><feMorphology operator="dilate" radius="1"/><feComponentTransfer><feFuncA type="discrete" tableValues="0 0 1"/></feComponentTransfer></filter>
+</svg>
 <canvas id="c" tabindex="0" aria-label="Blocky world"></canvas>
 <div id="tint" class="layer"></div>
 <div id="grain" class="layer"></div>
@@ -538,7 +571,7 @@ function drawFace(g, d) {
 function portrait(d) { return pixCanvas(64, 64, g => { g.imageSmoothingEnabled = false; g.drawImage(pixCanvas(8, 8, gg => drawFace(gg, d)), 0, 0, 64, 64); }).toDataURL(); }
 function nameTag(text) {
   text = L(text);
-  const c = pixCanvas(256, 48, g => { g.font = '600 30px "Pixelify Sans", "BC Kufi", "Reem Kufi", monospace'; const w = Math.ceil(g.measureText(text).width) + 16;
+  const c = pixCanvas(256, 48, g => { g.font = (/[\u0600-\u06ff]/.test(text) ? '400 30px' : '600 30px') + ' "Pixelify Sans", "BC Kufi", "Noto Kufi Arabic", monospace'; const w = Math.ceil(g.measureText(text).width) + 16;
     g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(128 - w / 2, 4, w, 40); g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 128, 25); });
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, fog: false, transparent: true }));
   s.scale.set(1.6, .3, 1); s.renderOrder = 20; return s;

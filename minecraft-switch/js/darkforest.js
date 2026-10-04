@@ -976,7 +976,7 @@ function advTick(dt) {
   const other = document.getElementById('vhAdv');
   if (!advQ.length || state === 'switching' || state === 'title' || (other && !other.classList.contains('out')) || !toastEl.classList.contains('out')) return;
   const a = advQ.shift();
-  advEl.classList.toggle('ch', a.ch); advEl.querySelector('b').textContent = a.ch ? 'Challenge Complete!' : 'Advancement Made!'; advEl.querySelector('span').textContent = a.title;
+  advEl.classList.toggle('ch', a.ch); advEl.querySelector('b').textContent = a.ch ? 'Challenge Complete!' : 'Advancement Made!'; advEl.querySelector('span').textContent = a.title; I18N.glow(advEl.querySelector('span'));
   const g = advEl.querySelector('canvas').getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, 32, 32);
   try { if (hasInv() && Inv.icon) g.drawImage(Inv.icon(a.icon), 0, 0, 32, 32); else if (ICONS[a.icon]) { g.scale(2, 2); ICONS[a.icon](g); g.setTransform(1, 0, 0, 1, 0, 0); } } catch (e) { /* no icon */ }
   advEl.classList.remove('out'); advT = 4.5; DS.chime(a.ch);
@@ -1314,11 +1314,11 @@ on('frame', (dt) => {
 });
 on('tick', rawDt => {
   fogTick(); advTick(rawDt);
-  if (F.started && goalSpan && state !== 'title') goalSpan.textContent = questText();
+  if (F.started && goalSpan && state !== 'title') (typeof Meadows !== 'undefined' && Meadows.questText ? Meadows.questText(goalSpan, questText()) : (goalSpan.textContent = questText()));
   const P0 = PL();
   if (boss && !boss.removed && boss.dead <= 0 && (state === 'play' || state === 'wheel') && boss.pos.distanceTo(P0.pos) < 70) {
     bossEl.hidden = false; bossFill.style.width = Math.max(0, boss.hp / boss.max * 100) + '%';
-    if (!ourBar) { ourBar = true; bossNameEl.textContent = 'The Old Root'; bossFill.style.background = 'linear-gradient(#c8ff9a, #2f8a1a)'; bossTrack.style.background = '#123012'; bossTrack.style.borderColor = '#061406'; }
+    if (!ourBar) { ourBar = true; bossNameEl.textContent = 'The Old Root'; I18N.glow(bossNameEl); bossFill.style.background = 'linear-gradient(#c8ff9a, #2f8a1a)'; bossTrack.style.background = '#123012'; bossTrack.style.borderColor = '#061406'; }
   } else if (ourBar) { ourBar = false; bossNameEl.textContent = 'Forest Troll'; bossFill.style.background = ''; bossTrack.style.background = ''; bossTrack.style.borderColor = ''; }
   if (cine) {
     if (state === 'play' && cine.boss && !cine.boss.removed) {

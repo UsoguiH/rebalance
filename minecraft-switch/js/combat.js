@@ -119,7 +119,7 @@ const Combat = (() => {
   function floatText(text, pos, color = '#ff5555', big = false) {
     text = L(text); const ar = /[\u0600-\u06ff]/.test(text);
     const w = Math.max(16, text.length * 8 + 4);
-    const c = pixCanvas(w, 12, g => { g.font = ar ? '600 11px "BC Kufi", "Reem Kufi", sans-serif' : '8px "Press Start 2P", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const c = pixCanvas(w, 12, g => { g.font = ar ? '400 11px "BC Kufi", "Noto Kufi Arabic", sans-serif' : '8px "Press Start 2P", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillStyle = '#000'; for (const [ox, oy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]]) g.fillText(text, w / 2 + ox, 6.5 + oy);
       g.fillStyle = '#3f0000'; g.fillText(text, w / 2 + 1, 7.5); g.fillStyle = color; g.fillText(text, w / 2, 6.5); });
     const sc = big ? .052 : .04, s = spriteAt(nearestTex(c), pos, w * sc, 12 * sc);

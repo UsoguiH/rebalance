@@ -416,6 +416,7 @@ css.textContent = `
   #bmRoot .is canvas.no { opacity: .45; }
   #bmRoot .is .x { position: absolute; inset: 1px; background: rgba(170,20,20,.38); pointer-events: none; }
   #bmRoot .bminfo { position: absolute; left: 8px; top: 75px; width: 160px; font-size: 8px; line-height: 9px; white-space: nowrap; overflow: hidden; }
+  html[lang="ar"] #bmRoot .bminfo { font-size: 7px; line-height: 10.5px; top: 73px; }
   #bmRoot .bminfo .c { display: inline-block; margin-right: 4px; } #bmRoot .bminfo .ok { color: #1e7a1e; } #bmRoot .bminfo .bad { color: #b02020; }
   #bmTip { position: fixed; z-index: 16; pointer-events: none; background: rgba(16,0,16,.94); padding: 3px 4px; border: 1px solid; border-image: linear-gradient(#5000ff, #28007f) 1;
     font: 16px/1.3 var(--ui); color: #aaa; white-space: nowrap; text-shadow: 2px 2px 0 rgba(0,0,0,.55); }
