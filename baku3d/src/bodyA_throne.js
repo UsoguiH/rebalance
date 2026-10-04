@@ -65,7 +65,33 @@ export function buildThrone(THREE, style, util) {
   }
 
   // ---- seat: one dark crimson block + soft pillow (no stepped dais) ----
-  M(new THREE.BoxGeometry(0.74, 0.44, 0.9), style.toon(0x4f0b18, { role: 'velvet' }), 0, 0.22, -0.02);
+  M(new THREE.BoxGeometry(0.7, 0.42, 0.8), style.toon(0x3a0813, { role: 'velvet' }), 0, 0.22, -0.02);
+  // pleated velvet drape hanging from the seat front, deep shadow toward the floor
+  {
+    const nx = 44, ny = 14, pos = [], col = [], idx = [];
+    for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+      const u = i / nx, v = j / ny, x = (u - 0.5) * 0.78, y = 0.46 - v * 0.44;
+      const pleat = Math.sin(x * 46 + Math.sin(y * 9) * 1.2) * (0.012 + 0.03 * v) + (util.fbm(x * 5, y * 4, 7.7) - 0.5) * 0.04;
+      const z = 0.43 + pleat + v * v * 0.07;
+      const edge = Math.min(u, 1 - u);
+      const zz = edge < 0.03 ? z - (0.03 - edge) * 2.5 : z;
+      pos.push(x, y, zz);
+      const b = (0.95 - 0.55 * v) * (0.85 + pleat * 6);
+      col.push(0.75 * b, 0.16 * b, 0.22 * b);
+    }
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.setIndex(idx); geo.computeVertexNormals();
+    const dm = style.toon(0x7a1222, { role: 'velvet' });
+    dm.side = THREE.DoubleSide;
+    try { dm.vertexColors = true; } catch (e) { /* ignore */ }
+    M(geo, dm);
+  }
   const pillow = M(new THREE.SphereGeometry(0.4, 24, 12), style.toon(0x701020, { role: 'velvet' }), 0, 0.43, -0.02);
   pillow.scale.set(0.93, 0.13, 1.1);
 

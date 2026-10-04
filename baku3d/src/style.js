@@ -146,10 +146,10 @@ void main(){
     float t = 0.55 * env + 0.45 * (s * 0.5 + 0.5);
     t = mix(t * 0.55, t, smoothstep(-0.2, 0.15, s));
     t += pow(ndh, 28.0) * 0.5;
-    vec3 c0 = vec3(0.20, 0.09, 0.02);
-    vec3 c1 = vec3(0.52, 0.31, 0.05);
-    vec3 c2 = vec3(0.86, 0.62, 0.12);
-    vec3 c3 = vec3(1.00, 0.86, 0.36);
+    vec3 c0 = vec3(0.13, 0.06, 0.015);
+    vec3 c1 = vec3(0.44, 0.26, 0.04);
+    vec3 c2 = vec3(0.78, 0.55, 0.10);
+    vec3 c3 = vec3(0.97, 0.80, 0.30);
     vec3 c4 = vec3(1.00, 0.98, 0.82);
     float k = 0.025;
     vec3 g = c0;
@@ -165,14 +165,14 @@ void main(){
   col = mix(col, uSpecCol, sp * uSpec * smoothstep(0.0, 0.5, sh));
 
   float fres = 1.0 - max(dot(N, V), 0.0);
-  float rim = smoothstep(0.62, 0.90, fres) * smoothstep(0.0, 0.5, dot(N, uRV));
+  float rim = smoothstep(0.72, 0.95, fres) * smoothstep(0.1, 0.6, dot(N, uRV));
   col = mix(col, uRimCol, rim * uRim);
 
   // --- ink: hatching / stipple, screen-space, diagonal like the reference
   vec2 p = gl_FragCoord.xy / uScale;
   float ink = 0.0;
-  float c1 = smoothstep(uMidT + 0.12, uMidT - 0.22, s) * uHatch * 0.85 + uStrand * smoothstep(0.5, -0.2, s);
-  float c2 = smoothstep(uMidT - 0.25, uMidT - 0.55, s) * uHatch * 0.9;
+  float c1 = smoothstep(uMidT + 0.14, uMidT - 0.10, s) * uHatch * 1.0 + uStrand * smoothstep(0.5, -0.2, s);
+  float c2 = smoothstep(uMidT - 0.12, uMidT - 0.40, s) * uHatch * 1.0;
   float c3 = smoothstep(-0.60, -0.9, s) * uHatch;
   ink = max(ink, strokes(p, uAngle, uPitch, c1));
   ink = max(ink, strokes(p, uAngle - 0.85, uPitch * 1.12, c2));
@@ -180,7 +180,7 @@ void main(){
   ink = max(ink, st);
   ink *= 0.95;
   // solid spot-black in the deepest creases / under folds
-  float solid = smoothstep(-0.58, -0.78, s) * uSolid;
+  float solid = smoothstep(-0.40, -0.58, s) * uSolid;
   ink = max(ink, solid);
   col = mix(col, uInk, ink);
 
@@ -381,11 +381,11 @@ float shadowAt(vec3 pw){
   vec3 sc = sp.xyz / sp.w;
   if (sc.x < 0.0 || sc.x > 1.0 || sc.y < 0.0 || sc.y > 1.0 || sc.z > 1.0) return 1.0;
   float s = 0.0;
-  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) {
-    float d = texture(uShadowMap, sc.xy + vec2(float(i), float(j)) * uShadowTexel * 2.0).r;
+  for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) {
+    float d = texture(uShadowMap, sc.xy + vec2(float(i), float(j)) * uShadowTexel * 5.0).r;
     s += step(sc.z - 0.004, d);
   }
-  return s / 9.0;
+  return s / 25.0;
 }
 
 float strokesB(vec2 p, float ang, float pitch, float cov){
@@ -405,12 +405,12 @@ float strokesB(vec2 p, float ang, float pitch, float cov){
 }
 
 vec3 velvetRamp(float t){
-  vec3 a = vec3(0.14, 0.01, 0.045);
-  vec3 b = vec3(0.38, 0.03, 0.10);
-  vec3 c = vec3(0.52, 0.06, 0.14);
-  vec3 d = vec3(0.70, 0.13, 0.19);
-  vec3 e = vec3(0.98, 0.52, 0.30);
-  vec3 f = vec3(1.00, 0.76, 0.46);
+  vec3 a = vec3(0.10, 0.008, 0.035);
+  vec3 b = vec3(0.30, 0.025, 0.08);
+  vec3 c = vec3(0.47, 0.05, 0.12);
+  vec3 d = vec3(0.64, 0.11, 0.17);
+  vec3 e = vec3(0.90, 0.44, 0.27);
+  vec3 f = vec3(0.97, 0.64, 0.42);
   vec3 col = mix(a, b, smoothstep(0.0, 0.25, t));
   col = mix(col, c, smoothstep(0.22, 0.50, t));
   col = mix(col, d, smoothstep(0.48, 0.72, t));
@@ -431,19 +431,19 @@ void main(){
     float warp = vn(vec2(v.x * 0.7, v.y * 0.4)) * 2.6 + vn(vec2(v.x * 2.2, v.y * 0.9)) * 0.7;
     float f1 = 0.5 + 0.5 * sin(lean * 2.6 + warp);
     float f2 = 0.5 + 0.5 * sin(lean * 6.5 + warp * 1.5 + 1.3);
-    float fold = f1 * 0.78 + f2 * 0.22;
     float g = smoothstep(-1.6, 2.6, v.x * 0.9 + 0.55 * v.y);
     float d = length((v - gv) * vec2(0.85, 0.75));
     float glow = exp(-d * d * 0.40);
+    float fold = 0.5 + (f1 * 0.78 + f2 * 0.22 - 0.5) * (1.0 - 0.5 * glow);
     float t = 0.22 + 0.20 * g + 0.62 * glow + (fold - 0.5) * 0.36;
-    t -= 0.36 * smoothstep(-0.8, -3.2, v.y);
+    t -= 0.42 * smoothstep(-0.5, -3.0, v.y);
     t -= 0.10 * smoothstep(0.2, -1.2, v.x) * (1.0 - glow);
     col = velvetRamp(clamp(t, 0.0, 1.0));
-    float gully = smoothstep(0.34, 0.20, fold) * (1.0 - glow * 0.5);
+    float gully = smoothstep(0.46, 0.14, fold) * (1.0 - glow * 0.7);
     col = mix(col, col * vec3(0.38, 0.22, 0.30), gully * 0.85);
     float sh = shadowAt(vPw);
     float shade = (1.0 - sh);
-    col *= mix(1.0, 0.62, shade);
+    col *= mix(1.0, 0.80, shade);
     float cov = gully * 0.7 + shade * 0.35 + smoothstep(0.16, 0.0, t) * 0.8;
     float ink = strokesB(p, -0.20 + (vn(p * 0.004) - 0.5) * 0.15, 6.5, cov * 0.5);
     col = mix(col, vec3(0.09, 0.005, 0.03), ink * 0.8);
@@ -465,10 +465,9 @@ void main(){
     col = mix(col, vec3(0.50, 0.44, 0.38), mortar * 0.45);
     float cn = abs(vn(w * vec2(2.3, 3.4) + vec2(9.0, 3.0)) - 0.5);
     float cm = smoothstep(0.76, 0.86, vn(w * 1.1 + 4.0)) * smoothstep(1.3, 0.9, abs(w.x));
-    col = mix(col, vec3(0.25, 0.2, 0.17), (1.0 - smoothstep(0.002, 0.007, cn)) * cm * 0.6);
-    float sh = shadowAt(vPw);
-    col *= mix(1.0, 0.86, 1.0 - sh);
-    col *= 1.0 - 0.18 * smoothstep(1.0, 1.9, abs(w.x));
+    
+    col *= 1.0;
+    col *= 1.0 - 0.30 * smoothstep(0.7, 1.7, abs(w.x));
   }
   oCol = vec4(col, 1.0);
   oNorm = vec4(0.5, 0.5, 1.0, -vVp.z * 0.1);
@@ -510,7 +509,7 @@ void main(){
   // thick ink where a big depth jump marks a silhouette
   float big = 0.0;
   for (int i = 0; i < 4; i++) {
-    vec4 nn = texture(tNorm, vUv + offs[i] * px * 2.4);
+    vec4 nn = texture(tNorm, vUv + offs[i] * px * 3.2);
     big = max(big, abs(nn.w - zc) / max(max(nn.w, zc), 0.05));
   }
   vec2 gp = gl_FragCoord.xy / uScale;
@@ -524,8 +523,9 @@ void main(){
   // grade: a bit punchier, warmer
   float lum = dot(col, vec3(0.299, 0.587, 0.114));
   col = mix(vec3(lum), col, 1.10);
-  col = (col - 0.5) * 1.10 + 0.5;
-  col *= vec3(1.01, 1.0, 0.985);
+  col = (col - 0.5) * 1.18 + 0.5;
+  col *= 0.96;
+  col *= vec3(1.0, 0.995, 0.99);
 
   // paper grain + printed-ink speckle + mild halftone
   float g1 = h21(floor(gl_FragCoord.xy));
@@ -542,8 +542,8 @@ void main(){
 
   // vignette
   vec2 q = vUv - 0.5;
-  float vig = smoothstep(0.95, 0.35, length(q * vec2(1.0, 1.05)));
-  col *= mix(0.80, 1.0, vig);
+  float vig = smoothstep(0.85, 0.30, length(q * vec2(1.0, 1.05)));
+  col *= mix(0.55, 1.0, vig);
   col = mix(col, col * vec3(1.0, 0.92, 0.90), 1.0 - vig);
 
   oCol = vec4(clamp(col, 0.0, 1.0), 1.0);

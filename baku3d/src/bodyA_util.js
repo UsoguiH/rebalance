@@ -91,7 +91,7 @@ export function makeUtil(THREE) {
       const a = (Math.PI / 2) * (i / capE);
       list.push({ t: 1, s: Math.sin(a), shift: Math.cos(a) });
     }
-    const pos = [];
+    const pos = [], col = [];
     for (const it of list) {
       const f = frameAt(spec, curve, it.t);
       const rx0 = spec.rx(it.t), ry0 = spec.ry(it.t);
@@ -109,6 +109,7 @@ export function makeUtil(THREE) {
           .addScaledVector(f.N, sa * ry0 * it.s * m)
           .addScaledVector(f.T, it.shift * capLen + (spec.tilt ? ca * rx0 * it.s * m * spec.tilt(it.t) : 0));
         pos.push(v.x, v.y, v.z);
+        if (spec.shade) col.push(...spec.shade(m, it.t, phi, base));
       }
     }
     const idx = [];
@@ -124,9 +125,12 @@ export function makeUtil(THREE) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setIndex(idx);
-    g.computeVertexNormals();
-    g._curve = curve;
-    return g;
+    if (spec.shade) g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    let out = g;
+    if (spec.flat) { out = g.toNonIndexed(); }
+    out.computeVertexNormals();
+    out._curve = curve;
+    return out;
   }
 
   // ribbon between two equally long point lists (double-sided surface)
