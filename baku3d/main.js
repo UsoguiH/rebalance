@@ -9,6 +9,7 @@ import { buildHead } from './src/head.js';
 import * as style from './src/style.js';
 
 const shotMode = new URLSearchParams(location.search).has('shot');
+if (shotMode) document.getElementById('hint')?.remove();
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(shotMode ? 1 : Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);

@@ -72,15 +72,15 @@ export function buildHead(THREE, style) {
       const rx = 0.0470 * flare, rz = 0.050 * (1 + 0.15 * (flare - 1));
       const r = Math.min(0.999, Math.abs(x) / rx); return rz * Math.sqrt(1 - r * r) - 0.004 + 0.0025;
     };
-    line([[-0.0245, 0.118, zN(-0.0245, 0.118)], [-0.020, 0.075, zN(-0.020, 0.075)], [-0.0125, 0.035, zN(-0.0125, 0.035)], [-0.008, 0.008, zN(-0.008, 0.008)]], 0.0016);
-    line([[0.0255, 0.112, zN(0.0255, 0.112)], [0.019, 0.075, zN(0.019, 0.075) + 0.001], [0.013, 0.035, zN(0.013, 0.035)], [0.009, 0.006, zN(0.009, 0.006)]], 0.0013);
+    line([[-0.0235, 0.090, zN(-0.0235, 0.090)], [-0.018, 0.060, zN(-0.018, 0.060)], [-0.0125, 0.032, zN(-0.0125, 0.032)], [-0.008, 0.008, zN(-0.008, 0.008)]], 0.0014);
+    line([[0.0245, 0.085, zN(0.0245, 0.085)], [0.019, 0.060, zN(0.019, 0.060) + 0.001], [0.013, 0.032, zN(0.013, 0.032)], [0.009, 0.006, zN(0.009, 0.006)]], 0.0011);
     line([[-0.0065, 0.070, zN(-0.0065, 0.070) + 0.006], [-0.0010, 0.062, zN(0, 0.062) + 0.0085], [0.0065, 0.071, zN(0.0065, 0.071) + 0.006]], 0.0012);
     // clavicles
     line([[-0.012, 0.005, 0.040], [-0.030, 0.0, 0.032], [-0.052, 0.0045, 0.018]], 0.0016);
     line([[0.012, 0.005, 0.040], [0.030, 0.0, 0.032], [0.052, 0.0045, 0.018]], 0.0016);
   }
   neckGroup.rotation.set(0.12, 0, -0.05);
-  const HS = 1.08; neckGroup.scale.setScalar(HS);
+  const HS = 1.15; neckGroup.scale.setScalar(HS);
 
   // ======================= HEAD (tilt group) =======================
   const tilt = new THREE.Group(); tilt.name = 'headTilt';
@@ -116,7 +116,7 @@ export function buildHead(THREE, style) {
 
   // ---- EYE (visible: viewer's left)
   function eyeAt(ex, ey, side, phi) {
-    const hw = 0.0185, hu = 0.0050, hl = 0.0027;
+    const hw = 0.0190, hu = 0.0056, hl = 0.0030;
     const cs = Math.cos(phi), sn = Math.sin(phi);
     // canonical u along +x; for side=-1 (viewer's left) inner corner is +u; mirror for the other
     const T = (u, v) => { const uu = u * (side < 0 ? 1 : -1); const x = uu * cs + v * sn * 1, y = -uu * sn + v * cs; return [ex + x, ey + y]; };
@@ -129,7 +129,7 @@ export function buildHead(THREE, style) {
     add(fill(THREE, field, toFace(almond), 0.0007, 3), 0xe8dfd2, 'eye', 'sclera', 1);
     const circle = (cx, cy, r, m = 28) => { const a = []; for (let i = 0; i < m; i++) { const t = i / m * Math.PI * 2; a.push([cx + Math.cos(t) * r, cy + Math.sin(t) * r]); } return a; };
     const ic = [0.0010 * (side < 0 ? 1 : -1) * 0 + 0.0012, -0.0006];
-    const irisP = clipPoly(circle(ic[0], ic[1], 0.0104), almond);
+    const irisP = clipPoly(circle(ic[0], ic[1], 0.0112), almond);
     const lightP = clipPoly(circle(ic[0] + 0.0008, ic[1] - 0.0005, 0.0075), almond);
     const pupP = clipPoly(circle(ic[0], ic[1], 0.0040), almond);
     if (irisP.length > 2) add(fill(THREE, field, toFace(irisP), 0.0010, 3), 0x1a2234, 'eye', 'iris', 2);
@@ -154,7 +154,7 @@ export function buildHead(THREE, style) {
   // ---- BROWS
   const browL = [[-0.062, 0.031], [-0.054, 0.0325], [-0.045, 0.0325], [-0.036, 0.0300], [-0.027, 0.0262], [-0.018, 0.0225], [-0.010, 0.0190]];
   add(ribbon(THREE, field, browL, t => (0.0024 + 0.0062 * Math.pow(t, 0.7)) * (t > 0.92 ? 0.7 : 1), 0.0018), 0x1e1418, 'hair', 'browL', 5);
-  const browR = [[0.012, 0.0285], [0.020, 0.0385], [0.032, 0.0445], [0.046, 0.0445], [0.058, 0.039], [0.067, 0.031]];
+  const browR = [[0.014, 0.0300], [0.023, 0.0405], [0.036, 0.0470], [0.050, 0.0465], [0.062, 0.0400], [0.070, 0.0320]];
   add(ribbon(THREE, field, browR, t => 0.0050 * Math.sin(Math.PI * (0.08 + 0.84 * t)) ** 0.5 + 0.0012, 0.0018), 0x1e1418, 'hair', 'browR', 5);
 
   // ---- NOSE lines

@@ -143,6 +143,22 @@ export function buildHair(THREE, style, field, skullGeo) {
     }
   }
 
+  // ---- 2b. back / nape cover: strands run down the back of the skull
+  for (let l = 0; l < 3; l++) for (let az = 60; az <= 300; az += 3.2) {
+    const a0 = (az + R(-1.5, 1.5)) * d2r, K = 22, pts = [];
+    const el0 = R(58, 74) * d2r, el1 = R(-40, -28) * d2r, eps = 0.0025 + l * 0.0027 + R(0, 0.0012);
+    const ph1 = R(0, 6.28), fr = R(2, 6), amp = R(0.0006, 0.002);
+    for (let k = 0; k <= K; k++) {
+      const t = k / K, el = el0 + (el1 - el0) * t, aa = a0 + (Math.PI - a0) * 0.18 * t * (a0 < Math.PI ? 1 : 1);
+      const q = surf(Math.sin(aa) * Math.cos(el), Math.sin(el), Math.cos(aa) * Math.cos(el));
+      if (q[1] < -0.034 && k > 3) break;
+      const e = eps + 0.010 * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.3))) ** 0.7;
+      pts.push(V(q[0] + q[3] * e + Math.sin(t * fr * 3 + ph1) * amp, q[1] + q[4] * e, q[2] + q[5] * e));
+    }
+    if (pts.length < 4) continue;
+    strand(rnd() < 0.05 ? ink : pick(), pts, taper(R(0.0050, 0.0095), 0.06, 0.32, 0.0), 0.0015);
+  }
+
   // ---- 3. hand-placed hanging locks, bangs and flicks
   function lock(bucket, ctrl, w, th = 0.0017, segs = 26, cenOv) {
     const c = new THREE.CatmullRomCurve3(ctrl.map(p => V(...p)), false, 'catmullrom', 0.5);
