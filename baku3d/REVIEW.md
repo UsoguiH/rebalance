@@ -1,53 +1,53 @@
-VERDICT: REDO (round 3, overall 6.4/10; round 2 was 5.9, round 1 was 4.9)
+VERDICT: REDO (round 4, overall 6.5/10; round 3 was 6.4, round 2 was 5.9, round 1 was 4.9)
 
-Scores (0-10 vs reference). Round 2 scores are in brackets.
-(1) pose/lean/silhouette/framing 7.5 [7]
-(2) head, face likeness, hair, strap, monocle 5.5 [5]
-(3) propping hand + armrest hand 6.5 [6]
-(4) legs, trousers, boot 5.5 [5.5]
-(5) throne/backdrop/wall 7 [6.5]
-(6) art style, ink, cel colour, mood, grade 6.5 [6]
+Scores (0-10 vs reference). Round 3 scores are in brackets.
+(1) pose/lean/silhouette/framing 7.5 [7.5]
+(2) head, face likeness, hair, strap, monocle 6 [5.5]
+(3) propping hand + armrest hand 5.5 [6.5]
+(4) legs, trousers, boot 6 [5.5]
+(5) throne/backdrop/wall 7 [7]
+(6) art style, ink, cel colour, mood, grade 7 [6.5]
 
-Coordinates are in the 1156x1264 render frame, and refs/ref_full.jpg is the same size, so they compare directly. They are approximate. Zoomed face/boot crops were compared (scratchpad face.png, boot.png).
+Coordinates are in the 1156x1264 render frame, and refs/ref_full.jpg is the same size, so they compare directly. They are approximate. Zoomed face/hand/boot crops were compared against the reference (scratchpad face.png, hand.png, boot.png).
 
-Improved since round 2:
-- The collar spike no longer cuts across the mouth.
-- The fist is now big, with knuckles on the cheek (~(690-840,290-410)).
-- The monocle is a visible gold disc of about the right size.
-- The hair is a creamy light grey with ink strands.
-- The whites are cooler, with real hatching in the shadows.
-- The throne has a red cushion instead of the stepped dais.
-- The stray artifacts are gone.
+Improved since round 3:
+- More of the face is visible: eye, nose, mouth and chin at ~(560-700,200-370).
+- The hair is whiter, with comb lines.
+- The strap is now diagonal and runs across the brow to the monocle.
+- The red collar is attached at the neck.
+- The boot is rounder and has crossed laces, and the trouser hem now wraps the ankle with a white cuff loop (~(390-500,1080-1160)).
+- The whites carry more ink hatching.
+- The shirt neckline is higher.
 
 ## Builder A (src/body.js)
 
-1. **Bare-skin neck/chest is a huge flat peach wedge.** Skin fills (470-720,300-540), including a bare shoulder blob at (465-545,300-390) left of the neck, with a red triangle and a white notch stuck on it at (430-520,370-430). The reference has a narrow neck, with the dark-red shirt coming up to the collarbone and the deep V only ~110px wide at the top. The shirt collar and red lapel edge frame the neck at (430-540,300-400), and there is no bare shoulder. Raise the shirt neckline: make the V ~35% narrower, start it at ~y 400 below the collarbones, put the red collar around the neck base (not a floating triangle), and remove the bare shoulder blob by moving the jacket/shirt collar up over it.
-2. **Boot is crude and faceted.** It spans (90-500,940-1225) as a low-poly wedge with visible polygon steps (a tan rectangle highlight at (230-440,1000-1100), a staircase shape at (320-400,960-1000), flat-shaded planes). The reference boot is an organic, rounded, lace-up boot with a thick toe cap, a shaft ending in the trouser hem, 4-5 thin crossed laces and heavy black shadow. Increase the segments and smooth the normals (a rounded toe cap and a rounded ankle), replace the blocky highlight with a thin curved rim light, and make laces thin dark crossing lines on the instep. The toe should point down-left at ~210 deg, which it roughly does.
-3. **Crossed-leg readability is still weak.** The thigh and the crossing shin read as one big white mass at (400-1050,700-1100), and the knee is a smooth rounded ball. The reference has a clear shin line: from the knee (1000,840) steeply down-left over the other thigh, with the cuff pooling at ~(380-480,1000-1100), and fold lines from the knee. Add a visible trouser cuff (hem opening ~60px wide) at the ankle where it meets the boot, and creases radiating from the knee and hip.
-4. **Torso/jacket shape.** The left shoulder is a tall white hump (270-440,310-420) that rises higher than the neck base, like a pauldron. The reference shoulder slopes down from the neck at ~25 deg. Lower the left shoulder peak ~45px and soften the hump. The lapels are flat white slabs: add a lapel notch and a clear lapel roll.
-5. **Right sleeve and elbow.** The propping sleeve (770-1030,380-700) is a smooth tube with a notched outline. Add 3-4 crumple creases at the elbow, a more bent elbow (a sharper angle, with the elbow lower, ~(1010,620)) and a cuff that shows at the wrist ~(800,400).
-6. **Fist details.** The fist is good in size, but a grey hair lock hangs over it (700-725,330-410), and the fingers are a blob of 4 similar bumps. Add finger separation lines, a thumb tucked under the chin and a visible curled index finger. The knuckles should press the cheek with the monocle partly under the fingers.
-7. **Armrest hand.** Now acceptable at (155-320,765-935). The fingers are still too straight, and the thumb at (290-320,850-885) looks like a spike. Curl and shorten.
-8. **Shirt.** Still a flat maroon slab (385-740,400-780), with a stray red triangle at ~(440,650). Add chest wrinkles and a lower hem, and remove the red triangle.
+1. **Propping hand now reads as a pointing hand.** The hand at (690-840,245-410) has a raised cylindrical thumb standing straight up at (740-780,245-290), plus long extended fingers lying along the cheek. In the reference the fist is a loose, curled fist: the four fingers are curled in, and the first knuckles press into the cheek just under the monocle. The thumb is tucked under, not raised, and the fist is ~100px wide at (735-810,310-420). Curl all four fingers to ~90 deg at both joints so the fingertips tuck into the palm and only the knuckle row and the back of the fingers face the face. Fold the thumb down along the index finger. Shorten the hand ~15%. The wrist should come in from the lower right, with the cuff at ~(800,400).
+2. **Boot is a long sausage.** The boot at (90-500,940-1225) is a tube, with a shaft ~400px long ending in a rounded cap, like a sock or a sausage. The reference boot is shorter (~(95-330,980-1200)): a chunky foot with a defined toe cap that points down-left, a visible heel and sole edge, a short ankle shaft hidden in the trouser, and tight laces on the instep. Cut the length ~35%, add a distinct toe-box bulge, an ankle step, a heel block and a thicker dark sole. The crossed laces (~(255-330,985-1045)) are a good start but are tiny. Scale up ~1.5x.
+3. **Bare skin at the neck/shoulder still wrong.** There is a peach wedge (495-600,325-470) between the collar and the V, and a bare patch at (440-515,330-385) beside the red collar, so the neck looks like a naked triangle with a hard vertical edge at x~500. The reference has a narrower neck, with the maroon shirt up to the collarbone at both sides, the red collar edge against the neck, and the skin V narrower (~100px). Fill the wedge on the viewer's-left with shirt and collar fabric, and make the V a clean narrow V starting at ~(560,400).
+4. **Crossed-leg readability.** Better, with the cuff, but the thigh/knee still merges into the big white mass at (400-1060,700-1100) and has a lumpy knee. The knee line needs to be sharper, with creases radiating, and the shin should clearly cross over in front of the other thigh. The reference thigh has diagonal folds from hip to knee.
+5. **Torso/left shoulder.** The left shoulder hump at (270-440,320-430) is still higher than the neck base by ~40px, like a pad. Lower it ~35px and slope it.
+6. **Armrest hand.** Good orientation at (155-320,765-935). Fingers are still too long and equal; the thumb stub at (290-320,850-885) is a spike. Shorten the fingers ~15% and curl them more.
+7. **Right sleeve.** Better shading, but the tube is still smooth from the elbow (1040,620) to the cuff. Add 3-4 elbow creases and a cuff bulge.
+8. **Armrest/throne spikes.** The gold teardrops under the armrests (140-210,960-1060 and 950-1030,960-1110) do not exist in the reference, which has carved block armrests. Replace with a stacked carved base or remove.
 
 ## Builder B (src/head.js)
 
-1. **The face is hidden and distorted.** The face is visible only as a narrow sliver (570-690,200-370), as the fist and a heavy hair lock cover the right half. The reference shows most of the face: forehead, nose bridge, left eye, cheek, mouth and chin at ~(600-740,215-380) with the fist below the monocle. Move the head ~25px left/up relative to the fist, or lower the fist, so that the nose, mouth and jaw are visible. Remove the grey lock that hangs across the knuckles (700-725,330-410); locks must hang beside the face, not over the hand.
-2. **Eye, brow and mouth.** The left eye is a small blue almond with a single brow line. It needs a darker iris, a heavy lid, dark under-eye bags and a sharper angry brow ~30px long. The brow (thin, near (595,248)) is OK in angle but too light. The mouth is a faint line with white stubble at the chin (585-610,350-365). Add a clear smirk (corner up), a darker upper lip line and the lower lip. The reference smirk is at ~(615-680,335).
-3. **Monocle.** The disc at (645-700,275-305) is now a flat gold coin pasted on the face, in front of the eye socket, with a black rim. The reference lens is a pale translucent-yellow disc that hugs the eye socket, ~45x30px, tilted with the head and partly hidden by the knuckles at ~(735,305). Tilt it with the head (~35 deg), make it translucent pale gold, and tuck its lower edge behind the fingers. Move it ~40px right, to the viewer's-right eye (currently it is sitting at the middle of the face).
-4. **Eyepatch strap.** The strap is now a wide, pale band (600-660,150-250) running down and across the brow, but it is nearly vertical and too wide (~40px), and has a stray white highlight patch. The reference strap is ~25px wide, running diagonally (~35 deg from horizontal) from the upper-left forehead to the monocle across the viewer's-right eye. Rotate ~35 deg more toward horizontal, narrow, and run it to the monocle.
-5. **Head scale and shape.** The head spans ~(545-840,65-390), but the skull is too tall and the jaw too long and narrow (chin at ~(600,365)). The reference has a rounder skull and a strong angular jaw. Shorten the face length ~10% and widen the jaw/cheek.
-6. **Hair.** Better colour. But the hair is a smooth helmet with a ragged flick at the left (545-590,215-260) and large dark spiky strokes. The reference has a wavy, voluminous mass with comb lines and curly tips at the ear and nape (~(565-600,270-310)), and white/cream, not grey. Brighten it ~15%, add the wavy lock tips, and thin the dark strokes.
-7. **Neck and skin.** The neck is a flat wedge (with A1). The skin is flat peach with hatching on the cheek/jaw. Add a collarbone line (~(540,390)-(690,405)), a neck tendon, and warm cel shadow under the jaw.
-8. **Ear and temple.** There is no visible ear or sideburn. The reference has the ear partly covered with locks and a sideburn running down the jaw (stubble). Add a sideburn along the left jaw (580-600,260-350).
+1. **Monocle is still a coin floating on the cheek.** The disc at (640-690,270-305) sits in front of the nose-side of the face, below the strap, not in the eye socket, and is flat and solid. In the reference the lens is at the viewer's-right eye ~(735,305), tilted ~35 deg to follow the head, partly hidden under the knuckles, and pale translucent gold with a glow. Move it ~50px right and ~5px down so it is half covered by the fist, tilt it, make it translucent, and thin its rim.
+2. **Eye, brow, mouth need character.** The left eye (~(595,248)) is a small blue almond with a thin lid. The reference is a dark, hooded, half-lidded eye with a heavy angled brow and dark bags, and an upward glance. Darken the iris (#2a2a38), thicken the brow at the inner end and angle it ~30 deg down toward the nose, and add a heavy upper lid and bags. The mouth is a faint dash at (590-625,320-335). Add the smirk with a raised corner and a visible lower lip.
+3. **Face shape.** The head is now long and narrow. The chin with its tuft of white stubble at (575-600,345-365) is pointy and the jaw is a thin line. The reference has a broader cheekbone and a strong angular jaw. Widen the lower face ~12% and add a cheekbone plane and a sunken cheek.
+4. **Head size and tilt vs fist.** The head spans ~(540-835,60-375). The tilt (~35 deg) is OK now. The fist overlaps the right side of the face OK. But the head sits ~25px too far left relative to the reference (centre ~(690,235) vs ref ~(705,250)). Shift right ~15px and down ~15px.
+5. **Hair.** Now near-white with comb lines, but the shape is a smooth helmet with a single big hump. The reference has a more voluminous mass with a ragged outline, wavy lock tips curling at the ear (~(555-600,250-300) in the frame) and nape, and long locks falling over the viewer's-right temple. Add the curl tips and 3-4 hanging locks on the right side and at the ear. The dark spiky lock at the left (545-585,195-235) looks messy; replace with thin white wavy strands.
+6. **Strap.** Much better. It now crosses the forehead diagonally at (590-665,185-235). It still starts too high and is too opaque. Make it a pale translucent yellow (as the reference) and continue it more clearly down across the brow toward the lens.
+7. **Neck.** The neck/collarbone area is flat peach, with no collarbone line or neck tendon. Add a collarbone line at ~(520,380)-(660,395) and a neck tendon.
+8. **Stubble.** The hatching on the jaw/cheek (585-690,300-370) is OK but over the nose side and under the lens is noisy; restrict it to the jawline band.
 
 ## Style (src/style.js)
 
-1. **Spot blacks and ink weight.** Better hatching, but the reference whites have sharp, dense black ink creases (under the lapel, between the thighs, in the cuffs) as solid fills. The render has only pale blue-grey tone with light hatch lines. Add a hard threshold so the darkest 10% turn solid black, and add 1-2px black fold lines at crease edges.
-2. **Shirt and skin are flat fills.** The shirt is a flat maroon polygon and the skin a flat peach. The reference shirt has darker folds and a gradient, with skin in a two-tone cel with a warm orange mid-shadow and a bright highlight. Add a subtle noise/gradient to the maroon, and a second shadow band on the skin.
-3. **Boot shading.** Hard-faceted brown steps (see A2). Use a smooth cel ramp (3 steps, soft terminator, thin rim highlight), a deep near-black shadow and a hint of orange.
-4. **Backdrop colour.** The red is now fine and the glow is soft. The cream wall has a brown vignette that reads sepia. The reference wall is pale cream with an orange warmth near the throne and cooler white away from it. Reduce the brown corner darkening to 50%.
-5. **Gold materials.** The throne gold is glossy and saturated; the reference is a warmer brown-gold with dark carved lines. Darken the shadow side of the gold (#7a4a08) and add small engraved detail lines.
-6. **Mood.** The scene is closer, but the face is not lit dramatically. Add a stronger shadow on the left side of the face and under the brow, and a warm rim light on the hair's right edge, for the lazy-menacing feel.
-7. **Outline weight.** Silhouette lines are good. Interior lines on the hand and face are still a bit heavy (the fist). Taper them.
-8. **Hair line art.** The strands are drawn as noisy dark scribbles. Replace with consistent thin parallel ink lines, matching the reference comb lines.
+1. **Spot blacks still missing in the whites.** The reference has solid black creases and shadow fills (under the lapel, between the thighs, behind the shin). The render has hatching but few solid fills. Threshold the darkest 10% to solid black, and add black fold lines at crease edges.
+2. **Skin cel shading is flat.** The face is peach and cream with a light hatch; the neck/chest is a flat peach. Add a warm orange mid-shadow band and strong shadow on the left side of the face, under the brow and under the jaw, for the menacing mood.
+3. **Boot shading.** Smoother than before but still a plain brown gradient with orange highlights. The reference leather has near-black shadows and a few sharp highlights. Add a harder cel ramp, a darker shadow side, and ink hatching.
+4. **Shirt flat.** The maroon shirt is a flat fill with a faint gradient. Add dark fold hatching and a darker shadow below the jacket.
+5. **Hair line art.** The comb lines are better, but the hair reads as a flat grey block on the right side (700-830,110-290). Add more white highlight lines and dark gaps between strands.
+6. **Outline weight.** Good on silhouettes. Interior lines on the hand are too heavy and uniform; taper them.
+7. **Backdrop.** The glow is soft and good. The wall is a warm cream/brown vignette, which is acceptable. Reduce the brown corner darkening a bit, and add faint mortar grunge.
+8. **Gold.** The throne gold is saturated and glossy. The reference gold is warmer brown with carved darkness. Darken the shadow side of the gold.
