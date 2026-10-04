@@ -82,8 +82,18 @@ export function buildHand(THREE, util, mat, nailMat, spec) {
     }
   }
   // thumb
-  const t = spec.thumb || { dir: V(0.5, 0.8, 0.1), bend: [0.2, 0.3], len: [0.034, 0.028, 0.024] };
-  {
+  if (spec.thumbPts) {
+    const tp = spec.thumbPts.map((a) => V(a[0], a[1], a[2]));
+    let r = spec.thumbR || 0.0115;
+    for (let k = 0; k < tp.length - 1; k++) {
+      if (k === 0) sphere(r, tp[0]);
+      cyl(tp[k], tp[k + 1], r, r * 0.92);
+      sphere(r * 0.92, tp[k + 1]);
+      r *= 0.92;
+    }
+  }
+  const t = spec.thumbPts ? { dir: V(0, 1, 0), bend: [0, 0], len: [0, 0, 0], skip: true } : spec.thumb || { dir: V(0.5, 0.8, 0.1), bend: [0.2, 0.3], len: [0.034, 0.028, 0.024] };
+  if (!t.skip) {
     let p = V(side * 0.03, 0.026, 0.0);
     const base = t.dir.clone().normalize();
     base.x *= side;

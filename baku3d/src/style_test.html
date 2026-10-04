@@ -29,6 +29,7 @@ M(new THREE.SphereGeometry(0.12, 32, 24), style.toon(0xf0c9a8, {role:'skin'}), 0
 const hair = M(new THREE.SphereGeometry(0.125, 32, 24), style.toon(0xf4f4f8, {role:'hair'}), 0.0, 1.31, 0.03); hair.scale.set(0.9,1.0,1.0);
 M(new THREE.TorusGeometry(0.03,0.006,8,24), style.toon(0xe8b020,{role:'gold'}), 0.05, 1.28, 0.17);
 M(new THREE.SphereGeometry(0.014, 12, 10), style.toon(0xffffff,{role:'eye'}), -0.04, 1.28, 0.165);
+M(new THREE.SphereGeometry(0.1, 24, 16), style.toon(0xffdd66,{role:'gold', opacity:0.4}), 0.3, 1.3, 0.3);
 root.add(body); root.add(new THREE.Group());
 scene.add(root);
 style.finalize(THREE, scene, root, stage);

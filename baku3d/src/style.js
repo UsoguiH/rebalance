@@ -54,7 +54,7 @@ layout(location = 0) out vec4 oCol;
 layout(location = 1) out vec4 oNorm;
 uniform vec3 uBase; uniform vec3 uLitM; uniform vec3 uMidM; uniform vec3 uShadeM; uniform vec3 uDeepM;
 uniform vec3 uInk; uniform vec3 uSpecCol; uniform vec3 uRimCol;
-uniform float uMidT, uSolid, uSoft, uStraight;
+uniform float uMidT, uSolid, uSoft, uStraight, uOpacity, uHatchT, uFaceShade;
 uniform float uSpec, uShin, uBump, uHatch, uPitch, uAngle, uStrand, uRim, uMetal, uFlat, uFlatCol, uLitT;
 uniform vec3 uLV; uniform vec3 uRV; uniform vec2 uRes; uniform float uScale;
 uniform sampler2D uShadowMap; uniform mat4 uShadowMatrix; uniform float uShadowTexel;
@@ -101,6 +101,10 @@ float strokes(vec2 p, float ang, float pitch, float cov){
 }
 
 void main(){
+  if (uOpacity < 0.999) {
+    float th = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+    if (th > uOpacity) discard;
+  }
   vec3 N = normalize(vNv);
   if (uFlat > 0.5) N = normalize(cross(dFdx(vVp), dFdy(vVp)));
   else if (!gl_FrontFacing) N = -N;
@@ -120,6 +124,9 @@ void main(){
   vec3 V = normalize(-vVp);
   float ndl = dot(N, uLV);
   float sh = shadowAt(vPw, V2W * normalize(vNv));
+  if (uFaceShade > 0.0) {
+    ndl -= uFaceShade * (0.55 * smoothstep(-0.05, -0.65, N.x) + 0.45 * smoothstep(0.05, -0.45, N.y));
+  }
   float s = min(ndl, mix(-0.40, 1.0, sh));
 
   vec3 base = pow(max(uBase * vCol, 0.0), vec3(1.0 / 2.2));
@@ -154,10 +161,10 @@ void main(){
     vec3 c4 = vec3(1.00, 0.90, 0.55);
     float k = 0.025;
     vec3 g = c0;
-    g = mix(g, c1, smoothstep(0.26 - k, 0.26 + k, t));
-    g = mix(g, c2, smoothstep(0.44 - k, 0.44 + k, t));
-    g = mix(g, c3, smoothstep(0.62 - k, 0.62 + k, t));
-    g = mix(g, c4, smoothstep(0.82 - k, 0.82 + k, t));
+    g = mix(g, c1, smoothstep(0.30 - k, 0.30 + k, t));
+    g = mix(g, c2, smoothstep(0.50 - k, 0.50 + k, t));
+    g = mix(g, c3, smoothstep(0.70 - k, 0.70 + k, t));
+    g = mix(g, c4, smoothstep(0.88 - k, 0.88 + k, t));
     // soft in-band gradient
     col = mix(g, g * base * 1.25, 0.25);
     float gd = abs(fract(vPw.y * 30.0 + 0.5) - 0.5);
@@ -174,13 +181,17 @@ void main(){
   // --- ink: hatching / stipple, screen-space, diagonal like the reference
   vec2 p = gl_FragCoord.xy / uScale;
   float ink = 0.0;
-  float c1 = smoothstep(uMidT + 0.14, uMidT - 0.10, s) * uHatch * 1.0 + uStrand * smoothstep(0.5, -0.2, s);
-  float c2 = smoothstep(uMidT - 0.12, uMidT - 0.40, s) * uHatch * 1.0;
+  float c1 = smoothstep(uHatchT + 0.14, uHatchT - 0.10, s) * uHatch * 1.0 + uStrand * smoothstep(0.5, -0.2, s);
+  float c2 = smoothstep(uHatchT - 0.12, uHatchT - 0.40, s) * uHatch * 1.0;
   float c3 = smoothstep(-0.60, -0.9, s) * uHatch;
   ink = max(ink, strokes(p, uAngle, uPitch, c1));
   ink = max(ink, strokes(p, uAngle - 0.85, uPitch * 1.12, c2));
   float st = step(h21(floor(p / 2.0) + 3.0), c3 * 0.5) * step(0.01, c3);
   ink = max(ink, st);
+  if (uStraight > 0.5) {
+    float hl = strokes(p + vec2(1.7, 0.0), uAngle, uPitch * 1.6, 0.55);
+    col = mix(col, vec3(1.0, 0.99, 0.96), hl * 0.85 * (1.0 - ink));
+  }
   ink *= 0.95;
   // solid spot-black in the deepest creases / under folds
   float solid = smoothstep(-0.34, -0.44, s) * uSolid;
@@ -188,7 +199,7 @@ void main(){
   if (uBump > 0.4 && uSolid > 0.0) {
     float fr = foldN(vPw * 4.2);
     float fw = fwidth(fr) * 1.5 + 0.004;
-    float crease = smoothstep(0.895 - fw, 0.895 + fw, fr) * smoothstep(0.40, 0.0, s);
+    float crease = smoothstep(0.88 - fw, 0.88 + fw, fr) * smoothstep(0.40, 0.0, s);
     ink = max(ink, crease * 0.95);
   }
   col = mix(col, uInk, ink);
@@ -215,7 +226,7 @@ export function toon(hex = 0xffffff, opts = {}) {
     uHatch: { value: r.hatch }, uPitch: { value: r.pitch }, uAngle: { value: r.angle },
     uStrand: { value: r.strand }, uRim: { value: r.rim }, uMetal: { value: r.metal ? 1 : 0 },
     uFlat: { value: opts.flatShading ? 1 : 0 }, uFlatCol: { value: r.flatCol ? 1 : 0 },
-    uLitT: { value: r.litT }, uSoft: { value: r.soft || 0 }, uStraight: { value: r.straight ? 1 : 0 }, uMidT: { value: r.midT }, uSolid: { value: r.solid },
+    uLitT: { value: r.litT }, uSoft: { value: r.soft || 0 }, uOpacity: { value: opts.opacity ?? 1 }, uHatchT: { value: r.hatchT ?? r.midT }, uFaceShade: { value: r.faceShade || 0 }, uStraight: { value: r.straight ? 1 : 0 }, uMidT: { value: r.midT }, uSolid: { value: r.solid },
   };
   const mat = new THREE.ShaderMaterial({
     glslVersion: THREE.GLSL3,
@@ -224,6 +235,10 @@ export function toon(hex = 0xffffff, opts = {}) {
     vertexColors: !!opts.vertexColors,
   });
   mat.color = color;
+  if (opts.opacity !== undefined && opts.opacity < 1 || opts.transparent) {
+    // screen-door (halftone) transparency: no blending, so the MRT normal/depth buffers stay valid
+    mat.transparent = true; mat.opacity = opts.opacity ?? 1; mat.depthWrite = false; mat.blending = THREE.NoBlending;
+  }
   mat.userData.role = role;
   mat.userData.inkWidth = opts.outline === false ? 0 : (typeof opts.outline === 'number' ? opts.outline : r.outline);
   return mat;
@@ -525,9 +540,9 @@ void main(){
   vec2 gp = gl_FragCoord.xy / uScale;
   float wob = 0.75 + 0.5 * vn(gp * 0.06);
   float eDepth = smoothstep(0.018, 0.045, dz * wob);
-  float eNorm = smoothstep(0.30, 0.65, dn * wob);
+  float eNorm = smoothstep(0.34, 0.70, dn * wob);
   float eBig = smoothstep(0.10, 0.22, big);
-  float edge = max(max(eDepth, eNorm * 0.75), eBig);
+  float edge = max(max(eDepth, eNorm * 0.6), eBig);
   col = mix(col, vec3(0.06, 0.03, 0.05), edge * 0.92);
 
   // grade: a bit punchier, warmer

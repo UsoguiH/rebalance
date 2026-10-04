@@ -15,9 +15,9 @@ export function buildHead(THREE, style) {
 
   // ---- materials
   const SKIN = 0xffeedb;
-  const skinMat = style.toon(SKIN, { role: 'skin', hatch: 0.35 });
+  const skinMat = style.toon(SKIN, { role: 'skin', hatch: 0.22 });
   const ink = (hex = 0x1c1217, role = 'eye', lay = 1) => {
-    const m = style.toon(hex, { role, side: THREE.DoubleSide, outline: false });
+    const m = style.toon(hex, { role, side: THREE.DoubleSide, outline: false, spec: 0 });
     m.polygonOffset = true; m.polygonOffsetFactor = -lay; m.polygonOffsetUnits = -lay * 2; return m;
   };
   const decal = (geo, mat, name) => { const m = new THREE.Mesh(geo, mat); m.name = name; m.renderOrder = 1; return m; };
@@ -96,8 +96,8 @@ export function buildHead(THREE, style) {
       neckGroup.add(new THREE.Mesh(g, ink(0xe2a984, 'eye', 1)));
     }
     // clavicles
-    line([[-0.012, 0.016, 0.054], [-0.034, 0.012, 0.047], [-0.068, 0.018, 0.028]], 0.0030);
-    line([[0.012, 0.016, 0.054], [0.034, 0.012, 0.047], [0.068, 0.018, 0.028]], 0.0030);
+    line([[-0.012, 0.030, 0.062], [-0.034, 0.026, 0.054], [-0.070, 0.030, 0.032]], 0.0034);
+    line([[0.012, 0.030, 0.062], [0.034, 0.026, 0.054], [0.070, 0.030, 0.032]], 0.0034);
   }
   neckGroup.rotation.set(0.12, 0, -0.20);
   const HS = 1.15; neckGroup.scale.setScalar(HS);
@@ -107,7 +107,7 @@ export function buildHead(THREE, style) {
   tilt.position.set(0, PIVOT_Y * HS, 0); tilt.scale.setScalar(HS);
   tilt.rotation.order = 'ZXY';
   tilt.rotation.set(0.28, -0.25, -0.50);
-  tilt.position.x += 0.026; tilt.position.y -= 0.008;
+  tilt.position.x += 0.043; tilt.position.y -= 0.024;
   root.add(tilt);
   const face = new THREE.Group(); face.name = 'face';
   face.position.set(0, FACE_Y - PIVOT_Y, 0.004);
@@ -144,7 +144,7 @@ export function buildHead(THREE, style) {
 
   // ---- EYE (visible: viewer's left)
   function eyeAt(ex, ey, side, phi) {
-    const hw = 0.0150, hu = 0.0044, hl = 0.0020;
+    const hw = 0.0150, hu = 0.0038, hl = 0.0020;
     const cs = Math.cos(phi), sn = Math.sin(phi);
     // canonical u along +x; for side=-1 (viewer's left) inner corner is +u; mirror for the other
     const T = (u, v) => { const uu = u * (side < 0 ? 1 : -1); const x = uu * cs + v * sn * 1, y = -uu * sn + v * cs; return [ex + x, ey + y]; };
@@ -156,12 +156,12 @@ export function buildHead(THREE, style) {
     const toFace = poly => poly.map(p => T(p[0], p[1]));
     add(fill(THREE, field, toFace(almond), 0.0007, 3), 0xe8dfd2, 'eye', 'sclera', 1);
     const circle = (cx, cy, r, m = 28) => { const a = []; for (let i = 0; i < m; i++) { const t = i / m * Math.PI * 2; a.push([cx + Math.cos(t) * r, cy + Math.sin(t) * r]); } return a; };
-    const ic = [0.0010, 0.0012];
+    const ic = [0.0010, 0.0009];
     const irisP = clipPoly(circle(ic[0], ic[1], 0.0078), almond);
-    const lightP = clipPoly(circle(ic[0] + 0.0004, ic[1] - 0.0004, 0.0050), almond);
+    const lightP = clipPoly(circle(ic[0] + 0.0004, ic[1] - 0.0006, 0.0044), almond);
     const pupP = clipPoly(circle(ic[0], ic[1] + 0.0004, 0.0030), almond);
-    if (irisP.length > 2) add(fill(THREE, field, toFace(irisP), 0.0010, 3), 0x10141f, 'eye', 'iris', 2);
-    if (lightP.length > 2) add(fill(THREE, field, toFace(lightP), 0.0013, 3), 0x2c3c55, 'eye', 'irisLight', 3);
+    if (irisP.length > 2) add(fill(THREE, field, toFace(irisP), 0.0010, 3), 0x14131a, 'eye', 'iris', 2);
+    if (lightP.length > 2) add(fill(THREE, field, toFace(lightP), 0.0013, 3), 0x2a2a38, 'eye', 'irisLight', 3);
     if (pupP.length > 2) add(fill(THREE, field, toFace(pupP), 0.0016, 2), 0x07070b, 'eye', 'pupil', 4);
     
     // lid lines
@@ -171,6 +171,9 @@ export function buildHead(THREE, style) {
     for (let i = 1; i < n; i++) { const u = -hw * 0.95 + 1.9 * hw * i / n; crease.push(T(u, up(u) + 0.0042 + 0.0010 * Math.sin((u / hw + 1) * Math.PI / 2))); }
     for (let i = 2; i < n - 1; i++) { const u = -hw * 0.9 + 1.8 * hw * i / n; bag.push(T(u, lo(u) - 0.0050 - 0.0010 * Math.sin((u / hw + 1) * Math.PI / 2))); }
     add(ribbon(THREE, field, upper, t => 0.0014 + 0.0040 * Math.sin(Math.PI * Math.min(1, t * 1.05)) ** 0.8, 0.0020), 0x060304, 'eye', 'upperLid', 6);
+    { const lid = []; for (let i = 0; i <= n; i++) { const u = -hw + 2 * hw * i / n; lid.push(T(u, up(u) + 0.0003)); }
+      for (let i = n; i >= 0; i--) { const u = -hw + 2 * hw * i / n; lid.push(T(u, up(u) + 0.0042 + 0.0016 * Math.sin((u / hw + 1) * Math.PI / 2))); }
+      add(fill(THREE, field, lid, 0.0011, 2), 0xd9a283, 'eye', 'heavyLid', 3); }
     const shade = []; for (let i = 0; i <= n; i++) { const u = -hw + 2 * hw * i / n; shade.push(T(u, up(u) + 0.0022)); }
     add(ribbon(THREE, field, shade, t => 0.0070 * Math.sin(Math.PI * Math.min(1, 0.05 + 0.9 * t)) ** 0.8 + 0.0004, 0.0014), 0x6a3a30, 'eye', 'lidShade', 2);
     add(ribbon(THREE, field, lower, t => 0.0004 + 0.0009 * Math.sin(Math.PI * t), 0.0020), 0x2a1a1c, 'eye', 'lowerLid', 6);
@@ -180,8 +183,8 @@ export function buildHead(THREE, style) {
   eyeAt(-0.0345, 0.0005, -1, 0.26);
 
   // ---- BROWS
-  const browL = [[-0.066, 0.0420], [-0.058, 0.0425], [-0.048, 0.0390], [-0.038, 0.0335], [-0.028, 0.0275], [-0.018, 0.0220], [-0.0095, 0.0175]];
-  add(ribbon(THREE, field, browL, t => 0.0010 + 0.0040 * Math.sin(Math.PI * Math.min(1, 0.12 + 0.85 * t)) ** 0.5 * (1 - 0.2 * t) * (0.55 + 0.45 * t), 0.0018), 0x0c0709, 'hair', 'browL', 5);
+  const browL = [[-0.066, 0.0440], [-0.058, 0.0440], [-0.048, 0.0400], [-0.038, 0.0335], [-0.028, 0.0265], [-0.018, 0.0205], [-0.0095, 0.0150]];
+  add(ribbon(THREE, field, browL, t => 0.0012 + 0.0052 * Math.sin(Math.PI * Math.min(1, 0.12 + 0.85 * t)) ** 0.5 * (1 - 0.15 * t) * (0.5 + 0.5 * t), 0.0018), 0x0c0709, 'hair', 'browL', 5);
   const browR = [[0.020, 0.0320], [0.030, 0.0430], [0.043, 0.0490], [0.057, 0.0470], [0.068, 0.0395]];
   add(ribbon(THREE, field, browR, t => 0.0008 + 0.0026 * Math.sin(Math.PI * t) ** 0.7, 0.0018), 0x1a1013, 'hair', 'browR', 5);
 
@@ -195,9 +198,10 @@ export function buildHead(THREE, style) {
   add(ribbon(THREE, field, [[-0.010, 0.017], [-0.006, 0.020], [0, 0.021], [0.006, 0.020], [0.010, 0.017]], t => 0.0008 * Math.sin(Math.PI * t) + 0.0002, 0.0012), 0x8a5a48, 'skin', 'glabella', 2);
 
   // ---- MOUTH: closed lopsided smirk
-  const mouth = [[-0.0250, -0.0715], [-0.0200, -0.0735], [-0.0130, -0.0745], [-0.0050, -0.0748], [0.0040, -0.0745], [0.0130, -0.0735], [0.0210, -0.0712], [0.0290, -0.0675]];
+  const mouth = [[-0.0250, -0.0715], [-0.0200, -0.0735], [-0.0130, -0.0745], [-0.0050, -0.0748], [0.0040, -0.0745], [0.0130, -0.0735], [0.0210, -0.0708], [0.0290, -0.0655], [0.0345, -0.0600]];
   add(ribbon(THREE, field, mouth, t => 0.0004 + 0.0008 * Math.sin(Math.PI * Math.min(1, t * 1.05 + 0.04)) ** 0.7, 0.0016), 0x3a1a1c, 'eye', 'mouthLine', 5);
   add(ribbon(THREE, field, [[-0.0250, -0.0715], [-0.0272, -0.0690], [-0.0268, -0.0668]], t => 0.0007 * (1 - t) + 0.0002, 0.0016), 0x3a1a1c, 'eye', 'mouthCurl', 5);
+  add(fill(THREE, field, [[-0.020, -0.0830], [0.022, -0.0830], [0.018, -0.0955], [-0.016, -0.0960]], 0.0009, 3), 0xe0ab8a, 'eye', 'chinShade', 1);
   add(ribbon(THREE, field, [[-0.010, -0.0775], [0.000, -0.0785], [0.010, -0.0775]], t => 0.0006 * Math.sin(Math.PI * t) + 0.0002, 0.0010), 0xb87868, 'eye', 'lowerLipLine', 3);
   add(ribbon(THREE, field, [[-0.0330, -0.0655], [-0.0345, -0.0700], [-0.0320, -0.0735]], t => 0.0007 * Math.sin(Math.PI * t) + 0.0002, 0.0012), 0x9a6252, 'eye', 'dimpleL', 3);
   add(ribbon(THREE, field, [[-0.0090, -0.0560], [-0.0020, -0.0548], [0.0080, -0.0560]], t => 0.0007 * Math.sin(Math.PI * t) + 0.0002, 0.0010), 0x8a5a48, 'skin', 'philtrum', 2);
@@ -205,8 +209,8 @@ export function buildHead(THREE, style) {
 
   // ---- FACE SHADING STROKES (ink hatching): nasolabial, cheek hollows, jaw contour, temple
   const stroke = (pts, w, hex = 0x4a2e2c, name = 'hatch') => add(ribbon(THREE, field, pts, t => w * Math.sin(Math.PI * (0.06 + 0.88 * t)) ** 0.7 + 0.0002, 0.0012), hex, 'eye', name, 2);
-  stroke([[-0.0320, -0.0320], [-0.0360, -0.0440], [-0.0370, -0.0540], [-0.0340, -0.0620]], 0.0018, 0x6a3e34, 'nasolabialL');
-  stroke([[0.0300, -0.0340], [0.0370, -0.0440], [0.0400, -0.0530]], 0.0016, 0x6a3e34, 'nasolabialR');
+  stroke([[-0.0320, -0.0320], [-0.0370, -0.0440], [-0.0385, -0.0545], [-0.0350, -0.0650]], 0.0026, 0x4a2a28, 'nasolabialL');
+  stroke([[0.0300, -0.0340], [0.0385, -0.0440], [0.0430, -0.0540], [0.0420, -0.0600]], 0.0024, 0x4a2a28, 'nasolabialR');
   for (let i = 0; i < 3; i++) stroke([[-0.063 + i * 0.002, -0.026 - i * 0.0045], [-0.058 + i * 0.002, -0.038 - i * 0.0045], [-0.052 + i * 0.0015, -0.050 - i * 0.0045]], 0.0010, 0x5a3a34, 'cheekHatchL');
   const jc = (sg, ys) => ys.map(y => [sg * field.Wf(y) * 0.90, y]);
   stroke(jc(-1, [0.0, -0.022, -0.045, -0.062, -0.078, -0.090]), 0.0020, 0x3a2224, 'jawContourL');
@@ -227,11 +231,10 @@ export function buildHead(THREE, style) {
     for (let k = 0; k < 150; k++) {
       const y = -0.108 + R() * 0.030, x = (R() * 2 - 1) * field.Wf(y) * 0.90;
       const edge = Math.abs(x) / field.Wf(y);
-      if (!(edge > 0.7 || Math.abs(x) < 0.016)) continue;
+      if (!(edge > 0.78)) continue;
       place(x, y, 0.0028 + R() * 0.0024, (R() - 0.5) * 0.5 + (x > 0 ? 0.3 : -0.3) * edge);
     }
     for (let k = 0; k < 110; k++) { const y = -0.052 + R() * 0.060, x = -(0.70 + R() * 0.22) * field.Wf(y); place(x, y, 0.0035 + R() * 0.003, (R() - 0.5) * 0.3); }
-    for (let k = 0; k < 30; k++) { const x = 0.060 + R() * 0.012, y = -0.050 + R() * 0.030; place(x, y, 0.0035 + R() * 0.003, (R() - 0.5) * 0.3); }
     const m = decal(mergeGeos(THREE, geos), ink(0x3b2a2c, 'eye', 1), 'stubble'); face.add(m);
   }
 
@@ -239,12 +242,12 @@ export function buildHead(THREE, style) {
   const gold = style.toon(0xe8c040, { role: 'gold', side: THREE.DoubleSide });
   const goldLight = style.toon(0xf6d460, { role: 'gold' });
   const goldDark = style.toon(0xa8741a, { role: 'gold' });
-  const C = [0.044, 0.000], RING = 0.0225, RY = 0.72;
+  const C = [0.050, 0.006], RING = 0.0225, RY = 0.72;
   {
-    const goldStrap = style.toon(0xf8e79a, { role: 'eye', side: THREE.DoubleSide, spec: 0, outline: false });
+    const goldStrap = style.toon(0xf8e79a, { role: 'eye', side: THREE.DoubleSide, spec: 0, outline: false, opacity: 0.8, transparent: true });
     const E = [C[0] - RING * 0.72, C[1] + RING * RY * 0.72];
     const ctrl = [];
-    const x0 = -0.058, ySl = -0.30;
+    const x0 = -0.058, ySl = -0.36;
     const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     for (let i = 0; i <= 8; i++) {
       const x = E[0] + (-0.072 - E[0]) * i / 8, y = E[1] + (x - E[0]) * ySl;
@@ -270,10 +273,10 @@ export function buildHead(THREE, style) {
     const nn = field.normal(C[0], C[1]), cp = field.P(C[0], C[1], 0.0070);
     const q = new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), nn);
     const disc = new THREE.Group(); disc.name = 'monocle'; disc.position.copy(cp); disc.quaternion.copy(q);
-    disc.rotateY(0.22); disc.rotateX(-0.08);
+    disc.rotateY(0.45); disc.rotateX(-0.12); disc.rotateZ(-0.3);
     const inner = new THREE.Group(); inner.scale.set(1, RY, 1); disc.add(inner);
     const rimM = style.toon(0xe0b030, { role: 'eye', side: THREE.DoubleSide, outline: false });
-    const lensGold = style.toon(0xf9e47e, { role: 'eye', side: THREE.DoubleSide, outline: false });
+    const lensGold = style.toon(0xf9e47e, { role: 'eye', side: THREE.DoubleSide, outline: false, opacity: 0.6, transparent: true });
     const ring = new THREE.Mesh(new THREE.TorusGeometry(RING, 0.0016, 8, 48), rimM); ring.name = 'monocleRing'; inner.add(ring);
     const lens = new THREE.Mesh(new THREE.CircleGeometry(RING - 0.0006, 40), lensGold); lens.position.z = -0.0006; lens.name = 'monocleLens'; inner.add(lens);
     const lensHi = new THREE.Mesh(new THREE.RingGeometry(RING * 0.55, RING * 0.66, 24, 1, 2.2, 1.4), style.toon(0xfffbe0, { role: 'eye', side: THREE.DoubleSide, outline: false })); lensHi.position.z = 0.0003; inner.add(lensHi);
@@ -286,7 +289,7 @@ export function buildHead(THREE, style) {
 
   // ======================= cheek contact point (group-local) =======================
   root.updateMatrixWorld(true);
-  const cheekFace = field.P(0.070, -0.034, 0.016);
+  const cheekFace = field.P(0.074, -0.046, 0.016);
   const cheekWorld = face.localToWorld(cheekFace.clone());
   root.userData.cheek = root.worldToLocal(cheekWorld);
   root.userData.faceOrigin = face.localToWorld(new V3());

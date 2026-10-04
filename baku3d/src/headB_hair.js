@@ -207,16 +207,16 @@ export function buildHair(THREE, style, field, skullGeo) {
     ];
     lock(pick(), ctrl, R(0.0045, 0.0085), 0.0017, 20, lockCen);
   }
-  // curly wisps around the viewer's-left ear / temple
-  for (let i = 0; i < 12; i++) {
-    const u = i / 11, jit = () => R(-0.002, 0.002);
-    const y0 = 0.050 - 0.060 * u;
-    lock(pick(), [
+  // curly white wisps around the viewer's-left ear / temple
+  for (let i = 0; i < 7; i++) {
+    const u = i / 6, jit = () => R(-0.002, 0.002);
+    const y0 = 0.040 - 0.060 * u;
+    lock(buckets[rnd() < 0.5 ? 0 : 1], [
       [-0.062 + jit(), y0 + 0.012, 0.036],
       [-0.080 + jit(), y0, 0.026],
-      [-0.092 - 0.006 * u + jit(), y0 - 0.014, 0.014],
-      [-0.098 - 0.008 * u + jit(), y0 - 0.030 * R(0.6, 1.2), 0.002],
-    ], R(0.0030, 0.0055), 0.0015, 18, lockCen, 0.0022, 0.008);
+      [-0.090 - 0.004 * u + jit(), y0 - 0.014, 0.014],
+      [-0.094 - 0.004 * u + jit(), y0 - 0.026 * R(0.7, 1.2), 0.004],
+    ], R(0.0050, 0.0080), 0.0015, 20, lockCen, 0.0030, 0.012);
   }
   // sideburn flicks above both ears
   for (const sg of [-1, 1]) for (let i = 0; i < 8; i++) {

@@ -80,11 +80,11 @@ export function buildBody(THREE, style) {
   add(loft(chestSpec), skinM());
 
   // maroon shirt with deep V (reaches ~ y 550)
-  const shirtGap = prof([[0, 0], [0.64, 0], [0.72, 0.07], [0.86, 0.2], [0.95, 0.28], [1, 0.5]]);
+  const shirtGap = prof([[0, 0], [0.64, 0], [0.74, 0.07], [0.86, 0.17], [0.95, 0.24], [1, 0.4]]);
   const shirtSpec = {
     pts: spine, rings: 28, sides: 28, ref: V3(0, 0, 1), tilt,
     rx: (t) => jrx(t) * 0.9, ry: (t) => jry(t) * 0.92,
-    phi0: (t) => Math.PI / 2 + shirtGap(t), phi1: (t) => Math.PI * 2.5 - shirtGap(t),
+    phi0: (t) => Math.PI / 2 + shirtGap(t) * 0.7, phi1: (t) => Math.PI * 2.5 - shirtGap(t) * 1.15,
     noise: shirtCloth(0.07), shade: shirtShade,
   };
   add(loft(shirtSpec), shirtVM());
@@ -140,7 +140,14 @@ export function buildBody(THREE, style) {
       const base = P(topPx[0] + s * 26, topPx[1] + 36, 0.1);
       add(ribbon([top, base, tip], [top.clone().add(V3(0, 0.02, 0.01)), inner, tip.clone().add(V3(0, 0.015, 0.012))], axisPt), redM);
     };
-    flap(-1, [430, 394], [512, 322], [496, 414]);
+    flap(-1, [428, 396], [514, 322], [510, 418]);
+    // red stand collar hugging the neck (covers any bare shoulder next to it)
+    const collar = {
+      pts: [P(576, 424, -0.02), P(574, 392, -0.025), P(574, 352, -0.03)], rings: 6, sides: 24, ref: V3(0, 0, 1),
+      rx: prof([[0, 0.085], [1, 0.062]]), ry: prof([[0, 0.075], [1, 0.058]]),
+      phi0: () => Math.PI / 2 + 0.42, phi1: () => Math.PI * 2.5 - 0.5,
+    };
+    add(loft(collar), redM);
   }
 
   // pelvis / lap filler under the jacket hem
@@ -158,7 +165,7 @@ export function buildBody(THREE, style) {
     return 1 + amp * (n * 1.2 + rg * 1.2 + acc * 1.3 + Math.sin(t * Math.PI * k + phi * 2 + seed) * 0.3);
   };
   const fistDir = V3(-0.62, 0.74, -0.2).normalize();
-  const FS = 1.5;
+  const FS = 1.42;
   const kn = cheek.clone().add(V3(0.02, 0.036, 0.03));
   const wristR = kn.clone().addScaledVector(fistDir, -0.1 * FS);
   const shoulderR = P(785, 470, -0.06), elbowR = P(985, 628, 0.17);
@@ -185,10 +192,11 @@ export function buildBody(THREE, style) {
 
     // propping fist: four knuckle bumps on the cheek side, thumb tucked under
     const hand = buildHand(THREE, U, skinM(), nailM(), {
-      side: -1, scale: FS, knuckle: 1.45, fingerLen: 0.9, gaps: true, lineMat: mat(0x8a5640, 'skin'),
-      curl: [[1.5, 1.85, 1.0], [1.55, 1.9, 1.0], [1.55, 1.85, 0.95], [1.5, 1.75, 0.9]],
+      side: -1, scale: FS, knuckle: 1.4, fingerLen: 0.82, gaps: true, lineMat: mat(0x8a5640, 'skin'),
+      curl: [[1.5, 1.8, 1.2], [1.55, 1.85, 1.2], [1.55, 1.8, 1.15], [1.5, 1.7, 1.1]],
       spread: 0,
-      thumb: { dir: V3(-0.6, 0.45, -0.7), bend: [0.5, 0.6], len: [0.034, 0.028, 0.024] },
+      // thumb folded across/under the index finger, on the palm side
+      thumbPts: [[-0.034, 0.02, -0.004], [-0.037, 0.046, -0.03], [-0.02, 0.062, -0.052], [0.004, 0.068, -0.056]], thumbR: 0.0105,
     });
     hand.position.copy(wristR);
     orient(hand, fistDir, V3(0.75, -0.1, -0.35));
