@@ -228,7 +228,7 @@ export function buildHead(THREE, style) {
   const gold = style.toon(0xe8c040, { role: 'gold', side: THREE.DoubleSide });
   const goldLight = style.toon(0xf6d460, { role: 'gold' });
   const goldDark = style.toon(0xa8741a, { role: 'gold' });
-  const C = [0.037, -0.004], RING = 0.0225, RY = 0.70;
+  const C = [0.034, 0.006], RING = 0.0225, RY = 0.72;
   {
     const goldStrap = style.toon(0xf8e79a, { role: 'eye', side: THREE.DoubleSide });
     const E = [C[0] - RING * 0.72, C[1] + RING * RY * 0.72];
@@ -241,7 +241,7 @@ export function buildHead(THREE, style) {
     }
     const curveS = new THREE.CatmullRomCurve3(ctrl, false, 'catmullrom', 0.5);
     const pts = curveS.getPoints(60);
-    const cen = new V3(0, 0.05, -0.012), hw = 0.0105, th = 0.0016;
+    const cen = new V3(0, 0.05, -0.012), hw = 0.0125, th = 0.0016;
     const pos = [], idx = [], tt = new V3(), nn = new V3(), bb = new V3();
     for (let i = 0; i < pts.length; i++) {
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
@@ -261,7 +261,7 @@ export function buildHead(THREE, style) {
     const disc = new THREE.Group(); disc.name = 'monocle'; disc.position.copy(cp); disc.quaternion.copy(q);
     disc.rotateY(0.22); disc.rotateX(-0.08);
     const inner = new THREE.Group(); inner.scale.set(1, RY, 1); disc.add(inner);
-    const lensGold = style.toon(0xf3d460, { role: 'gold', side: THREE.DoubleSide });
+    const lensGold = style.toon(0xf7dc6c, { role: 'eye', side: THREE.DoubleSide, outline: false });
     const ring = new THREE.Mesh(new THREE.TorusGeometry(RING, 0.0016, 8, 48), gold); ring.name = 'monocleRing'; inner.add(ring);
     const lens = new THREE.Mesh(new THREE.CircleGeometry(RING - 0.0006, 40), lensGold); lens.position.z = -0.0006; lens.name = 'monocleLens'; inner.add(lens);
     const lensHi = new THREE.Mesh(new THREE.RingGeometry(RING * 0.55, RING * 0.66, 24, 1, 2.2, 1.4), style.toon(0xfffbd0, { role: 'gold', side: THREE.DoubleSide })); lensHi.position.z = 0.0003; inner.add(lensHi);

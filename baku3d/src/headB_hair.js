@@ -35,10 +35,10 @@ export function buildHair(THREE, style, field, skullGeo) {
 
   // ---- buckets per colour
   const palette = [
-    { hex: 0xf8f8fa, w: 0.42 }, { hex: 0xe6e8ee, w: 0.26 }, { hex: 0xc9ccd6, w: 0.16 }, { hex: 0xa3a8b6, w: 0.08 },
+    { hex: 0xfaf6ea, w: 0.46 }, { hex: 0xf2eee2, w: 0.30 }, { hex: 0xdedacd, w: 0.14 }, { hex: 0xc2bfb6, w: 0.06 },
   ];
   const buckets = palette.map(p => ({ ...p, pos: [], idx: [] }));
-  const ink = { hex: 0x4a4e5c, pos: [], idx: [] };
+  const ink = { hex: 0x6a6a70, pos: [], idx: [] };
   const inkDeep = { hex: 0x23242e, pos: [], idx: [] };
   const pick = () => { let r = rnd() * 0.92, a = 0; for (const b of buckets) { a += b.w; if (r < a) return b; } return buckets[0]; };
 
@@ -88,7 +88,7 @@ export function buildHair(THREE, style, field, skullGeo) {
     geo.setAttribute('position', new THREE.BufferAttribute(off, 3));
     geo.setIndex(I);
     geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, style.toon(0xe4e6ec, { role: 'hair', side: THREE.DoubleSide, hatch: 0.2, outline: 0 }));
+    const m = new THREE.Mesh(geo, style.toon(0xece8dc, { role: 'hair', side: THREE.DoubleSide, hatch: 0.2, outline: 0 }));
     m.name = 'scalp'; group.add(m);
   }
 
@@ -100,9 +100,9 @@ export function buildHair(THREE, style, field, skullGeo) {
     return [CEN[0] + dx * lo, CEN[1] + dy * lo, CEN[2] + dz * lo, dx, dy, dz];
   }
   const d2r = Math.PI / 180;
-  const layers = 5;
+  const layers = 4;
   for (let l = 0; l < layers; l++) {
-    for (let az = -104; az <= 104; az += 2.9) {
+    for (let az = -104; az <= 104; az += 3.4) {
       const az0 = (az + R(-1, 1)) * d2r, sn = Math.sin(az0), cs = Math.cos(az0);
       const side = sm(48, 100, Math.abs(az)), sgn = az < 0 ? -1 : 1;
       // root: first elevation whose surface point is above the hairline
@@ -128,15 +128,15 @@ export function buildHair(THREE, style, field, skullGeo) {
         const a = (1 - t) * (1 - t), b = 2 * t * (1 - t) * kk, c = t * t;
         const dd = V(d0.x * a + via.x * b + d1.x * c, d0.y * a + via.y * b + d1.y * c, d0.z * a + via.z * b + d1.z * c).normalize();
         const q = surf(dd.x, dd.y, dd.z);
-        const bump = (0.005 + 0.007 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
+        const bump = (0.008 + 0.010 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
         const e = eps + bump + lift * Math.max(0, Math.sin(Math.PI * t / tEnd)) ** 1.5;
         const wob = Math.sin(t * fr * 3 + ph1) * amp;
         pts.push(V(q[0] + dd.x * e + wob, q[1] + dd.y * e, q[2] + dd.z * e));
       }
-      const w0 = R(0.0044, 0.0088) * (1 - 0.2 * side);
+      const w0 = R(0.0058, 0.0110) * (1 - 0.2 * side);
       const b = (rnd() < 0.035) ? (rnd() < 0.3 ? inkDeep : ink) : pick();
       strand(b, pts, taper(w0, 0.05, 0.30, 0.0), 0.0015);
-      if (l >= 1 && rnd() < 0.16) {
+      if (l >= 1 && rnd() < 0.07) {
         const q = pts.map((p, i) => p.clone().addScaledVector(tmpN.subVectors(p, cen).normalize(), -0.0014).add(V(0.0018, 0, 0)));
         strand(rnd() < 0.5 ? ink : inkDeep, q, taper(0.0014, 0.1, 0.35), 0.0008);
       }
@@ -160,14 +160,27 @@ export function buildHair(THREE, style, field, skullGeo) {
   }
 
   // ---- 3. hand-placed hanging locks, bangs and flicks
-  function lock(bucket, ctrl, w, th = 0.0017, segs = 26, cenOv) {
+  function lock(bucket, ctrl, w, th = 0.0017, segs = 26, cenOv, wav = 0.0025, curl = 0.006) {
     const c = new THREE.CatmullRomCurve3(ctrl.map(p => V(...p)), false, 'catmullrom', 0.5);
-    strand(bucket, c.getPoints(segs), taper(w, 0.06, 0.38), th, cenOv);
+    const pts = c.getPoints(segs);
+    if (wav) {
+      const ph = R(0, 6.28), fq = R(5, 9);
+      for (let i = 1; i < pts.length; i++) {
+        const t = i / (pts.length - 1), a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+        tmpT.subVectors(b, a).normalize();
+        tmpN.subVectors(pts[i], cenOv || cen).normalize();
+        tmpB.crossVectors(tmpT, tmpN).normalize();
+        const k = wav * Math.sin(t * fq + ph) * Math.min(1, t * 2.2);
+        pts[i].addScaledVector(tmpB, k);
+        if (curl && t > 0.8) { const u = (t - 0.8) / 0.2; pts[i].addScaledVector(tmpN, curl * Math.sin(u * 3.0) * u); pts[i].y += curl * 0.6 * (1 - Math.cos(u * 3.0)) * 0.5; }
+      }
+    }
+    strand(bucket, pts, taper(w, 0.06, 0.38), th, cenOv);
   }
   // right (viewer's) long bangs: a thick wavy sweep falling from the parting over the temple, hanging beside the cheek
   const lockCen = V(0, 0.04, -0.01);
-  for (let i = 0; i < 30; i++) {
-    const u = i / 29, jit = () => R(-0.0065, 0.0065);
+  for (let i = 0; i < 46; i++) {
+    const u = i / 45, jit = () => R(-0.0065, 0.0065);
     const x0 = 0.000 + 0.05 * u;
     const wave = R(0.002, 0.008), sgn = rnd() < 0.5 ? 1 : -1;
     const len = 0.55 + 0.6 * R(0, 1);
@@ -180,7 +193,7 @@ export function buildHair(THREE, style, field, skullGeo) {
       [0.088 + 0.006 * u + wave * sgn, -0.006 - 0.040 * len, 0.058 - 0.012 * u],
       [0.084 + 0.012 * u - wave * sgn * 0.5 + 0.008 * u, -0.030 - 0.045 * len, 0.045 - 0.018 * u],
     ];
-    lock(rnd() < 0.18 ? buckets[2] : pick(), ctrl, R(0.0050, 0.0105), 0.0020, 30, lockCen);
+    lock(rnd() < 0.16 ? buckets[2] : pick(), ctrl, R(0.0028, 0.0058), 0.0016, 34, lockCen, R(0.002, 0.004), R(0.004, 0.009));
   }
   // left (viewer's) temple: a few short locks fall in front of the ear, tucked close to the head
   for (let i = 0; i < 9; i++) {
@@ -193,6 +206,17 @@ export function buildHair(THREE, style, field, skullGeo) {
       [-0.083 - 0.003 * u + jit(), -0.016 - 0.024 * u * R(0.5, 1.2), 0.022 - 0.012 * u],
     ];
     lock(pick(), ctrl, R(0.0045, 0.0085), 0.0017, 20, lockCen);
+  }
+  // curly wisps around the viewer's-left ear / temple
+  for (let i = 0; i < 12; i++) {
+    const u = i / 11, jit = () => R(-0.002, 0.002);
+    const y0 = 0.050 - 0.060 * u;
+    lock(pick(), [
+      [-0.062 + jit(), y0 + 0.012, 0.036],
+      [-0.080 + jit(), y0, 0.026],
+      [-0.092 - 0.006 * u + jit(), y0 - 0.014, 0.014],
+      [-0.098 - 0.008 * u + jit(), y0 - 0.030 * R(0.6, 1.2), 0.002],
+    ], R(0.0030, 0.0055), 0.0015, 18, lockCen, 0.0022, 0.008);
   }
   // sideburn flicks above both ears
   for (const sg of [-1, 1]) for (let i = 0; i < 8; i++) {
