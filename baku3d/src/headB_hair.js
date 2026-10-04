@@ -179,21 +179,21 @@ export function buildHair(THREE, style, field, skullGeo) {
   }
   // right (viewer's) long bangs: a thick wavy sweep falling from the parting over the temple, hanging beside the cheek
   const lockCen = V(0, 0.04, -0.01);
-  for (let i = 0; i < 46; i++) {
-    const u = i / 45, jit = () => R(-0.0065, 0.0065);
+  for (let i = 0; i < 38; i++) {
+    const u = i / 37, jit = () => R(-0.008, 0.008);
     const x0 = 0.000 + 0.05 * u;
-    const wave = R(0.002, 0.008), sgn = rnd() < 0.5 ? 1 : -1;
-    const len = 0.55 + 0.6 * R(0, 1);
+    const wave = R(0.003, 0.009), sgn = rnd() < 0.5 ? 1 : -1;
+    const len = R(0.3, 1.0);
     const ctrl = [
       [x0 - 0.02, 0.118 - 0.01 * u, 0.050],
       [x0 + 0.004 + jit(), 0.112 - 0.01 * u, 0.074 + jit()],
       [0.040 + 0.020 * u + jit(), 0.092 - 0.012 * u, 0.094 - 0.006 * u],
-      [0.068 + 0.012 * u + wave * sgn, 0.060 - 0.018 * u, 0.094 - 0.012 * u],
-      [0.082 + 0.008 * u - wave * sgn, 0.030 - 0.010 * u * len, 0.078 - 0.010 * u],
-      [0.088 + 0.006 * u + wave * sgn, 0.006 - 0.014 * len, 0.058 - 0.012 * u],
-      [0.086 + 0.010 * u - wave * sgn * 0.5, -0.010 - 0.022 * len, 0.048 - 0.018 * u],
+      [0.068 + 0.012 * u + wave * sgn, 0.062 - 0.018 * u, 0.094 - 0.012 * u],
+      [0.082 + 0.008 * u - wave * sgn, 0.034 - 0.014 * len, 0.078 - 0.010 * u],
+      [0.088 + 0.006 * u + wave * sgn, 0.016 - 0.030 * len, 0.060 - 0.012 * u],
+      [0.086 + 0.010 * u - wave * sgn * 0.5, 0.004 - 0.040 * len, 0.050 - 0.018 * u],
     ];
-    lock(rnd() < 0.16 ? buckets[2] : pick(), ctrl, R(0.0028, 0.0058), 0.0016, 34, lockCen, R(0.002, 0.004), R(0.004, 0.009));
+    lock(rnd() < 0.25 ? buckets[2] : pick(), ctrl, R(0.0030, 0.0060), 0.0016, 34, lockCen, R(0.003, 0.006), R(0.006, 0.012));
   }
   // left (viewer's) temple: a few short locks fall in front of the ear, tucked close to the head
   for (let i = 0; i < 9; i++) {

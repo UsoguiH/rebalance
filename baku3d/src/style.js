@@ -120,7 +120,7 @@ void main(){
   vec3 V = normalize(-vVp);
   float ndl = dot(N, uLV);
   float sh = shadowAt(vPw, V2W * normalize(vNv));
-  float s = min(ndl, mix(-0.46, 1.0, sh));
+  float s = min(ndl, mix(-0.40, 1.0, sh));
 
   vec3 base = pow(max(uBase * vCol, 0.0), vec3(1.0 / 2.2));
   float e = max(0.03, uSoft);

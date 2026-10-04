@@ -230,7 +230,7 @@ export function buildHead(THREE, style) {
       if (!(edge > 0.7 || Math.abs(x) < 0.016)) continue;
       place(x, y, 0.0028 + R() * 0.0024, (R() - 0.5) * 0.5 + (x > 0 ? 0.3 : -0.3) * edge);
     }
-    for (let k = 0; k < 130; k++) { const x = -(0.056 + R() * 0.014), y = -0.050 + R() * 0.075; place(x, y, 0.0035 + R() * 0.003, (R() - 0.5) * 0.3); }
+    for (let k = 0; k < 110; k++) { const y = -0.052 + R() * 0.060, x = -(0.70 + R() * 0.22) * field.Wf(y); place(x, y, 0.0035 + R() * 0.003, (R() - 0.5) * 0.3); }
     for (let k = 0; k < 30; k++) { const x = 0.060 + R() * 0.012, y = -0.050 + R() * 0.030; place(x, y, 0.0035 + R() * 0.003, (R() - 0.5) * 0.3); }
     const m = decal(mergeGeos(THREE, geos), ink(0x3b2a2c, 'eye', 1), 'stubble'); face.add(m);
   }
