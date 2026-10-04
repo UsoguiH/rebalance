@@ -165,7 +165,7 @@ export function buildBody(THREE, style) {
     return 1 + amp * (n * 1.2 + rg * 1.2 + acc * 1.3 + Math.sin(t * Math.PI * k + phi * 2 + seed) * 0.3);
   };
   const fistDir = V3(-0.62, 0.74, -0.2).normalize();
-  const FS = 1.42;
+  const FS = 1.38;
   const kn = cheek.clone().add(V3(0.02, 0.036, 0.03));
   const wristR = kn.clone().addScaledVector(fistDir, -0.1 * FS);
   const shoulderR = P(785, 470, -0.06), elbowR = P(985, 628, 0.17);
@@ -192,14 +192,14 @@ export function buildBody(THREE, style) {
 
     // propping fist: four knuckle bumps on the cheek side, thumb tucked under
     const hand = buildHand(THREE, U, skinM(), nailM(), {
-      side: -1, scale: FS, knuckle: 1.4, fingerLen: 0.82, gaps: true, lineMat: mat(0x8a5640, 'skin'),
+      side: -1, scale: FS, knuckle: 1.4, fingerLen: 0.7, gaps: true, lineMat: mat(0x8a5640, 'skin'),
       curl: [[1.5, 1.8, 1.2], [1.55, 1.85, 1.2], [1.55, 1.8, 1.15], [1.5, 1.7, 1.1]],
       spread: 0,
       // thumb folded across/under the index finger, on the palm side
       thumbPts: [[-0.034, 0.02, -0.004], [-0.037, 0.046, -0.03], [-0.02, 0.062, -0.052], [0.004, 0.068, -0.056]], thumbR: 0.0105,
     });
     hand.position.copy(wristR);
-    orient(hand, fistDir, V3(0.75, -0.1, -0.35));
+    orient(hand, fistDir, V3(0.2, 0.25, -0.95));
     g.add(hand);
   }
 
@@ -271,50 +271,55 @@ export function buildBody(THREE, style) {
     ell(0.07, P(540, 1700, 0.62), [1, 0.6, 1.8], mat(0x1a1210, 'leather'));
   }
 
-  // ================= BOOT: rounded dark-brown lace-up, toe down-left =================
+  // ================= BOOT: short chunky lace-up, toe cap down-left =================
   {
     const leather = mat(0x4a2410, 'leather');
     const leatherD = mat(0x120804, 'leather');
-    const heel = P(322, 1008, 0.5), mid = P(246, 1068, 0.55), ball = P(176, 1122, 0.58), toe = P(140, 1175, 0.6);
-    // shaft rising into the trouser hem
+    const heel = P(316, 1034, 0.5), mid = P(246, 1088, 0.55), ball = P(184, 1136, 0.58), toe = P(142, 1170, 0.6);
+    // ankle shaft: tall, disappears into the trouser hem
     add(loft({
-      pts: [P(485, 995, 0.5), P(405, 998, 0.52), P(335, 1018, 0.52)], rings: 10, sides: 18, ref: V3(0, 1, 0),
-      rx: prof([[0, 0.05], [1, 0.045]]), ry: prof([[0, 0.05], [1, 0.045]]), capEnd: 4,
+      pts: [P(420, 975, 0.5), P(360, 992, 0.52), P(322, 1030, 0.52)], rings: 8, sides: 18, ref: V3(0, 1, 0),
+      rx: prof([[0, 0.054], [1, 0.05]]), ry: prof([[0, 0.054], [1, 0.05]]), capEnd: 4, noise: legNoise(0.03, 4),
     }), leather);
+    // foot: tall at the instep, bulging toe box
     const footSpec = {
-      pts: [heel, mid, ball, toe], rings: 24, sides: 20, ref: V3(0.2, 0.2, 1),
-      rx: prof([[0, 0.04], [0.4, 0.044], [0.72, 0.046], [0.93, 0.04], [1, 0.03]]),
-      ry: prof([[0, 0.047], [0.4, 0.047], [0.72, 0.042], [0.93, 0.036], [1, 0.03]]),
-      capStart: 5, capEnd: 6, noise: legNoise(0.03, 8),
+      pts: [heel, mid, ball, toe], rings: 22, sides: 20, ref: V3(0.2, 0.2, 1),
+      rx: prof([[0, 0.045], [0.35, 0.046], [0.7, 0.054], [0.92, 0.052], [1, 0.034]]),
+      ry: prof([[0, 0.058], [0.35, 0.052], [0.7, 0.05], [0.92, 0.042], [1, 0.03]]),
+      capStart: 5, capEnd: 6, noise: legNoise(0.025, 8),
     };
     const footGeo = loft(footSpec);
     add(footGeo, leather);
-    // rounded toe cap
-    ell(0.04, toe.clone().lerp(ball, 0.18), [1.05, 0.95, 1.15], mat(0x3e1d0c, 'leather'));
-    // chunky sole along the underside
+    // toe cap (a darker rounded cap)
+    ell(0.046, toe.clone().lerp(ball, 0.25), [1.0, 0.92, 1.1], mat(0x3a1a0a, 'leather'));
+    // thick dark sole, wider than the upper, plus a heel block
     const soleSpec = {
-      pts: footSpec.pts.map((p) => p.clone().add(V3(0.008, -0.035, -0.01))), rings: 16, sides: 14, ref: V3(0.2, 0.2, 1),
-      rx: prof([[0, 0.044], [0.72, 0.049], [1, 0.032]]), ry: () => 0.014, capStart: 3, capEnd: 4,
+      pts: footSpec.pts.map((p) => p.clone().add(V3(0.006, -0.042, -0.01))), rings: 16, sides: 14, ref: V3(0.2, 0.2, 1),
+      rx: prof([[0, 0.052], [0.7, 0.06], [1, 0.04]]), ry: () => 0.02, capStart: 3, capEnd: 4,
     };
     add(loft(soleSpec), leatherD);
-    // thin crossed laces over the instep
+    const hb = new THREE.Mesh(new THREE.BoxGeometry(0.085, 0.045, 0.08), leatherD);
+    hb.position.copy(heel).add(V3(0.012, -0.05, -0.01));
+    hb.rotation.set(0.0, 0.5, 0.35);
+    g.add(hb);
+    // laces: five thin crossings over the instep + tongue
     const gc = footGeo._curve;
     for (let i = 0; i < 5; i++) {
-      const t = 0.08 + i * 0.07;
+      const t = 0.06 + i * 0.075;
       const f = U.frameAt(footSpec, gc, t);
       for (const sgn of [-1, 1]) {
-        const top = U.ringPoint(footSpec, gc, t, Math.PI / 2, 1.0, 0.002);
-        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.0017, 0.0017, 0.052, 5), leatherD);
+        const top = U.ringPoint(footSpec, gc, t, Math.PI / 2, 1.0, 0.003);
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.0028, 0.0028, 0.075, 5), mat(0x1c0e06, 'leather'));
         bar.position.copy(top);
         orient(bar, f.B, f.N);
-        bar.rotateZ(sgn * 0.5);
+        bar.rotateZ(sgn * 0.55);
         g.add(bar);
       }
     }
-    ell(0.016, U.ringPoint(footSpec, gc, 0.03, Math.PI / 2, 1.0, 0.01), [1.2, 0.5, 1.7], mat(0x5a2e14, 'leather'));
-    // trouser cuff: ring at the hem so the opening reads, with a dark interior
+    ell(0.026, U.ringPoint(footSpec, gc, 0.02, Math.PI / 2, 1.0, 0.014), [1.3, 0.5, 1.9], mat(0x5a2e14, 'leather'));
+    // trouser cuff ring pooled over the boot top
     const tan = hemA.clone().sub(P(540, 982, 0.53)).normalize();
-    const cuffRing = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.013, 8, 28), trouserVM2());
+    const cuffRing = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.015, 8, 28), mat(0xf0eeea, 'suit'));
     cuffRing.position.copy(hemA);
     cuffRing.quaternion.setFromUnitVectors(V3(0, 0, 1), tan);
     cuffRing.scale.set(1, 0.92, 1);

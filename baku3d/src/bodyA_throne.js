@@ -112,8 +112,11 @@ export function buildThrone(THREE, style, util) {
       M(new THREE.SphereGeometry(0.044, 14, 10), goldDark(), x - s * 0.052, 0.615, z).scale.set(0.5, 1, 1);
     }
     // turned front/back support posts
-    M(new THREE.LatheGeometry(postProfile(0.57, 0.024, [{ y: 0.3, R: 0.044 }], 0.15), 14), gold(), x, 0.0, 0.32);
-    M(new THREE.LatheGeometry(postProfile(0.57, 0.02, [{ y: 0.3, R: 0.036 }], 0.15), 12), goldDark(), x, 0.0, -0.32);
+    // stacked carved bases (no teardrop finials)
+    const base = (r) => [V2(0.001, 0), V2(r * 1.8, 0), V2(r * 1.8, 0.04), V2(r, 0.07), V2(r, 0.16), V2(r * 1.5, 0.17), V2(r * 1.5, 0.2), V2(r, 0.21), V2(r, 0.3),
+      V2(r * 1.7, 0.31), V2(r * 1.7, 0.34), V2(r * 1.2, 0.35), V2(r * 1.2, 0.42), V2(r * 1.9, 0.43), V2(r * 1.9, 0.55), V2(0.001, 0.55)];
+    M(new THREE.LatheGeometry(base(0.024), 14), gold(), x, 0.0, 0.32);
+    M(new THREE.LatheGeometry(base(0.02), 12), goldDark(), x, 0.0, -0.32);
   }
 
   // ---- cream brick wall ----

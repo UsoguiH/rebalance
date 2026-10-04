@@ -101,10 +101,6 @@ float strokes(vec2 p, float ang, float pitch, float cov){
 }
 
 void main(){
-  if (uOpacity < 0.999) {
-    float th = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
-    if (th > uOpacity) discard;
-  }
   vec3 N = normalize(vNv);
   if (uFlat > 0.5) N = normalize(cross(dFdx(vVp), dFdy(vVp)));
   else if (!gl_FrontFacing) N = -N;
@@ -182,7 +178,7 @@ void main(){
   vec2 p = gl_FragCoord.xy / uScale;
   float ink = 0.0;
   float c1 = smoothstep(uHatchT + 0.14, uHatchT - 0.10, s) * uHatch * 1.0 + uStrand * smoothstep(0.5, -0.2, s);
-  float c2 = smoothstep(uHatchT - 0.12, uHatchT - 0.40, s) * uHatch * 1.0;
+  float c2 = smoothstep(uHatchT - 0.12, uHatchT - 0.40, s) * uHatch * (1.0 - uStraight);
   float c3 = smoothstep(-0.60, -0.9, s) * uHatch;
   ink = max(ink, strokes(p, uAngle, uPitch, c1));
   ink = max(ink, strokes(p, uAngle - 0.85, uPitch * 1.12, c2));
@@ -204,8 +200,9 @@ void main(){
   }
   col = mix(col, uInk, ink);
 
-  oCol = vec4(col, 1.0);
-  oNorm = vec4(uStraight > 0.5 ? vec3(0.5, 0.5, 1.0) : N * 0.5 + 0.5, -vVp.z * 0.1);
+  oCol = vec4(col, uOpacity);
+  // translucent surfaces leave the normal/depth buffer untouched (alpha 0 under normal blending)
+  oNorm = vec4(uStraight > 0.5 ? vec3(0.5, 0.5, 1.0) : N * 0.5 + 0.5, uOpacity < 0.999 ? 0.0 : -vVp.z * 0.1);
 }`;
 
 export function toon(hex = 0xffffff, opts = {}) {
@@ -236,8 +233,7 @@ export function toon(hex = 0xffffff, opts = {}) {
   });
   mat.color = color;
   if (opts.opacity !== undefined && opts.opacity < 1 || opts.transparent) {
-    // screen-door (halftone) transparency: no blending, so the MRT normal/depth buffers stay valid
-    mat.transparent = true; mat.opacity = opts.opacity ?? 1; mat.depthWrite = false; mat.blending = THREE.NoBlending;
+    mat.transparent = true; mat.opacity = opts.opacity ?? 1; mat.depthWrite = false;
   }
   mat.userData.role = role;
   mat.userData.inkWidth = opts.outline === false ? 0 : (typeof opts.outline === 'number' ? opts.outline : r.outline);
