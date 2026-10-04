@@ -1208,10 +1208,20 @@ function questTick(dt) {
     if (s.after) s.after();
     flags.q++;
   }
-  const s = STEPS[flags.q];
+  const s = STEPS[flags.q]; flags.qid = s ? s.id : 'done';
   if (s && s.stuck && !dlg.open) { qStuck += dt; if (qStuck > 120) { qStuck = -60; tip(s.stuck); } }
 }
 const questDone = () => (flags.q | 0) >= STEPS.length;
+// a save stores the step by name (qid): the list changes between versions, so an old index can point at the wrong step.
+// Old saves without a name start from the first step that is not done yet (never further than they were).
+function fixStep() {
+  if (flags.qid === 'done') { flags.q = STEPS.length; return; }
+  const i = flags.qid ? stepIdx(flags.qid) : -1;
+  if (i >= 0) { flags.q = i; return; }
+  const max = Math.min(flags.q | 0, STEPS.length); let q = flags.intro ? 1 : 0;
+  while (q < max && ((STEPS[q].skip && STEPS[q].skip()) || STEPS[q].done())) q++;
+  flags.q = q; lastQ = -1;
+}
 
 // =====================================================================================================
 //  Milestones, kills and pickups
@@ -1788,7 +1798,7 @@ window.Meadows = { questText,
     fadeT = 0; fadeEl.style.opacity = 0; korraQ.length = 0; timers.length = 0; flags.intro = true; flags.arrived = true; stage = Math.max(stage, 1); },
   skipArrival: () => endArrival(true),
   // Continue: put the quest back where it was; a save made mid-fight gets the offering back (the boss is not saved)
-  restore(s) { s = s | 0; if (s === 2) { s = 1; if (hasInv()) try { Inv.add('deer_trophy', 2); } catch (e) { /* ignore */ } } stage = Math.max(stage, s); updateGoal(); },
+  restore(s) { s = s | 0; fixStep(); if (s === 2) { s = 1; if (hasInv()) try { Inv.add('deer_trophy', 2); } catch (e) { /* ignore */ } } stage = Math.max(stage, s); updateGoal(); },
   spawn, summonBoss, despawnBoss, advance, korra, talk, tip, subtitle, bigTitle, bolt, addWaystone, readWaystone,
   get boss() { return boss; }, get stones() { return stones; }, get creatures() { return CREATURES; }, get drops() { return drops; }, get dialog() { return dlg; },
   get stage() { return stage; }, get step() { const s = STEPS[flags.q | 0]; return s ? s.id : 'done'; }, get questDone() { return questDone(); }, get arrival() { return arrival; },

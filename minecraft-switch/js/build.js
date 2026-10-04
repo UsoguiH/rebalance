@@ -462,7 +462,7 @@ function tipHtml(p) {
 function renderMenu() {
   panel.innerHTML = ''; wrap.querySelectorAll('.bmtab').forEach(e => e.remove());
   TABS.forEach(([id, name], i) => {
-    const d = document.createElement('div'); d.className = 'bmtab' + (id === tab ? ' on' : ''); d.style.left = (i * 29) + 'px'; d.title = name;
+    const d = document.createElement('div'); d.className = 'bmtab' + (id === tab ? ' on' : ''); d.dataset.tab = id; d.style.left = (i * 29) + 'px'; d.title = name;
     const first = PIECES.find(p => p.tab === id && !p.tool && blockOf(p) > 0) || PIECES.find(p => p.tab === id);
     const c = document.createElement('canvas'); c.width = c.height = 32; c.getContext('2d').drawImage(iconOf(first), 0, 0); d.appendChild(c); wrap.appendChild(d);
     d.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); tab = id; tapSel = null; uiClick(); renderMenu(); });
@@ -474,7 +474,7 @@ function renderMenu() {
   const list = PIECES.filter(p => p.tab === tab && (p.tool || blockOf(p) > 0));
   for (let i = 0; i < 27; i++) {
     const d = document.createElement('div'); d.className = 'is'; d.style.left = (7 + (i % 9) * 18) + 'px'; d.style.top = (17 + Math.floor(i / 9) * 18) + 'px'; panel.appendChild(d);
-    const p = list[i]; if (!p) continue;
+    const p = list[i]; if (!p) continue; d.dataset.piece = p.id;
     if (sel === p || tapSel === p) d.classList.add('sel');
     const why = canPiece(p), c = document.createElement('canvas'); c.width = c.height = 32; c.getContext('2d').drawImage(iconOf(p), 0, 0);
     if (why) c.classList.add('no'); d.appendChild(c);
@@ -715,7 +715,7 @@ on('tick', rawDt => {
 Object.assign(Build, {
   PIECES, PIECE, BUILT, KILNS, SMELTERS, SPITS, blocks: { CAMPFIRE, CAMPFIRE_SPIT, BEAM, FORGE, KILN, CAULDRON, CHOP, TANRACK, ADZE, SHELF, ANVILS, GRINDER, COOLER, TOOLRACK, BENCH, TABLE, RUG, STAKES },
   select: id => { sel = id ? PIECE[id] || null : null; rot = 0; return !!sel; }, get selected() { return sel ? sel.id : null; }, rotate: turn,
-  build: () => { lastPlace = 0; return buildNow(); }, remove: () => removeAt(targetBlock()), open: openMenu, close: () => closeMenu(false), isOpen: () => menuOpen,
+  build: () => { lastPlace = 0; return buildNow(); }, remove: () => removeAt(targetBlock()), open: openMenu, close: () => closeMenu(false), isOpen: () => menuOpen, curTab: () => tab, selId: () => (sel ? sel.id : null), tapped: () => tapSel ? tapSel.id : null,
   evaluate: id => { const r = evaluate(PIECE[id], targetBlock()); return { why: r.why || '', s: r.s, grounded: r.g, cells: r.list }; },
   supportAt: (x, y, z) => { const e = BUILT.get(KEY(x, y, z)); return e ? +e.s.toFixed(3) : null; }, benchNear: () => benchNear(true),
   stationLevel: (kind, x, y, z) => stationLevel({ x, y, z }, kind), feed: h => feed(h), ghost: () => ghostState,

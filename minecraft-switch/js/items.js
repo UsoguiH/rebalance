@@ -718,6 +718,7 @@ function layout() {
 function slotEl(x, y, ref, big) {
   const d = mkEl('div', 'is' + (big ? ' big' : ''), panel); d.style.left = x + 'px'; d.style.top = y + 'px';
   const c = mkEl('canvas', '', d); c.width = c.height = 32; const b = mkEl('b', '', d); const bar = mkEl('i', '', d); const u = mkEl('u', '', bar);
+  if (ref && ref.kind === 'result') d.id = 'invResult';
   const S = { d, c, g: c.getContext('2d'), b, bar, u, ref }; slots.push(S); hookSlot(S); return S;
 }
 const label = (txt, x, y) => { const l = mkEl('div', 'ilb', panel, txt); l.style.left = x + 'px'; l.style.top = y + 'px'; return l; };
@@ -741,7 +742,7 @@ function buildPanel() {
     const show = slotEl(8, 32, { kind: 'show' }, true); show.d.classList.add('show');
     const name = label('', 40, 31), desc = label('', 40, 40); desc.classList.add('ids');
     const costs = []; for (let k = 0; k < 4; k++) costs.push(slotEl(40 + k * 18, 54, { kind: 'cost', k }));
-    const go = stButton(stTab === 'craft' ? 'Craft' : 'Upgrade', 128, 55, 'mcb', () => doCraft());
+    const go = stButton(stTab === 'craft' ? 'Craft' : 'Upgrade', 128, 55, 'mcb', () => doCraft()); go.id = 'stCraftBtn';
     stEls = { show, name, desc, costs, go };
     label('Inventory', 8, 73);
   } else if (mode === 'inv') {
@@ -794,7 +795,7 @@ function stationEntries() {
   return out;
 }
 function bookRow(out, n, needs, station, label2) {
-  const d = mkEl('div', 'ir', bookInner); const c = mkEl('canvas', '', d); c.width = c.height = 32; c.getContext('2d').drawImage(icon32(out), 0, 0);
+  const d = mkEl('div', 'ir', bookInner); d.dataset.out = out; const c = mkEl('canvas', '', d); c.width = c.height = 32; c.getContext('2d').drawImage(icon32(out), 0, 0);
   mkEl('div', 'irn', d, (n > 1 ? n + ' ' : '') + (ITEMS[out] ? ITEMS[out].name : out) + (label2 || ''));
   const q = mkEl('div', 'irq', d), parts = [];
   for (const k in needs) { const sp = mkEl('span', '', q); const ic = mkEl('canvas', '', sp); ic.width = ic.height = 16; ic.getContext('2d').drawImage(icon16(ITEMS[k] ? k : tagIcon(k)), 0, 0);
@@ -1227,7 +1228,7 @@ Object.assign(Inv, {
   damageOffhand: (n = 1) => wearOut(bag.off, 0, n),
   damageArmor: (n = 1) => { for (let k = 0; k < 4; k++) wearOut(bag.armor, k, n); },
   consumeHeld: (n = 1) => { const s = held(); if (!s || s.n < n) return false; s.n -= n; if (!s.n) bag.main[hotSel] = null; changed(); return true; },
-  isOpen: () => isOpen, open: m => openInv(m), close: () => closeInv(!TOUCH), toggle: () => isOpen ? closeInv(!TOUCH) : openInv(),
+  isOpen: () => isOpen, mode: () => mode, resultReady: () => { try { return !!resultStack(); } catch (e) { return false; } }, open: m => openInv(m), close: () => closeInv(!TOUCH), toggle: () => isOpen ? closeInv(!TOUCH) : openInv(),
   heldName: () => { const s = held(); return s && ITEMS[s.id] ? ITEMS[s.id].name : ''; },
   heldBlock: () => { const s = held(), it = s && ITEMS[s.id]; return it && it.block != null ? it.block : AIR; },
   heldModel: () => model(held(), false),
