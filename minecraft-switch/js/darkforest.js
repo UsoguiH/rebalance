@@ -1208,7 +1208,7 @@ const regrow = [];
 on('blockDrops', (drops, h) => {
   if (!h) return drops; const t = h.t, tl = heldTool(), r = R();
   switch (t) {
-    case PINE: return r < .15 ? [['wood', 1], ['resin', 1]] : [['wood', 1]];
+    case PINE: return r < .15 ? [['wood', 4], ['resin', 1]] : [['wood', 4]];
     case NEEDLES: return r < .06 ? [['stick', 1]] : [];
     case FLOOR: return [['dirt', 1]];
     case MSTONE: return tl && tl.type === 'pickaxe' ? [['cobblestone', 1]] : [];

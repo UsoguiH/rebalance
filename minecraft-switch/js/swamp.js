@@ -1086,7 +1086,7 @@ const inPit = h => Math.hypot(h.x + .5 - PIT.cx, h.z + .5 - PIT.cz) < PIT.r + 1;
 on('blockDrops', (drops, h) => {
   if (!h) return drops; const t = h.t, tl = heldTool(), r = R();
   switch (t) {
-    case DEAD: return r < .2 ? [['wood', 1], ['resin', 1]] : [['wood', 1]];
+    case DEAD: return r < .2 ? [['wood', 4], ['resin', 1]] : [['wood', 4]];
     case MUD: case BOG: return [['dirt', 1]];
     case SCRAP: if (!tl || tl.type !== 'pickaxe' || tl.power < 2) return []; mined.scrap += 2; SS.clink(); regrow.push({ x: h.x, y: h.y, z: h.z, t, at: 900 }); return [['scrap_iron', 2]];
     case BONES: if (inPit(h)) { say('The old bones crumble to dust. Fresh ones lie in the crypts.', 2.5); return []; }

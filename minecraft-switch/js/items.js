@@ -532,7 +532,7 @@ function dropsFor(h) {
     case STONE: return [['cobblestone', 1]];
     case GLASS: case TALLGRASS: return [];
     case LEAVES: return r < .1 ? [['apple', 1]] : r < .16 ? [['wood', 1]] : [];
-    case LOG: return r < .15 ? [['oak_log', 1], ['resin', 1]] : [['oak_log', 1]];
+    case LOG: return r < .15 ? [['oak_log', 4], ['resin', 1]] : [['oak_log', 4]];   // a log gives 4 wood
     case SAND: return r < .1 ? [['sand', 1], ['flint', 1]] : [['sand', 1]];
     case COAL: return [['coal', 1]];
     case IRONORE: return [['raw_iron', 1]];

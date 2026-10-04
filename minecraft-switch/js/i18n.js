@@ -1050,7 +1050,8 @@ const I18N = (() => {
   "Chunk: {1} {2}": "القطعة: {1} {2}",
   "Facing: {1}": "الاتجاه: {1}",
   "Space": "المسافة",
-  "Build": "البناء"
+  "Build": "البناء",
+  "Your things wait in a tombstone where you fell. Respawn and follow the yellow arrow to get them back.": "أغراضك في شاهد قبر مكان موتك. اضغط إحياء واتبع السهم الأصفر لتسترجعها."
   };
   // templates that need a real regex (numbers only)
   const RAW = [

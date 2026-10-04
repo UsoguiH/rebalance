@@ -34,8 +34,8 @@ css.textContent = `
 #gdHint { position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 60; max-width: min(80vw, 560px);
   background: rgba(0,0,0,.66); border: 2px solid #ffd400; color: #ffe866; padding: 4px 12px 6px; font: 17px var(--ui, monospace); line-height: 1.3;
   text-align: center; text-shadow: 2px 2px 0 #3a2a00; pointer-events: none; box-shadow: 0 0 12px rgba(255,212,0,.45); }
-#gdHint[hidden] { display: none; }
-html.touch #gdHint { font-size: 14px; max-width: 52%; top: auto; bottom: calc(142px + env(safe-area-inset-bottom, 0px)); }
+#gdHint[hidden], #cbDeath:not([hidden]) ~ #gdHint, #cbDeath:not([hidden]) ~ #gdEdge { display: none; }
+html.touch #gdHint { font-size: 14px; max-width: 52%; top: auto; bottom: calc(106px + env(safe-area-inset-bottom, 0px)); }
 #gdEdge { position: fixed; z-index: 55; width: 0; height: 0; pointer-events: none; }
 #gdEdge i { position: absolute; left: -14px; top: -14px; width: 28px; height: 28px; background: #ffd400; clip-path: polygon(50% 0, 100% 100%, 50% 74%, 0 100%);
   filter: drop-shadow(0 0 3px #000); animation: gdPulse .6s ease-in-out infinite alternate; }
@@ -368,6 +368,16 @@ function planStep(step) {
   }
   return null;
 }
+// after a death: the tombstone with your things comes first, in every chapter
+function tombPlan() {
+  let list = null; try { list = Combat._survival.tombstones; } catch (e) { return null; }
+  const p = P0(), t = (list || []).filter(o => o.items > 0).sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))[0];
+  if (!t) return null;
+  const tg = { x: t.x, y: t.y + .6, z: t.z, sx: 1, sy: 1.3, sz: 1, see: true }, d = dist(tg), near = d < 3;
+  if (state === 'tomb') { const tb = [...document.querySelectorAll('#cbTomb .cbBtn')].find(e => !e.hidden); return { hint: T('Tap Take all to get your things back', 'اضغط «خذ الكل» لتسترجع أغراضك'), ui: [tb && inn(tb)] }; }
+  return { hint: near ? (TOUCH ? T('Look at the tombstone and tap Use', 'انظر إلى شاهد القبر واضغط زر الاستخدام') : T('Look at the tombstone and right-click', 'انظر إلى شاهد القبر وانقر بالزر الأيمن'))
+    : T(`Your things are where you died: follow the arrow (${Math.round(d)} m)`, `أغراضك في مكان موتك: اتبع السهم (${Math.round(d)} م)`), targets: [tg], ui: near && TOUCH ? [out($('tUse'))] : [] };
+}
 function bbSelected(id) { const bb = B(); return !!bb && bb.selId() === id && !bb.isOpen(); }
 function spitBusy() { const bb = B(); if (!bb || !bb.SPITS) return false; for (const s of bb.SPITS.values()) if (s && s.slots && s.slots.some(Boolean)) return true; return false; }
 
@@ -378,12 +388,14 @@ let planT = 0, clock = 0, cur = null;
 const off = () => { cur = null; targets = []; mainT = null; setUI([]); setHint(''); };
 on('tick', dt => {
   clock += dt; trunkT -= dt;
-  const live = (state === 'play' || state === 'inv' || state === 'build' || (hasInv() && Inv.isOpen()) || (B() && B().isOpen()))
-    && Meadows.flags.intro && !Meadows.arrival && !(Meadows.dialog && Meadows.dialog.open) && !(typeof DarkForest !== 'undefined' && DarkForest.flags && DarkForest.flags.started);
+  const ui0 = (state === 'play' || state === 'tomb' || state === 'inv' || state === 'build' || (hasInv() && Inv.isOpen()) || (B() && B().isOpen()))
+    && Meadows.flags.intro && !Meadows.arrival && !(Meadows.dialog && Meadows.dialog.open);
+  const tomb = ui0 && tombPlan();
+  const live = ui0 && (tomb || !(typeof DarkForest !== 'undefined' && DarkForest.flags && DarkForest.flags.started));
   if (!live) { if (cur || hintTxt) off(); drawTargets(clock); edgeEl.hidden = true; return; }
   if ((planT -= dt) <= 0) {
     planT = .25; let r = null;
-    try { r = planStep(Meadows.step); } catch (e) { console.error(e); r = null; }
+    try { r = tomb || planStep(Meadows.step); } catch (e) { console.error(e); r = null; }
     cur = r;
     targets = (r && r.targets || []).filter(Boolean).slice(0, 40);
     mainT = targets.find(o => !o.dim) || targets[0] || null;

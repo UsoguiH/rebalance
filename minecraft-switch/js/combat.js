@@ -374,7 +374,7 @@ const Combat = (() => {
   #cbDeath .mcbtn[disabled] { color: #a0a0a0; background: #2c2c2c; box-shadow: none; border-color: #000; cursor: default; }`;
   document.head.appendChild(css);
   const deathEl = document.createElement('div'); deathEl.id = 'cbDeath'; deathEl.className = 'screen'; deathEl.hidden = true;
-  deathEl.innerHTML = '<h1 class="mc">You died!</h1><p class="mc" id="cbCause"></p><p class="mc" id="cbLoss"></p>' +
+  deathEl.innerHTML = '<h1 class="mc">You died!</h1><p class="mc" id="cbCause"></p><p class="mc" id="cbLoss"></p><p class="mc" id="cbWhere" style="color:#ffd400"></p>' +
     '<div class="menu"><button class="mcbtn" id="cbRespawn" type="button">Respawn</button><button class="mcbtn" id="cbTitle" type="button">Title Screen</button></div>';
   document.body.appendChild(deathEl);
   const respawnBtn = deathEl.querySelector('#cbRespawn'), titleBtn = deathEl.querySelector('#cbTitle');
@@ -390,6 +390,8 @@ const Combat = (() => {
     // Valheim death: everything you carry goes into a tombstone here; skills drain unless "Spared" is active
     let lost = 0;
     try { dropTombstone(d); } catch (e) { console.error(e); }
+    { const t = TOMBS[TOMBS.length - 1], w = deathEl.querySelector('#cbWhere');      // where your things wait (the guide points there after respawn)
+      w.textContent = t && t.items.length ? 'Your things wait in a tombstone where you fell. Respawn and follow the yellow arrow to get them back.' : ''; }
     if (extra.has('spared')) deathEl.querySelector('#cbLoss').textContent = 'Spared: your skills are safe';
     else { lost = drainSkills(); deathEl.querySelector('#cbLoss').textContent = lost > 0 ? 'Your skills weakened' : ''; }
     respawnBtn.disabled = titleBtn.disabled = true; setTimeout(() => { respawnBtn.disabled = titleBtn.disabled = false; }, 1000);
