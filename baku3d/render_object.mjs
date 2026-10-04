@@ -1,4 +1,4 @@
-// node render_relief.mjs name "az=0&pol=0&zoom=1&depth=0.55&light=0.9"  -> shots/<name>.png (1156x1264, same size as the reference)
+// node render_object.mjs name "az=0&pol=0&zoom=1&depth=0.55&light=0.9"  -> shots/<name>.png (1156x1264, same size as the reference)
 import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -10,7 +10,7 @@ const server = http.createServer((req,res)=>{ const p=path.join(root,decodeURICo
 const browser = await chromium.launch({ args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport:{ width:1156, height:1264 } });
 const errs=[]; page.on('console',m=>{ if(['error','warning'].includes(m.type())) errs.push(m.text()); }); page.on('pageerror',e=>errs.push(e.message));
-await page.goto(`http://localhost:${server.address().port}/relief.html?shot=1&${q}`);
+await page.goto(`http://localhost:${server.address().port}/index.html?shot=1&${q}`);
 try { await page.waitForFunction('window.__ready===true',null,{timeout:60000}); } catch { errs.push('timeout'); }
 fs.mkdirSync(path.join(root,'shots'),{recursive:true});
 await page.screenshot({ path:path.join(root,'shots',name+'.png') });

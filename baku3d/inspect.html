@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><title>inspect</title>
+<style>html,body{margin:0;background:#241214;height:100%}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const P=new URLSearchParams(location.search);
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true}); r.setSize(innerWidth,innerHeight); r.outputColorSpace=THREE.SRGBColorSpace; document.body.appendChild(r.domElement);
+const s=new THREE.Scene(); s.background=new THREE.Color(0x241214);
+const cam=new THREE.PerspectiveCamera(22,innerWidth/innerHeight,0.1,50);
+s.add(new THREE.HemisphereLight(0xffffff,0x886666,1.6)); const d=new THREE.DirectionalLight(0xffffff,1.5); d.position.set(-1,2,3); s.add(d);
+const g=await new Promise(res=>new GLTFLoader().load(P.get('glb'),res));
+const obj=g.scene; obj.traverse(o=>{if(o.isMesh&&!o.geometry.attributes.normal)o.geometry.computeVertexNormals();}); if(P.get('mat')==='normal'){obj.traverse(o=>{if(o.isMesh)o.material=new THREE.MeshNormalMaterial()});} s.add(obj);
+const box=new THREE.Box3().setFromObject(obj), c=box.getCenter(new THREE.Vector3()), sz=box.getSize(new THREE.Vector3());
+const az=(+P.get('az')||0)*Math.PI/180, pol=(+P.get('pol')||0)*Math.PI/180, R=Math.max(sz.x,sz.y)*3.6;
+cam.position.set(c.x+R*Math.sin(az)*Math.cos(pol), c.y+R*Math.sin(pol), c.z+R*Math.cos(az)*Math.cos(pol)); cam.lookAt(c);
+r.render(s,cam); window.__ready=true;
+</script></body></html>
