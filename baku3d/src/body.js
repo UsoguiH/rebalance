@@ -215,7 +215,7 @@ export function buildBody(THREE, style) {
     return 1 + amp * (n * 1.6 + rg * 2.0 + drag * 0.9);
   };
   // leg A: thigh runs up-right to the raised knee (~x1040), shin drops down-left to the hem over the boot
-  const hipA = P(625, 845, -0.04), kneeA = P(945, 792, 0.22), hemA = P(402, 1038, 0.5);
+  const hipA = P(625, 845, -0.04), kneeA = P(945, 792, 0.22), hemA = P(405, 1015, 0.5);
   {
     const thigh = {
       pts: [hipA, P(790, 815, 0.12), kneeA], rings: 20, sides: 22, ref: V3(0, 1, 0),
@@ -223,15 +223,15 @@ export function buildBody(THREE, style) {
     };
     add(loft(thigh), trouserM());
     const shin = {
-      pts: [kneeA, P(840, 868, 0.3), P(660, 950, 0.4), P(520, 1000, 0.46), hemA], rings: 36, sides: 24, ref: V3(0, 1, 0),
-      rx: prof([[0, 0.088], [0.5, 0.078], [0.85, 0.09], [1, 0.108]]), ry: prof([[0, 0.088], [0.5, 0.074], [0.85, 0.088], [1, 0.1]]),
+      pts: [kneeA, P(840, 855, 0.3), P(660, 925, 0.4), P(520, 975, 0.46), hemA], rings: 36, sides: 24, ref: V3(0, 1, 0),
+      rx: prof([[0, 0.086], [0.5, 0.074], [0.85, 0.086], [1, 0.1]]), ry: prof([[0, 0.086], [0.5, 0.07], [0.85, 0.082], [1, 0.094]]),
       capStart: 3, noise: legNoise(0.12, 5),
     };
     add(loft(shin), trouserM());
   }
   // leg B: wide white leg falling from behind the crossed shin to the bottom centre, pooled at a pointed hem
   {
-    const hipB = P(560, 855, -0.04), kneeB = P(505, 1010, 0.4), ankleB = P(535, 1750, 0.55);
+    const hipB = P(560, 855, -0.04), kneeB = P(520, 985, 0.38), ankleB = P(535, 1750, 0.55);
     const thigh = {
       pts: [hipB, P(520, 930, 0.2), kneeB], rings: 14, sides: 22, ref: V3(1, 0, 0),
       rx: prof([[0, 0.11], [1, 0.1]]), ry: prof([[0, 0.11], [1, 0.1]]), capStart: 3, capEnd: 4, noise: legNoise(0.09, 9),
@@ -239,7 +239,7 @@ export function buildBody(THREE, style) {
     add(loft(thigh), trouserM());
     const shin = {
       pts: [kneeB, P(515, 1250, 0.46), P(525, 1500, 0.52), ankleB], rings: 26, sides: 24, ref: V3(1, 0, 0),
-      rx: prof([[0, 0.098], [0.4, 0.105], [1, 0.125]]), ry: prof([[0, 0.098], [0.4, 0.1], [1, 0.115]]), capStart: 3, noise: legNoise(0.1, 11),
+      rx: prof([[0, 0.105], [0.4, 0.115], [1, 0.14]]), ry: prof([[0, 0.1], [0.4, 0.105], [1, 0.12]]), capStart: 3, noise: legNoise(0.1, 11),
     };
     add(loft(shin), trouserM());
     ell(0.07, P(540, 1700, 0.62), [1, 0.6, 1.8], mat(0x1a1210, 'leather'));
@@ -249,7 +249,7 @@ export function buildBody(THREE, style) {
   {
     const leather = mat(0x5a2e14, 'leather');
     const leatherD = mat(0x1e0f08, 'leather');
-    const heel = P(338, 1022, 0.5), mid = P(246, 1092, 0.56), ball = P(165, 1140, 0.6), toe = P(112, 1178, 0.62);
+    const heel = P(345, 1015, 0.5), mid = P(255, 1085, 0.55), ball = P(185, 1130, 0.58), toe = P(142, 1165, 0.6);
     // shaft: slides out of the trouser hem
     add(loft({
       pts: [P(470, 1030, 0.46), P(380, 1040, 0.5), heel.clone().add(V3(0.0, -0.01, 0.0))], rings: 8, sides: 18, ref: V3(0, 1, 0),
@@ -275,7 +275,7 @@ export function buildBody(THREE, style) {
       const f = U.frameAt(footSpec, gc, t);
       // instep = the ring point facing the viewer/up
       const top = U.ringPoint(footSpec, gc, t, Math.PI / 2, 1.0, 0.003);
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.05, 6), mat(0xa88650, 'leather'));
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.046, 6), mat(0x6e5230, 'leather'));
       bar.position.copy(top);
       orient(bar, f.B, f.N);
       bar.rotateY(0.5);

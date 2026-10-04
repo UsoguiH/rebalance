@@ -73,17 +73,17 @@ export function buildThrone(THREE, style, util) {
   for (const s of [-1, 1]) {
     const x = s * 0.345;
     // stacked, grooved block running front-to-back
-    const bands = [[0.575, 0.1, 0.09, gold()], [0.597, 0.112, 0.07, goldDark()], [0.62, 0.1, 0.09, gold()], [0.642, 0.108, 0.07, goldDark()], [0.664, 0.098, 0.085, gold()]];
+    const bands = [[0.58, 0.088, 0.09, gold()], [0.6, 0.098, 0.07, goldDark()], [0.62, 0.088, 0.09, gold()], [0.64, 0.096, 0.07, goldDark()]];
     for (const [y, w, hh, m] of bands) {
       const b = M(new THREE.BoxGeometry(w, 0.02, 0.64), m, x, y, 0.0);
       b.scale.y = 1;
     }
     // carved scroll ends: horizontal cylinders across the front and back
     for (const z of [0.33, -0.33]) {
-      const c = M(new THREE.CylinderGeometry(0.052, 0.052, 0.118, 18), gold(), x, 0.62, z);
+      const c = M(new THREE.CylinderGeometry(0.042, 0.042, 0.1, 18), gold(), x, 0.615, z);
       c.rotation.z = Math.PI / 2;
-      M(new THREE.SphereGeometry(0.056, 14, 10), goldDark(), x + s * 0.062, 0.62, z).scale.set(0.5, 1, 1);
-      M(new THREE.SphereGeometry(0.056, 14, 10), goldDark(), x - s * 0.062, 0.62, z).scale.set(0.5, 1, 1);
+      M(new THREE.SphereGeometry(0.044, 14, 10), goldDark(), x + s * 0.052, 0.615, z).scale.set(0.5, 1, 1);
+      M(new THREE.SphereGeometry(0.044, 14, 10), goldDark(), x - s * 0.052, 0.615, z).scale.set(0.5, 1, 1);
     }
     // turned front/back support posts
     M(new THREE.LatheGeometry(postProfile(0.57, 0.024, [{ y: 0.3, R: 0.044 }], 0.15), 14), gold(), x, 0.0, 0.32);

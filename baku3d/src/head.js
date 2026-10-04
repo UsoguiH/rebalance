@@ -79,7 +79,7 @@ export function buildHead(THREE, style) {
     line([[-0.012, 0.004, 0.046], [-0.034, -0.002, 0.040], [-0.066, 0.004, 0.024]], 0.0024);
     line([[0.012, 0.004, 0.046], [0.034, -0.002, 0.040], [0.066, 0.004, 0.024]], 0.0024);
   }
-  neckGroup.rotation.set(0.12, 0, -0.05);
+  neckGroup.rotation.set(0.12, 0, -0.20);
   const HS = 1.15; neckGroup.scale.setScalar(HS);
 
   // ======================= HEAD (tilt group) =======================
@@ -87,7 +87,7 @@ export function buildHead(THREE, style) {
   tilt.position.set(0, PIVOT_Y * HS, 0); tilt.scale.setScalar(HS);
   tilt.rotation.order = 'YXZ';
   tilt.rotation.set(0.36, -0.02, -0.48);
-  tilt.position.x += 0.012;
+  tilt.position.x += 0.034; tilt.position.y -= 0.035;
   root.add(tilt);
   const face = new THREE.Group(); face.name = 'face';
   face.position.set(0, FACE_Y - PIVOT_Y, 0.004);
@@ -214,18 +214,18 @@ export function buildHead(THREE, style) {
   const gold = style.toon(0xe6b32a, { role: 'gold', side: THREE.DoubleSide });
   const goldLight = style.toon(0xf6d460, { role: 'gold' });
   const goldDark = style.toon(0xa8741a, { role: 'gold' });
-  const C = [0.042, -0.020], RING = 0.0150, RY = 0.74;
+  const C = [0.042, -0.020], RING = 0.0165, RY = 0.74;
   {
-    const goldStrap = style.toon(0xf3d97a, { role: 'gold', side: THREE.DoubleSide });
+    const goldStrap = style.toon(0xf7e48c, { role: 'eye', side: THREE.DoubleSide });
     const E = [C[0] - RING * 0.72, C[1] + RING * RY * 0.72];
     const ctrl = [];
-    const x0 = -0.058, ySl = -0.42;
+    const x0 = -0.058, ySl = -0.65;
     const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     for (let i = 0; i <= 5; i++) {
       const x = E[0] + (x0 - E[0]) * i / 5, y = E[1] + (x - E[0]) * ySl;
       ctrl.push(field.P(x, y, 0.0040));
     }
-    for (const q of [[-0.078, 0.046, 0.046], [-0.091, 0.050, 0.022], [-0.095, 0.053, -0.012], [-0.091, 0.056, -0.050], [-0.072, 0.060, -0.088], [0, 0.062, -0.104], [0.072, 0.060, -0.088], [0.091, 0.056, -0.050], [0.095, 0.052, -0.010], [0.089, 0.046, 0.024]]) ctrl.push(new V3(...q));
+    for (const q of [[-0.081, 0.063, 0.030], [-0.090, 0.066, 0.004], [-0.092, 0.068, -0.030], [-0.085, 0.068, -0.065], [-0.065, 0.066, -0.095], [0, 0.066, -0.106], [0.065, 0.066, -0.095], [0.085, 0.068, -0.065], [0.092, 0.068, -0.030], [0.090, 0.064, 0.0]]) ctrl.push(new V3(...q));
     const curveS = new THREE.CatmullRomCurve3(ctrl, false, 'catmullrom', 0.5);
     const pts = curveS.getPoints(160);
     const cen = new V3(0, 0.05, -0.012), hw = 0.0068, th = 0.0022;
