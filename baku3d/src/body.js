@@ -1,10 +1,11 @@
 // OWNER: Builder A. Origin = floor centre under the throne seat. Units ~ metres, +Z toward camera.
-// Matched to the reference assuming camera fov32 at (0,0.85,2.2) looking at (0,0.85,0) (see bodyA_util.js).
+// Matched to the reference with camera fov32 at (0,0.85,2.2) looking at (0,0.85,0) (see bodyA_util.js; style.js uses the same).
 // group.userData.neck = Vector3 (body-local) where the head attaches
 // group.userData.cheekTarget = Vector3 (body-local) where the propping fist ends up
 import { makeUtil } from './bodyA_util.js';
 import { buildHand } from './bodyA_hand.js';
 import { buildThrone } from './bodyA_throne.js';
+import { buildHead } from './head.js';
 
 export function buildBody(THREE, style) {
   const U = makeUtil(THREE);
@@ -22,28 +23,36 @@ export function buildBody(THREE, style) {
     const o = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 16), m);
     o.position.copy(p); o.scale.set(sc[0], sc[1], sc[2]); parent.add(o); return o;
   };
+  const ridged = (x, y, z) => 1 - Math.abs(2 * fbm(x, y, z, 2) - 1); // sharp crease peaks, 0..1
 
-  const SUIT = 0xf2f0ec, SUIT2 = 0xe8e6e4;
+  const SUIT = 0xf2f0ec, SUIT2 = 0xe6e4e6;
   const suitM = () => mat(SUIT, 'suit', true);
   const trouserM = () => mat(0xf0eeea, 'suit', true);
   const shirtM = () => mat(0x58101a, 'shirt', true);
   const skinM = () => mat(0xf1c7a0, 'skin');
   const nailM = () => mat(0xf6dcc4, 'skin');
 
+  // ---- where does the head's cheek land? (head hangs from `neck`) ----
+  const neck = P(572, 432, -0.02);
+  let cheekOff = null;
+  try { const h = buildHead(THREE, style); if (h.userData.cheek) cheekOff = h.userData.cheek.clone(); } catch (e) { /* head not ready */ }
+  const cheek = cheekOff ? neck.clone().add(cheekOff) : P(742, 338, 0.18);
+
   // ================= THRONE & WALL =================
   g.add(buildThrone(THREE, style, U));
 
-  // ================= TORSO =================
-  // spine from pelvis (bottom) to neck base (top)
-  const spine = [P(600, 870, -0.05), P(598, 770, -0.05), P(590, 650, -0.04), P(584, 530, -0.02), P(580, 420, -0.02), P(576, 362, -0.03)];
-  const tilt = (t) => -0.12 * sm(Math.min(1, Math.max(0, (t - 0.45) / 0.5)));
+  // ================= TORSO (leaning toward viewer's left, right shoulder dropped) =================
+  const spine = [P(645, 875, -0.05), P(628, 775, -0.05), P(606, 655, -0.04), P(580, 540, -0.02), P(556, 435, -0.02), P(540, 365, -0.03)];
+  const tilt = (t) => -0.17 * sm(Math.min(1, Math.max(0, (t - 0.4) / 0.5)));
   const jrx = prof([[0, 0.205], [0.2, 0.19], [0.5, 0.2], [0.78, 0.222], [0.9, 0.238], [0.96, 0.17], [1, 0.1]]);
   const jry = prof([[0, 0.15], [0.3, 0.135], [0.6, 0.14], [0.85, 0.115], [1, 0.08]]);
   const gap = prof([[0, 0.22], [0.45, 0.3], [0.72, 0.5], [0.9, 1.0], [1, 1.3]]);
+  // crumpled cloth: fbm + ridged creases + diagonal drag folds
   const cloth = (amp, sx, sy, sz, seed = 0) => (t, phi, p) => {
     const n = fbm(p.x * sx + seed, p.y * sy, p.z * sz + seed * 0.7) - 0.5;
-    const crease = Math.sin(p.y * 38 + p.x * 17 + seed) * 0.35 + Math.sin(p.y * 21 - p.x * 25 + seed * 2) * 0.3;
-    return 1 + amp * (n * 2 + crease * 0.5);
+    const rg = ridged(p.x * sx * 0.9 + seed, p.y * sy * 0.8, p.z * sz * 0.9) - 0.45;
+    const diag = Math.sin(p.y * 30 + p.x * 22 + n * 5 + seed) * 0.5 + Math.sin(p.y * 17 - p.x * 24 + seed * 2) * 0.35;
+    return 1 + amp * (n * 1.6 + rg * 2.2 + diag * 0.7);
   };
 
   // skin chest (visible through the V)
@@ -53,225 +62,229 @@ export function buildBody(THREE, style) {
   };
   add(loft(chestSpec), skinM());
 
-  // maroon shirt with deep V
-  const shirtGap = prof([[0, 0], [0.7, 0], [0.76, 0.12], [1, 0.9]]);
+  // maroon shirt with deep V (reaches ~ y 550)
+  const shirtGap = prof([[0, 0], [0.66, 0], [0.72, 0.12], [1, 0.9]]);
   const shirtSpec = {
     pts: spine, rings: 28, sides: 28, ref: V3(0, 0, 1), tilt,
     rx: (t) => jrx(t) * 0.9, ry: (t) => jry(t) * 0.92,
     phi0: (t) => Math.PI / 2 + shirtGap(t), phi1: (t) => Math.PI * 2.5 - shirtGap(t),
-    noise: cloth(0.03, 7, 5, 7, 3),
+    noise: cloth(0.04, 7, 5, 7, 3),
   };
   add(loft(shirtSpec), shirtM());
 
   // white jacket (open front, loose, crumpled)
   const jacketSpec = {
-    pts: spine, rings: 40, sides: 40, ref: V3(0, 0, 1), tilt,
+    pts: spine, rings: 56, sides: 48, ref: V3(0, 0, 1), tilt,
     rx: jrx, ry: jry,
     phi0: (t) => Math.PI / 2 + gap(t), phi1: (t) => Math.PI * 2.5 - gap(t),
-    noise: cloth(0.07, 7, 5, 7, 0),
+    noise: cloth(0.075, 6, 4.5, 6, 0),
   };
   const jacketGeo = loft(jacketSpec);
   add(jacketGeo, suitM());
   const curve = jacketGeo._curve;
+  const axisPt = P(560, 600, -0.14);
 
-  // lapels: raised surface patch beside the opening, widest near the shoulder (pointed/notched)
-  const axisPt = P(580, 600, -0.12);
-  const lapelW = prof([[0.28, 0.0], [0.5, 0.18], [0.75, 0.42], [0.9, 0.5], [0.98, 0.3], [1, 0.1]]);
-  for (const s of [-1, 1]) {
+  // notched lapels: a long pointed lapel + a separate collar piece with a V notch between them
+  const edgeOf = (s, t) => (s < 0 ? Math.PI / 2 + gap(t) : Math.PI / 2 - gap(t));
+  const strip = (s, t0, t1, wFn, outset, colour, n = 26) => {
     const A = [], B = [];
-    const n = 22;
     for (let i = 0; i <= n; i++) {
-      const t = 0.28 + (0.965 - 0.28) * (i / n);
-      const edge = s < 0 ? Math.PI / 2 + gap(t) : Math.PI / 2 - gap(t);
-      const dphi = lapelW(t) * (s < 0 ? 1 : -1);
-      // pointed notch: cut the lapel in near the top
-      A.push(U.ringPoint(jacketSpec, curve, t, edge, 1.0, 0.012));
-      B.push(U.ringPoint(jacketSpec, curve, t, edge + dphi, 1.0, 0.02 + 0.015 * Math.sin(i / n * 3)));
+      const u = i / n, t = t0 + (t1 - t0) * u;
+      const e = edgeOf(s, t);
+      const w = wFn(u) * (s < 0 ? 1 : -1);
+      A.push(U.ringPoint(jacketSpec, curve, t, e, 1.0, outset));
+      B.push(U.ringPoint(jacketSpec, curve, t, e + w, 1.0, outset + 0.012 + 0.012 * Math.sin(u * 3)));
     }
-    add(ribbon(A, B, axisPt), mat(SUIT2, 'suit', true));
-    // lapel front edge roll (thin tube along the opening edge)
-    const edgePts = A.map((p) => p.clone());
-    const edgeCurve = new THREE.CatmullRomCurve3(edgePts);
-    add(new THREE.TubeGeometry(edgeCurve, 30, 0.011, 6, false), mat(SUIT, 'suit'));
+    add(ribbon(A, B, axisPt), mat(colour, 'suit', true));
+    add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(A), 40, 0.0095, 6, false), mat(SUIT, 'suit'));
+    return A;
+  };
+  for (const s of [-1, 1]) {
+    // lapel: width grows linearly to a sharp point reaching toward the shoulder
+    strip(s, 0.3, 0.9, (u) => 0.02 + 0.82 * Math.pow(u, 1.15) * (u < 0.96 ? 1 : (1 - u) / 0.04), 0.012, SUIT2);
+    // collar piece above the notch
+    strip(s, 0.86, 0.985, (u) => 0.32 * (1 - u * 0.7) * (u < 0.1 ? u / 0.1 : 1), 0.02, SUIT);
   }
-  // jacket edge below the lapels (front hem tube)
+  // front hem edge below the lapels
   for (const s of [-1, 1]) {
     const pts = [];
     for (let i = 0; i <= 12; i++) {
       const t = 0.02 + 0.28 * (i / 12);
-      pts.push(U.ringPoint(jacketSpec, curve, t, s < 0 ? Math.PI / 2 + gap(t) : Math.PI / 2 - gap(t), 1.0, 0.006));
+      pts.push(U.ringPoint(jacketSpec, curve, t, edgeOf(s, t), 1.0, 0.006));
     }
     add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.011, 6, false), mat(SUIT, 'suit'));
   }
 
-  // collar: red shirt collar flaps lying over the lapels + a standing jacket collar band
+  // red shirt collar flaps lying over the lapels
   {
     const redM = mat(0x9a1620, 'shirt', true);
     const flap = (s, tipPx, topPx, innerPx) => {
-      const tip = P(tipPx[0], tipPx[1], 0.14), top = P(topPx[0], topPx[1], 0.07), inner = P(innerPx[0], innerPx[1], 0.13);
-      const base = P(topPx[0] + s * 30, topPx[1] + 40, 0.1);
-      const geoF = ribbon([top, base, tip], [top.clone().add(V3(0, 0.02, 0.01)), inner, tip.clone().add(V3(0, 0.015, 0.012))], axisPt);
-      add(geoF, redM);
+      const tip = P(tipPx[0], tipPx[1], 0.15), top = P(topPx[0], topPx[1], 0.08), inner = P(innerPx[0], innerPx[1], 0.14);
+      const base = P(topPx[0] + s * 30, topPx[1] + 40, 0.11);
+      add(ribbon([top, base, tip], [top.clone().add(V3(0, 0.02, 0.01)), inner, tip.clone().add(V3(0, 0.015, 0.012))], axisPt), redM);
     };
-    flap(-1, [438, 398], [556, 308], [520, 408]);
-    flap(1, [676, 446], [600, 332], [646, 420]);
+    flap(-1, [438, 392], [545, 312], [510, 405]);
+    flap(1, [648, 412], [598, 336], [628, 404]);
   }
 
   // pelvis / lap filler under the jacket hem
-  ell(0.17, P(590, 868, -0.02), [1.25, 0.7, 1.0], trouserM());
+  ell(0.17, P(615, 868, -0.02), [1.25, 0.7, 1.0], trouserM());
+  add(new THREE.TorusGeometry(0.205, 0.012, 8, 36, Math.PI * 1.3), mat(0x2b1a14, 'leather')).position.copy(P(620, 805, -0.05));
 
-  // belt
-  add(new THREE.TorusGeometry(0.205, 0.012, 8, 36, Math.PI * 1.3), mat(0x2b1a14, 'leather')).position.copy(P(590, 800, -0.05));
-
-  // ================= RIGHT ARM (viewer's right): elbow out, forearm up, fist props cheek =================
-  const shoulderR = P(790, 445, -0.06), elbowR = P(942, 600, 0.16), wristR = P(808, 410, 0.26);
-  const sleeveNoise = (amp, k, seed) => (t, phi, p) => {
-    const n = fbm(p.x * 14 + seed, p.y * 14, p.z * 14 + seed) - 0.5;
-    const bunch = Math.sin(t * Math.PI * k + phi * 2 + seed) * 0.5;
-    return 1 + amp * (n * 2 + bunch * (0.4 + t));
+  // ================= RIGHT ARM (viewer's right): elbow out, forearm up, fist props the cheek =================
+  const bunch = (k, c0, wdt, seed) => (t) => Math.exp(-(((t - c0) / wdt) ** 2));
+  const sleeveNoise = (amp, k, seed, centres = [0.5, 0.9]) => (t, phi, p) => {
+    const n = fbm(p.x * 12 + seed, p.y * 12, p.z * 12 + seed) - 0.5;
+    const rg = ridged(p.x * 10 + seed, p.y * 10, p.z * 10) - 0.45;
+    let w = 0;
+    for (const c of centres) w = Math.max(w, Math.exp(-(((t - c) / 0.12) ** 2)));
+    const acc = Math.sin(t * 95 + phi * 1.7 + n * 6 + seed) * w;
+    return 1 + amp * (n * 1.4 + rg * 1.8 + acc * 1.5 + Math.sin(t * Math.PI * k + phi * 2 + seed) * 0.3);
   };
+  const fistDir = V3(-0.62, 0.74, -0.2).normalize();
+  const FS = 1.15;
+  const kn = cheek.clone().add(V3(0.004, -0.002, 0.03));
+  const wristR = kn.clone().addScaledVector(fistDir, -0.098 * FS);
+  const shoulderR = P(785, 470, -0.06), elbowR = P(945, 612, 0.17);
   {
     const up = {
-      pts: [shoulderR, P(865, 505, 0.03), elbowR], rings: 18, sides: 20, ref: V3(0, 0, 1),
-      rx: prof([[0, 0.085], [0.5, 0.072], [1, 0.07]]), ry: prof([[0, 0.085], [0.5, 0.072], [1, 0.07]]),
-      capStart: 4, capEnd: 4, noise: sleeveNoise(0.075, 9, 1),
+      pts: [shoulderR, P(868, 530, 0.04), elbowR], rings: 22, sides: 22, ref: V3(0, 0, 1),
+      rx: prof([[0, 0.088], [0.5, 0.074], [1, 0.072]]), ry: prof([[0, 0.088], [0.5, 0.074], [1, 0.072]]),
+      capStart: 4, capEnd: 4, noise: sleeveNoise(0.085, 9, 1, [0.75]),
     };
     add(loft(up), suitM());
-    ell(0.074, elbowR, [1, 1, 1], suitM());
+    ell(0.078, elbowR, [1, 1, 1], suitM());
+    const mid = elbowR.clone().lerp(wristR, 0.5).add(V3(0.02, 0.0, 0.03));
     const fore = {
-      pts: [elbowR, P(880, 500, 0.23), wristR], rings: 20, sides: 20, ref: V3(0.3, 0, 1),
-      rx: prof([[0, 0.07], [0.5, 0.064], [1, 0.054]]), ry: prof([[0, 0.07], [0.5, 0.064], [1, 0.054]]),
-      capStart: 2, noise: sleeveNoise(0.07, 11, 4),
+      pts: [elbowR, mid, wristR], rings: 26, sides: 22, ref: V3(0.3, 0, 1),
+      rx: prof([[0, 0.074], [0.5, 0.066], [1, 0.054]]), ry: prof([[0, 0.074], [0.5, 0.066], [1, 0.054]]),
+      capStart: 2, noise: sleeveNoise(0.085, 11, 4, [0.15, 0.9]),
     };
     add(loft(fore), suitM());
-    // cuff
-    const cuffEnd = wristR.clone();
-    const cuffDir = wristR.clone().sub(P(880, 500, 0.23)).normalize();
-    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.06, 0.03, 18), mat(0xfafafa, 'suit'));
-    cuff.position.copy(cuffEnd).addScaledVector(cuffDir, -0.012);
+    const cuffDir = wristR.clone().sub(mid).normalize();
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.056, 0.061, 0.03, 18), mat(0xfafafa, 'suit'));
+    cuff.position.copy(wristR).addScaledVector(cuffDir, -0.012);
     orient(cuff, cuffDir, V3(0, 0, 1));
     g.add(cuff);
 
-    // propping fist
+    // propping fist: four knuckle bumps on the cheek side, thumb tucked under
     const hand = buildHand(THREE, U, skinM(), nailM(), {
-      side: -1, // thumb on viewer's-left side of the hand (toward the face)
-      curl: [[1.4, 1.75, 1.05], [1.5, 1.8, 1.05], [1.5, 1.8, 1.0], [1.45, 1.7, 0.95]],
+      side: -1, scale: FS, knuckle: 1.45, fingerLen: 0.9,
+      curl: [[1.5, 1.85, 1.0], [1.55, 1.9, 1.0], [1.55, 1.85, 0.95], [1.5, 1.75, 0.9]],
       spread: 0,
       thumb: { dir: V3(-0.6, 0.45, -0.7), bend: [0.5, 0.6], len: [0.034, 0.028, 0.024] },
-      scale: 1.15,
     });
     hand.position.copy(wristR);
-    const kn = P(745, 338, 0.2);
-    orient(hand, kn.clone().sub(wristR), V3(0.6, 0.2, 0.75));
+    orient(hand, fistDir, V3(0.6, 0.25, 0.75));
     g.add(hand);
-    g.userData.cheekTarget = kn.clone().add(V3(-0.01, 0.0, -0.005));
   }
 
-  // ================= LEFT ARM (viewer's left): straight down, hand draped over the armrest =================
+  // ================= LEFT ARM (viewer's left): straight down, back of hand to camera, fingers hang over the armrest =================
   {
-    const shoulderL = P(372, 398, -0.04), wristL = P(252, 790, 0.32);
+    const shoulderL = P(362, 392, -0.04), wristL = P(250, 782, 0.3);
     const spec = {
-      pts: [shoulderL, P(300, 520, 0.02), P(240, 650, 0.14), P(243, 735, 0.25), wristL],
-      rings: 28, sides: 22, ref: V3(0, 0, 1),
+      pts: [shoulderL, P(292, 520, 0.02), P(232, 648, 0.14), P(238, 728, 0.24), wristL],
+      rings: 34, sides: 22, ref: V3(0, 0, 1),
       rx: prof([[0, 0.088], [0.4, 0.074], [0.7, 0.07], [1, 0.056]]), ry: prof([[0, 0.088], [0.4, 0.076], [0.7, 0.072], [1, 0.056]]),
-      capStart: 4, noise: sleeveNoise(0.07, 12, 7),
+      capStart: 4, noise: sleeveNoise(0.085, 12, 7, [0.55, 0.92]),
     };
     add(loft(spec), suitM());
-    const dir = wristL.clone().sub(P(243, 735, 0.25)).normalize();
+    const dir = wristL.clone().sub(P(238, 728, 0.24)).normalize();
     const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.063, 0.03, 18), mat(0xfafafa, 'suit'));
     cuff.position.copy(wristL).addScaledVector(dir, -0.012);
     orient(cuff, dir, V3(0, 0, 1));
     g.add(cuff);
 
+    // wrist bent down: hand slopes toward the camera, back of the hand faces camera/up, fingers curl over the rail
     const hand = buildHand(THREE, U, skinM(), nailM(), {
-      side: -1,
-      curl: [[1.15, 0.45, 0.3], [1.28, 0.5, 0.3], [1.35, 0.55, 0.35], [1.45, 0.6, 0.35]],
-      spread: 0.12, scale: 1.25,
-      thumb: { dir: V3(0.7, 0.7, 0.1), bend: [0.15, 0.2], len: [0.034, 0.028, 0.024] },
+      side: -1, scale: 1.2, knuckle: 1.5, fingerLen: 0.88, tendons: true,
+      curl: [[1.05, 0.85, 0.55], [1.15, 0.9, 0.55], [1.2, 0.95, 0.6], [1.3, 0.95, 0.6]],
+      spread: 0.05,
+      thumb: { dir: V3(0.55, 0.5, -0.6), bend: [0.4, 0.5], len: [0.03, 0.026, 0.022] },
     });
     hand.position.copy(wristL);
-    orient(hand, V3(-0.3, -0.42, 0.7), V3(0.1, 0.8, 0.55));
+    orient(hand, V3(-0.22, -0.55, 0.8), V3(0.12, 0.8, 0.5));
     g.add(hand);
   }
 
   // ================= LEGS =================
   const legNoise = (amp, seed) => (t, phi, p) => {
-    const n = (fbm(p.x * 9 + seed, p.y * 9, p.z * 9 + seed) - 0.5) + (fbm(p.x * 4 + seed, p.y * 4, p.z * 4) - 0.5) * 1.2;
-    const crease = Math.sin(t * 34 + phi * 2 + seed) * 0.5 + Math.sin(phi * 3 - t * 9 + seed) * 0.5;
-    return 1 + amp * (n * 2 + crease * 0.9);
+    const n = (fbm(p.x * 8 + seed, p.y * 8, p.z * 8 + seed) - 0.5) + (fbm(p.x * 3.5 + seed, p.y * 3.5, p.z * 3.5) - 0.5) * 1.2;
+    const rg = ridged(p.x * 7 + seed, p.y * 7, p.z * 7) - 0.45;
+    const drag = Math.sin(phi * 2.5 - t * 16 + n * 4 + seed) * 0.6 + Math.sin(t * 36 + phi * 2 + seed) * 0.4;
+    return 1 + amp * (n * 1.6 + rg * 2.0 + drag * 0.9);
   };
-  // leg A: thigh out to viewer's right (knee up on the armrest), shin back across the lap, boot at left
-  const hipA = P(640, 835, -0.04), kneeA = P(1020, 778, 0.24), ankleA = P(385, 1040, 0.55);
+  // leg A: thigh runs up-right to the raised knee (~x1040), shin drops down-left to the hem over the boot
+  const hipA = P(625, 845, -0.04), kneeA = P(945, 792, 0.22), hemA = P(402, 1038, 0.5);
   {
     const thigh = {
-      pts: [hipA, P(830, 805, 0.1), kneeA], rings: 18, sides: 22, ref: V3(0, 1, 0),
+      pts: [hipA, P(790, 815, 0.12), kneeA], rings: 20, sides: 22, ref: V3(0, 1, 0),
       rx: prof([[0, 0.115], [1, 0.088]]), ry: prof([[0, 0.11], [1, 0.088]]), capStart: 3, capEnd: 4, noise: legNoise(0.1, 2),
     };
     add(loft(thigh), trouserM());
     const shin = {
-      pts: [kneeA, P(900, 880, 0.3), P(700, 955, 0.38), P(520, 1020, 0.43), ankleA], rings: 34, sides: 24, ref: V3(0, 1, 0),
-      rx: prof([[0, 0.088], [0.5, 0.082], [1, 0.1]]), ry: prof([[0, 0.088], [0.5, 0.078], [1, 0.095]]),
-      capStart: 3, noise: legNoise(0.11, 5),
+      pts: [kneeA, P(840, 868, 0.3), P(660, 950, 0.4), P(520, 1000, 0.46), hemA], rings: 36, sides: 24, ref: V3(0, 1, 0),
+      rx: prof([[0, 0.088], [0.5, 0.078], [0.85, 0.09], [1, 0.108]]), ry: prof([[0, 0.088], [0.5, 0.074], [0.85, 0.088], [1, 0.1]]),
+      capStart: 3, noise: legNoise(0.12, 5),
     };
     add(loft(shin), trouserM());
   }
-  // leg B: thigh toward camera, shin straight down to the floor
+  // leg B: wide white leg falling from behind the crossed shin to the bottom centre, pooled at a pointed hem
   {
-    const hipB = P(540, 850, -0.04), kneeB = P(520, 1070, 0.33), ankleB = P(545, 1700, 0.5);
+    const hipB = P(560, 855, -0.04), kneeB = P(505, 1010, 0.4), ankleB = P(535, 1750, 0.55);
     const thigh = {
-      pts: [hipB, P(510, 960, 0.12), kneeB], rings: 14, sides: 22, ref: V3(1, 0, 0),
-      rx: prof([[0, 0.11], [1, 0.088]]), ry: prof([[0, 0.11], [1, 0.088]]), capStart: 3, capEnd: 4, noise: legNoise(0.09, 9),
+      pts: [hipB, P(520, 930, 0.2), kneeB], rings: 14, sides: 22, ref: V3(1, 0, 0),
+      rx: prof([[0, 0.11], [1, 0.1]]), ry: prof([[0, 0.11], [1, 0.1]]), capStart: 3, capEnd: 4, noise: legNoise(0.09, 9),
     };
     add(loft(thigh), trouserM());
     const shin = {
-      pts: [kneeB, P(535, 1260, 0.42), ankleB], rings: 22, sides: 22, ref: V3(1, 0, 0),
-      rx: prof([[0, 0.085], [1, 0.095]]), ry: prof([[0, 0.085], [1, 0.095]]), capStart: 3, noise: legNoise(0.09, 11),
+      pts: [kneeB, P(515, 1250, 0.46), P(525, 1500, 0.52), ankleB], rings: 26, sides: 24, ref: V3(1, 0, 0),
+      rx: prof([[0, 0.098], [0.4, 0.105], [1, 0.125]]), ry: prof([[0, 0.098], [0.4, 0.1], [1, 0.115]]), capStart: 3, noise: legNoise(0.1, 11),
     };
     add(loft(shin), trouserM());
-    ell(0.07, P(500, 1650, 0.7), [1, 0.6, 1.8], mat(0x1a1210, 'leather'));
+    ell(0.07, P(540, 1700, 0.62), [1, 0.6, 1.8], mat(0x1a1210, 'leather'));
   }
 
-  // ================= BOOT (brown lace-up) =================
+  // ================= BOOT: small dark-brown lace-up, toe down-left =================
   {
-    const leather = mat(0x7d4220, 'leather');
-    const leatherD = mat(0x3c1c0c, 'leather');
-    const toe = P(128, 1135, 0.6);
-    const heel = ankleA.clone().add(V3(0.04, -0.075, -0.05));
-    const shaftTop = ankleA.clone().add(V3(0.17, 0.06, -0.07));
+    const leather = mat(0x5a2e14, 'leather');
+    const leatherD = mat(0x1e0f08, 'leather');
+    const heel = P(338, 1022, 0.5), mid = P(246, 1092, 0.56), ball = P(165, 1140, 0.6), toe = P(112, 1178, 0.62);
+    // shaft: slides out of the trouser hem
     add(loft({
-      pts: [ankleA.clone().add(V3(-0.01, -0.04, 0.01)), shaftTop], rings: 8, sides: 18, ref: V3(0, 1, 0),
-      rx: () => 0.062, ry: () => 0.062, capStart: 3, noise: legNoise(0.03, 4),
+      pts: [P(470, 1030, 0.46), P(380, 1040, 0.5), heel.clone().add(V3(0.0, -0.01, 0.0))], rings: 8, sides: 18, ref: V3(0, 1, 0),
+      rx: () => 0.052, ry: () => 0.052, capEnd: 3, noise: legNoise(0.04, 4),
     }), leather);
-    const mid = heel.clone().lerp(toe, 0.38).add(V3(-0.01, 0.01, 0.02));
     const footSpec = {
-      pts: [heel, mid, heel.clone().lerp(toe, 0.72), toe], rings: 18, sides: 20, ref: V3(0, 1, 0),
-      rx: prof([[0, 0.05], [0.4, 0.058], [0.72, 0.062], [1, 0.04]]), ry: prof([[0, 0.065], [0.4, 0.066], [0.72, 0.05], [1, 0.038]]),
-      capStart: 4, capEnd: 5, noise: legNoise(0.03, 8),
+      pts: [heel, mid, ball, toe], rings: 20, sides: 20, ref: V3(0.2, 0.2, 1),
+      rx: prof([[0, 0.05], [0.4, 0.056], [0.75, 0.058], [1, 0.04]]), ry: prof([[0, 0.052], [0.4, 0.054], [0.75, 0.048], [1, 0.036]]),
+      capStart: 4, capEnd: 5, noise: legNoise(0.035, 8),
     };
     const footGeo = loft(footSpec);
     add(footGeo, leather);
+    // chunky sole along the underside
     const soleSpec = {
-      pts: footSpec.pts.map((p) => p.clone().add(V3(0, -0.055, 0))), rings: 14, sides: 18, ref: V3(0, 1, 0),
-      rx: prof([[0, 0.052], [0.72, 0.066], [1, 0.044]]), ry: () => 0.014, capStart: 3, capEnd: 4,
+      pts: footSpec.pts.map((p) => p.clone().add(V3(0.012, -0.036, -0.012))), rings: 14, sides: 16, ref: V3(0.2, 0.2, 1),
+      rx: prof([[0, 0.054], [0.75, 0.06], [1, 0.044]]), ry: () => 0.018, capStart: 3, capEnd: 4,
     };
     add(loft(soleSpec), leatherD);
-    // laces across the instep
+    // laces: 6 crossings along the instep + tongue
     const gc = footGeo._curve;
     for (let i = 0; i < 6; i++) {
-      const t = 0.12 + i * 0.075;
+      const t = 0.1 + i * 0.07;
       const f = U.frameAt(footSpec, gc, t);
-      const top = U.ringPoint(footSpec, gc, t, Math.PI / 2, 1.0, 0.004);
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.07, 6), mat(0xd2b070, 'leather'));
+      // instep = the ring point facing the viewer/up
+      const top = U.ringPoint(footSpec, gc, t, Math.PI / 2, 1.0, 0.003);
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.05, 6), mat(0xa88650, 'leather'));
       bar.position.copy(top);
       orient(bar, f.B, f.N);
+      bar.rotateY(0.5);
       g.add(bar);
     }
-    // tongue
-    const tg = ell(0.03, U.ringPoint(footSpec, gc, 0.1, Math.PI / 2, 1.0, 0.02), [1.2, 0.6, 1.6], mat(0x8a4c26, 'leather'));
+    ell(0.022, U.ringPoint(footSpec, gc, 0.06, Math.PI / 2, 1.0, 0.012), [1.2, 0.5, 1.7], mat(0x6e3a1a, 'leather'));
   }
 
-  // neck: slightly inside the collar so the head can sink into the V
-  g.userData.neck = P(605, 428, -0.02);
-  if (!g.userData.cheekTarget) g.userData.cheekTarget = P(745, 338, 0.2);
+  g.userData.neck = neck.clone();
+  g.userData.cheekTarget = kn.clone();
   return g;
 }

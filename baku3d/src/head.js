@@ -15,7 +15,7 @@ export function buildHead(THREE, style) {
 
   // ---- materials
   const SKIN = 0xf3c9a1;
-  const skinMat = style.toon(SKIN, { role: 'skin' });
+  const skinMat = style.toon(SKIN, { role: 'skin', hatch: 0.5 });
   const ink = (hex = 0x1c1217, role = 'eye', lay = 1) => {
     const m = style.toon(hex, { role, side: THREE.DoubleSide });
     m.polygonOffset = true; m.polygonOffsetFactor = -lay; m.polygonOffsetUnits = -lay * 2; return m;
@@ -76,8 +76,8 @@ export function buildHead(THREE, style) {
     line([[0.0245, 0.085, zN(0.0245, 0.085)], [0.019, 0.060, zN(0.019, 0.060) + 0.001], [0.013, 0.032, zN(0.013, 0.032)], [0.009, 0.006, zN(0.009, 0.006)]], 0.0011);
     line([[-0.0065, 0.070, zN(-0.0065, 0.070) + 0.006], [-0.0010, 0.062, zN(0, 0.062) + 0.0085], [0.0065, 0.071, zN(0.0065, 0.071) + 0.006]], 0.0012);
     // clavicles
-    line([[-0.012, 0.005, 0.040], [-0.030, 0.0, 0.032], [-0.052, 0.0045, 0.018]], 0.0016);
-    line([[0.012, 0.005, 0.040], [0.030, 0.0, 0.032], [0.052, 0.0045, 0.018]], 0.0016);
+    line([[-0.012, 0.004, 0.046], [-0.034, -0.002, 0.040], [-0.066, 0.004, 0.024]], 0.0024);
+    line([[0.012, 0.004, 0.046], [0.034, -0.002, 0.040], [0.066, 0.004, 0.024]], 0.0024);
   }
   neckGroup.rotation.set(0.12, 0, -0.05);
   const HS = 1.15; neckGroup.scale.setScalar(HS);
@@ -86,7 +86,8 @@ export function buildHead(THREE, style) {
   const tilt = new THREE.Group(); tilt.name = 'headTilt';
   tilt.position.set(0, PIVOT_Y * HS, 0); tilt.scale.setScalar(HS);
   tilt.rotation.order = 'YXZ';
-  tilt.rotation.set(0.28, -0.03, -0.27);
+  tilt.rotation.set(0.36, -0.02, -0.48);
+  tilt.position.x += 0.012;
   root.add(tilt);
   const face = new THREE.Group(); face.name = 'face';
   face.position.set(0, FACE_Y - PIVOT_Y, 0.004);
@@ -116,7 +117,7 @@ export function buildHead(THREE, style) {
 
   // ---- EYE (visible: viewer's left)
   function eyeAt(ex, ey, side, phi) {
-    const hw = 0.0190, hu = 0.0056, hl = 0.0030;
+    const hw = 0.0150, hu = 0.0044, hl = 0.0020;
     const cs = Math.cos(phi), sn = Math.sin(phi);
     // canonical u along +x; for side=-1 (viewer's left) inner corner is +u; mirror for the other
     const T = (u, v) => { const uu = u * (side < 0 ? 1 : -1); const x = uu * cs + v * sn * 1, y = -uu * sn + v * cs; return [ex + x, ey + y]; };
@@ -128,34 +129,34 @@ export function buildHead(THREE, style) {
     const toFace = poly => poly.map(p => T(p[0], p[1]));
     add(fill(THREE, field, toFace(almond), 0.0007, 3), 0xe8dfd2, 'eye', 'sclera', 1);
     const circle = (cx, cy, r, m = 28) => { const a = []; for (let i = 0; i < m; i++) { const t = i / m * Math.PI * 2; a.push([cx + Math.cos(t) * r, cy + Math.sin(t) * r]); } return a; };
-    const ic = [0.0010 * (side < 0 ? 1 : -1) * 0 + 0.0012, -0.0006];
-    const irisP = clipPoly(circle(ic[0], ic[1], 0.0112), almond);
-    const lightP = clipPoly(circle(ic[0] + 0.0008, ic[1] - 0.0005, 0.0075), almond);
-    const pupP = clipPoly(circle(ic[0], ic[1], 0.0040), almond);
-    if (irisP.length > 2) add(fill(THREE, field, toFace(irisP), 0.0010, 3), 0x1a2234, 'eye', 'iris', 2);
-    if (lightP.length > 2) add(fill(THREE, field, toFace(lightP), 0.0013, 3), 0x3d5576, 'eye', 'irisLight', 3);
+    const ic = [0.0010, 0.0012];
+    const irisP = clipPoly(circle(ic[0], ic[1], 0.0078), almond);
+    const lightP = clipPoly(circle(ic[0] + 0.0004, ic[1] - 0.0004, 0.0050), almond);
+    const pupP = clipPoly(circle(ic[0], ic[1] + 0.0004, 0.0030), almond);
+    if (irisP.length > 2) add(fill(THREE, field, toFace(irisP), 0.0010, 3), 0x10141f, 'eye', 'iris', 2);
+    if (lightP.length > 2) add(fill(THREE, field, toFace(lightP), 0.0013, 3), 0x2c3c55, 'eye', 'irisLight', 3);
     if (pupP.length > 2) add(fill(THREE, field, toFace(pupP), 0.0016, 2), 0x07070b, 'eye', 'pupil', 4);
-    add(fill(THREE, field, toFace(circle(ic[0] - 0.0020, ic[1] + 0.0016, 0.0011, 10)), 0xffffff, 'eye', 'catchlight', 5), 0xffffff, 'eye', 'catch', 5);
+    
     // lid lines
     const upper = [], lower = [], crease = [], bag = [];
     for (let i = -1; i <= n + 2; i++) { const u = -hw + 2 * hw * i / n; const uc = Math.max(-hw, Math.min(hw, u)); upper.push(T(u + (i > n ? 0.002 * (i - n) * (side < 0 ? -1 : 1) * (side < 0 ? 1 : 1) * 0 : 0), up(uc) + (i > n ? 0.0016 * (i - n) : 0) + 0.0002)); }
     for (let i = 0; i <= n; i++) { const u = -hw + 2 * hw * i / n; lower.push(T(u, lo(u) - 0.0002)); }
     for (let i = 1; i < n; i++) { const u = -hw * 0.95 + 1.9 * hw * i / n; crease.push(T(u, up(u) + 0.0042 + 0.0010 * Math.sin((u / hw + 1) * Math.PI / 2))); }
-    for (let i = 2; i < n - 1; i++) { const u = -hw * 0.9 + 1.8 * hw * i / n; bag.push(T(u, lo(u) - 0.0060 - 0.0012 * Math.sin((u / hw + 1) * Math.PI / 2))); }
-    add(ribbon(THREE, field, upper, t => 0.0009 + 0.0030 * Math.sin(Math.PI * Math.min(1, t * 1.05)) ** 0.8, 0.0020), 0x0c0709, 'eye', 'upperLid', 6);
+    for (let i = 2; i < n - 1; i++) { const u = -hw * 0.9 + 1.8 * hw * i / n; bag.push(T(u, lo(u) - 0.0050 - 0.0010 * Math.sin((u / hw + 1) * Math.PI / 2))); }
+    add(ribbon(THREE, field, upper, t => 0.0010 + 0.0026 * Math.sin(Math.PI * Math.min(1, t * 1.05)) ** 0.8, 0.0020), 0x0a0507, 'eye', 'upperLid', 6);
     const shade = []; for (let i = 0; i <= n; i++) { const u = -hw + 2 * hw * i / n; shade.push(T(u, up(u) + 0.0022)); }
     add(ribbon(THREE, field, shade, t => 0.0050 * Math.sin(Math.PI * Math.min(1, 0.05 + 0.9 * t)) ** 0.8 + 0.0004, 0.0014), 0x8a5040, 'skin', 'lidShade', 2);
     add(ribbon(THREE, field, lower, t => 0.0004 + 0.0009 * Math.sin(Math.PI * t), 0.0020), 0x2a1a1c, 'eye', 'lowerLid', 6);
     add(ribbon(THREE, field, crease, t => 0.0004 + 0.0011 * Math.sin(Math.PI * t), 0.0012), 0x6a4034, 'skin', 'crease', 2);
-    add(ribbon(THREE, field, bag, t => 0.0003 + 0.0008 * Math.sin(Math.PI * t), 0.0012), 0x8a5a48, 'skin', 'bag', 2);
+    add(ribbon(THREE, field, bag, t => 0.0010 + 0.0030 * Math.sin(Math.PI * t), 0.0012), 0x9a6252, 'skin', 'bag', 2);
   }
-  eyeAt(-0.0345, 0.0005, -1, 0.20);
+  eyeAt(-0.0345, 0.0005, -1, 0.26);
 
   // ---- BROWS
-  const browL = [[-0.062, 0.031], [-0.054, 0.0325], [-0.045, 0.0325], [-0.036, 0.0300], [-0.027, 0.0262], [-0.018, 0.0225], [-0.010, 0.0190]];
-  add(ribbon(THREE, field, browL, t => (0.0024 + 0.0062 * Math.pow(t, 0.7)) * (t > 0.92 ? 0.7 : 1), 0.0018), 0x1e1418, 'hair', 'browL', 5);
-  const browR = [[0.014, 0.0300], [0.023, 0.0405], [0.036, 0.0470], [0.050, 0.0465], [0.062, 0.0400], [0.070, 0.0320]];
-  add(ribbon(THREE, field, browR, t => 0.0050 * Math.sin(Math.PI * (0.08 + 0.84 * t)) ** 0.5 + 0.0012, 0.0018), 0x1e1418, 'hair', 'browR', 5);
+  const browL = [[-0.064, 0.0405], [-0.056, 0.0400], [-0.046, 0.0365], [-0.036, 0.0315], [-0.026, 0.0260], [-0.017, 0.0215], [-0.010, 0.0180]];
+  add(ribbon(THREE, field, browL, t => 0.0008 + 0.0024 * Math.sin(Math.PI * Math.min(1, 0.15 + 0.85 * t)) ** 0.6 * (1 - 0.25 * t), 0.0018), 0x1e1418, 'hair', 'browL', 5);
+  const browR = [[0.016, 0.0300], [0.026, 0.0400], [0.038, 0.0460], [0.052, 0.0450], [0.064, 0.0390]];
+  add(ribbon(THREE, field, browR, t => 0.0006 + 0.0020 * Math.sin(Math.PI * t) ** 0.7, 0.0018), 0x2a1c20, 'hair', 'browR', 5);
 
   // ---- NOSE lines
   add(ribbon(THREE, field, [[-0.0100, 0.008], [-0.0096, -0.006], [-0.0092, -0.020], [-0.0104, -0.033], [-0.0125, -0.040]], t => 0.0009 * Math.sin(Math.PI * (0.1 + 0.8 * t)) + 0.0003, 0.0012), 0x7a4a3a, 'skin', 'noseSide', 2);
@@ -167,15 +168,12 @@ export function buildHead(THREE, style) {
   add(ribbon(THREE, field, [[-0.010, 0.017], [-0.006, 0.020], [0, 0.021], [0.006, 0.020], [0.010, 0.017]], t => 0.0008 * Math.sin(Math.PI * t) + 0.0002, 0.0012), 0x8a5a48, 'skin', 'glabella', 2);
 
   // ---- MOUTH: closed lopsided smirk
-  const mouth = [[-0.0275, -0.0675], [-0.0230, -0.0715], [-0.0160, -0.0745], [-0.0075, -0.0752], [0.0010, -0.0742], [0.0095, -0.0742], [0.0180, -0.0725], [0.0265, -0.0690], [0.0345, -0.0640], [0.0395, -0.0585]];
-  add(ribbon(THREE, field, mouth, t => 0.0010 + 0.0016 * Math.sin(Math.PI * Math.min(1, t * 1.1 + 0.02)) ** 0.7, 0.0016), 0x2e1416, 'eye', 'mouthLine', 5);
-  // lower lip + upper lip tint
-  const lowerLip = [[-0.020, -0.0768], [-0.010, -0.0795], [0.002, -0.0802], [0.014, -0.0790], [0.024, -0.0745]];
-  add(ribbon(THREE, field, lowerLip, t => 0.0030 * Math.sin(Math.PI * (0.05 + 0.9 * t)) ** 0.8, 0.0010), 0xe3a08f, 'skin', 'lowerLip', 2);
-  const upperLip = [[-0.020, -0.0705], [-0.010, -0.0722], [0.0, -0.0715], [0.010, -0.0722], [0.022, -0.0695]];
-  add(ribbon(THREE, field, upperLip, t => 0.0026 * Math.sin(Math.PI * t) ** 0.8, 0.0010), 0xdb9484, 'skin', 'upperLip', 2);
-  add(ribbon(THREE, field, [[-0.0305, -0.0600], [-0.0345, -0.0655], [-0.0335, -0.0715], [-0.0295, -0.0740]], t => 0.0010 * Math.sin(Math.PI * t) + 0.0003, 0.0012), 0x6a3e34, 'skin', 'dimpleL', 3);
-  add(ribbon(THREE, field, [[0.0425, -0.0545], [0.0465, -0.0600], [0.0450, -0.0670], [0.0405, -0.0705]], t => 0.0012 * Math.sin(Math.PI * t) + 0.0003, 0.0012), 0x6a3e34, 'skin', 'dimpleR', 3);
+  const mouth = [[-0.0300, -0.0700], [-0.0230, -0.0728], [-0.0150, -0.0742], [-0.0070, -0.0748], [0.0020, -0.0745], [0.0110, -0.0735], [0.0200, -0.0712], [0.0290, -0.0672], [0.0370, -0.0615], [0.0425, -0.0545]];
+  add(ribbon(THREE, field, mouth, t => 0.0006 + 0.0011 * Math.sin(Math.PI * Math.min(1, t * 1.05 + 0.02)) ** 0.7, 0.0016), 0x2a1214, 'eye', 'mouthLine', 5);
+  const lowerLip = [[-0.014, -0.0775], [-0.005, -0.0790], [0.006, -0.0788], [0.016, -0.0768]];
+  add(ribbon(THREE, field, lowerLip, t => 0.0022 * Math.sin(Math.PI * (0.05 + 0.9 * t)) ** 0.8, 0.0010), 0xe9ae9a, 'skin', 'lowerLip', 2);
+  add(ribbon(THREE, field, [[-0.0330, -0.0640], [-0.0350, -0.0690], [-0.0325, -0.0735]], t => 0.0010 * Math.sin(Math.PI * t) + 0.0003, 0.0012), 0x6a3e34, 'skin', 'dimpleL', 3);
+  add(ribbon(THREE, field, [[0.0470, -0.0520], [0.0500, -0.0580], [0.0475, -0.0640]], t => 0.0010 * Math.sin(Math.PI * t) + 0.0003, 0.0012), 0x6a3e34, 'skin', 'dimpleR', 3);
   add(ribbon(THREE, field, [[-0.0090, -0.0560], [-0.0020, -0.0548], [0.0080, -0.0560]], t => 0.0007 * Math.sin(Math.PI * t) + 0.0002, 0.0010), 0x8a5a48, 'skin', 'philtrum', 2);
   add(ribbon(THREE, field, [[-0.012, -0.0900], [-0.004, -0.0925], [0.008, -0.0915], [0.014, -0.0890]], t => 0.0010 * Math.sin(Math.PI * t) + 0.0002, 0.0010), 0x8a5a48, 'skin', 'chinCrease', 2);
 
@@ -188,6 +186,11 @@ export function buildHead(THREE, style) {
   stroke(jc(-1, [0.0, -0.022, -0.045, -0.062, -0.078, -0.090]), 0.0020, 0x3a2224, 'jawContourL');
   stroke(jc(1, [-0.010, -0.030, -0.050, -0.066, -0.080, -0.091]), 0.0016, 0x3a2224, 'jawContourR');
 
+  // ---- warm shadow modelling decals
+  add(fill(THREE, field, [[0.0075, 0.012], [0.0135, -0.010], [0.0180, -0.034], [0.0140, -0.0435], [0.0085, -0.040], [0.0070, -0.015]], 0.0009, 3), 0xe0a07c, 'skin', 'noseShade', 1);
+  add(ribbon(THREE, field, [[-0.062, -0.030], [-0.052, -0.048], [-0.042, -0.064]], 0.012, 0.0008), 0xe8ae8a, 'skin', 'cheekHollowL', 1);
+  add(ribbon(THREE, field, [[0.062, -0.030], [0.054, -0.048], [0.046, -0.064]], 0.012, 0.0008), 0xe2a280, 'skin', 'cheekHollowR', 1);
+
   // ---- STUBBLE strokes on jaw, chin, upper lip, sideburn area
   {
     const R = rng(42), geos = [];
@@ -195,18 +198,15 @@ export function buildHead(THREE, style) {
       const dx = Math.sin(ang) * len, dy = -Math.cos(ang) * len;
       geos.push(ribbon(THREE, field, [[x, y], [x + dx * 0.5, y + dy * 0.5], [x + dx, y + dy]], t => 0.00070 * (1 - 0.7 * t), 0.0010));
     };
-    for (let k = 0; k < 600; k++) {
-      const y = -0.106 + R() * 0.083, x = (R() * 2 - 1) * field.Wf(y) * 0.92;
-      const ax = Math.abs(x);
-      if (ax < 0.040 && y > -0.0815 && y < -0.0575) continue;          // mouth
-      if (ax < 0.014 && y > -0.058 && y < -0.047) continue;            // nostril zone
-      const edge = ax / field.Wf(y);
-      const keep = (0.35 + 0.65 * Math.min(1, (-0.02 - y) / 0.05)) * (0.45 + 0.55 * edge) * (x < 0 ? 1.0 : 0.9);
-      if (R() > keep * 0.95) continue;
-      place(x, y, 0.0045 + R() * 0.0045, (R() - 0.5) * 0.8 + (x > 0 ? 0.25 : -0.25) * edge);
+    for (let k = 0; k < 520; k++) {
+      const y = -0.108 + R() * 0.062, x = (R() * 2 - 1) * field.Wf(y) * 0.92;
+      const edge = Math.abs(x) / field.Wf(y);
+      const chin = Math.abs(x) < 0.020 && y < -0.088;
+      if (!(edge > 0.58 || chin) || y > -0.04) continue;
+      if (Math.abs(x) < 0.040 && y > -0.086) continue;
+      place(x, y, 0.0035 + R() * 0.0035, (R() - 0.5) * 0.6 + (x > 0 ? 0.3 : -0.3) * edge);
     }
-    for (let k = 0; k < 90; k++) { const x = (R() * 2 - 1) * 0.022, y = -0.0555 + R() * 0.0060; place(x, y, 0.004 + R() * 0.003, (R() - 0.5) * 0.6); }
-    for (let k = 0; k < 120; k++) { const sg = k % 2 ? 1 : -1, x = sg * (0.060 + R() * 0.012), y = -0.025 + R() * 0.035; place(x, y, 0.004 + R() * 0.005, (R() - 0.5) * 0.5); }
+    for (let k = 0; k < 40; k++) { const sg = k % 2 ? 1 : -1, x = sg * (0.064 + R() * 0.008), y = -0.020 + R() * 0.026; place(x, y, 0.004 + R() * 0.004, (R() - 0.5) * 0.4); }
     const m = decal(mergeGeos(THREE, geos), ink(0x3b2a2c, 'eye', 1), 'stubble'); face.add(m);
   }
 
@@ -214,41 +214,45 @@ export function buildHead(THREE, style) {
   const gold = style.toon(0xe6b32a, { role: 'gold', side: THREE.DoubleSide });
   const goldLight = style.toon(0xf6d460, { role: 'gold' });
   const goldDark = style.toon(0xa8741a, { role: 'gold' });
-  const C = [0.038, -0.016], RING = 0.0215;
+  const C = [0.042, -0.020], RING = 0.0150, RY = 0.74;
   {
-    const S = [-0.068, 0.072], E = [C[0] - RING * 0.70, C[1] + RING * 0.70];
-    const pts = [];
-    for (let i = 0; i <= 28; i++) { const t = i / 28; pts.push([S[0] + (E[0] - S[0]) * t, S[1] + (E[1] - S[1]) * t + 0.0035 * Math.sin(Math.PI * t) ]); }
-    const hw = 0.0058, th = 0.0026, off0 = 0.0012;
-    const pos = [], idx = [], tmp = new V3(), nn = new V3(), tt = new V3(), bb = new V3();
+    const goldStrap = style.toon(0xf3d97a, { role: 'gold', side: THREE.DoubleSide });
+    const E = [C[0] - RING * 0.72, C[1] + RING * RY * 0.72];
+    const ctrl = [];
+    const x0 = -0.058, ySl = -0.42;
+    const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    for (let i = 0; i <= 5; i++) {
+      const x = E[0] + (x0 - E[0]) * i / 5, y = E[1] + (x - E[0]) * ySl;
+      ctrl.push(field.P(x, y, 0.0040));
+    }
+    for (const q of [[-0.078, 0.046, 0.046], [-0.091, 0.050, 0.022], [-0.095, 0.053, -0.012], [-0.091, 0.056, -0.050], [-0.072, 0.060, -0.088], [0, 0.062, -0.104], [0.072, 0.060, -0.088], [0.091, 0.056, -0.050], [0.095, 0.052, -0.010], [0.089, 0.046, 0.024]]) ctrl.push(new V3(...q));
+    const curveS = new THREE.CatmullRomCurve3(ctrl, false, 'catmullrom', 0.5);
+    const pts = curveS.getPoints(160);
+    const cen = new V3(0, 0.05, -0.012), hw = 0.0068, th = 0.0022;
+    const pos = [], idx = [], tt = new V3(), nn = new V3(), bb = new V3();
     for (let i = 0; i < pts.length; i++) {
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
-      field.P(pts[i][0], pts[i][1], 0, tmp); field.normal(pts[i][0], pts[i][1], nn);
-      const pa = field.P(a[0], a[1]), pb = field.P(b[0], b[1]);
-      tt.subVectors(pb, pa).normalize(); bb.crossVectors(nn, tt).normalize();
-      const base = tmp.clone().addScaledVector(nn, off0);
-      const cs = [[-hw, 0], [hw, 0], [hw, th], [-hw, th]];
-      for (const [bw, nh] of cs) { const p = base.clone().addScaledVector(bb, bw).addScaledVector(nn, nh); pos.push(p.x, p.y, p.z); }
-      if (i < pts.length - 1) { const k = i * 4; for (let s = 0; s < 4; s++) { const a0 = k + s, a1 = k + (s + 1) % 4, b0 = k + 4 + s, b1 = k + 4 + (s + 1) % 4; idx.push(a0, a1, b0, a1, b1, b0); } }
+      tt.subVectors(b, a).normalize();
+      nn.subVectors(pts[i], cen).normalize();
+      nn.addScaledVector(tt, -nn.dot(tt)).normalize(); bb.crossVectors(tt, nn).normalize();
+      for (const [bw, nh] of [[-hw, 0], [hw, 0], [hw, th], [-hw, th]]) { const p = pts[i].clone().addScaledVector(bb, bw).addScaledVector(nn, nh); pos.push(p.x, p.y, p.z); }
+      if (i < pts.length - 1) { const k = i * 4; for (let s2 = 0; s2 < 4; s2++) { const a0 = k + s2, a1 = k + (s2 + 1) % 4, b0 = k + 4 + s2, b1 = k + 4 + (s2 + 1) % 4; idx.push(a0, a1, b0, a1, b1, b0); } }
     }
     const n0 = pos.length / 3 - 4; idx.push(0, 1, 2, 0, 2, 3, n0, n0 + 2, n0 + 1, n0, n0 + 3, n0 + 2);
     const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
-    const strap = new THREE.Mesh(geo, gold); strap.name = 'eyepatchStrap'; face.add(strap);
-    // stitched rim line on the strap
-    const rimPts = pts.map(p => [p[0], p[1]]);
-    face.add(decal(ribbon(THREE, field, rimPts.slice(1, -1), 0.0007, off0 + th + 0.0004), goldDark, 'strapRim'));
+    const strap = new THREE.Mesh(geo, goldStrap); strap.name = 'eyepatchStrap'; face.add(strap);
   }
   {
-    const nn = field.normal(C[0], C[1]), cp = field.P(C[0], C[1], 0.0075);
+    const nn = field.normal(C[0], C[1]), cp = field.P(C[0], C[1], 0.0070);
     const q = new THREE.Quaternion().setFromUnitVectors(new V3(0, 0, 1), nn);
     const disc = new THREE.Group(); disc.name = 'monocle'; disc.position.copy(cp); disc.quaternion.copy(q);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(RING, 0.0030, 10, 48), gold); ring.name = 'monocleRing'; disc.add(ring);
-    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(RING - 0.0042, 0.0013, 8, 48), goldDark); disc.add(ring2);
-    const lens = new THREE.Mesh(new THREE.CircleGeometry(RING - 0.0006, 40), goldLight); lens.position.z = -0.0006; lens.name = 'monocleLens'; disc.add(lens);
-    const lensHi = new THREE.Mesh(new THREE.RingGeometry(RING * 0.52, RING * 0.62, 24, 1, 2.2, 1.5), style.toon(0xfff2b0, { role: 'gold', side: THREE.DoubleSide })); lensHi.position.z = 0.0003; disc.add(lensHi);
-    const back = new THREE.Mesh(new THREE.CircleGeometry(RING, 40), gold); back.position.z = -0.0036; back.name = 'monocleBack'; disc.add(back);
-    // little hinge lug where the strap meets the ring
-    const lug = new THREE.Mesh(new THREE.SphereGeometry(0.0042, 10, 8), goldDark); lug.position.set(-RING * 0.70, RING * 0.70, 0.0); disc.add(lug);
+    disc.rotateY(0.22); disc.rotateX(-0.08);
+    const inner = new THREE.Group(); inner.scale.set(1, RY, 1); disc.add(inner);
+    const lensGold = style.toon(0xf8e08a, { role: 'gold' });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(RING, 0.0016, 8, 48), gold); ring.name = 'monocleRing'; inner.add(ring);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(RING - 0.0006, 40), lensGold); lens.position.z = -0.0006; lens.name = 'monocleLens'; inner.add(lens);
+    const lensHi = new THREE.Mesh(new THREE.RingGeometry(RING * 0.55, RING * 0.66, 24, 1, 2.2, 1.4), style.toon(0xfffbd0, { role: 'gold', side: THREE.DoubleSide })); lensHi.position.z = 0.0003; inner.add(lensHi);
+    const back = new THREE.Mesh(new THREE.CircleGeometry(RING, 40), gold); back.position.z = -0.0030; back.name = 'monocleBack'; inner.add(back);
     face.add(disc);
   }
 

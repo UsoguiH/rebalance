@@ -5,6 +5,7 @@ export function buildHand(THREE, util, mat, nailMat, spec) {
   const side = spec.side || 1;
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const S = spec.scale || 1;
+  const FL = spec.fingerLen || 1;
 
   const sphere = (r, p, sc = [1, 1, 1], m = mat) => {
     const s = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10), m);
@@ -38,7 +39,8 @@ export function buildHand(THREE, util, mat, nailMat, spec) {
     const curl = (spec.curl && spec.curl[i]) || [0, 0, 0];
     const spread = (spec.spread || 0) * (1.5 - i) * 0.5;
     let p = V(side * f.x, f.y, 0.003);
-    sphere(f.r * 1.18, p.clone().add(V(0, 0, 0.006)), [1.05, 0.9, 0.9]); // knuckle bump
+    sphere(f.r * (spec.knuckle || 1.25), p.clone().add(V(0, 0, 0.007)), [1.1, 0.95, 0.95]); // knuckle bump
+    if (spec.tendons) cyl(V(side * f.x * 0.55, 0.012, 0.018), p.clone().add(V(0, 0, 0.012)), 0.0045, 0.0055);
     let cum = 0;
     const axis = V(1, 0, 0);
     for (let k = 0; k < 3; k++) {
@@ -47,14 +49,14 @@ export function buildHand(THREE, util, mat, nailMat, spec) {
       const q2 = new THREE.Quaternion().setFromAxisAngle(axis, -cum);
       const dir = V(0, 1, 0).applyQuaternion(q2).applyQuaternion(q);
       const r0 = f.r * (1 - k * 0.1), r1 = f.r * (1 - (k + 1) * 0.1);
-      const e = p.clone().addScaledVector(dir, f.len[k]);
+      const e = p.clone().addScaledVector(dir, f.len[k] * FL);
       cyl(p, e, r0, r1);
       sphere(r1, e);
       if (k === 2) {
         // nail on dorsal side
         const dors = V(0, 0, 1).applyQuaternion(q2).applyQuaternion(q);
         const n = new THREE.Mesh(new THREE.SphereGeometry(r1 * 0.95, 10, 8), nailMat);
-        n.position.copy(p).addScaledVector(dir, f.len[k] * 0.62).addScaledVector(dors, r1 * 0.55);
+        n.position.copy(p).addScaledVector(dir, f.len[k] * FL * 0.62).addScaledVector(dors, r1 * 0.55);
         n.scale.set(1, 1.5, 0.35);
         util.orient(n, dir, dors);
         n.scale.set(1.0, 1.55, 0.38);

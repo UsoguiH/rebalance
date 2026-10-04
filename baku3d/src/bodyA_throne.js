@@ -11,36 +11,30 @@ export function buildThrone(THREE, style, util) {
     return m;
   };
 
-  // ---- turned post profile (radius, height) ----
-  function postProfile(h, r, knobAt = []) {
-    const pts = [V2(0.001, 0)];
+  // ---- turned post profile (radius, height); knob = {y, R} with absolute max radius ----
+  function postProfile(h, r, knobs = [], ringEvery = 0.2) {
+    const pts = [];
     const add = (rr, y) => pts.push(V2(rr, y));
-    // base
-    add(r * 1.7, 0); add(r * 1.7, 0.05); add(r * 1.2, 0.09); add(r, 0.12);
-    const bead = (y, rr) => {
-      add(r * 0.85, y - rr * 1.3); add(r * 1.35, y - rr * 0.8); add(r * 1.6 * (rr / 0.03), y);
-      add(r * 1.35, y + rr * 0.8); add(r * 0.85, y + rr * 1.3);
-    };
-    const ring = (y) => { add(r, y - 0.012); add(r * 1.3, y - 0.006); add(r * 1.3, y + 0.006); add(r, y + 0.012); };
-    for (let y = 0.3; y < h - 0.2; y += 0.17) ring(y);
-    knobAt.forEach((k) => bead(k.y, k.r));
-    // finial
-    add(r, h - 0.12); add(r * 1.6, h - 0.09); add(r * 1.1, h - 0.05); add(0.001, h);
+    add(0.001, 0);
+    add(r * 1.9, 0); add(r * 1.9, 0.04); add(r * 1.25, 0.08); add(r, 0.11);
+    const ring = (y, k = 1.35) => { add(r, y - 0.013); add(r * k, y - 0.006); add(r * k, y + 0.006); add(r, y + 0.013); };
+    const knob = (y, R) => { add(r, y - 0.05); add(R * 0.75, y - 0.03); add(R, y); add(R * 0.75, y + 0.03); add(r, y + 0.05); };
+    for (let y = 0.3; y < h - 0.2; y += ringEvery) ring(y);
+    knobs.forEach((k) => knob(k.y, k.R));
+    add(r, h - 0.1); add(r * 1.5, h - 0.07); add(r, h - 0.04); add(0.001, h);
     pts.sort((a, b) => a.y - b.y);
-    // remove duplicate y values by tiny offset
     for (let i = 1; i < pts.length; i++) if (pts[i].y <= pts[i - 1].y) pts[i].y = pts[i - 1].y + 1e-4;
     return pts;
   }
 
-  // thick outer posts + thin inner posts (behind the sitter)
+  // slender outer posts with a small node + thin inner posts (behind the sitter)
   for (const s of [-1, 1]) {
-    const thick = new THREE.LatheGeometry(postProfile(2.3, 0.032, [{ y: 1.22, r: 0.06 }, { y: 0.82, r: 0.032 }, { y: 1.62, r: 0.032 }]), 20);
+    const thick = new THREE.LatheGeometry(postProfile(2.3, 0.015, [{ y: 1.22, R: 0.034 }, { y: 0.8, R: 0.026 }, { y: 1.62, R: 0.026 }]), 16);
     M(thick, gold(), s * 0.415, 0, -0.42);
-    const thin = new THREE.LatheGeometry(postProfile(2.3, 0.014, []), 12);
-    M(thin, goldDark(), s * 0.365, 0, -0.42);
+    const thin = new THREE.LatheGeometry(postProfile(2.3, 0.008, [], 0.3), 10);
+    M(thin, goldDark(), s * 0.368, 0, -0.42);
   }
-  // gold cross rail at the back of the seat
-  M(new THREE.CylinderGeometry(0.018, 0.018, 0.84, 12), gold(), 0, 0.62, -0.42).rotation.z = Math.PI / 2;
+  M(new THREE.CylinderGeometry(0.012, 0.012, 0.84, 10), gold(), 0, 0.62, -0.42).rotation.z = Math.PI / 2;
 
   // ---- red velvet back panel with draped vertical folds ----
   {
@@ -53,7 +47,7 @@ export function buildThrone(THREE, style, util) {
       pos.push(x, y, -0.45 + fold);
       // darker at the bottom and in the folds, warm glow near top-right
       const b = 0.62 + 0.38 * Math.min(1, v * 1.6) + fold * 6;
-      col.push(0.9 * b, 0.55 * b * b, 0.6 * b * b);
+      col.push(0.85 * b, 0.22 * b * b, 0.28 * b * b);
     }
     for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
       const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1;
@@ -70,28 +64,30 @@ export function buildThrone(THREE, style, util) {
     M(geo, mat);
   }
 
-  // ---- seat cushion + skirt ----
-  M(new THREE.BoxGeometry(0.76, 0.12, 0.9), style.toon(0x701020, { role: 'velvet' }), 0, 0.39, -0.02);
-  M(new THREE.BoxGeometry(0.8, 0.4, 0.94), style.toon(0x4a0a16, { role: 'velvet' }), 0, 0.2, -0.02);
-  
+  // ---- seat: one dark crimson block + soft pillow (no stepped dais) ----
+  M(new THREE.BoxGeometry(0.74, 0.44, 0.9), style.toon(0x4f0b18, { role: 'velvet' }), 0, 0.22, -0.02);
+  const pillow = M(new THREE.SphereGeometry(0.4, 24, 12), style.toon(0x701020, { role: 'velvet' }), 0, 0.43, -0.02);
+  pillow.scale.set(0.93, 0.13, 1.1);
 
-  // ---- ornate armrests ----
+  // ---- ornate armrests: chunky grooved gold blocks ----
   for (const s of [-1, 1]) {
     const x = s * 0.345;
-    // top rail (flattened capsule along z)
-    const rail = M(new THREE.CapsuleGeometry(0.036, 0.62, 8, 16), gold(), x, 0.615, 0.0);
-    rail.rotation.x = Math.PI / 2;
-    rail.scale.set(1.5, 1, 1.0);
-    // front scroll: big round pommel + ring
-    M(new THREE.SphereGeometry(0.048, 20, 14), gold(), x, 0.6, 0.345).scale.set(1.15, 0.9, 1);
-    
-    // front support posts (turned)
-    const fp = new THREE.LatheGeometry(postProfile(0.56, 0.026, [{ y: 0.3, r: 0.04 }]), 16);
-    M(fp, gold(), x, 0.0, 0.32);
-    const rp = new THREE.LatheGeometry(postProfile(0.56, 0.022, [{ y: 0.3, r: 0.034 }]), 14);
-    M(rp, goldDark(), x, 0.0, -0.32);
-    // side apron panel
-    M(new THREE.BoxGeometry(0.02, 0.1, 0.62), gold(), x + s * 0.02, 0.5, 0);
+    // stacked, grooved block running front-to-back
+    const bands = [[0.575, 0.1, 0.09, gold()], [0.597, 0.112, 0.07, goldDark()], [0.62, 0.1, 0.09, gold()], [0.642, 0.108, 0.07, goldDark()], [0.664, 0.098, 0.085, gold()]];
+    for (const [y, w, hh, m] of bands) {
+      const b = M(new THREE.BoxGeometry(w, 0.02, 0.64), m, x, y, 0.0);
+      b.scale.y = 1;
+    }
+    // carved scroll ends: horizontal cylinders across the front and back
+    for (const z of [0.33, -0.33]) {
+      const c = M(new THREE.CylinderGeometry(0.052, 0.052, 0.118, 18), gold(), x, 0.62, z);
+      c.rotation.z = Math.PI / 2;
+      M(new THREE.SphereGeometry(0.056, 14, 10), goldDark(), x + s * 0.062, 0.62, z).scale.set(0.5, 1, 1);
+      M(new THREE.SphereGeometry(0.056, 14, 10), goldDark(), x - s * 0.062, 0.62, z).scale.set(0.5, 1, 1);
+    }
+    // turned front/back support posts
+    M(new THREE.LatheGeometry(postProfile(0.57, 0.024, [{ y: 0.3, R: 0.044 }], 0.15), 14), gold(), x, 0.0, 0.32);
+    M(new THREE.LatheGeometry(postProfile(0.57, 0.02, [{ y: 0.3, R: 0.036 }], 0.15), 12), goldDark(), x, 0.0, -0.32);
   }
 
   // ---- cream brick wall ----

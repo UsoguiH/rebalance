@@ -23,7 +23,7 @@ function outline(x0, phi) {
 
 export const hairline = (x, z) => {
   const ax = Math.abs(x);
-  const front = 0.088 - 0.058 * sm(0.025, 0.076, ax) + 0.006 * (1 - Math.min(1, ax / 0.022));
+  const front = 0.090 - 0.062 * sm(0.042, 0.078, ax) + 0.006 * (1 - Math.min(1, ax / 0.022));
   const t = sm(0.015, -0.040, z);
   return front * (1 - t) + (-0.038) * t;
 };
@@ -128,7 +128,7 @@ export function buildHair(THREE, style, field, skullGeo) {
         const a = (1 - t) * (1 - t), b = 2 * t * (1 - t) * kk, c = t * t;
         const dd = V(d0.x * a + via.x * b + d1.x * c, d0.y * a + via.y * b + d1.y * c, d0.z * a + via.z * b + d1.z * c).normalize();
         const q = surf(dd.x, dd.y, dd.z);
-        const bump = (0.012 + 0.016 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
+        const bump = (0.005 + 0.007 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
         const e = eps + bump + lift * Math.max(0, Math.sin(Math.PI * t / tEnd)) ** 1.5;
         const wob = Math.sin(t * fr * 3 + ph1) * amp;
         pts.push(V(q[0] + dd.x * e + wob, q[1] + dd.y * e, q[2] + dd.z * e));
@@ -182,30 +182,17 @@ export function buildHair(THREE, style, field, skullGeo) {
     ];
     lock(rnd() < 0.18 ? buckets[2] : pick(), ctrl, R(0.0050, 0.0105), 0.0020, 30, lockCen);
   }
-  // left (viewer's) temple tufts: swept back & flicking outward in ragged points at ear level
-  for (let i = 0; i < 18; i++) {
-    const u = i / 17, jit = () => R(-0.003, 0.003);
+  // left (viewer's) temple: a few short locks fall in front of the ear, tucked close to the head
+  for (let i = 0; i < 9; i++) {
+    const u = i / 8, jit = () => R(-0.002, 0.002);
     const ctrl = [
-      [-0.050 - 0.020 * u + jit(), 0.090 - 0.04 * u, 0.050 - 0.012 * u],
-      [-0.068 - 0.014 * u, 0.064 - 0.034 * u + jit(), 0.044 - 0.006 * u],
-      [-0.082 - 0.014 * u, 0.040 - 0.038 * u, 0.030 - 0.01 * u],
-      [-0.094 - 0.020 * u + jit(), 0.020 - 0.040 * u, 0.016 - 0.012 * u],
-      [-0.104 - 0.032 * u + jit(), 0.004 - 0.036 * u, 0.006 - 0.014 * u],
-      [-0.118 - 0.046 * u + jit(), -0.006 - 0.032 * u * R(0.5, 1.3), 0.0 - 0.016 * u],
+      [-0.056 - 0.012 * u + jit(), 0.082 - 0.02 * u, 0.050 - 0.01 * u],
+      [-0.072 - 0.006 * u, 0.056 - 0.024 * u, 0.044 - 0.008 * u],
+      [-0.081 - 0.004 * u, 0.030 - 0.026 * u, 0.034 - 0.010 * u],
+      [-0.084 - 0.004 * u + jit(), 0.004 - 0.026 * u, 0.026 - 0.010 * u],
+      [-0.083 - 0.003 * u + jit(), -0.016 - 0.024 * u * R(0.5, 1.2), 0.022 - 0.012 * u],
     ];
-    lock(pick(), ctrl, R(0.0050, 0.0095), 0.0017, 24, lockCen);
-  }
-  // ragged short tufts bulging out on the viewer's left temple / ear
-  for (let i = 0; i < 20; i++) {
-    const u = i / 19, jit = () => R(-0.004, 0.004), L = R(0.7, 1.3);
-    const y0 = 0.075 - 0.075 * u;
-    const ctrl = [
-      [-0.058 - 0.010 * u, y0 + 0.01, 0.040],
-      [-0.078 - 0.012 * u + jit(), y0 - 0.004, 0.030],
-      [-0.094 - 0.016 * u * L + jit(), y0 - 0.014 - 0.008 * L, 0.018],
-      [-0.108 - 0.026 * u * L + jit(), y0 - 0.030 * L - 0.01, 0.008 - 0.006 * u],
-    ];
-    lock(pick(), ctrl, R(0.0055, 0.0105), 0.0018, 16, lockCen);
+    lock(pick(), ctrl, R(0.0045, 0.0085), 0.0017, 20, lockCen);
   }
   // sideburn flicks above both ears
   for (const sg of [-1, 1]) for (let i = 0; i < 8; i++) {
@@ -213,13 +200,13 @@ export function buildHair(THREE, style, field, skullGeo) {
     const ctrl = [
       [sg * 0.072, 0.040 - 0.004 * i, 0.012],
       [sg * (0.082 + 0.004 * i / 7), 0.014 - 0.004 * i, 0.000],
-      [sg * (0.090 + 0.006 * i / 7) + jit(), -0.010 - 0.004 * i, -0.014],
-      [sg * (0.094 + 0.014 * i / 7), -0.030 - 0.004 * i, -0.034],
+      [sg * (0.085 + 0.003 * i / 7) + jit(), -0.010 - 0.004 * i, -0.014],
+      [sg * (0.085 + 0.004 * i / 7), -0.030 - 0.004 * i, -0.030],
     ];
     lock(pick(), ctrl, R(0.004, 0.0075), 0.0016, 18, lockCen);
   }
   // crown flyaways / swept tips at the back (silhouette)
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < 8; i++) {
     const x0 = R(-0.07, 0.07), jit = () => R(-0.004, 0.004);
     const [y1, z1] = outline(Math.min(Math.abs(x0), 0.07) * Math.sign(x0), 2.2);
     const [y2, z2] = outline(Math.min(Math.abs(x0), 0.07) * Math.sign(x0), 2.8);
