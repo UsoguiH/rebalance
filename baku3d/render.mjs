@@ -20,7 +20,7 @@ const errors = [];
 page.on('console', m => { if (['error', 'warning'].includes(m.type())) errors.push(`[${m.type()}] ${m.text()}`); });
 page.on('pageerror', e => errors.push('[pageerror] ' + e.message));
 // optional camera override for extra angles: node tools_render.mjs name "x,y,z"
-await page.goto(`http://localhost:${port}/index.html?shot=1`);
+await page.goto(`http://localhost:${port}/model.html?shot=1`);
 try { await page.waitForFunction('window.__ready === true', null, { timeout: 60000 }); } catch { errors.push('[timeout] window.__ready never set'); }
 fs.mkdirSync(path.join(root, 'shots'), { recursive: true });
 await page.screenshot({ path: path.join(root, 'shots', out + '.png') });
