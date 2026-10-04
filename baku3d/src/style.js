@@ -178,24 +178,20 @@ void main(){
   vec2 p = gl_FragCoord.xy / uScale;
   float ink = 0.0;
   float c1 = smoothstep(uHatchT + 0.14, uHatchT - 0.10, s) * uHatch * 1.0 + uStrand * smoothstep(0.5, -0.2, s);
-  float c2 = smoothstep(uHatchT - 0.12, uHatchT - 0.40, s) * uHatch * (1.0 - uStraight);
+  float c2 = smoothstep(uHatchT - 0.12, uHatchT - 0.40, s) * uHatch * (1.0 - uStraight) * (uFaceShade > 0.0 ? 0.0 : 1.0);
   float c3 = smoothstep(-0.60, -0.9, s) * uHatch;
   ink = max(ink, strokes(p, uAngle, uPitch, c1));
   ink = max(ink, strokes(p, uAngle - 0.85, uPitch * 1.12, c2));
   float st = step(h21(floor(p / 2.0) + 3.0), c3 * 0.5) * step(0.01, c3);
   ink = max(ink, st);
-  if (uStraight > 0.5) {
-    float hl = strokes(p + vec2(1.7, 0.0), uAngle, uPitch * 1.6, 0.55);
-    col = mix(col, vec3(1.0, 0.99, 0.96), hl * 0.85 * (1.0 - ink));
-  }
   ink *= 0.95;
   // solid spot-black in the deepest creases / under folds
   float solid = smoothstep(-0.34, -0.44, s) * uSolid;
   ink = max(ink, solid);
   if (uBump > 0.4 && uSolid > 0.0) {
     float fr = foldN(vPw * 4.2);
-    float fw = fwidth(fr) * 1.5 + 0.004;
-    float crease = smoothstep(0.88 - fw, 0.88 + fw, fr) * smoothstep(0.40, 0.0, s);
+    float fw = fwidth(fr) * 1.5 + 0.006;
+    float crease = smoothstep(0.83 - fw, 0.83 + fw, fr) * smoothstep(0.34, 0.05, s);
     ink = max(ink, crease * 0.95);
   }
   col = mix(col, uInk, ink);

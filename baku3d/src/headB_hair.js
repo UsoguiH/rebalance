@@ -100,43 +100,44 @@ export function buildHair(THREE, style, field, skullGeo) {
     return [CEN[0] + dx * lo, CEN[1] + dy * lo, CEN[2] + dz * lo, dx, dy, dz];
   }
   const d2r = Math.PI / 180;
+  const t0 = l => 0.2 * l;
   const layers = 4;
   for (let l = 0; l < layers; l++) {
-    for (let az = -104; az <= 104; az += 3.4) {
-      const az0 = (az + R(-1, 1)) * d2r, sn = Math.sin(az0), cs = Math.cos(az0);
+    for (let az = -104; az <= 104; az += 4.2) {
+      const az0 = (az + 0.5 * (l % 2 ? 1 : -1) + R(-0.4, 0.4)) * d2r, sn = Math.sin(az0), cs = Math.cos(az0);
       const side = sm(48, 100, Math.abs(az)), sgn = az < 0 ? -1 : 1;
       // root: first elevation whose surface point is above the hairline
       let el = -50 * d2r, root = null;
       for (; el < 80 * d2r; el += 2 * d2r) {
         const q = surf(sn * Math.cos(el), Math.sin(el), cs * Math.cos(el));
-        if (q[1] >= hairline(q[0], q[2]) - R(-0.002, 0.007) * (l === 0 ? 0.3 : 1)) { root = q; break; }
+        if (q[1] >= hairline(q[0], q[2]) - (0.003 * l + R(0, 0.003))) { root = q; break; }
       }
       if (!root) continue;
       const d0 = V(root[3], root[4], root[5]);
       const xn = sn;
       const viaTop = V(0.30 * xn + 0.50, 1.0, -0.05), viaSide = V(sgn * 0.85, 0.55, -0.55);
       const via = viaTop.clone().multiplyScalar(1 - side).add(viaSide.clone().multiplyScalar(side)).normalize();
-      const d1 = V(xn * 0.35 + 0.30 + R(-0.05, 0.05), R(-0.30, -0.12) + 0.2 * side, -0.95).normalize();
-      const kk = 1.55 + R(-0.15, 0.15);
+      const d1 = V(xn * 0.35 + 0.30, -0.20 + 0.2 * side, -0.95).normalize();
+      const kk = 1.55;
       const K = 32, pts = [];
       const eps = 0.0018 + l * 0.0024 + R(0, 0.0014);
-      const lift = rnd() < 0.10 ? R(0.004, 0.012) : 0;
-      const ph1 = R(0, Math.PI * 2), fr = R(3, 9), amp = R(0.0002, 0.0007);
-      const tEnd = R(0.78, 1.0) - (l === 0 ? 0 : 0.0) - (side > 0.5 ? R(0.0, 0.18) : 0);
+      const lift = rnd() < 0.03 ? R(0.004, 0.012) : 0;
+      const ph1 = az * 0.04, fr = 4.5, amp = 0.0008 * (0.4 + t0(l));
+      const tEnd = (0.80 + 0.2 * ((az * 7 + l * 3) % 5) / 4) - (side > 0.5 ? 0.12 : 0);
       for (let k = 0; k <= K; k++) {
         const t = (k / K) * tEnd;
         const a = (1 - t) * (1 - t), b = 2 * t * (1 - t) * kk, c = t * t;
         const dd = V(d0.x * a + via.x * b + d1.x * c, d0.y * a + via.y * b + d1.y * c, d0.z * a + via.z * b + d1.z * c).normalize();
         const q = surf(dd.x, dd.y, dd.z);
-        const bump = (0.012 + 0.014 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
+        const bump = (0.016 + 0.018 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
         const e = eps + bump + lift * Math.max(0, Math.sin(Math.PI * t / tEnd)) ** 1.5;
         const wob = Math.sin(t * fr * 3 + ph1) * amp;
         pts.push(V(q[0] + dd.x * e + wob, q[1] + dd.y * e, q[2] + dd.z * e));
       }
-      const w0 = R(0.0058, 0.0110) * (1 - 0.2 * side);
-      const b = (rnd() < 0.035) ? (rnd() < 0.3 ? inkDeep : ink) : pick();
+      const w0 = (0.0085 + 0.0030 * ((az * 3 + l) % 3) / 2) * (1 - 0.2 * side);
+      const b = (rnd() < 0.015) ? ink : pick();
       strand(b, pts, taper(w0, 0.05, 0.30, 0.0), 0.0015);
-      if (l >= 1 && rnd() < 0.07) {
+      if (false) {
         const q = pts.map((p, i) => p.clone().addScaledVector(tmpN.subVectors(p, cen).normalize(), -0.0014).add(V(0.0018, 0, 0)));
         strand(rnd() < 0.5 ? ink : inkDeep, q, taper(0.0014, 0.1, 0.35), 0.0008);
       }

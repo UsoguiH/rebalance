@@ -200,6 +200,8 @@ export function buildHead(THREE, style) {
   // ---- MOUTH: closed lopsided smirk
   const mouth = [[-0.0250, -0.0715], [-0.0200, -0.0735], [-0.0130, -0.0745], [-0.0050, -0.0748], [0.0040, -0.0745], [0.0130, -0.0735], [0.0210, -0.0708], [0.0290, -0.0655], [0.0345, -0.0600]];
   add(ribbon(THREE, field, mouth, t => 0.0004 + 0.0008 * Math.sin(Math.PI * Math.min(1, t * 1.05 + 0.04)) ** 0.7, 0.0016), 0x3a1a1c, 'eye', 'mouthLine', 5);
+  add(ribbon(THREE, field, mouth.slice(1, 7).map(q => [q[0], q[1] + 0.0027]), t => 0.0030 * Math.sin(Math.PI * t) ** 0.7, 0.0010), 0xdc9c84, 'eye', 'upperLipShape', 2);
+  add(ribbon(THREE, field, mouth.slice(1, 7).map(q => [q[0] * 0.9, q[1] - 0.0045]), t => 0.0036 * Math.sin(Math.PI * t) ** 0.7, 0.0010), 0xc88870, 'eye', 'lowerLipShadow', 2);
   add(ribbon(THREE, field, [[-0.0250, -0.0715], [-0.0272, -0.0690], [-0.0268, -0.0668]], t => 0.0007 * (1 - t) + 0.0002, 0.0016), 0x3a1a1c, 'eye', 'mouthCurl', 5);
   add(fill(THREE, field, [[-0.020, -0.0830], [0.022, -0.0830], [0.018, -0.0955], [-0.016, -0.0960]], 0.0009, 3), 0xe0ab8a, 'eye', 'chinShade', 1);
   add(ribbon(THREE, field, [[-0.010, -0.0775], [0.000, -0.0785], [0.010, -0.0775]], t => 0.0006 * Math.sin(Math.PI * t) + 0.0002, 0.0010), 0xb87868, 'eye', 'lowerLipLine', 3);
@@ -217,7 +219,7 @@ export function buildHead(THREE, style) {
   stroke(jc(1, [-0.010, -0.030, -0.050, -0.066, -0.080, -0.091]), 0.0016, 0x3a2224, 'jawContourR');
 
   // ---- warm shadow modelling decals
-  add(fill(THREE, field, [[0.0075, 0.012], [0.0125, -0.010], [0.0160, -0.034], [0.0125, -0.0425], [0.0085, -0.040], [0.0070, -0.015]], 0.0009, 3), 0xe6b690, 'eye', 'noseShade', 1);
+  add(fill(THREE, field, [[-0.0072, 0.012], [-0.0115, -0.010], [-0.0145, -0.032], [-0.0120, -0.0415], [-0.0085, -0.039], [-0.0068, -0.015]], 0.0009, 3), 0xe6b690, 'eye', 'noseShade', 1);
   add(fill(THREE, field, [[-0.062, 0.027], [-0.045, 0.0205], [-0.020, 0.0125], [-0.012, 0.0045], [-0.030, 0.0105], [-0.052, 0.0150], [-0.064, 0.0200]], 0.0009, 3), 0xe9bb94, 'eye', 'browShadeL', 1);
   add(fill(THREE, field, [[-0.068, -0.016], [-0.052, -0.025], [-0.038, -0.030], [-0.046, -0.044], [-0.056, -0.050], [-0.064, -0.036]], 0.0009, 3), 0xeab890, 'eye', 'cheekboneShadeL', 1);
 
