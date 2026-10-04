@@ -1,0 +1,600 @@
+<title>Baku Madarame 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed 3D stage, a gambling-den nameplate top-left, a control strip pinned to the bottom. Single dark look by design. */
+:root {
+  --ink: #0b0a10;
+  --smoke: #17141f;
+  --silver: #e4e2ec;
+  --muted: #9a95ab;
+  --gold: #c9a24a;
+  --blood: #b3122e;
+  --display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 38%, var(--smoke) 0%, var(--ink) 62%);
+  color: var(--silver);
+  font-family: var(--mono);
+}
+#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#stage:active { cursor: grabbing; }
+
+.plate {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 20px);
+  left: 20px;
+  right: 20px;
+  pointer-events: none;
+  display: grid;
+  gap: 6px;
+  max-width: 26rem;
+}
+.plate .kanji {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--silver);
+}
+.plate h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(1rem, 2.6vw, 1.25rem);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.plate .tag {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.plate .tag b { color: var(--gold); font-weight: 500; }
+
+.bar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  padding: 14px 20px calc(env(safe-area-inset-bottom, 0px) + 18px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+.hint { font-size: 0.72rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; pointer-events: auto; }
+button {
+  font: 500 0.75rem/1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--silver);
+  background: rgba(23, 20, 31, 0.72);
+  border: 1px solid rgba(201, 162, 74, 0.45);
+  padding: 10px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+button:hover { border-color: var(--gold); }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+button.call { border-color: var(--blood); }
+button.call[aria-pressed="true"] { background: var(--blood); color: var(--silver); border-color: var(--blood); }
+
+[hidden] { display: none !important; }
+#err { position: fixed; inset: 0; display: grid; place-items: center; padding: 0 20px; text-align: center; color: var(--muted); }
+</style>
+
+<canvas id="stage" aria-label="3D model of Baku Madarame holding a playing card. Drag to rotate."></canvas>
+
+<div class="plate">
+  <div class="kanji" lang="ja">斑目 貘</div>
+  <h1>Baku Madarame</h1>
+  <div class="tag">Usogui · <span lang="ja">嘘喰い</span> · <b>The Lie Eater</b></div>
+</div>
+
+<div class="bar">
+  <div class="hint">Drag to orbit · Scroll or pinch to zoom</div>
+  <div class="controls">
+    <button id="call" class="call" aria-pressed="false">Call</button>
+    <button id="spin" aria-pressed="true">Auto-rotate</button>
+    <button id="reset">Reset view</button>
+  </div>
+</div>
+
+<div id="err" hidden>The 3D view needs WebGL, and this browser did not provide it.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  if (!window.THREE) { document.getElementById('err').hidden = false; return; }
+  const canvas = document.getElementById('stage');
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  } catch (e) {
+    document.getElementById('err').hidden = false;
+    return;
+  }
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x0b0a10, 5, 12);
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 50);
+
+  // ---------- materials ----------
+  const ramp = (() => {
+    const d = new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]);
+    const t = new THREE.DataTexture(d, 3, 1, THREE.RGBAFormat);
+    t.minFilter = t.magFilter = THREE.NearestFilter;
+    t.generateMipmaps = false;
+    t.needsUpdate = true;
+    return t;
+  })();
+  const toon = (c) => new THREE.MeshToonMaterial({ color: c, gradientMap: ramp });
+
+  const M = {
+    skin: toon(0xe6c9bb),
+    hair: toon(0xd2cfdd),
+    suit: toon(0x1d1b25),
+    lapel: toon(0x2a2735),
+    shirt: toon(0xf1f0f5),
+    tie: toon(0x0c0b10),
+    shoe: toon(0x111016),
+    eyeW: toon(0xfbfafc),
+    iris: toon(0x3a2c45),
+    dark: new THREE.MeshBasicMaterial({ color: 0x0b0a10 }),
+    brow: toon(0xc9c5d6),
+    lip: toon(0xc98f88),
+    felt: toon(0x123d30),
+    gold: toon(0xc9a24a),
+    base: toon(0x15121b),
+    chipR: toon(0xa8152d),
+    chipW: toon(0xece8e0),
+    chipK: toon(0x1b1a20),
+  };
+
+  const outlineMat = (thick) => new THREE.ShaderMaterial({
+    uniforms: { thick: { value: thick }, col: { value: new THREE.Color(0x07060a) } },
+    vertexShader: 'uniform float thick; void main(){ vec3 p = position + normal * thick; gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0); }',
+    fragmentShader: 'uniform vec3 col; void main(){ gl_FragColor = vec4(col, 1.0); }',
+    side: THREE.BackSide,
+  });
+  const OL = outlineMat(0.0045);
+  const OLthin = outlineMat(0.0022);
+
+  function part(geo, mat, parent, o = {}) {
+    const m = new THREE.Mesh(geo, mat);
+    if (o.p) m.position.set(o.p[0], o.p[1], o.p[2]);
+    if (o.r) m.rotation.set(o.r[0], o.r[1], o.r[2]);
+    if (o.s) m.scale.set(o.s[0], o.s[1], o.s[2]);
+    m.castShadow = o.cast !== false;
+    m.receiveShadow = true;
+    if (o.line !== false) m.add(new THREE.Mesh(geo, o.thin ? OLthin : OL));
+    parent.add(m);
+    return m;
+  }
+  const grp = (parent, p = [0, 0, 0], r = [0, 0, 0]) => {
+    const g = new THREE.Group();
+    g.position.set(p[0], p[1], p[2]);
+    g.rotation.set(r[0], r[1], r[2]);
+    parent.add(g);
+    return g;
+  };
+
+  // deterministic randomness so the hair is the same every load
+  let seed = 1717;
+  const rnd = () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  // ---------- card textures ----------
+  function roundPath(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+  function cardFace(rank, suit) {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 358;
+    const g = c.getContext('2d');
+    roundPath(g, 0, 0, 256, 358, 22); g.fillStyle = '#f6f3ee'; g.fill();
+    const red = suit === '♥' || suit === '♦';
+    g.fillStyle = red ? '#b3122e' : '#141218';
+    g.textAlign = 'center';
+    const corner = () => {
+      g.font = 'bold 52px Georgia, serif'; g.fillText(rank, 38, 60);
+      g.font = '42px Georgia, serif'; g.fillText(suit, 38, 104);
+    };
+    corner();
+    g.save(); g.translate(256, 358); g.rotate(Math.PI); corner(); g.restore();
+    g.font = '150px Georgia, serif'; g.textBaseline = 'middle'; g.fillText(suit, 128, 186);
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+  }
+  function cardBack() {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 358;
+    const g = c.getContext('2d');
+    roundPath(g, 0, 0, 256, 358, 22); g.fillStyle = '#5e0d1c'; g.fill();
+    g.save(); roundPath(g, 16, 16, 224, 326, 12); g.clip();
+    g.strokeStyle = 'rgba(201,162,74,0.35)'; g.lineWidth = 2;
+    for (let i = -400; i < 400; i += 18) {
+      g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 358, 358); g.stroke();
+      g.beginPath(); g.moveTo(i + 358, 0); g.lineTo(i, 358); g.stroke();
+    }
+    g.restore();
+    g.strokeStyle = '#c9a24a'; g.lineWidth = 4; roundPath(g, 16, 16, 224, 326, 12); g.stroke();
+    g.fillStyle = '#5e0d1c'; g.beginPath(); g.arc(128, 179, 52, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 3; g.stroke();
+    g.fillStyle = '#c9a24a'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '800 64px "Shippori Mincho B1", "Yu Mincho", serif'; g.fillText('嘘', 128, 182);
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+  }
+  const backTex = cardBack();
+  function makeCard(w, h, faceTex) {
+    const g = new THREE.Group();
+    const geo = new THREE.PlaneGeometry(w, h);
+    const front = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: faceTex, transparent: true }));
+    const back = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: backTex, transparent: true }));
+    back.rotation.y = Math.PI;
+    front.position.z = 0.0004; back.position.z = -0.0004;
+    g.add(front, back);
+    return g;
+  }
+
+  // ---------- stage ----------
+  const world = grp(scene);
+  part(new THREE.CylinderGeometry(0.72, 0.78, 0.14, 64), M.base, world, { p: [0, -0.07, 0], line: false });
+  part(new THREE.CylinderGeometry(0.7, 0.7, 0.02, 64), M.felt, world, { p: [0, 0.01, 0], line: false, cast: false });
+  part(new THREE.TorusGeometry(0.71, 0.014, 8, 80), M.gold, world, { p: [0, 0.02, 0], r: [Math.PI / 2, 0, 0], line: false });
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(8, 48), new THREE.MeshToonMaterial({ color: 0x0e0c14, gradientMap: ramp }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.14; floor.receiveShadow = true;
+  world.add(floor);
+
+  // chip stacks on the felt
+  const chipGeo = new THREE.CylinderGeometry(0.036, 0.036, 0.009, 24);
+  [[0.42, 0.25, 9, [M.chipR, M.chipW]], [0.5, 0.05, 6, [M.chipK, M.chipW]], [-0.45, 0.2, 12, [M.chipR, M.chipK]], [-0.38, -0.32, 5, [M.chipW, M.chipR]]]
+    .forEach(([x, z, n, mats]) => {
+      for (let i = 0; i < n; i++) {
+        part(chipGeo, mats[i % 2], world, { p: [x + (rnd() - 0.5) * 0.004, 0.025 + i * 0.0095, z + (rnd() - 0.5) * 0.004], thin: true });
+      }
+    });
+
+  // ---------- Baku ----------
+  const baku = grp(world, [0, 0.02, 0]);
+
+  // legs and shoes
+  [-1, 1].forEach((s) => {
+    part(new THREE.CylinderGeometry(0.07, 0.056, 0.86, 18), M.suit, baku, { p: [s * 0.1, 0.5, 0], r: [0, 0, s * 0.02] });
+    part(new THREE.SphereGeometry(1, 20, 14), M.shoe, baku, { p: [s * 0.11, 0.045, 0.035], s: [0.062, 0.045, 0.13] });
+  });
+  part(new THREE.CylinderGeometry(0.155, 0.15, 0.16, 24), M.suit, baku, { p: [0, 0.93, 0], s: [1, 1, 0.66] });
+
+  // torso
+  const torso = grp(baku, [0, 0.92, 0]);
+  part(new THREE.CylinderGeometry(0.168, 0.155, 0.5, 28), M.suit, torso, { p: [0, 0.25, 0], s: [1, 1, 0.63] });
+  // rounded yoke so the shoulders slope into the collar instead of ending in a flat shelf
+  part(new THREE.SphereGeometry(1, 28, 16), M.suit, torso, { p: [0, 0.495, -0.004], s: [0.175, 0.085, 0.108] });
+  part(new THREE.CylinderGeometry(0.158, 0.172, 0.16, 28), M.suit, torso, { p: [0, -0.06, 0], s: [1, 1, 0.66] });
+  part(new THREE.BoxGeometry(0.004, 0.2, 0.004), M.dark, torso, { p: [0, -0.05, 0.114], line: false });
+  part(new THREE.SphereGeometry(0.011, 12, 8), M.lapel, torso, { p: [0, 0.07, 0.104], s: [1, 1, 0.5], thin: true });
+
+  // shirt V, tie and lapels on the jacket front
+  const vShape = new THREE.Shape();
+  vShape.moveTo(-0.066, 0.27); vShape.lineTo(0.066, 0.27); vShape.lineTo(0, -0.02); vShape.closePath();
+  part(new THREE.ShapeGeometry(vShape), M.shirt, torso, { p: [0, 0.27, 0.1105], r: [-0.03, 0, 0], line: false });
+  const tieShape = new THREE.Shape();
+  tieShape.moveTo(-0.011, 0.255); tieShape.lineTo(0.011, 0.255); tieShape.lineTo(0.008, 0.03); tieShape.lineTo(0, 0.0); tieShape.lineTo(-0.008, 0.03); tieShape.closePath();
+  part(new THREE.ShapeGeometry(tieShape), M.tie, torso, { p: [0, 0.27, 0.1115], r: [-0.03, 0, 0], line: false });
+  [-1, 1].forEach((s) => {
+    const lap = new THREE.Shape();
+    lap.moveTo(s * 0.066, 0.27); lap.lineTo(s * 0.1, 0.27); lap.lineTo(s * 0.12, 0.17); lap.lineTo(s * 0.07, 0.19); lap.lineTo(0, -0.02); lap.lineTo(s * 0.004, -0.02); lap.closePath();
+    const g = new THREE.ShapeGeometry(lap);
+    part(g, M.lapel, torso, { p: [0, 0.27, 0.112], r: [-0.03, 0, 0], line: false });
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.3, 0.002), M.dark);
+    edge.position.set(s * 0.034, 0.395, 0.1135); edge.rotation.set(-0.03, 0, s * 0.215);
+    torso.add(edge);
+    // shirt collar points
+    const col = new THREE.Shape();
+    col.moveTo(0, 0); col.lineTo(s * 0.05, 0.012); col.lineTo(s * 0.026, -0.045); col.closePath();
+    part(new THREE.ShapeGeometry(col), M.shirt, torso, { p: [s * 0.008, 0.535, 0.1], r: [-0.25, 0, 0], line: false });
+  });
+  // shoulders
+  [-1, 1].forEach((s) => part(new THREE.SphereGeometry(0.075, 18, 12), M.suit, torso, { p: [s * 0.17, 0.5, 0], s: [0.95, 0.75, 0.8] }));
+  // neck
+  part(new THREE.CylinderGeometry(0.04, 0.045, 0.12, 16), M.skin, torso, { p: [0, 0.6, -0.005] });
+  part(new THREE.CylinderGeometry(0.047, 0.05, 0.04, 18), M.shirt, torso, { p: [0, 0.575, -0.004], s: [1, 1, 0.92] });
+
+  // ---------- head ----------
+  const head = grp(torso, [0, 0.735, 0.005]);
+  // one sculpted skull: an egg that narrows into a sharp chin
+  const skull = new THREE.SphereGeometry(1, 40, 30);
+  const sp = skull.attributes.position;
+  for (let i = 0; i < sp.count; i++) {
+    let x = sp.getX(i) * 0.0945, y = sp.getY(i) * 0.1124, z = sp.getZ(i) * 0.103;
+    if (y < 0) {
+      const t = -y / 0.1124;
+      x *= 1 - 0.4 * Math.pow(t, 1.5);
+      z *= 1 - 0.14 * t * t;
+      if (z > 0) z += 0.006 * t;
+    }
+    sp.setXYZ(i, x, y, z);
+  }
+  skull.computeVertexNormals();
+  part(skull, M.skin, head, { cast: false });
+  [-1, 1].forEach((s) => part(new THREE.SphereGeometry(1, 12, 10), M.skin, head, { p: [s * 0.092, -0.006, -0.004], s: [0.013, 0.027, 0.019], thin: true }));
+
+  const eyes = [];
+  [-1, 1].forEach((s) => {
+    const eye = grp(head, [s * 0.037, 0.004, 0.0905], [0, s * 0.35, 0]);
+    part(new THREE.SphereGeometry(1, 20, 12), M.eyeW, eye, { s: [0.024, 0.0095, 0.008], line: false });
+    part(new THREE.SphereGeometry(1, 16, 12), M.iris, eye, { p: [-s * 0.002, -0.0005, 0.0055], s: [0.0088, 0.0098, 0.004], line: false });
+    part(new THREE.SphereGeometry(1, 8, 6), M.eyeW, eye, { p: [-s * 0.0035 + 0.002, 0.0028, 0.0092], s: [0.0016, 0.0016, 0.001], line: false });
+    // upper lash line, flicked up at the outer corner
+    part(new THREE.BoxGeometry(0.05, 0.004, 0.004), M.dark, eye, { p: [0, 0.009, 0.004], r: [0, 0, s * 0.12], line: false });
+    part(new THREE.BoxGeometry(0.012, 0.003, 0.003), M.dark, eye, { p: [s * 0.026, 0.012, 0.002], r: [0, 0, s * 0.55], line: false });
+    eyes.push(eye);
+    // brow
+    part(new THREE.BoxGeometry(0.04, 0.0045, 0.006), M.brow, head, { p: [s * 0.038, 0.032, 0.088], r: [0, s * 0.35, s * 0.08], line: false });
+  });
+  // nose
+  part(new THREE.ConeGeometry(0.008, 0.026, 8), M.skin, head, { p: [0, -0.02, 0.1], r: [Math.PI * 0.62, 0, 0], thin: true });
+  // the smirk: one corner pulled up
+  const smirk = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.0016, 6, 20, Math.PI * 0.55), M.dark);
+  smirk.position.set(0.004, -0.046, 0.088);
+  smirk.rotation.set(0.15, 0.1, Math.PI * 1.3);
+  head.add(smirk);
+  part(new THREE.SphereGeometry(0.0025, 6, 6), M.dark, head, { p: [0.019, -0.055, 0.085], line: false });
+
+  // ---------- hair ----------
+  const hair = grp(head, [0, 0.008, -0.004]);
+  part(new THREE.SphereGeometry(0.117, 32, 18, 0, Math.PI * 2, 0, Math.PI * 0.6), M.hair, hair, { p: [0, 0.006, -0.006], r: [-0.45, 0, 0], s: [0.96, 1.06, 1.04], cast: false });
+  const up = new THREE.Vector3(0, 1, 0);
+  function lock(az, el, len, rad, axis) {
+    const geo = new THREE.ConeGeometry(rad, len, 5);
+    geo.translate(0, len / 2, 0);
+    const m = part(geo, M.hair, hair, { thin: true, cast: false });
+    const r = 0.103;
+    m.position.set(Math.sin(az) * Math.cos(el) * r * 0.95, Math.sin(el) * r * 1.05, Math.cos(az) * Math.cos(el) * r);
+    m.quaternion.setFromUnitVectors(up, axis.normalize());
+    return m;
+  }
+  const out = (az, k) => new THREE.Vector3(Math.sin(az) * k, 0, Math.cos(az) * k);
+  // back and side layers: shaggy, falling to the nape
+  for (let layer = 0; layer < 3; layer++) {
+    const el = [0.55, 0.15, -0.25][layer];
+    const n = [10, 12, 10][layer];
+    const from = [1.15, 1.3, 1.5][layer];
+    for (let i = 0; i < n; i++) {
+      const az = from + (i + 0.25 + rnd() * 0.5) * ((Math.PI * 2 - 2 * from) / n);
+      const o = out(az, [0.6, 0.35, 0.2][layer]);
+      const axis = new THREE.Vector3(o.x, -1 + (rnd() - 0.5) * 0.2, o.z);
+      lock(az, el, [0.09, 0.115, 0.1][layer] + rnd() * 0.03, [0.026, 0.024, 0.02][layer], axis);
+    }
+  }
+  // a few short spikes swept back off the crown
+  for (let i = 0; i < 7; i++) {
+    const az = (i / 7) * Math.PI * 2 + rnd() * 0.3;
+    const o = out(az, 0.7);
+    lock(az, 1.12, 0.05 + rnd() * 0.025, 0.024, new THREE.Vector3(o.x, 0.25, o.z - 0.6));
+  }
+  // side locks framing the face down to the jaw
+  [-1, 1].forEach((s) => {
+    lock(s * 1.3, 0.25, 0.15, 0.022, new THREE.Vector3(s * 0.15, -1, 0.08));
+    lock(s * 1.05, 0.42, 0.12, 0.018, new THREE.Vector3(s * 0.3, -1, 0.22));
+  });
+  // bangs: pointed locks over the forehead, the long one dipping between the eyes
+  [[-0.7, 0.06], [-0.45, 0.065], [-0.2, 0.055], [0.02, 0.078], [0.24, 0.058], [0.48, 0.066], [0.72, 0.06]].forEach(([az, len]) => {
+    const m = lock(az, 0.78, len, 0.018, new THREE.Vector3(Math.sin(az) * 0.5, -1, 0.5));
+    m.position.z += 0.012;
+  });
+
+  // ---------- arms ----------
+  function arm(side) {
+    const shoulder = grp(torso, [side * 0.185, 0.49, 0]);
+    part(new THREE.CylinderGeometry(0.05, 0.044, 0.3, 14).translate(0, -0.15, 0), M.suit, shoulder);
+    const elbow = grp(shoulder, [0, -0.3, 0]);
+    part(new THREE.SphereGeometry(0.045, 12, 10), M.suit, elbow, { line: false });
+    part(new THREE.CylinderGeometry(0.044, 0.038, 0.26, 14).translate(0, -0.13, 0), M.suit, elbow);
+    part(new THREE.CylinderGeometry(0.031, 0.031, 0.025, 14), M.shirt, elbow, { p: [0, -0.265, 0], thin: true });
+    const hand = grp(elbow, [0, -0.29, 0]);
+    part(new THREE.SphereGeometry(1, 14, 10), M.skin, hand, { p: [0, -0.02, 0], s: [0.026, 0.042, 0.017], thin: true });
+    return { shoulder, elbow, hand };
+  }
+  const R = arm(-1);
+  const L = arm(1);
+
+  // right hand raised, card held up by the face
+  R.shoulder.rotation.set(-0.35, 0, -0.08);
+  R.elbow.rotation.set(-2.05, 0.9, 0);
+  R.hand.rotation.set(0.25, 0, 0.15);
+  // two extended fingers pinching the card
+  [-1, 1].forEach((k) => part(new THREE.CylinderGeometry(0.0075, 0.0065, 0.05, 8).translate(0, -0.025, 0), M.skin, R.hand, { p: [k * 0.009, -0.052, 0.003], r: [0, 0, k * 0.05], thin: true }));
+  part(new THREE.CylinderGeometry(0.008, 0.007, 0.035, 8).translate(0, -0.017, 0), M.skin, R.hand, { p: [0.022, -0.03, 0.01], r: [0.4, 0, 0.7], thin: true });
+  const handCard = makeCard(0.063, 0.088, cardFace('A', '♠'));
+  const cardPivot = grp(R.hand);
+  // keep the card upright and turned toward the viewer whatever the wrist is doing
+  const cardWorldRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.3, 0.22));
+  const cardWorldOffset = new THREE.Vector3(0.0, 0.035, 0.015);
+  const qHand = new THREE.Quaternion();
+  cardPivot.add(handCard);
+  handCard.rotation.y = Math.PI; // starts back-out, face hidden
+
+  // left arm relaxed, hand near the trouser pocket
+  L.shoulder.rotation.set(0.12, 0, 0.11);
+  L.elbow.rotation.set(-0.3, 0, -0.05);
+
+  // ---------- floating cards ----------
+  const ranks = ['K', 'Q', 'J', '10', '7', '3', 'A', '9', '5'];
+  const suits = ['♥', '♣', '♦', '♠'];
+  const floaters = [];
+  for (let i = 0; i < 9; i++) {
+    const c = makeCard(0.12, 0.168, cardFace(ranks[i], suits[i % 4]));
+    const holder = grp(world);
+    holder.add(c);
+    floaters.push({ c, holder, a: (i / 9) * Math.PI * 2, y: 0.45 + rnd() * 1.35, r: 0.95 + rnd() * 0.35, spin: 0.4 + rnd() * 0.8, ph: rnd() * 6 });
+  }
+
+  // dust
+  const dustGeo = new THREE.BufferGeometry();
+  const dp = new Float32Array(240 * 3);
+  for (let i = 0; i < 240; i++) {
+    const a = rnd() * Math.PI * 2, r = 0.6 + rnd() * 3;
+    dp[i * 3] = Math.cos(a) * r; dp[i * 3 + 1] = rnd() * 3; dp[i * 3 + 2] = Math.sin(a) * r;
+  }
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
+  const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xc9a24a, size: 0.012, transparent: true, opacity: 0.55 }));
+  scene.add(dust);
+
+  // ---------- lights ----------
+  scene.add(new THREE.HemisphereLight(0x8d86a8, 0x140f12, 0.4));
+  const key = new THREE.DirectionalLight(0xfff1de, 0.8);
+  key.position.set(1.6, 3.2, 2.4);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  Object.assign(key.shadow.camera, { left: -1.3, right: 1.3, top: 2.4, bottom: -0.4, near: 0.5, far: 8 });
+  key.shadow.bias = -0.0008;
+  key.shadow.normalBias = 0.02;
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0x9b7cff, 0.65);
+  rim.position.set(-2, 2.2, -2.5);
+  scene.add(rim);
+  const under = new THREE.PointLight(0xb3122e, 0.5, 1.4);
+  under.position.set(0, 0.12, 0.75);
+  scene.add(under);
+
+  // ---------- camera control ----------
+  const target = new THREE.Vector3(0, 1.0, 0);
+  const home = { theta: 0.28, phi: 1.45, radius: 4.6 };
+  const view = Object.assign({}, home);
+  let autoSpin = !reduceMotion;
+  let idleAt = 0;
+  const pointers = new Map();
+  let pinch = 0;
+  const look = { x: 0, y: 0 };
+
+  canvas.addEventListener('pointerdown', (e) => { canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); });
+  const release = (e) => { pointers.delete(e.pointerId); pinch = 0; idleAt = performance.now(); };
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+  canvas.addEventListener('pointermove', (e) => {
+    look.x = (e.clientX / innerWidth) * 2 - 1;
+    look.y = (e.clientY / innerHeight) * 2 - 1;
+    const p = pointers.get(e.pointerId);
+    if (!p) return;
+    if (pointers.size === 1) {
+      view.theta -= (e.clientX - p.x) * 0.007;
+      view.phi = Math.min(1.9, Math.max(0.55, view.phi - (e.clientY - p.y) * 0.005));
+      idleAt = performance.now();
+    }
+    p.x = e.clientX; p.y = e.clientY;
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch) view.radius = Math.min(6, Math.max(1.3, view.radius * (pinch / d)));
+      pinch = d;
+    }
+  });
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    view.radius = Math.min(6, Math.max(1.3, view.radius * (1 + Math.sign(e.deltaY) * 0.08)));
+  }, { passive: false });
+
+  const btnSpin = document.getElementById('spin');
+  const btnCall = document.getElementById('call');
+  btnSpin.setAttribute('aria-pressed', String(autoSpin));
+  btnSpin.addEventListener('click', () => { autoSpin = !autoSpin; btnSpin.setAttribute('aria-pressed', String(autoSpin)); });
+  document.getElementById('reset').addEventListener('click', () => Object.assign(view, home));
+  let reveal = false;
+  btnCall.addEventListener('click', () => {
+    reveal = !reveal;
+    btnCall.setAttribute('aria-pressed', String(reveal));
+    btnCall.textContent = reveal ? 'Fold' : 'Call';
+  });
+
+  function resize() {
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    // pull back a little on narrow screens so he fits
+    camera.fov = w / h < 0.8 ? 40 : 32;
+    camera.updateProjectionMatrix();
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  // ---------- loop ----------
+  const clock = new THREE.Clock();
+  let nextBlink = 2.5;
+  function frame() {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+    const motion = reduceMotion ? 0.25 : 1;
+
+    if (autoSpin && pointers.size === 0 && performance.now() - idleAt > 1500) view.theta += dt * 0.18;
+    camera.position.set(
+      target.x + view.radius * Math.sin(view.phi) * Math.sin(view.theta),
+      target.y + view.radius * Math.cos(view.phi),
+      target.z + view.radius * Math.sin(view.phi) * Math.cos(view.theta)
+    );
+    camera.lookAt(target);
+
+    // idle life: breath, a lazy head tilt toward the pointer, hair sway
+    torso.scale.y = 1 + Math.sin(t * 1.7) * 0.006 * motion;
+    head.rotation.y += ((look.x * 0.3 + Math.sin(t * 0.37) * 0.08 * motion) - head.rotation.y) * 0.05;
+    head.rotation.x += ((look.y * 0.12 + 0.04) - head.rotation.x) * 0.05;
+    head.rotation.z = -0.06 + Math.sin(t * 0.5) * 0.02 * motion;
+    hair.rotation.z = Math.sin(t * 1.3) * 0.015 * motion;
+    hair.rotation.x = Math.sin(t * 0.9 + 1) * 0.01 * motion;
+    R.elbow.rotation.x = -2.05 + Math.sin(t * 1.1) * 0.03 * motion;
+
+    if (t > nextBlink) {
+      const k = (t - nextBlink) / 0.14;
+      const s = k < 1 ? Math.abs(1 - 2 * k) * 0.9 + 0.1 : 1;
+      eyes.forEach((e) => (e.scale.y = s));
+      if (k >= 1) nextBlink = t + 2.5 + Math.random() * 3.5;
+    }
+
+    R.hand.getWorldQuaternion(qHand);
+    qHand.invert();
+    cardPivot.quaternion.copy(qHand).multiply(cardWorldRot);
+    cardPivot.position.copy(cardWorldOffset).applyQuaternion(qHand);
+
+    const goal = reveal ? 0 : Math.PI;
+    handCard.rotation.y += (goal - handCard.rotation.y) * Math.min(1, dt * 7);
+
+    floaters.forEach((f) => {
+      const a = f.a + t * 0.12 * motion;
+      f.holder.position.set(Math.cos(a) * f.r, f.y + Math.sin(t * 0.8 + f.ph) * 0.05 * motion, Math.sin(a) * f.r);
+      f.c.rotation.set(Math.sin(t * 0.5 + f.ph) * 0.3, t * f.spin * motion + f.ph, Math.sin(t * 0.4 + f.ph) * 0.2);
+    });
+    dust.rotation.y = t * 0.02 * motion;
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
