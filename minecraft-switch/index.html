@@ -125,7 +125,17 @@
   html[dir="rtl"] body :is(div, span, p, b, i, h1, h2, h3, button, label) { unicode-bidi: plaintext; }
   /* Arabic text: one weight (no synthetic bold), pixelated by an SVG filter on the text element itself */
   html[lang="ar"] body { font-synthesis-weight: none; }
-  html[lang="ar"] .bcpx { filter: url(#bcPxM); }
+  /* phones: smaller Arabic text, short chat, quest box under the chat so it never covers the action buttons */
+  html.touch .msg { font-size: 14px !important; line-height: 1.5; }
+  html.touch .mcbtn { font-size: 17px !important; padding: 6px 12px 8px !important; }
+  html.touch .menu { gap: 6px; width: min(340px, 100%); }
+  html.touch .corner { font-size: 11px !important; } html.touch .corner.r { display: none; }
+  html.touch #logo { font-size: clamp(24px, 7vw, 52px) !important; } html.touch #splash { font-size: 12px !important; }
+  html.touch .panel { font-size: 14px !important; }
+  html.touch #chat .msg:nth-last-child(n+4) { display: none; }
+  html.touch #vhGoal { left: 8px !important; right: auto !important; bottom: auto !important; top: calc(112px + env(safe-area-inset-top, 0px)) !important; max-width: 34% !important; font-size: 13px !important; }
+  html.touch #vhSub { font-size: 14px !important; }
+  html[lang="ar"] .bcpx { filter: url(#bcPxM); display: inline-block; }
   html[lang="ar"] :is(.bcpx, .bcpxT) { font-family: "BC Num", "Pixelify Sans", "BC Kufi", "Noto Kufi Arabic", monospace !important; }
   html[lang="ar"] .bcpxT { filter: url(#bcPxT); font-weight: 300 !important; }
   .bcpxI { display: inline-block; }
@@ -1290,5 +1300,6 @@ requestAnimationFrame(frame);
 <script src="js/swamp.js"></script>
 <script src="js/mobile.js"></script>
 <script src="js/shaders.js"></script>
+<script src="js/arpx.js"></script>
 </body>
 </html>
