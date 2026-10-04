@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{ "imports": { "three": "../node_modules/three/build/three.module.js", "three/addons/": "../node_modules/three/examples/jsm/" } }</script>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<script type="module">
+import * as THREE from 'three';
+import * as style from './style.js';
+import { buildThrone } from './bodyA_throne.js';
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const stage = style.createStage(THREE, renderer, scene);
+const root = new THREE.Group();
+const util = (await import('./bodyA_util.js')).makeUtil(THREE);
+let throne; try { throne = buildThrone(THREE, style, util); } catch(e){ console.error('throne', e.message); throne = new THREE.Group(); }
+const body = new THREE.Group(); body.add(throne);
+const M = (geo, mat, x,y,z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); body.add(m); return m; };
+const suit = () => style.toon(0xf2f0ec, { role: 'suit' });
+// mock sitter
+const torso = M(new THREE.CapsuleGeometry(0.17, 0.35, 10, 20), suit(), -0.06, 0.82, 0.02); torso.rotation.z = -0.25;
+M(new THREE.BoxGeometry(0.18,0.34,0.05), style.toon(0x6a0f18, {role:'shirt'}), -0.02, 0.86, 0.17).rotation.z=-0.2;
+const thigh = M(new THREE.CapsuleGeometry(0.13, 0.5, 10, 20), suit(), 0.0, 0.58, 0.32); thigh.rotation.z = Math.PI/2 + 0.2;
+const shin = M(new THREE.CapsuleGeometry(0.1, 0.45, 10, 20), suit(), 0.15, 0.3, 0.45);
+M(new THREE.CapsuleGeometry(0.09, 0.2, 8, 16), style.toon(0x8a4a26, {role:'leather'}), -0.25, 0.42, 0.45).rotation.z = 1.2;
+M(new THREE.CapsuleGeometry(0.06, 0.4, 8, 16), suit(), 0.28, 0.98, 0.1).rotation.z = -0.5;
+M(new THREE.SphereGeometry(0.06, 16, 12), style.toon(0xf0c9a8, {role:'skin'}), 0.14, 1.2, 0.18);
+M(new THREE.CylinderGeometry(0.05,0.06,0.12,16), style.toon(0xf0c9a8, {role:'skin'}), -0.0, 1.12, 0.05);
+M(new THREE.SphereGeometry(0.12, 32, 24), style.toon(0xf0c9a8, {role:'skin'}), 0.0, 1.27, 0.06).scale.set(0.85,1.1,1);
+const hair = M(new THREE.SphereGeometry(0.125, 32, 24), style.toon(0xf4f4f8, {role:'hair'}), 0.0, 1.31, 0.03); hair.scale.set(0.9,1.0,1.0);
+M(new THREE.TorusGeometry(0.03,0.006,8,24), style.toon(0xe8b020,{role:'gold'}), 0.05, 1.28, 0.17);
+M(new THREE.SphereGeometry(0.014, 12, 10), style.toon(0xffffff,{role:'eye'}), -0.04, 1.28, 0.165);
+root.add(body); root.add(new THREE.Group());
+scene.add(root);
+style.finalize(THREE, scene, root, stage);
+stage.resize(innerWidth, innerHeight);
+stage.render();
+window.__ready = true;
+</script></body></html>
