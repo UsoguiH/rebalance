@@ -38,7 +38,7 @@ export function buildHair(THREE, style, field, skullGeo) {
     { hex: 0xfaf6ea, w: 0.46 }, { hex: 0xf2eee2, w: 0.30 }, { hex: 0xdedacd, w: 0.14 }, { hex: 0xc2bfb6, w: 0.06 },
   ];
   const buckets = palette.map(p => ({ ...p, pos: [], idx: [] }));
-  const ink = { hex: 0x6a6a70, pos: [], idx: [] };
+  const ink = { hex: 0x9a9aa0, pos: [], idx: [] };
   const inkDeep = { hex: 0x23242e, pos: [], idx: [] };
   const pick = () => { let r = rnd() * 0.92, a = 0; for (const b of buckets) { a += b.w; if (r < a) return b; } return buckets[0]; };
 
@@ -121,14 +121,14 @@ export function buildHair(THREE, style, field, skullGeo) {
       const K = 32, pts = [];
       const eps = 0.0018 + l * 0.0024 + R(0, 0.0014);
       const lift = rnd() < 0.10 ? R(0.004, 0.012) : 0;
-      const ph1 = R(0, Math.PI * 2), fr = R(3, 9), amp = R(0.0006, 0.0024);
+      const ph1 = R(0, Math.PI * 2), fr = R(3, 9), amp = R(0.0002, 0.0007);
       const tEnd = R(0.78, 1.0) - (l === 0 ? 0 : 0.0) - (side > 0.5 ? R(0.0, 0.18) : 0);
       for (let k = 0; k <= K; k++) {
         const t = (k / K) * tEnd;
         const a = (1 - t) * (1 - t), b = 2 * t * (1 - t) * kk, c = t * t;
         const dd = V(d0.x * a + via.x * b + d1.x * c, d0.y * a + via.y * b + d1.y * c, d0.z * a + via.z * b + d1.z * c).normalize();
         const q = surf(dd.x, dd.y, dd.z);
-        const bump = (0.008 + 0.010 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
+        const bump = (0.012 + 0.014 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
         const e = eps + bump + lift * Math.max(0, Math.sin(Math.PI * t / tEnd)) ** 1.5;
         const wob = Math.sin(t * fr * 3 + ph1) * amp;
         pts.push(V(q[0] + dd.x * e + wob, q[1] + dd.y * e, q[2] + dd.z * e));
@@ -189,9 +189,9 @@ export function buildHair(THREE, style, field, skullGeo) {
       [x0 + 0.004 + jit(), 0.112 - 0.01 * u, 0.074 + jit()],
       [0.040 + 0.020 * u + jit(), 0.092 - 0.012 * u, 0.094 - 0.006 * u],
       [0.068 + 0.012 * u + wave * sgn, 0.060 - 0.018 * u, 0.094 - 0.012 * u],
-      [0.082 + 0.008 * u - wave * sgn, 0.026 - 0.018 * u * len, 0.078 - 0.010 * u],
-      [0.088 + 0.006 * u + wave * sgn, -0.006 - 0.040 * len, 0.058 - 0.012 * u],
-      [0.084 + 0.012 * u - wave * sgn * 0.5 + 0.008 * u, -0.030 - 0.045 * len, 0.045 - 0.018 * u],
+      [0.082 + 0.008 * u - wave * sgn, 0.030 - 0.010 * u * len, 0.078 - 0.010 * u],
+      [0.088 + 0.006 * u + wave * sgn, 0.006 - 0.014 * len, 0.058 - 0.012 * u],
+      [0.086 + 0.010 * u - wave * sgn * 0.5, -0.010 - 0.022 * len, 0.048 - 0.018 * u],
     ];
     lock(rnd() < 0.16 ? buckets[2] : pick(), ctrl, R(0.0028, 0.0058), 0.0016, 34, lockCen, R(0.002, 0.004), R(0.004, 0.009));
   }

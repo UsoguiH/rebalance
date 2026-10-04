@@ -16,11 +16,11 @@ export const ROLES = {
            bump: 0.3, hatch: 0.9, pitch: 4.4, angle: 1.1, rim: 0.3, outline: 1.4, ink: [0.05, 0.015, 0.03], solid: 1.0 },
   // warm peach skin: two-tone cel + warm orange mid-shadow, fine hatching only in the real shadow side
   skin: { ...D, lit: [1.0, 0.97, 0.93], mid: [0.88, 0.70, 0.58], shade: [0.88, 0.70, 0.58], deep: [0.62, 0.40, 0.34],
-          spec: 0.3, shin: 60, specCol: [1.0, 0.95, 0.82], bump: 0.0, hatch: 0.7, pitch: 3.2, angle: 1.2, rim: 0.7,
+          spec: 0.3, shin: 60, specCol: [1.0, 0.95, 0.82], bump: 0.0, hatch: 0.9, pitch: 3.2, angle: 1.2, rim: 0.7,
           outline: 0.9, ink: [0.16, 0.07, 0.05], litT: 0.12, midT: 0.0, solid: 0.5 },
   // white/silver hair with ink strands
   hair: { ...D, lit: [1.06, 1.03, 0.97], mid: [0.99, 0.96, 0.91], shade: [0.87, 0.83, 0.77], deep: [0.68, 0.64, 0.58],
-          strand: 0.10, hatch: 0.5, pitch: 3.3, angle: 1.45, rim: 0.6, outline: 0.7, ink: [0.14, 0.11, 0.10],
+          strand: 0.30, straight: true, hatch: 0.5, pitch: 3.0, angle: 1.45, rim: 0.6, outline: 0.7, ink: [0.14, 0.11, 0.10],
           spec: 0.3, shin: 70, midT: -0.1, rimCol: [1.0, 0.85, 0.55] },
   // gold: yellow -> brown gradient ramp, glossy white-yellow highlights
   gold: { ...D, metal: true, lit: [1, 1, 1], mid: [1, 1, 1], shade: [0.7, 0.45, 0.3], deep: [0.4, 0.2, 0.1],
@@ -28,7 +28,7 @@ export const ROLES = {
           spec: 0.0, solid: 0.9 },
   // brown lace-up boot leather
   leather: { ...D, lit: [1.15, 0.95, 0.82], mid: [0.7, 0.58, 0.55], shade: [0.38, 0.28, 0.28], deep: [0.16, 0.1, 0.11],
-             spec: 0.6, shin: 30, specCol: [1.0, 0.82, 0.62], bump: 0.15, hatch: 1.0, pitch: 4.2, angle: 1.0,
+             spec: 0.45, shin: 30, soft: 0.22, specCol: [1.0, 0.78, 0.55], bump: 0.15, hatch: 1.0, pitch: 4.2, angle: 1.0,
              rim: 0.5, outline: 1.7, ink: [0.07, 0.025, 0.02], solid: 1.0, midT: 0.0, litT: 0.35 },
   // throne frame: painted gold derived from the base colour
   throne: { ...D, metal: true, lit: [1.4, 1.3, 1.0], mid: [1.0, 0.95, 0.85], shade: [0.72, 0.5, 0.35], deep: [0.4, 0.2, 0.12],

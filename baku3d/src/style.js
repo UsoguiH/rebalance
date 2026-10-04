@@ -24,7 +24,7 @@ const U = {
 };
 
 // World-space key light: warm, from the viewer's top-left front.
-const LIGHT_W = new THREE.Vector3(-0.55, 0.8, 0.62).normalize();
+const LIGHT_W = new THREE.Vector3(-0.62, 0.66, 0.6).normalize();
 const RIM_W = new THREE.Vector3(0.85, 0.35, -0.25).normalize();
 
 const outlineMeshes = [];
@@ -54,7 +54,7 @@ layout(location = 0) out vec4 oCol;
 layout(location = 1) out vec4 oNorm;
 uniform vec3 uBase; uniform vec3 uLitM; uniform vec3 uMidM; uniform vec3 uShadeM; uniform vec3 uDeepM;
 uniform vec3 uInk; uniform vec3 uSpecCol; uniform vec3 uRimCol;
-uniform float uMidT, uSolid;
+uniform float uMidT, uSolid, uSoft, uStraight;
 uniform float uSpec, uShin, uBump, uHatch, uPitch, uAngle, uStrand, uRim, uMetal, uFlat, uFlatCol, uLitT;
 uniform vec3 uLV; uniform vec3 uRV; uniform vec2 uRes; uniform float uScale;
 uniform sampler2D uShadowMap; uniform mat4 uShadowMatrix; uniform float uShadowTexel;
@@ -85,7 +85,7 @@ float strokes(vec2 p, float ang, float pitch, float cov){
   ang -= 1.5708;
   float c = cos(ang), sn = sin(ang);
   vec2 q = vec2(p.x * c + p.y * sn, -p.x * sn + p.y * c);
-  q.x += (vn(p * 0.02) - 0.5) * pitch * 0.35;
+  q.x += (vn(p * 0.02) - 0.5) * pitch * 0.35 * (1.0 - uStraight);
   float id = floor(q.x / pitch);
   float f = fract(q.x / pitch) - 0.5;
   float rnd = h21(vec2(id, 7.13));
@@ -94,6 +94,7 @@ float strokes(vec2 p, float ang, float pitch, float cov){
   float thr = 1.0 - cov * 1.25;
   float on = smoothstep(thr, thr + 0.18, seg);
   float width = pitch * (0.07 + 0.19 * cov) * (0.65 + 0.7 * rnd);
+  if (uStraight > 0.5) { on = smoothstep(0.0, 0.2, cov) * step(0.25, h21(vec2(id, 1.7)) + cov * 0.6); width = pitch * (0.10 + 0.1 * cov); }
   float d = abs(f) * pitch;
   float aa = 0.75 / uScale;
   return (1.0 - smoothstep(width - aa, width + aa, d)) * on;
@@ -119,10 +120,10 @@ void main(){
   vec3 V = normalize(-vVp);
   float ndl = dot(N, uLV);
   float sh = shadowAt(vPw, V2W * normalize(vNv));
-  float s = min(ndl, mix(-0.30, 1.0, sh));
+  float s = min(ndl, mix(-0.46, 1.0, sh));
 
   vec3 base = pow(max(uBase * vCol, 0.0), vec3(1.0 / 2.2));
-  float e = 0.03;
+  float e = max(0.03, uSoft);
   float bLit  = smoothstep(uLitT - e, uLitT + e, s);
   float bMid  = smoothstep(uMidT - e, uMidT + e, s);
   float bDeep = smoothstep(-0.62 - e, -0.62 + e, s);
@@ -143,14 +144,14 @@ void main(){
     vec3 R = reflect(-V, N);
     float env = R.y * 0.5 + 0.5;
     env += (vn3(vPw * 3.0) - 0.5) * 0.12;
-    float t = 0.55 * env + 0.45 * (s * 0.5 + 0.5);
+    float t = 0.50 * env + 0.40 * (s * 0.5 + 0.5);
     t = mix(t * 0.55, t, smoothstep(-0.2, 0.15, s));
     t += pow(ndh, 28.0) * 0.5;
-    vec3 c0 = vec3(0.13, 0.06, 0.015);
-    vec3 c1 = vec3(0.44, 0.26, 0.04);
-    vec3 c2 = vec3(0.78, 0.55, 0.10);
-    vec3 c3 = vec3(0.97, 0.80, 0.30);
-    vec3 c4 = vec3(1.00, 0.98, 0.82);
+    vec3 c0 = vec3(0.08, 0.035, 0.01);
+    vec3 c1 = vec3(0.35, 0.20, 0.03);
+    vec3 c2 = vec3(0.60, 0.40, 0.07);
+    vec3 c3 = vec3(0.88, 0.66, 0.18);
+    vec3 c4 = vec3(1.00, 0.90, 0.55);
     float k = 0.025;
     vec3 g = c0;
     g = mix(g, c1, smoothstep(0.26 - k, 0.26 + k, t));
@@ -159,6 +160,8 @@ void main(){
     g = mix(g, c4, smoothstep(0.82 - k, 0.82 + k, t));
     // soft in-band gradient
     col = mix(g, g * base * 1.25, 0.25);
+    float gd = abs(fract(vPw.y * 30.0 + 0.5) - 0.5);
+    col = mix(col, vec3(0.06, 0.03, 0.01), (1.0 - smoothstep(0.02, 0.06, gd)) * 0.55 * (1.0 - bLit * 0.6));
   }
 
   float sp = smoothstep(0.55, 0.60, pow(ndh, uShin * 0.25));
@@ -180,12 +183,18 @@ void main(){
   ink = max(ink, st);
   ink *= 0.95;
   // solid spot-black in the deepest creases / under folds
-  float solid = smoothstep(-0.40, -0.58, s) * uSolid;
+  float solid = smoothstep(-0.34, -0.44, s) * uSolid;
   ink = max(ink, solid);
+  if (uBump > 0.4 && uSolid > 0.0) {
+    float fr = foldN(vPw * 4.2);
+    float fw = fwidth(fr) * 1.5 + 0.004;
+    float crease = smoothstep(0.895 - fw, 0.895 + fw, fr) * smoothstep(0.40, 0.0, s);
+    ink = max(ink, crease * 0.95);
+  }
   col = mix(col, uInk, ink);
 
   oCol = vec4(col, 1.0);
-  oNorm = vec4(N * 0.5 + 0.5, -vVp.z * 0.1);
+  oNorm = vec4(uStraight > 0.5 ? vec3(0.5, 0.5, 1.0) : N * 0.5 + 0.5, -vVp.z * 0.1);
 }`;
 
 export function toon(hex = 0xffffff, opts = {}) {
@@ -206,7 +215,7 @@ export function toon(hex = 0xffffff, opts = {}) {
     uHatch: { value: r.hatch }, uPitch: { value: r.pitch }, uAngle: { value: r.angle },
     uStrand: { value: r.strand }, uRim: { value: r.rim }, uMetal: { value: r.metal ? 1 : 0 },
     uFlat: { value: opts.flatShading ? 1 : 0 }, uFlatCol: { value: r.flatCol ? 1 : 0 },
-    uLitT: { value: r.litT }, uMidT: { value: r.midT }, uSolid: { value: r.solid },
+    uLitT: { value: r.litT }, uSoft: { value: r.soft || 0 }, uStraight: { value: r.straight ? 1 : 0 }, uMidT: { value: r.midT }, uSolid: { value: r.solid },
   };
   const mat = new THREE.ShaderMaterial({
     glslVersion: THREE.GLSL3,
@@ -409,7 +418,7 @@ vec3 velvetRamp(float t){
   vec3 b = vec3(0.30, 0.025, 0.08);
   vec3 c = vec3(0.47, 0.05, 0.12);
   vec3 d = vec3(0.64, 0.11, 0.17);
-  vec3 e = vec3(0.90, 0.44, 0.27);
+  vec3 e = vec3(0.95, 0.42, 0.22);
   vec3 f = vec3(0.97, 0.64, 0.42);
   vec3 col = mix(a, b, smoothstep(0.0, 0.25, t));
   col = mix(col, c, smoothstep(0.22, 0.50, t));
@@ -426,7 +435,7 @@ void main(){
   if (uMode > 0.5) {
     // ---- deep crimson velvet panel: one wide diagonal fold, warm glow upper right / behind the head
     vec2 v = (w - vec2(0.0, 1.0)) / 0.37;
-    vec2 gv = (uGlow.xy - vec2(0.0, 1.0)) / 0.37 + vec2(0.6, 0.5);
+    vec2 gv = (uGlow.xy - vec2(0.0, 1.0)) / 0.37 + vec2(0.8, 0.6);
     float lean = v.x * 0.9 + v.y * 0.55;
     float warp = vn(vec2(v.x * 0.7, v.y * 0.4)) * 2.6 + vn(vec2(v.x * 2.2, v.y * 0.9)) * 0.7;
     float f1 = 0.5 + 0.5 * sin(lean * 2.6 + warp);
@@ -435,7 +444,8 @@ void main(){
     float d = length((v - gv) * vec2(0.85, 0.75));
     float glow = exp(-d * d * 0.40);
     float fold = 0.5 + (f1 * 0.78 + f2 * 0.22 - 0.5) * (1.0 - 0.5 * glow);
-    float t = 0.22 + 0.20 * g + 0.62 * glow + (fold - 0.5) * 0.36;
+    float t = 0.20 + 0.20 * g + 0.78 * glow + (fold - 0.5) * 0.36;
+    t -= 0.16 * smoothstep(0.55, 1.0, abs(v.x)) * (1.0 - glow);
     t -= 0.42 * smoothstep(-0.5, -3.0, v.y);
     t -= 0.10 * smoothstep(0.2, -1.2, v.x) * (1.0 - glow);
     col = velvetRamp(clamp(t, 0.0, 1.0));
@@ -449,8 +459,8 @@ void main(){
     col = mix(col, vec3(0.09, 0.005, 0.03), ink * 0.8);
   } else {
     // ---- pale worn brick wall: very fine mortar, barely-there bricks, grime, warm glow near the throne
-    vec3 cream = vec3(1.0, 0.985, 0.92);
-    vec3 dark = vec3(0.90, 0.86, 0.76);
+    vec3 cream = vec3(1.0, 0.995, 0.95);
+    vec3 dark = vec3(0.95, 0.91, 0.82);
     const float BH = 0.15, BW = 0.34;
     float row = floor(w.y / BH);
     float bx = w.x / BW + mod(row, 2.0) * 0.5;
@@ -460,14 +470,14 @@ void main(){
     float mortar = (1.0 - smoothstep(0.0008, 0.0026, dm)) * brk;
     float tone = vn(w * 1.3) * 0.5 + vn(w * 5.0) * 0.25 + h21(floor(vec2(bx, row))) * 0.25;
     float grime = vn(w * 9.0) * vn(w * 2.3 + 7.0);
-    col = mix(cream, dark, clamp(tone * 0.35 + grime * 0.45 + 0.30 * smoothstep(0.6, -0.5, w.y) + 0.30 * smoothstep(0.7, 1.6, abs(w.x)), 0.0, 1.0));
-    col = mix(col, vec3(1.0, 0.86, 0.58), 0.22 * exp(-pow(abs(w.x) - 0.55, 2.0) * 7.0) * smoothstep(-0.2, 1.4, w.y));
+    col = mix(cream, dark, clamp(tone * 0.35 + grime * 0.45 + 0.30 * smoothstep(0.6, -0.5, w.y) + 0.12 * smoothstep(0.9, 1.7, abs(w.x)), 0.0, 1.0));
+    col = mix(col, vec3(1.0, 0.84, 0.52), 0.42 * exp(-pow(abs(w.x) - 0.50, 2.0) * 5.0) * smoothstep(-0.4, 1.4, w.y));
     col = mix(col, vec3(0.50, 0.44, 0.38), mortar * 0.45);
     float cn = abs(vn(w * vec2(2.3, 3.4) + vec2(9.0, 3.0)) - 0.5);
     float cm = smoothstep(0.76, 0.86, vn(w * 1.1 + 4.0)) * smoothstep(1.3, 0.9, abs(w.x));
     
     col *= 1.0;
-    col *= 1.0 - 0.30 * smoothstep(0.7, 1.7, abs(w.x));
+    col *= 1.0 - 0.12 * smoothstep(0.9, 1.8, abs(w.x));
   }
   oCol = vec4(col, 1.0);
   oNorm = vec4(0.5, 0.5, 1.0, -vVp.z * 0.1);
@@ -515,7 +525,7 @@ void main(){
   vec2 gp = gl_FragCoord.xy / uScale;
   float wob = 0.75 + 0.5 * vn(gp * 0.06);
   float eDepth = smoothstep(0.018, 0.045, dz * wob);
-  float eNorm = smoothstep(0.40, 0.80, dn * wob);
+  float eNorm = smoothstep(0.30, 0.65, dn * wob);
   float eBig = smoothstep(0.10, 0.22, big);
   float edge = max(max(eDepth, eNorm * 0.75), eBig);
   col = mix(col, vec3(0.06, 0.03, 0.05), edge * 0.92);
@@ -543,8 +553,8 @@ void main(){
   // vignette
   vec2 q = vUv - 0.5;
   float vig = smoothstep(0.85, 0.30, length(q * vec2(1.0, 1.05)));
-  col *= mix(0.55, 1.0, vig);
-  col = mix(col, col * vec3(1.0, 0.92, 0.90), 1.0 - vig);
+  col *= mix(0.68, 1.0, vig);
+  col = mix(col, col * vec3(1.0, 0.95, 0.93), 1.0 - vig);
 
   oCol = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;

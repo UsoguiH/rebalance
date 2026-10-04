@@ -2,8 +2,8 @@
 export function buildThrone(THREE, style, util) {
   const g = new THREE.Group();
   const V2 = (x, y) => new THREE.Vector2(x, y);
-  const gold = () => style.toon(0xe0a41a, { role: 'gold' });
-  const goldDark = () => style.toon(0xb57a10, { role: 'gold' });
+  const gold = () => style.toon(0xa8741a, { role: 'gold' });
+  const goldDark = () => style.toon(0x6e450f, { role: 'gold' });
   const M = (geo, mat, x = 0, y = 0, z = 0) => {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
@@ -29,7 +29,7 @@ export function buildThrone(THREE, style, util) {
 
   // slender outer posts with a small node + thin inner posts (behind the sitter)
   for (const s of [-1, 1]) {
-    const thick = new THREE.LatheGeometry(postProfile(2.3, 0.015, [{ y: 1.22, R: 0.034 }, { y: 0.8, R: 0.026 }, { y: 1.62, R: 0.026 }]), 16);
+    const thick = new THREE.LatheGeometry(postProfile(2.3, 0.012, [{ y: 1.22, R: 0.026 }, { y: 0.8, R: 0.02 }, { y: 1.62, R: 0.02 }]), 16);
     M(thick, gold(), s * 0.415, 0, -0.42);
     const thin = new THREE.LatheGeometry(postProfile(2.3, 0.008, [], 0.3), 10);
     M(thin, goldDark(), s * 0.368, 0, -0.42);

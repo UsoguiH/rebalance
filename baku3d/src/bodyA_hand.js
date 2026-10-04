@@ -67,6 +67,20 @@ export function buildHand(THREE, util, mat, nailMat, spec) {
     }
   });
 
+  if (spec.gaps) {
+    const lineM = spec.lineMat || mat;
+    for (let i = 0; i < 3; i++) {
+      const a = fingers[i], c = fingers[i + 1];
+      const x = side * (a.x + c.x) / 2, y = (a.y + c.y) / 2;
+      const cl = (spec.curl[i][0] + spec.curl[i + 1][0]) / 2;
+      const d = V(0, Math.cos(cl), -Math.sin(cl));
+      const p0 = V(x, y, 0.004), p1 = p0.clone().addScaledVector(d, 0.036);
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.0012, 0.0012, p1.distanceTo(p0), 4), lineM);
+      m.position.copy(p0).add(p1).multiplyScalar(0.5);
+      util.orient(m, d, V(1, 0, 0));
+      g.add(m);
+    }
+  }
   // thumb
   const t = spec.thumb || { dir: V(0.5, 0.8, 0.1), bend: [0.2, 0.3], len: [0.034, 0.028, 0.024] };
   {
@@ -75,7 +89,7 @@ export function buildHand(THREE, util, mat, nailMat, spec) {
     base.x *= side;
     let dir = base.clone();
     const bendAxis = V(0, 0, 1).cross(base).normalize(); // curls toward -Z-ish (palm) when rotating negatively
-    let r = 0.0115;
+    let r = spec.thumbR || 0.0115;
     for (let k = 0; k < 3; k++) {
       if (k > 0) dir.applyAxisAngle(bendAxis, -(t.bend[k - 1] || 0)).normalize();
       const e = p.clone().addScaledVector(dir, t.len[k]);

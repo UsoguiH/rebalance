@@ -29,7 +29,7 @@ export function buildHead(THREE, style) {
     for (let j = 0; j <= ny; j++) {
       const y = -0.012 + 0.158 * j / ny;
       const flare = 1 + 0.55 * Math.pow(Math.max(0, 1 - (y + 0.012) / 0.045), 2);
-      const rx = 0.0470 * flare, rz = 0.050 * (1 + 0.15 * (flare - 1));
+      const rx = 0.0410 * flare, rz = 0.050 * (1 + 0.15 * (flare - 1));
       for (let i = 0; i < nth; i++) {
         const th = i / nth * Math.PI * 2, c = Math.cos(th), s = Math.sin(th);
         let x = rx * c, z = rz * s - 0.004;
@@ -69,7 +69,7 @@ export function buildHead(THREE, style) {
     };
     const zN = (x, y) => { // surface z of neck front
       const flare = 1 + 0.55 * Math.pow(Math.max(0, 1 - (y + 0.012) / 0.045), 2);
-      const rx = 0.0470 * flare, rz = 0.050 * (1 + 0.15 * (flare - 1));
+      const rx = 0.0410 * flare, rz = 0.050 * (1 + 0.15 * (flare - 1));
       const r = Math.min(0.999, Math.abs(x) / rx); return rz * Math.sqrt(1 - r * r) - 0.004 + 0.0025;
     };
     line([[-0.0235, 0.090, zN(-0.0235, 0.090)], [-0.018, 0.060, zN(-0.018, 0.060)], [-0.0125, 0.032, zN(-0.0125, 0.032)], [-0.008, 0.008, zN(-0.008, 0.008)]], 0.0014);
@@ -86,6 +86,15 @@ export function buildHead(THREE, style) {
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
       neckGroup.add(new THREE.Mesh(g, ink(0x4a3030, 'eye', 1)));
     }
+    { const pos = [], idx = [], rowsN = 6, colsN = 14;
+      for (let j = 0; j <= rowsN; j++) for (let i = 0; i <= colsN; i++) {
+        const x = -0.040 + 0.080 * i / colsN, y = 0.122 + 0.030 * j / rowsN - 0.012 * Math.abs(x) / 0.04;
+        pos.push(x, y, zN(x, y) + 0.0005);
+      }
+      for (let j = 0; j < rowsN; j++) for (let i = 0; i < colsN; i++) { const a = j * (colsN + 1) + i; idx.push(a, a + 1, a + colsN + 1, a + 1, a + colsN + 2, a + colsN + 1); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+      neckGroup.add(new THREE.Mesh(g, ink(0xe2a984, 'eye', 1)));
+    }
     // clavicles
     line([[-0.012, 0.016, 0.054], [-0.034, 0.012, 0.047], [-0.068, 0.018, 0.028]], 0.0030);
     line([[0.012, 0.016, 0.054], [0.034, 0.012, 0.047], [0.068, 0.018, 0.028]], 0.0030);
@@ -98,10 +107,11 @@ export function buildHead(THREE, style) {
   tilt.position.set(0, PIVOT_Y * HS, 0); tilt.scale.setScalar(HS);
   tilt.rotation.order = 'ZXY';
   tilt.rotation.set(0.28, -0.25, -0.50);
-  tilt.position.x += 0.040; tilt.position.y -= 0.020;
+  tilt.position.x += 0.026; tilt.position.y -= 0.008;
   root.add(tilt);
   const face = new THREE.Group(); face.name = 'face';
   face.position.set(0, FACE_Y - PIVOT_Y, 0.004);
+  face.scale.set(1.05, 0.92, 1.0);
   tilt.add(face);
 
   { // aim the neck at the underside of the chin
@@ -160,20 +170,20 @@ export function buildHead(THREE, style) {
     for (let i = 0; i <= n; i++) { const u = -hw + 2 * hw * i / n; lower.push(T(u, lo(u) - 0.0002)); }
     for (let i = 1; i < n; i++) { const u = -hw * 0.95 + 1.9 * hw * i / n; crease.push(T(u, up(u) + 0.0042 + 0.0010 * Math.sin((u / hw + 1) * Math.PI / 2))); }
     for (let i = 2; i < n - 1; i++) { const u = -hw * 0.9 + 1.8 * hw * i / n; bag.push(T(u, lo(u) - 0.0050 - 0.0010 * Math.sin((u / hw + 1) * Math.PI / 2))); }
-    add(ribbon(THREE, field, upper, t => 0.0010 + 0.0026 * Math.sin(Math.PI * Math.min(1, t * 1.05)) ** 0.8, 0.0020), 0x0a0507, 'eye', 'upperLid', 6);
+    add(ribbon(THREE, field, upper, t => 0.0014 + 0.0040 * Math.sin(Math.PI * Math.min(1, t * 1.05)) ** 0.8, 0.0020), 0x060304, 'eye', 'upperLid', 6);
     const shade = []; for (let i = 0; i <= n; i++) { const u = -hw + 2 * hw * i / n; shade.push(T(u, up(u) + 0.0022)); }
-    add(ribbon(THREE, field, shade, t => 0.0050 * Math.sin(Math.PI * Math.min(1, 0.05 + 0.9 * t)) ** 0.8 + 0.0004, 0.0014), 0x8a5040, 'skin', 'lidShade', 2);
+    add(ribbon(THREE, field, shade, t => 0.0070 * Math.sin(Math.PI * Math.min(1, 0.05 + 0.9 * t)) ** 0.8 + 0.0004, 0.0014), 0x6a3a30, 'eye', 'lidShade', 2);
     add(ribbon(THREE, field, lower, t => 0.0004 + 0.0009 * Math.sin(Math.PI * t), 0.0020), 0x2a1a1c, 'eye', 'lowerLid', 6);
     add(ribbon(THREE, field, crease, t => 0.0004 + 0.0011 * Math.sin(Math.PI * t), 0.0012), 0x6a4034, 'skin', 'crease', 2);
-    add(ribbon(THREE, field, bag, t => 0.0010 + 0.0030 * Math.sin(Math.PI * t), 0.0012), 0x9a6252, 'skin', 'bag', 2);
+    add(ribbon(THREE, field, bag, t => 0.0014 + 0.0042 * Math.sin(Math.PI * t), 0.0012), 0x7a4638, 'eye', 'bag', 2);
   }
   eyeAt(-0.0345, 0.0005, -1, 0.26);
 
   // ---- BROWS
-  const browL = [[-0.064, 0.0405], [-0.056, 0.0400], [-0.046, 0.0365], [-0.036, 0.0315], [-0.026, 0.0260], [-0.017, 0.0215], [-0.010, 0.0180]];
-  add(ribbon(THREE, field, browL, t => 0.0008 + 0.0024 * Math.sin(Math.PI * Math.min(1, 0.15 + 0.85 * t)) ** 0.6 * (1 - 0.25 * t), 0.0018), 0x1e1418, 'hair', 'browL', 5);
-  const browR = [[0.016, 0.0300], [0.026, 0.0400], [0.038, 0.0460], [0.052, 0.0450], [0.064, 0.0390]];
-  add(ribbon(THREE, field, browR, t => 0.0006 + 0.0020 * Math.sin(Math.PI * t) ** 0.7, 0.0018), 0x2a1c20, 'hair', 'browR', 5);
+  const browL = [[-0.066, 0.0420], [-0.058, 0.0425], [-0.048, 0.0390], [-0.038, 0.0335], [-0.028, 0.0275], [-0.018, 0.0220], [-0.0095, 0.0175]];
+  add(ribbon(THREE, field, browL, t => 0.0010 + 0.0040 * Math.sin(Math.PI * Math.min(1, 0.12 + 0.85 * t)) ** 0.5 * (1 - 0.2 * t) * (0.55 + 0.45 * t), 0.0018), 0x0c0709, 'hair', 'browL', 5);
+  const browR = [[0.020, 0.0320], [0.030, 0.0430], [0.043, 0.0490], [0.057, 0.0470], [0.068, 0.0395]];
+  add(ribbon(THREE, field, browR, t => 0.0008 + 0.0026 * Math.sin(Math.PI * t) ** 0.7, 0.0018), 0x1a1013, 'hair', 'browR', 5);
 
   // ---- NOSE lines
   add(ribbon(THREE, field, [[-0.0100, 0.008], [-0.0096, -0.006], [-0.0092, -0.020], [-0.0104, -0.033], [-0.0125, -0.040]], t => 0.0009 * Math.sin(Math.PI * (0.1 + 0.8 * t)) + 0.0003, 0.0012), 0x7a4a3a, 'skin', 'noseSide', 2);
@@ -220,7 +230,8 @@ export function buildHead(THREE, style) {
       if (!(edge > 0.7 || Math.abs(x) < 0.016)) continue;
       place(x, y, 0.0028 + R() * 0.0024, (R() - 0.5) * 0.5 + (x > 0 ? 0.3 : -0.3) * edge);
     }
-    for (let k = 0; k < 45; k++) { const sg = k % 2 ? 1 : -1, x = sg * (0.056 + R() * 0.012), y = -0.040 + R() * 0.030; place(x, y, 0.0035 + R() * 0.003, (R() - 0.5) * 0.4); }
+    for (let k = 0; k < 130; k++) { const x = -(0.056 + R() * 0.014), y = -0.050 + R() * 0.075; place(x, y, 0.0035 + R() * 0.003, (R() - 0.5) * 0.3); }
+    for (let k = 0; k < 30; k++) { const x = 0.060 + R() * 0.012, y = -0.050 + R() * 0.030; place(x, y, 0.0035 + R() * 0.003, (R() - 0.5) * 0.3); }
     const m = decal(mergeGeos(THREE, geos), ink(0x3b2a2c, 'eye', 1), 'stubble'); face.add(m);
   }
 
@@ -228,12 +239,12 @@ export function buildHead(THREE, style) {
   const gold = style.toon(0xe8c040, { role: 'gold', side: THREE.DoubleSide });
   const goldLight = style.toon(0xf6d460, { role: 'gold' });
   const goldDark = style.toon(0xa8741a, { role: 'gold' });
-  const C = [0.034, 0.006], RING = 0.0225, RY = 0.72;
+  const C = [0.044, 0.000], RING = 0.0225, RY = 0.72;
   {
-    const goldStrap = style.toon(0xf8e79a, { role: 'eye', side: THREE.DoubleSide });
+    const goldStrap = style.toon(0xf8e79a, { role: 'eye', side: THREE.DoubleSide, spec: 0, outline: false });
     const E = [C[0] - RING * 0.72, C[1] + RING * RY * 0.72];
     const ctrl = [];
-    const x0 = -0.058, ySl = -0.60;
+    const x0 = -0.058, ySl = -0.30;
     const sm = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
     for (let i = 0; i <= 8; i++) {
       const x = E[0] + (-0.072 - E[0]) * i / 8, y = E[1] + (x - E[0]) * ySl;
@@ -241,7 +252,7 @@ export function buildHead(THREE, style) {
     }
     const curveS = new THREE.CatmullRomCurve3(ctrl, false, 'catmullrom', 0.5);
     const pts = curveS.getPoints(60);
-    const cen = new V3(0, 0.05, -0.012), hw = 0.0125, th = 0.0016;
+    const cen = new V3(0, 0.05, -0.012), hw = 0.0095, th = 0.0016;
     const pos = [], idx = [], tt = new V3(), nn = new V3(), bb = new V3();
     for (let i = 0; i < pts.length; i++) {
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
@@ -261,11 +272,12 @@ export function buildHead(THREE, style) {
     const disc = new THREE.Group(); disc.name = 'monocle'; disc.position.copy(cp); disc.quaternion.copy(q);
     disc.rotateY(0.22); disc.rotateX(-0.08);
     const inner = new THREE.Group(); inner.scale.set(1, RY, 1); disc.add(inner);
-    const lensGold = style.toon(0xf7dc6c, { role: 'eye', side: THREE.DoubleSide, outline: false });
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(RING, 0.0016, 8, 48), gold); ring.name = 'monocleRing'; inner.add(ring);
+    const rimM = style.toon(0xe0b030, { role: 'eye', side: THREE.DoubleSide, outline: false });
+    const lensGold = style.toon(0xf9e47e, { role: 'eye', side: THREE.DoubleSide, outline: false });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(RING, 0.0016, 8, 48), rimM); ring.name = 'monocleRing'; inner.add(ring);
     const lens = new THREE.Mesh(new THREE.CircleGeometry(RING - 0.0006, 40), lensGold); lens.position.z = -0.0006; lens.name = 'monocleLens'; inner.add(lens);
-    const lensHi = new THREE.Mesh(new THREE.RingGeometry(RING * 0.55, RING * 0.66, 24, 1, 2.2, 1.4), style.toon(0xfffbd0, { role: 'gold', side: THREE.DoubleSide })); lensHi.position.z = 0.0003; inner.add(lensHi);
-    const back = new THREE.Mesh(new THREE.CircleGeometry(RING, 40), gold); back.position.z = -0.0030; back.name = 'monocleBack'; inner.add(back);
+    const lensHi = new THREE.Mesh(new THREE.RingGeometry(RING * 0.55, RING * 0.66, 24, 1, 2.2, 1.4), style.toon(0xfffbe0, { role: 'eye', side: THREE.DoubleSide, outline: false })); lensHi.position.z = 0.0003; inner.add(lensHi);
+    const back = new THREE.Mesh(new THREE.CircleGeometry(RING, 40), rimM); back.position.z = -0.0030; back.name = 'monocleBack'; inner.add(back);
     face.add(disc);
   }
 
@@ -274,7 +286,7 @@ export function buildHead(THREE, style) {
 
   // ======================= cheek contact point (group-local) =======================
   root.updateMatrixWorld(true);
-  const cheekFace = field.P(0.060, -0.030, 0.014);
+  const cheekFace = field.P(0.070, -0.034, 0.016);
   const cheekWorld = face.localToWorld(cheekFace.clone());
   root.userData.cheek = root.worldToLocal(cheekWorld);
   root.userData.faceOrigin = face.localToWorld(new V3());

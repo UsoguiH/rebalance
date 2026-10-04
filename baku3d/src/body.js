@@ -35,6 +35,7 @@ export function buildBody(THREE, style) {
   const suitVM = () => vmat(SUIT, 'suit');
   const trouserM = () => mat(0xf0eeea, 'suit', true);
   const trouserVM = () => vmat(0xf0eeea, 'suit');
+  const trouserVM2 = () => mat(0xf0eeea, 'suit');
   const trouserBM = () => vmat(0xdedde4, 'suit');
   const shirtM = () => mat(0x58101a, 'shirt', true);
   const shirtVM = () => vmat(0x6a1420, 'shirt');
@@ -51,9 +52,9 @@ export function buildBody(THREE, style) {
   g.add(buildThrone(THREE, style, U));
 
   // ================= TORSO (leaning toward viewer's left, right shoulder dropped) =================
-  const spine = [P(645, 875, -0.05), P(628, 775, -0.05), P(606, 655, -0.04), P(580, 540, -0.02), P(556, 435, -0.02), P(540, 365, -0.03)];
-  const tilt = (t) => -0.17 * sm(Math.min(1, Math.max(0, (t - 0.4) / 0.5)));
-  const jrx = prof([[0, 0.205], [0.2, 0.19], [0.5, 0.2], [0.78, 0.222], [0.9, 0.238], [0.96, 0.17], [1, 0.1]]);
+  const spine = [P(645, 875, -0.05), P(628, 775, -0.05), P(606, 655, -0.04), P(580, 540, -0.02), P(556, 440, -0.02), P(542, 388, -0.03)];
+  const tilt = (t) => -0.13 * sm(Math.min(1, Math.max(0, (t - 0.4) / 0.5)));
+  const jrx = prof([[0, 0.205], [0.2, 0.19], [0.5, 0.2], [0.72, 0.212], [0.85, 0.232], [0.95, 0.15], [1, 0.09]]);
   const jry = prof([[0, 0.15], [0.3, 0.135], [0.6, 0.14], [0.85, 0.115], [1, 0.08]]);
   const gap = prof([[0, 0.22], [0.45, 0.3], [0.72, 0.5], [0.9, 1.0], [1, 1.3]]);
   // crumpled cloth: fbm + ridged creases + diagonal drag folds
@@ -79,7 +80,7 @@ export function buildBody(THREE, style) {
   add(loft(chestSpec), skinM());
 
   // maroon shirt with deep V (reaches ~ y 550)
-  const shirtGap = prof([[0, 0], [0.66, 0], [0.72, 0.12], [1, 0.9]]);
+  const shirtGap = prof([[0, 0], [0.64, 0], [0.72, 0.07], [0.86, 0.2], [0.95, 0.28], [1, 0.5]]);
   const shirtSpec = {
     pts: spine, rings: 28, sides: 28, ref: V3(0, 0, 1), tilt,
     rx: (t) => jrx(t) * 0.9, ry: (t) => jry(t) * 0.92,
@@ -160,12 +161,12 @@ export function buildBody(THREE, style) {
   const FS = 1.5;
   const kn = cheek.clone().add(V3(0.02, 0.036, 0.03));
   const wristR = kn.clone().addScaledVector(fistDir, -0.1 * FS);
-  const shoulderR = P(785, 470, -0.06), elbowR = P(945, 612, 0.17);
+  const shoulderR = P(785, 470, -0.06), elbowR = P(985, 628, 0.17);
   {
     const up = {
-      pts: [shoulderR, P(868, 530, 0.04), elbowR], rings: 22, sides: 22, ref: V3(0, 0, 1),
+      pts: [shoulderR, P(885, 540, 0.05), elbowR], rings: 22, sides: 22, ref: V3(0, 0, 1),
       rx: prof([[0, 0.088], [0.5, 0.074], [1, 0.072]]), ry: prof([[0, 0.088], [0.5, 0.074], [1, 0.072]]),
-      capStart: 4, capEnd: 4, noise: sleeveNoise(0.085, 9, 1, [0.75]), shade: suitShade,
+      capStart: 4, capEnd: 4, noise: sleeveNoise(0.09, 9, 1, [0.6, 0.92]), shade: suitShade,
     };
     add(loft(up), suitVM());
     ell(0.078, elbowR, [1, 1, 1], suitM());
@@ -173,7 +174,7 @@ export function buildBody(THREE, style) {
     const fore = {
       pts: [elbowR, mid, wristR], rings: 26, sides: 22, ref: V3(0.3, 0, 1),
       rx: prof([[0, 0.074], [0.5, 0.066], [1, 0.054]]), ry: prof([[0, 0.074], [0.5, 0.066], [1, 0.054]]),
-      capStart: 2, noise: sleeveNoise(0.085, 11, 4, [0.15, 0.9]), shade: suitShade,
+      capStart: 2, noise: sleeveNoise(0.09, 11, 4, [0.1, 0.25, 0.9]), shade: suitShade,
     };
     add(loft(fore), suitVM());
     const cuffDir = wristR.clone().sub(mid).normalize();
@@ -184,7 +185,7 @@ export function buildBody(THREE, style) {
 
     // propping fist: four knuckle bumps on the cheek side, thumb tucked under
     const hand = buildHand(THREE, U, skinM(), nailM(), {
-      side: -1, scale: FS, knuckle: 1.45, fingerLen: 0.9,
+      side: -1, scale: FS, knuckle: 1.45, fingerLen: 0.9, gaps: true, lineMat: mat(0x8a5640, 'skin'),
       curl: [[1.5, 1.85, 1.0], [1.55, 1.9, 1.0], [1.55, 1.85, 0.95], [1.5, 1.75, 0.9]],
       spread: 0,
       thumb: { dir: V3(-0.6, 0.45, -0.7), bend: [0.5, 0.6], len: [0.034, 0.028, 0.024] },
@@ -196,9 +197,9 @@ export function buildBody(THREE, style) {
 
   // ================= LEFT ARM (viewer's left): straight down, back of hand to camera, fingers hang over the armrest =================
   {
-    const shoulderL = P(362, 392, -0.04), wristL = P(250, 782, 0.3);
+    const shoulderL = P(366, 410, -0.04), wristL = P(250, 782, 0.3);
     const spec = {
-      pts: [shoulderL, P(292, 520, 0.02), P(232, 648, 0.14), P(238, 728, 0.24), wristL],
+      pts: [shoulderL, P(296, 525, 0.02), P(232, 648, 0.14), P(238, 728, 0.24), wristL],
       rings: 34, sides: 22, ref: V3(0, 0, 1),
       rx: prof([[0, 0.088], [0.4, 0.074], [0.7, 0.07], [1, 0.056]]), ry: prof([[0, 0.088], [0.4, 0.076], [0.7, 0.072], [1, 0.056]]),
       capStart: 4, noise: sleeveNoise(0.085, 12, 7, [0.55, 0.92]), shade: suitShade,
@@ -213,9 +214,9 @@ export function buildBody(THREE, style) {
     // wrist bent down: hand slopes toward the camera, back of the hand faces camera/up, fingers curl over the rail
     const hand = buildHand(THREE, U, skinM(), nailM(), {
       side: -1, scale: 1.2, knuckle: 1.6, fingerLen: 0.72, tendons: true,
-      curl: [[1.0, 1.15, 0.75], [1.1, 1.2, 0.75], [1.15, 1.25, 0.8], [1.25, 1.25, 0.8]],
-      spread: 0.04,
-      thumb: { dir: V3(0.3, 0.25, -0.9), bend: [0.7, 0.8], len: [0.026, 0.02, 0.016] },
+      curl: [[1.0, 1.4, 1.0], [1.1, 1.45, 1.0], [1.15, 1.5, 1.0], [1.25, 1.5, 1.0]],
+      spread: 0.03, thumbR: 0.0085,
+      thumb: { dir: V3(0.1, 0.3, -1.0), bend: [0.9, 0.9], len: [0.022, 0.016, 0.012] },
     });
     hand.position.copy(wristL);
     orient(hand, V3(-0.22, -0.55, 0.8), V3(0.12, 0.8, 0.5));
@@ -223,25 +224,26 @@ export function buildBody(THREE, style) {
   }
 
   // ================= LEGS =================
-  const legNoise = (amp, seed, hem = false) => (t, phi, p) => {
+  const legNoise = (amp, seed, hem = false, knee = 0) => (t, phi, p) => {
     const n = (fbm(p.x * 8 + seed, p.y * 8, p.z * 8 + seed) - 0.5) + (fbm(p.x * 3.5 + seed, p.y * 3.5, p.z * 3.5) - 0.5) * 1.2;
     const rg = ridged(p.x * 7 + seed, p.y * 7, p.z * 7) - 0.45;
     const drag = Math.sin(phi * 2.5 - t * 16 + n * 4 + seed) * 0.6 + Math.sin(t * 36 + phi * 2 + seed) * 0.4;
+    const kneeF = knee ? Math.sin(phi * 6 + n * 4) * Math.exp(-(((t - (knee === 1 ? 0.04 : 0.96)) / 0.14) ** 2)) * 0.9 : 0;
     const pool = hem ? Math.sin(phi * 5 + n * 3) * sm(clamp01((t - 0.8) / 0.2)) * 0.9 : 0;
-    return 1 + amp * (n * 1.6 + rg * 2.0 + drag * 0.9 + pool);
+    return 1 + amp * (n * 1.6 + rg * 2.0 + drag * 0.9 + pool + kneeF);
   };
   // leg A: thigh runs up-right to the raised knee (~x1040), shin drops down-left to the hem over the boot
   const hipA = P(625, 845, -0.04), kneeA = P(950, 808, 0.26), hemA = P(430, 1022, 0.58);
   {
     const thigh = {
       pts: [hipA, P(790, 815, 0.12), kneeA], rings: 20, sides: 22, ref: V3(0, 1, 0),
-      rx: prof([[0, 0.115], [1, 0.088]]), ry: prof([[0, 0.11], [1, 0.088]]), capStart: 3, capEnd: 4, noise: legNoise(0.1, 2), shade: suitShade,
+      rx: prof([[0, 0.115], [1, 0.088]]), ry: prof([[0, 0.11], [1, 0.088]]), capStart: 3, capEnd: 4, noise: legNoise(0.1, 2, false, 2), shade: suitShade,
     };
     add(loft(thigh), trouserVM());
     const shin = {
       pts: [kneeA, P(850, 870, 0.34), P(670, 935, 0.46), P(540, 982, 0.53), hemA], rings: 36, sides: 24, ref: V3(0, 1, 0),
       rx: prof([[0, 0.086], [0.5, 0.074], [0.82, 0.088], [1, 0.12]]), ry: prof([[0, 0.086], [0.5, 0.07], [0.82, 0.084], [1, 0.112]]),
-      capStart: 3, noise: legNoise(0.12, 5, true), shade: suitShade,
+      capStart: 3, noise: legNoise(0.12, 5, true, 1), shade: suitShade,
     };
     add(loft(shin), trouserVM());
   }
@@ -261,44 +263,54 @@ export function buildBody(THREE, style) {
     ell(0.07, P(540, 1700, 0.62), [1, 0.6, 1.8], mat(0x1a1210, 'leather'));
   }
 
-  // ================= BOOT: slim angular dark-brown lace-up, toe down-left =================
+  // ================= BOOT: rounded dark-brown lace-up, toe down-left =================
   {
     const leather = mat(0x4a2410, 'leather');
-    const leatherD = mat(0x140a05, 'leather');
-    const heel = P(322, 1010, 0.5), mid = P(246, 1070, 0.55), ball = P(176, 1125, 0.58), toe = P(128, 1165, 0.6);
-    // taller shaft that rises into the trouser hem
+    const leatherD = mat(0x120804, 'leather');
+    const heel = P(322, 1008, 0.5), mid = P(246, 1068, 0.55), ball = P(176, 1122, 0.58), toe = P(140, 1175, 0.6);
+    // shaft rising into the trouser hem
     add(loft({
-      pts: [P(480, 1000, 0.5), P(400, 1000, 0.52), P(335, 1020, 0.52)], rings: 8, sides: 10, ref: V3(0, 1, 0),
-      rx: prof([[0, 0.05], [1, 0.044]]), ry: prof([[0, 0.05], [1, 0.044]]), capEnd: 2, flat: true,
+      pts: [P(485, 995, 0.5), P(405, 998, 0.52), P(335, 1018, 0.52)], rings: 10, sides: 18, ref: V3(0, 1, 0),
+      rx: prof([[0, 0.05], [1, 0.045]]), ry: prof([[0, 0.05], [1, 0.045]]), capEnd: 4,
     }), leather);
     const footSpec = {
-      pts: [heel, mid, ball, toe], rings: 16, sides: 8, ref: V3(0.2, 0.2, 1),
-      rx: prof([[0, 0.04], [0.4, 0.043], [0.75, 0.044], [1, 0.026]]), ry: prof([[0, 0.046], [0.4, 0.046], [0.75, 0.04], [1, 0.028]]),
-      capStart: 3, capEnd: 4, flat: true,
+      pts: [heel, mid, ball, toe], rings: 24, sides: 20, ref: V3(0.2, 0.2, 1),
+      rx: prof([[0, 0.04], [0.4, 0.044], [0.72, 0.046], [0.93, 0.04], [1, 0.03]]),
+      ry: prof([[0, 0.047], [0.4, 0.047], [0.72, 0.042], [0.93, 0.036], [1, 0.03]]),
+      capStart: 5, capEnd: 6, noise: legNoise(0.03, 8),
     };
     const footGeo = loft(footSpec);
     add(footGeo, leather);
+    // rounded toe cap
+    ell(0.04, toe.clone().lerp(ball, 0.18), [1.05, 0.95, 1.15], mat(0x3e1d0c, 'leather'));
+    // chunky sole along the underside
     const soleSpec = {
-      pts: footSpec.pts.map((p) => p.clone().add(V3(0.01, -0.034, -0.01))), rings: 12, sides: 8, ref: V3(0.2, 0.2, 1),
-      rx: prof([[0, 0.044], [0.75, 0.048], [1, 0.03]]), ry: () => 0.016, capStart: 2, capEnd: 3, flat: true,
+      pts: footSpec.pts.map((p) => p.clone().add(V3(0.008, -0.035, -0.01))), rings: 16, sides: 14, ref: V3(0.2, 0.2, 1),
+      rx: prof([[0, 0.044], [0.72, 0.049], [1, 0.032]]), ry: () => 0.014, capStart: 3, capEnd: 4,
     };
     add(loft(soleSpec), leatherD);
-    // thin laces with dark eyelets
+    // thin crossed laces over the instep
     const gc = footGeo._curve;
-    for (let i = 0; i < 6; i++) {
-      const t = 0.06 + i * 0.065;
+    for (let i = 0; i < 5; i++) {
+      const t = 0.08 + i * 0.07;
       const f = U.frameAt(footSpec, gc, t);
-      const top = U.ringPoint(footSpec, gc, t, Math.PI / 2, 1.0, 0.002);
-      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, 0.05, 5), mat(0x2a190c, 'leather'));
-      bar.position.copy(top);
-      orient(bar, f.B, f.N);
-      bar.rotateY(0.45);
-      g.add(bar);
-      const bar2 = bar.clone();
-      bar2.rotateY(-0.9);
-      g.add(bar2);
+      for (const sgn of [-1, 1]) {
+        const top = U.ringPoint(footSpec, gc, t, Math.PI / 2, 1.0, 0.002);
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.0017, 0.0017, 0.052, 5), leatherD);
+        bar.position.copy(top);
+        orient(bar, f.B, f.N);
+        bar.rotateZ(sgn * 0.5);
+        g.add(bar);
+      }
     }
-    ell(0.018, U.ringPoint(footSpec, gc, 0.03, Math.PI / 2, 1.0, 0.01), [1.2, 0.5, 1.7], mat(0x5a2e14, 'leather'));
+    ell(0.016, U.ringPoint(footSpec, gc, 0.03, Math.PI / 2, 1.0, 0.01), [1.2, 0.5, 1.7], mat(0x5a2e14, 'leather'));
+    // trouser cuff: ring at the hem so the opening reads, with a dark interior
+    const tan = hemA.clone().sub(P(540, 982, 0.53)).normalize();
+    const cuffRing = new THREE.Mesh(new THREE.TorusGeometry(0.108, 0.013, 8, 28), trouserVM2());
+    cuffRing.position.copy(hemA);
+    cuffRing.quaternion.setFromUnitVectors(V3(0, 0, 1), tan);
+    cuffRing.scale.set(1, 0.92, 1);
+    g.add(cuffRing);
   }
 
   g.userData.neck = neck.clone();
