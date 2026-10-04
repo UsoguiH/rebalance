@@ -88,7 +88,7 @@ export function buildHair(THREE, style, field, skullGeo) {
     geo.setAttribute('position', new THREE.BufferAttribute(off, 3));
     geo.setIndex(I);
     geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, style.toon(0xece8dc, { role: 'hair', side: THREE.DoubleSide, hatch: 0.2, outline: 0 }));
+    const m = new THREE.Mesh(geo, style.toon(0xc9c3b2, { role: 'hair', side: THREE.DoubleSide, hatch: 0.2, outline: 0 }));
     m.name = 'scalp'; group.add(m);
   }
 
@@ -129,12 +129,12 @@ export function buildHair(THREE, style, field, skullGeo) {
         const a = (1 - t) * (1 - t), b = 2 * t * (1 - t) * kk, c = t * t;
         const dd = V(d0.x * a + via.x * b + d1.x * c, d0.y * a + via.y * b + d1.y * c, d0.z * a + via.z * b + d1.z * c).normalize();
         const q = surf(dd.x, dd.y, dd.z);
-        const bump = (0.016 + 0.018 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
+        const bump = (0.022 + 0.020 * (1 - 0.3 * side)) * Math.max(0, Math.sin(Math.PI * Math.min(1, t * 1.15))) ** 0.7 * sm(0.0, 0.5, t);
         const e = eps + bump + lift * Math.max(0, Math.sin(Math.PI * t / tEnd)) ** 1.5;
         const wob = Math.sin(t * fr * 3 + ph1) * amp;
         pts.push(V(q[0] + dd.x * e + wob, q[1] + dd.y * e, q[2] + dd.z * e));
       }
-      const w0 = (0.0085 + 0.0030 * ((az * 3 + l) % 3) / 2) * (1 - 0.2 * side);
+      const w0 = (0.0058 + 0.0028 * ((az * 3 + l) % 3) / 2) * (1 - 0.2 * side);
       const b = (rnd() < 0.015) ? ink : pick();
       strand(b, pts, taper(w0, 0.05, 0.30, 0.0), 0.0015);
       if (false) {

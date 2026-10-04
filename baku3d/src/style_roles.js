@@ -20,7 +20,7 @@ export const ROLES = {
           outline: 0.7, ink: [0.20, 0.10, 0.08], litT: 0.10, midT: -0.12, hatchT: 0.06, faceShade: 0.3, solid: 0.15 },
   // white/silver hair with ink strands
   hair: { ...D, lit: [1.15, 1.11, 1.02], mid: [1.08, 1.03, 0.94], shade: [0.95, 0.90, 0.83], deep: [0.78, 0.73, 0.66],
-          strand: 0.22, straight: true, hatch: 0.35, pitch: 3.6, angle: -0.3, rim: 0.5, outline: 0.7, ink: [0.20, 0.17, 0.15],
+          strand: 0.18, straight: true, hatch: 0.3, pitch: 4.0, angle: -0.45, rim: 0.5, outline: 0.7, ink: [0.30, 0.26, 0.22],
           spec: 0.2, shin: 70, midT: -0.1, rimCol: [1.0, 0.85, 0.55] },
   // gold: yellow -> brown gradient ramp, glossy white-yellow highlights
   gold: { ...D, metal: true, lit: [1, 1, 1], mid: [1, 1, 1], shade: [0.7, 0.45, 0.3], deep: [0.4, 0.2, 0.1],

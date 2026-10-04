@@ -191,7 +191,7 @@ void main(){
   if (uBump > 0.4 && uSolid > 0.0) {
     float fr = foldN(vPw * 4.2);
     float fw = fwidth(fr) * 1.5 + 0.006;
-    float crease = smoothstep(0.83 - fw, 0.83 + fw, fr) * smoothstep(0.34, 0.05, s);
+    float crease = smoothstep(0.80 - fw, 0.80 + fw, fr) * smoothstep(0.38, 0.08, s);
     ink = max(ink, crease * 0.95);
   }
   col = mix(col, uInk, ink);
