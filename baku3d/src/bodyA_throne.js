@@ -81,7 +81,7 @@ export function buildThrone(THREE, style, util) {
     // top rail (flattened capsule along z)
     const rail = M(new THREE.CapsuleGeometry(0.036, 0.62, 8, 16), gold(), x, 0.615, 0.0);
     rail.rotation.x = Math.PI / 2;
-    rail.scale.set(1.15, 1, 0.8);
+    rail.scale.set(1.5, 1, 1.0);
     // front scroll: big round pommel + ring
     M(new THREE.SphereGeometry(0.048, 20, 14), gold(), x, 0.6, 0.345).scale.set(1.15, 0.9, 1);
     

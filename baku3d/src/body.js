@@ -39,7 +39,7 @@ export function buildBody(THREE, style) {
   const tilt = (t) => -0.12 * sm(Math.min(1, Math.max(0, (t - 0.45) / 0.5)));
   const jrx = prof([[0, 0.205], [0.2, 0.19], [0.5, 0.2], [0.78, 0.222], [0.9, 0.238], [0.96, 0.17], [1, 0.1]]);
   const jry = prof([[0, 0.15], [0.3, 0.135], [0.6, 0.14], [0.85, 0.115], [1, 0.08]]);
-  const gap = prof([[0, 0.3], [0.45, 0.4], [0.72, 0.58], [0.9, 1.05], [1, 1.3]]);
+  const gap = prof([[0, 0.22], [0.45, 0.3], [0.72, 0.5], [0.9, 1.0], [1, 1.3]]);
   const cloth = (amp, sx, sy, sz, seed = 0) => (t, phi, p) => {
     const n = fbm(p.x * sx + seed, p.y * sy, p.z * sz + seed * 0.7) - 0.5;
     const crease = Math.sin(p.y * 38 + p.x * 17 + seed) * 0.35 + Math.sin(p.y * 21 - p.x * 25 + seed * 2) * 0.3;
@@ -68,7 +68,7 @@ export function buildBody(THREE, style) {
     pts: spine, rings: 40, sides: 40, ref: V3(0, 0, 1), tilt,
     rx: jrx, ry: jry,
     phi0: (t) => Math.PI / 2 + gap(t), phi1: (t) => Math.PI * 2.5 - gap(t),
-    noise: cloth(0.05, 7, 5, 7, 0),
+    noise: cloth(0.07, 7, 5, 7, 0),
   };
   const jacketGeo = loft(jacketSpec);
   add(jacketGeo, suitM());
@@ -81,7 +81,7 @@ export function buildBody(THREE, style) {
     const A = [], B = [];
     const n = 22;
     for (let i = 0; i <= n; i++) {
-      const t = 0.28 + (0.995 - 0.28) * (i / n);
+      const t = 0.28 + (0.965 - 0.28) * (i / n);
       const edge = s < 0 ? Math.PI / 2 + gap(t) : Math.PI / 2 - gap(t);
       const dphi = lapelW(t) * (s < 0 ? 1 : -1);
       // pointed notch: cut the lapel in near the top
@@ -114,14 +114,7 @@ export function buildBody(THREE, style) {
       add(geoF, redM);
     };
     flap(-1, [438, 398], [556, 308], [520, 408]);
-    flap(1, [700, 478], [598, 330], [655, 440]);
-    // standing back/side collar band of the jacket
-    const bandSpec = {
-      pts: [P(576, 368, -0.03), P(576, 352, -0.05), P(576, 340, -0.06)], rings: 4, sides: 28, ref: V3(0, 0, 1),
-      rx: (t) => 0.095 + 0.015 * t, ry: (t) => 0.085 + 0.012 * t,
-      phi0: () => Math.PI / 2 + 0.95, phi1: () => Math.PI * 2.5 - 0.95,
-    };
-    add(loft(bandSpec), suitM());
+    flap(1, [676, 446], [600, 332], [646, 420]);
   }
 
   // pelvis / lap filler under the jacket hem
@@ -141,14 +134,14 @@ export function buildBody(THREE, style) {
     const up = {
       pts: [shoulderR, P(865, 505, 0.03), elbowR], rings: 18, sides: 20, ref: V3(0, 0, 1),
       rx: prof([[0, 0.085], [0.5, 0.072], [1, 0.07]]), ry: prof([[0, 0.085], [0.5, 0.072], [1, 0.07]]),
-      capStart: 4, capEnd: 4, noise: sleeveNoise(0.05, 9, 1),
+      capStart: 4, capEnd: 4, noise: sleeveNoise(0.075, 9, 1),
     };
     add(loft(up), suitM());
     ell(0.074, elbowR, [1, 1, 1], suitM());
     const fore = {
       pts: [elbowR, P(880, 500, 0.23), wristR], rings: 20, sides: 20, ref: V3(0.3, 0, 1),
       rx: prof([[0, 0.07], [0.5, 0.064], [1, 0.054]]), ry: prof([[0, 0.07], [0.5, 0.064], [1, 0.054]]),
-      capStart: 2, noise: sleeveNoise(0.05, 11, 4),
+      capStart: 2, noise: sleeveNoise(0.07, 11, 4),
     };
     add(loft(fore), suitM());
     // cuff
@@ -164,7 +157,8 @@ export function buildBody(THREE, style) {
       side: -1, // thumb on viewer's-left side of the hand (toward the face)
       curl: [[1.4, 1.75, 1.05], [1.5, 1.8, 1.05], [1.5, 1.8, 1.0], [1.45, 1.7, 0.95]],
       spread: 0,
-      thumb: { dir: V3(0.5, 0.75, -0.55), bend: [0.5, 0.5], len: [0.034, 0.028, 0.024] },
+      thumb: { dir: V3(-0.6, 0.45, -0.7), bend: [0.5, 0.6], len: [0.034, 0.028, 0.024] },
+      scale: 1.15,
     });
     hand.position.copy(wristR);
     const kn = P(745, 338, 0.2);
@@ -180,7 +174,7 @@ export function buildBody(THREE, style) {
       pts: [shoulderL, P(300, 520, 0.02), P(240, 650, 0.14), P(243, 735, 0.25), wristL],
       rings: 28, sides: 22, ref: V3(0, 0, 1),
       rx: prof([[0, 0.088], [0.4, 0.074], [0.7, 0.07], [1, 0.056]]), ry: prof([[0, 0.088], [0.4, 0.076], [0.7, 0.072], [1, 0.056]]),
-      capStart: 4, noise: sleeveNoise(0.055, 12, 7),
+      capStart: 4, noise: sleeveNoise(0.07, 12, 7),
     };
     add(loft(spec), suitM());
     const dir = wristL.clone().sub(P(243, 735, 0.25)).normalize();
@@ -202,36 +196,36 @@ export function buildBody(THREE, style) {
 
   // ================= LEGS =================
   const legNoise = (amp, seed) => (t, phi, p) => {
-    const n = fbm(p.x * 9 + seed, p.y * 9, p.z * 9 + seed) - 0.5;
-    const crease = Math.sin(t * 38 + phi * 3 + seed) * 0.5;
-    return 1 + amp * (n * 2 + crease * 0.5);
+    const n = (fbm(p.x * 9 + seed, p.y * 9, p.z * 9 + seed) - 0.5) + (fbm(p.x * 4 + seed, p.y * 4, p.z * 4) - 0.5) * 1.2;
+    const crease = Math.sin(t * 34 + phi * 2 + seed) * 0.5 + Math.sin(phi * 3 - t * 9 + seed) * 0.5;
+    return 1 + amp * (n * 2 + crease * 0.9);
   };
   // leg A: thigh out to viewer's right (knee up on the armrest), shin back across the lap, boot at left
-  const hipA = P(640, 835, -0.04), kneeA = P(1020, 778, 0.24), ankleA = P(385, 1035, 0.45);
+  const hipA = P(640, 835, -0.04), kneeA = P(1020, 778, 0.24), ankleA = P(385, 1040, 0.55);
   {
     const thigh = {
       pts: [hipA, P(830, 805, 0.1), kneeA], rings: 18, sides: 22, ref: V3(0, 1, 0),
-      rx: prof([[0, 0.115], [1, 0.088]]), ry: prof([[0, 0.11], [1, 0.088]]), capStart: 3, capEnd: 4, noise: legNoise(0.06, 2),
+      rx: prof([[0, 0.115], [1, 0.088]]), ry: prof([[0, 0.11], [1, 0.088]]), capStart: 3, capEnd: 4, noise: legNoise(0.1, 2),
     };
     add(loft(thigh), trouserM());
     const shin = {
       pts: [kneeA, P(900, 880, 0.3), P(700, 955, 0.38), P(520, 1020, 0.43), ankleA], rings: 34, sides: 24, ref: V3(0, 1, 0),
       rx: prof([[0, 0.088], [0.5, 0.082], [1, 0.1]]), ry: prof([[0, 0.088], [0.5, 0.078], [1, 0.095]]),
-      capStart: 3, noise: legNoise(0.07, 5),
+      capStart: 3, noise: legNoise(0.11, 5),
     };
     add(loft(shin), trouserM());
   }
   // leg B: thigh toward camera, shin straight down to the floor
   {
-    const hipB = P(540, 850, -0.04), kneeB = P(485, 1090, 0.3), ankleB = P(520, 1700, 0.5);
+    const hipB = P(540, 850, -0.04), kneeB = P(520, 1070, 0.33), ankleB = P(545, 1700, 0.5);
     const thigh = {
       pts: [hipB, P(510, 960, 0.12), kneeB], rings: 14, sides: 22, ref: V3(1, 0, 0),
-      rx: prof([[0, 0.11], [1, 0.088]]), ry: prof([[0, 0.11], [1, 0.088]]), capStart: 3, capEnd: 4, noise: legNoise(0.06, 9),
+      rx: prof([[0, 0.11], [1, 0.088]]), ry: prof([[0, 0.11], [1, 0.088]]), capStart: 3, capEnd: 4, noise: legNoise(0.09, 9),
     };
     add(loft(thigh), trouserM());
     const shin = {
-      pts: [kneeB, P(500, 1260, 0.4), ankleB], rings: 22, sides: 22, ref: V3(1, 0, 0),
-      rx: prof([[0, 0.085], [1, 0.095]]), ry: prof([[0, 0.085], [1, 0.095]]), capStart: 3, noise: legNoise(0.06, 11),
+      pts: [kneeB, P(535, 1260, 0.42), ankleB], rings: 22, sides: 22, ref: V3(1, 0, 0),
+      rx: prof([[0, 0.085], [1, 0.095]]), ry: prof([[0, 0.085], [1, 0.095]]), capStart: 3, noise: legNoise(0.09, 11),
     };
     add(loft(shin), trouserM());
     ell(0.07, P(500, 1650, 0.7), [1, 0.6, 1.8], mat(0x1a1210, 'leather'));
@@ -241,8 +235,8 @@ export function buildBody(THREE, style) {
   {
     const leather = mat(0x7d4220, 'leather');
     const leatherD = mat(0x3c1c0c, 'leather');
-    const toe = P(105, 1150, 0.64);
-    const heel = ankleA.clone().add(V3(0.07, -0.085, -0.06));
+    const toe = P(128, 1135, 0.6);
+    const heel = ankleA.clone().add(V3(0.04, -0.075, -0.05));
     const shaftTop = ankleA.clone().add(V3(0.17, 0.06, -0.07));
     add(loft({
       pts: [ankleA.clone().add(V3(-0.01, -0.04, 0.01)), shaftTop], rings: 8, sides: 18, ref: V3(0, 1, 0),

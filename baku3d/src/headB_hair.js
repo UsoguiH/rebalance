@@ -23,7 +23,7 @@ function outline(x0, phi) {
 
 export const hairline = (x, z) => {
   const ax = Math.abs(x);
-  const front = 0.076 - 0.058 * sm(0.025, 0.076, ax) + 0.006 * (1 - Math.min(1, ax / 0.022));
+  const front = 0.088 - 0.058 * sm(0.025, 0.076, ax) + 0.006 * (1 - Math.min(1, ax / 0.022));
   const t = sm(0.015, -0.040, z);
   return front * (1 - t) + (-0.038) * t;
 };
@@ -109,14 +109,14 @@ export function buildHair(THREE, style, field, skullGeo) {
       let el = -50 * d2r, root = null;
       for (; el < 80 * d2r; el += 2 * d2r) {
         const q = surf(sn * Math.cos(el), Math.sin(el), cs * Math.cos(el));
-        if (q[1] >= hairline(q[0], q[2]) - R(0, 0.003)) { root = q; break; }
+        if (q[1] >= hairline(q[0], q[2]) - R(-0.002, 0.007) * (l === 0 ? 0.3 : 1)) { root = q; break; }
       }
       if (!root) continue;
       const d0 = V(root[3], root[4], root[5]);
       const xn = sn;
-      const viaTop = V(0.30 * xn + 0.18, 1.0, -0.10), viaSide = V(sgn * 0.85, 0.55, -0.55);
+      const viaTop = V(0.30 * xn + 0.50, 1.0, -0.05), viaSide = V(sgn * 0.85, 0.55, -0.55);
       const via = viaTop.clone().multiplyScalar(1 - side).add(viaSide.clone().multiplyScalar(side)).normalize();
-      const d1 = V(xn * 0.35 + 0.10 + R(-0.04, 0.04), R(-0.30, -0.12) + 0.2 * side, -0.95).normalize();
+      const d1 = V(xn * 0.35 + 0.30 + R(-0.05, 0.05), R(-0.30, -0.12) + 0.2 * side, -0.95).normalize();
       const kk = 1.55 + R(-0.15, 0.15);
       const K = 32, pts = [];
       const eps = 0.0018 + l * 0.0024 + R(0, 0.0014);
@@ -150,11 +150,11 @@ export function buildHair(THREE, style, field, skullGeo) {
   }
   // right (viewer's) long bangs: a thick wavy sweep falling from the parting over the temple, hanging beside the cheek
   const lockCen = V(0, 0.04, -0.01);
-  for (let i = 0; i < 22; i++) {
-    const u = i / 21, jit = () => R(-0.0025, 0.0025);
+  for (let i = 0; i < 30; i++) {
+    const u = i / 29, jit = () => R(-0.0065, 0.0065);
     const x0 = 0.000 + 0.05 * u;
-    const wave = R(0.003, 0.006), sgn = rnd() < 0.5 ? 1 : -1;
-    const len = 0.75 + 0.35 * R(0, 1);
+    const wave = R(0.002, 0.008), sgn = rnd() < 0.5 ? 1 : -1;
+    const len = 0.55 + 0.6 * R(0, 1);
     const ctrl = [
       [x0 - 0.02, 0.118 - 0.01 * u, 0.050],
       [x0 + 0.004 + jit(), 0.112 - 0.01 * u, 0.074 + jit()],
@@ -164,7 +164,7 @@ export function buildHair(THREE, style, field, skullGeo) {
       [0.088 + 0.006 * u + wave * sgn, -0.006 - 0.040 * len, 0.058 - 0.012 * u],
       [0.084 + 0.012 * u - wave * sgn * 0.5 + 0.008 * u, -0.030 - 0.045 * len, 0.045 - 0.018 * u],
     ];
-    lock(pick(), ctrl, R(0.0080, 0.0135), 0.0020, 30, lockCen);
+    lock(rnd() < 0.18 ? buckets[2] : pick(), ctrl, R(0.0050, 0.0105), 0.0020, 30, lockCen);
   }
   // left (viewer's) temple tufts: swept back & flicking outward in ragged points at ear level
   for (let i = 0; i < 18; i++) {
@@ -178,6 +178,18 @@ export function buildHair(THREE, style, field, skullGeo) {
       [-0.118 - 0.046 * u + jit(), -0.006 - 0.032 * u * R(0.5, 1.3), 0.0 - 0.016 * u],
     ];
     lock(pick(), ctrl, R(0.0050, 0.0095), 0.0017, 24, lockCen);
+  }
+  // ragged short tufts bulging out on the viewer's left temple / ear
+  for (let i = 0; i < 20; i++) {
+    const u = i / 19, jit = () => R(-0.004, 0.004), L = R(0.7, 1.3);
+    const y0 = 0.075 - 0.075 * u;
+    const ctrl = [
+      [-0.058 - 0.010 * u, y0 + 0.01, 0.040],
+      [-0.078 - 0.012 * u + jit(), y0 - 0.004, 0.030],
+      [-0.094 - 0.016 * u * L + jit(), y0 - 0.014 - 0.008 * L, 0.018],
+      [-0.108 - 0.026 * u * L + jit(), y0 - 0.030 * L - 0.01, 0.008 - 0.006 * u],
+    ];
+    lock(pick(), ctrl, R(0.0055, 0.0105), 0.0018, 16, lockCen);
   }
   // sideburn flicks above both ears
   for (const sg of [-1, 1]) for (let i = 0; i < 8; i++) {
@@ -208,7 +220,7 @@ export function buildHair(THREE, style, field, skullGeo) {
     geo.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
     geo.setIndex(b.idx);
     geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, style.toon(b.hex, { role: 'hair', side: THREE.DoubleSide, hatch: 0.25, outline: 0.45 }));
+    const m = new THREE.Mesh(geo, style.toon(b.hex, { role: 'hair', side: THREE.DoubleSide, hatch: 0.0, outline: 0.35 }));
     m.name = name; group.add(m);
   };
   buckets.forEach((b, i) => mk(b, 'hair' + i)); mk(ink, 'hairInk'); mk(inkDeep, 'hairInkDeep');
