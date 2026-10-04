@@ -96,14 +96,20 @@ export function buildHead(THREE, style) {
   // ======================= HEAD (tilt group) =======================
   const tilt = new THREE.Group(); tilt.name = 'headTilt';
   tilt.position.set(0, PIVOT_Y * HS, 0); tilt.scale.setScalar(HS);
-  tilt.rotation.order = 'YXZ';
-  tilt.rotation.set(0.34, -0.30, -0.46);
-  tilt.position.x += 0.075; tilt.position.y -= 0.030;
+  tilt.rotation.order = 'ZXY';
+  tilt.rotation.set(0.28, -0.25, -0.50);
+  tilt.position.x += 0.040; tilt.position.y -= 0.020;
   root.add(tilt);
   const face = new THREE.Group(); face.name = 'face';
   face.position.set(0, FACE_Y - PIVOT_Y, 0.004);
   tilt.add(face);
 
+  { // aim the neck at the underside of the chin
+    root.updateMatrixWorld(true);
+    const p = face.localToWorld(new V3(0, -0.078, -0.012));
+    neckGroup.rotation.z = -Math.atan2(p.x, p.y);
+    neckGroup.scale.set(HS, Math.max(HS, Math.hypot(p.x, p.y) / 0.140), HS);
+  }
   const skullGeo = field.skullGeometry();
   const skull = new THREE.Mesh(skullGeo, skinMat); skull.name = 'skull'; face.add(skull);
 
@@ -255,7 +261,7 @@ export function buildHead(THREE, style) {
     const disc = new THREE.Group(); disc.name = 'monocle'; disc.position.copy(cp); disc.quaternion.copy(q);
     disc.rotateY(0.22); disc.rotateX(-0.08);
     const inner = new THREE.Group(); inner.scale.set(1, RY, 1); disc.add(inner);
-    const lensGold = style.toon(0xf3d460, { role: 'gold' });
+    const lensGold = style.toon(0xf3d460, { role: 'gold', side: THREE.DoubleSide });
     const ring = new THREE.Mesh(new THREE.TorusGeometry(RING, 0.0016, 8, 48), gold); ring.name = 'monocleRing'; inner.add(ring);
     const lens = new THREE.Mesh(new THREE.CircleGeometry(RING - 0.0006, 40), lensGold); lens.position.z = -0.0006; lens.name = 'monocleLens'; inner.add(lens);
     const lensHi = new THREE.Mesh(new THREE.RingGeometry(RING * 0.55, RING * 0.66, 24, 1, 2.2, 1.4), style.toon(0xfffbd0, { role: 'gold', side: THREE.DoubleSide })); lensHi.position.z = 0.0003; inner.add(lensHi);

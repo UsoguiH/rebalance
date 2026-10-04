@@ -139,8 +139,7 @@ export function buildBody(THREE, style) {
       const base = P(topPx[0] + s * 26, topPx[1] + 36, 0.1);
       add(ribbon([top, base, tip], [top.clone().add(V3(0, 0.02, 0.01)), inner, tip.clone().add(V3(0, 0.015, 0.012))], axisPt), redM);
     };
-    flap(-1, [436, 396], [506, 338], [488, 412]);
-    flap(1, [676, 462], [650, 432], [662, 450]);
+    flap(-1, [430, 394], [512, 322], [496, 414]);
   }
 
   // pelvis / lap filler under the jacket hem
@@ -191,7 +190,7 @@ export function buildBody(THREE, style) {
       thumb: { dir: V3(-0.6, 0.45, -0.7), bend: [0.5, 0.6], len: [0.034, 0.028, 0.024] },
     });
     hand.position.copy(wristR);
-    orient(hand, fistDir, V3(0.35, 0.1, -0.9));
+    orient(hand, fistDir, V3(0.75, -0.1, -0.35));
     g.add(hand);
   }
 
