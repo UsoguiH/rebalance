@@ -1,10 +1,11 @@
 import { $, $$, ar, api, initCommon, myOrders, snackbar } from './m3.js';
 import { blurIn } from './motion.js';
+import { icon } from './shared/icons.js';
 
 initCommon();
 const list = $('#list');
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const STAR = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.8-4.4 4.3 1 6.1L12 17l-5.4 2.8 1-6.1-4.4-4.3 6.1-.8z"/></svg>';
+const STAR = icon('star', { size: 20 });
 
 function card(o) {
   const paid = o.status === 'paid';

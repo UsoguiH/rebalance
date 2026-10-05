@@ -299,3 +299,13 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Material Symbols ---------- */
+.ms { display: block; flex: none; }
+[dir=rtl] .flip-rtl { transform: scaleX(-1); }
+.ni { position: relative; display: grid; }
+.ni > .ms { grid-area: 1 / 1; transition: opacity .18s, transform var(--dur-bouncy) var(--spring-bouncy); }
+.ni-f { opacity: 0; transform: scale(.6); }
+.nav-item[aria-current="page"] .ni-f { opacity: 1; transform: none; }
+.nav-item[aria-current="page"] .ni-o { opacity: 0; transform: scale(1.2); }
+.chip .ms { width: 20px; height: 20px; }

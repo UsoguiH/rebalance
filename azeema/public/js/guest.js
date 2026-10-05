@@ -41,19 +41,19 @@ async function toggleMap() {
     pill.hidden = true; card.hidden = false;
     const cr = card.getBoundingClientRect();
     const inset = `inset(${pr.top - cr.top}px ${cr.right - pr.right}px ${cr.bottom - pr.bottom}px ${pr.left - cr.left}px round 28px)`;
-    if (!card.querySelector('iframe')) {
-      const f = document.createElement('iframe');
-      f.title = 'الخريطة'; f.loading = 'lazy'; f.referrerPolicy = 'no-referrer-when-downgrade'; f.allowFullscreen = true;
-      f.onload = () => { f.classList.add('loaded'); card.classList.add('ready'); };
-      card.prepend(f);
-      setTimeout(() => (f.src = card.dataset.embed), 150);
-    }
     await Promise.all([
       spring(slot, [{ height: sr0.height + 'px' }, { height: cr.height + 'px' }], 'snappy').finished,
       spring(card, [{ clipPath: inset }, { clipPath: 'inset(0 0 0 0 round 32px)' }], 'snappy').finished,
       spring($('#map-close'), [{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'none' }], 'bouncy', { delay: 0.15 }).finished,
     ]);
     slot.getAnimations().forEach((a) => a.cancel());
+    if (!card.querySelector('iframe')) { // created after the morph so it never competes with the animation
+      const f = document.createElement('iframe');
+      f.title = 'الخريطة'; f.loading = 'lazy'; f.referrerPolicy = 'no-referrer-when-downgrade'; f.allowFullscreen = true;
+      f.onload = () => { f.classList.add('loaded'); card.classList.add('ready'); };
+      card.prepend(f);
+      f.src = card.dataset.embed;
+    }
     mapOpen = true;
   } else {
     const cr = card.getBoundingClientRect();

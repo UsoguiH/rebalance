@@ -30,13 +30,18 @@ const filter = () => {
 q.addEventListener('input', filter);
 filter();
 
+// warm the image cache as soon as a finger lands on a tile
+document.addEventListener('pointerdown', (e) => { const t = e.target.closest('.g-tile'); if (t) new Image().src = `/img/designs/${t.dataset.theme}.jpg`; });
+
 // Design details → bottom sheet
 const sheet = $('#design-sheet');
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
   const t = e.target.closest('.g-tile');
   if (!t) return;
   const k = t.dataset.theme;
-  $('.ds-img', sheet).src = `/img/designs/${k}.jpg`;
+  const im = $('.ds-img', sheet);
+  im.src = `/img/designs/${k}.jpg`;
+  await Promise.race([im.decode().catch(() => {}), new Promise((r) => setTimeout(r, 120))]); // decode off the animation
   $('.ds-name', sheet).textContent = T[k].name;
   $('.ds-desc', sheet).textContent = T[k].desc;
   $('.ds-use', sheet).href = `/create?template=${k}&occasion=${occ}`;

@@ -292,3 +292,20 @@
   --pad-top: 5%; --pad-bottom: 6%;
   background: #FAF9F7;
 }
+
+/* ================= performance: live pages =================
+   Infinite animations inside the SVG force the whole filtered drawing (watercolor, paper grain)
+   to re-rasterize every frame. They stay in the rendered video; on live pages the art is still. */
+.m-page .twinkle, .m-page .halo, .m-page .lantern, .m-page .blob, .m-page .sway, .m-page .sunset,
+.m-page .sadu-t, .m-page .sadu-b, .m-page .rawshan, .m-page .lattice, .m-page .dune, .m-page .palms,
+.m-page .bloom-in, .m-page .leaf, .m-page .flower, .m-page .mono { animation: none !important; }
+.m-page .draw { stroke-dashoffset: 0; animation: none !important; }
+.m-page .a { animation-name: riseLite; }
+.m-page .a-name { animation-name: nameLite; }
+@keyframes riseLite { from { opacity: 0; transform: translateY(2.2cqw); } to { opacity: 1; transform: none; } }
+@keyframes nameLite { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
+.p-particles i { will-change: transform, opacity; }
+.p-bg, .p-frame { contain: strict; }
+/* Artwork on its own compositor layer: text edits/animations never repaint the filtered SVG beneath */
+.m-page .p-bg, .m-page .p-frame, .m-static .p-bg, .m-static .p-frame { will-change: transform; }
+.poster { contain: layout paint style; }

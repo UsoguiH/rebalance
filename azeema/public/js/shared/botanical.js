@@ -35,6 +35,8 @@ export function stretchName(name, n = 3) {
   return ch.join('');
 }
 
+const F = (x) => Math.round(x * 10) / 10; // 0.1px precision keeps SVG strings small
+
 function rng(seed) {
   let s = seed >>> 0;
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -74,7 +76,7 @@ function branch({ x, y, rot, len, bend = 0.2, leaves = 7, size = 46, p = 'lg', s
     const dy = 2 * (1 - t) * P1[1] + 2 * t * (0 - P1[1]);
     return (Math.atan2(dy, dx) * 180) / Math.PI;
   };
-  let out = `<path d="M0 0 Q ${P1[0]} ${P1[1]} ${len} 0" fill="none" stroke="#7B866C" stroke-width="2" stroke-linecap="round" opacity=".75"/>`;
+  let out = `<path d="M0 0Q${F(P1[0])} ${F(P1[1])} ${len} 0" fill="none" stroke="#7B866C" stroke-width="2" stroke-linecap="round" opacity=".75"/>`;
   for (let i = 0; i < leaves; i++) {
     const t = 0.12 + (i / leaves) * 0.86;
     const [px, py] = pt(t);
@@ -85,12 +87,12 @@ function branch({ x, y, rot, len, bend = 0.2, leaves = 7, size = 46, p = 'lg', s
     const g = ['A', 'B', 'C'][Math.floor(r() * 3)];
     const op = (0.62 + r() * 0.33).toFixed(2);
     out += `<g transform="translate(${px.toFixed(1)} ${py.toFixed(1)}) rotate(${ang.toFixed(1)})" opacity="${op}">
-      <path d="M0 0 C ${L * 0.22} ${-W} ${L * 0.78} ${-W * 0.92} ${L} 0 C ${L * 0.78} ${W * 0.92} ${L * 0.22} ${W} 0 0Z" fill="url(#${p}${g})" ${edge ? `filter="url(#${edge})"` : ''}/>
-      <path d="M2 0 Q ${L * 0.5} ${-W * 0.1} ${L * 0.92} 0" stroke="#4F5E42" stroke-width=".7" fill="none" opacity=".35"/>
+      <path d="M0 0C${F(L * 0.22)} ${F(-W)} ${F(L * 0.78)} ${F(-W * 0.92)} ${F(L)} 0C${F(L * 0.78)} ${F(W * 0.92)} ${F(L * 0.22)} ${F(W)} 0 0Z" fill="url(#${p}${g})" ${edge ? `filter="url(#${edge})"` : ''}/>
+      <path d="M2 0Q${F(L * 0.5)} ${F(-W * 0.1)} ${F(L * 0.92)} 0" stroke="#4F5E42" stroke-width=".7" fill="none" opacity=".35"/>
     </g>`;
   }
   // terminal leaf
-  out += `<g transform="translate(${len} 0) rotate(${tan(1).toFixed(1)})" opacity=".85"><path d="M0 0 C ${size * 0.2} ${-size * 0.3} ${size * 0.7} ${-size * 0.28} ${size * 0.9} 0 C ${size * 0.7} ${size * 0.28} ${size * 0.2} ${size * 0.3} 0 0Z" fill="url(#${p}A)" ${edge ? `filter="url(#${edge})"` : ''}/></g>`;
+  out += `<g transform="translate(${len} 0) rotate(${tan(1).toFixed(1)})" opacity=".85"><path d="M0 0C${F(size * 0.2)} ${F(-size * 0.3)} ${F(size * 0.7)} ${F(-size * 0.28)} ${F(size * 0.9)} 0C${F(size * 0.7)} ${F(size * 0.28)} ${F(size * 0.2)} ${F(size * 0.3)} 0 0Z" fill="url(#${p}A)" ${edge ? `filter="url(#${edge})"` : ''}/></g>`;
   return `<g class="sway ${cls}" style="transform-origin:${x}px ${y}px"><g transform="translate(${x} ${y}) rotate(${rot})">${out}</g></g>`;
 }
 
@@ -98,16 +100,16 @@ function branch({ x, y, rot, len, bend = 0.2, leaves = 7, size = 46, p = 'lg', s
 function dahlia(cx, cy, R, seed, id = 'pt') {
   const r = rng(seed);
   const rings = [[18, 1], [15, 0.84], [13, 0.68], [11, 0.53], [9, 0.39], [7, 0.26]];
-  let out = `<ellipse cx="${cx}" cy="${cy + R * 0.12}" rx="${R * 0.95}" ry="${R * 0.75}" fill="#6E7A5C" opacity=".14" filter="url(#soft)"/>`;
+  let out = `<ellipse cx="${cx}" cy="${F(cy + R * 0.12)}" rx="${F(R * 0.95)}" ry="${F(R * 0.75)}" fill="#6E7A5C" opacity=".14" filter="url(#soft)"/>`;
   out += `<g transform="translate(${cx} ${cy}) rotate(${(r() * 30).toFixed(1)})">`;
   rings.forEach(([n, k], ri) => {
     const rr = R * k, b = rr * 0.22, w = (rr * Math.PI) / n * 0.62;
     for (let j = 0; j < n; j++) {
       const a = (360 / n) * j + ri * (180 / n) + r() * 6;
-      out += `<path transform="rotate(${a.toFixed(1)})" d="M0 ${-b} C ${w} ${-(b + (rr - b) * 0.3)} ${w * 0.9} ${-rr * 0.94} 0 ${-rr} C ${-w * 0.9} ${-rr * 0.94} ${-w} ${-(b + (rr - b) * 0.3)} 0 ${-b}Z" fill="url(#${id}${ri > 3 ? 'i' : ''})" stroke="#C3CCB2" stroke-width=".7"/>`;
+      out += `<path transform="rotate(${F(a)})" d="M0 ${F(-b)}C${F(w)} ${F(-(b + (rr - b) * 0.3))} ${F(w * 0.9)} ${F(-rr * 0.94)} 0 ${F(-rr)}C${F(-w * 0.9)} ${F(-rr * 0.94)} ${F(-w)} ${F(-(b + (rr - b) * 0.3))} 0 ${F(-b)}Z" fill="url(#${id}${ri > 3 ? 'i' : ''})" stroke="#C3CCB2" stroke-width=".7"/>`;
     }
   });
-  out += `<circle r="${R * 0.12}" fill="#B9C68C"/><circle r="${R * 0.07}" fill="#D7E0A9"/></g>`;
+  out += `<circle r="${F(R * 0.12)}" fill="#B9C68C"/><circle r="${F(R * 0.07)}" fill="#D7E0A9"/></g>`;
   return out;
 }
 
@@ -225,15 +227,15 @@ export const BOTANICAL_THEMES = {
 
 export const BOTANICAL = {
   sage: {
-    bg: () => svg(`
+    bg: (d, lite) => svg(`
       <defs>${washFilter('wsA', 3)}${paperFilter('ppA')}${petalGrads}${leafGrads('sg')}${edgeFilter('egA')}
         <radialGradient id="sgbg" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#F7F7F1"/><stop offset="1" stop-color="#E9EADF"/></radialGradient></defs>
       <rect width="540" height="960" fill="url(#sgbg)"/>
       <g filter="url(#wsA)" opacity=".55"><circle cx="90" cy="140" r="120" fill="#DCE0CF"/><circle cx="470" cy="420" r="130" fill="#E4E6DA"/><circle cx="120" cy="640" r="110" fill="#E1E4D6"/></g>
       <rect width="540" height="960" filter="url(#ppA)"/>
       <g class="bloom-in">
-        ${branch({ x: -20, y: 900, rot: -62, len: 170, size: 40, p: 'sg', seed: 4, leaves: 6, edge: 'egA' })}
-        ${branch({ x: 560, y: 880, rot: -122, len: 160, size: 38, p: 'sg', seed: 9, leaves: 6, edge: 'egA' })}
+        ${branch({ x: -20, y: 900, rot: -62, len: 170, size: 40, p: 'sg', seed: 4, leaves: 6, edge: lite ? '' : 'egA' })}
+        ${branch({ x: 560, y: 880, rot: -122, len: 160, size: 38, p: 'sg', seed: 9, leaves: 6, edge: lite ? '' : 'egA' })}
         ${bud(40, 790, 0.95, -14)}${bud(500, 800, 0.9, 12)}${bud(150, 846, 0.7, -6)}
         ${dahlia(80, 920, 92, 3)}${dahlia(470, 930, 98, 8)}${dahlia(275, 960, 84, 13)}
         ${dahlia(190, 948, 62, 21)}${dahlia(370, 950, 66, 34)}
@@ -257,7 +259,7 @@ export const BOTANICAL = {
   },
 
   arch: {
-    bg: () => svg(`
+    bg: (d, lite) => svg(`
       <defs>${washFilter('wsB', 11, 80, 12)}${paperFilter('ppB')}${leafGrads('ar')}${edgeFilter('egB')}</defs>
       <rect width="540" height="960" fill="#F8F8F5"/>
       <g filter="url(#wsB)" opacity=".5">
@@ -265,10 +267,10 @@ export const BOTANICAL = {
         <circle cx="470" cy="760" r="150" fill="#DCDDD7"/><circle cx="80" cy="820" r="120" fill="#E0E1DB"/>
       </g>
       <rect width="540" height="960" filter="url(#ppB)"/>
-      ${branch({ x: 560, y: 40, rot: 150, len: 230, bend: -0.18, size: 62, p: 'ar', seed: 5, leaves: 7, edge: 'egB' })}
-      ${branch({ x: 560, y: 210, rot: 172, len: 150, bend: 0.15, size: 50, p: 'ar', seed: 15, leaves: 5, edge: 'egB' })}
-      ${branch({ x: -20, y: 940, rot: -38, len: 230, bend: 0.2, size: 60, p: 'ar', seed: 7, leaves: 7, edge: 'egB' })}
-      ${branch({ x: -20, y: 760, rot: -12, len: 140, bend: -0.2, size: 46, p: 'ar', seed: 27, leaves: 5, edge: 'egB' })}`),
+      ${branch({ x: 560, y: 40, rot: 150, len: 230, bend: -0.18, size: 62, p: 'ar', seed: 5, leaves: 7, edge: lite ? '' : 'egB' })}
+      ${branch({ x: 560, y: 210, rot: 172, len: 150, bend: 0.15, size: 50, p: 'ar', seed: 15, leaves: 5, edge: lite ? '' : 'egB' })}
+      ${branch({ x: -20, y: 940, rot: -38, len: 230, bend: 0.2, size: 60, p: 'ar', seed: 7, leaves: 7, edge: lite ? '' : 'egB' })}
+      ${branch({ x: -20, y: 760, rot: -12, len: 140, bend: -0.2, size: 46, p: 'ar', seed: 27, leaves: 5, edge: lite ? '' : 'egB' })}`),
     frame: () => svg(`
       <path class="draw" pathLength="1" fill="none" stroke="#BFA466" stroke-width="2" d="M92 884 V330 A178 178 0 0 1 448 330 V884 Z"/>`),
     layout({ d, occ, dates, esc, at, hasName2 }) {
@@ -298,16 +300,16 @@ export const BOTANICAL = {
   },
 
   lilac: {
-    bg: () => svg(`
+    bg: (d, lite) => svg(`
       <defs>${washFilter('wsC', 21, 60, 9)}${paperFilter('ppC')}${leafGrads('ll')}${edgeFilter('egC')}
         <filter id="lavBlur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.5"/></filter></defs>
       <rect width="540" height="960" fill="#FAF9F7"/>
       <g filter="url(#wsC)" opacity=".5"><circle cx="40" cy="200" r="150" fill="#E3DDEB"/><circle cx="40" cy="560" r="120" fill="#E7E2EE"/><circle cx="480" cy="560" r="160" fill="#EBEBE6"/></g>
       <rect width="540" height="960" filter="url(#ppC)"/>
       <g class="bloom-in">${lavender(-40, 10, 1.1, 4)}</g>
-      ${branch({ x: 560, y: 960, rot: -128, len: 190, bend: 0.22, size: 40, p: 'll', seed: 31, leaves: 9, edge: 'egC' })}
-      ${branch({ x: 560, y: 900, rot: -150, len: 140, bend: -0.2, size: 34, p: 'll', seed: 41, leaves: 7, edge: 'egC' })}
-      ${branch({ x: 520, y: 960, rot: -100, len: 150, bend: 0.2, size: 32, p: 'll', seed: 51, leaves: 7, edge: 'egC' })}`),
+      ${branch({ x: 560, y: 960, rot: -128, len: 190, bend: 0.22, size: 40, p: 'll', seed: 31, leaves: 9, edge: lite ? '' : 'egC' })}
+      ${branch({ x: 560, y: 900, rot: -150, len: 140, bend: -0.2, size: 34, p: 'll', seed: 41, leaves: 7, edge: lite ? '' : 'egC' })}
+      ${branch({ x: 520, y: 960, rot: -100, len: 150, bend: 0.2, size: 32, p: 'll', seed: 51, leaves: 7, edge: lite ? '' : 'egC' })}`),
     frame: () => '',
     layout({ d, occ, dates, esc, at, hasName2 }) {
       const mono = initials(d, hasName2);

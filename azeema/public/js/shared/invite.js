@@ -108,16 +108,27 @@ const asDate = (iso, time = '12:00') => {
   return new Date(Date.UTC(y, m - 1, d, hh || 0, mm || 0));
 };
 
+// Intl formatters are expensive to construct — build each one once.
+const fmtCache = new Map();
+const fmt = (loc, o) => {
+  const k = loc + JSON.stringify(o);
+  if (!fmtCache.has(k)) fmtCache.set(k, new Intl.DateTimeFormat(loc, { timeZone: 'UTC', ...o }));
+  return fmtCache.get(k);
+};
+let numAr, numArPlain;
+const nAr = (x) => (numAr ??= new Intl.NumberFormat('ar-SA-u-nu-arab')).format(x);
+const nArPlain = (x) => (numArPlain ??= new Intl.NumberFormat('ar-SA-u-nu-arab', { useGrouping: false })).format(x);
+
 export function formatDates(date, time) {
   const dt = asDate(date, time);
   if (!dt) return { weekday: '', hijri: '', greg: '', time: '', dotted: '' };
-  const f = (loc, o) => new Intl.DateTimeFormat(loc, { timeZone: 'UTC', ...o }).format(dt);
+  const f = (loc, o) => fmt(loc, o).format(dt);
   let timeLabel = '';
   if (time) {
     const [h, m] = time.split(':').map(Number);
     const period = h < 12 ? 'صباحاً' : h < 16 ? 'ظهراً' : h < 18 ? 'عصراً' : 'مساءً';
     const h12 = ((h + 11) % 12) + 1;
-    const n = (x) => new Intl.NumberFormat('ar-SA-u-nu-arab').format(x);
+    const n = nAr;
     timeLabel = `${n(h12)}:${n(String(m).padStart(2, '0')).padStart(2, '٠')} ${period}`;
   }
   return {
@@ -125,7 +136,7 @@ export function formatDates(date, time) {
     hijri: f('ar-SA-u-ca-islamic-umalqura-nu-arab', { day: 'numeric', month: 'long', year: 'numeric' }),
     greg: f('ar-SA-u-ca-gregory-nu-arab', { day: 'numeric', month: 'long', year: 'numeric' }),
     time: timeLabel,
-    dotted: [dt.getUTCDate(), dt.getUTCMonth() + 1, dt.getUTCFullYear()].map((x) => new Intl.NumberFormat('ar-SA-u-nu-arab', { useGrouping: false }).format(x)).join(' . '),
+    dotted: [dt.getUTCDate(), dt.getUTCMonth() + 1, dt.getUTCFullYear()].map(nArPlain).join(' . '),
   };
 }
 
@@ -382,13 +393,38 @@ function latticeStrip(y) {
 
 // ---------- poster ----------
 // mode: 'page' (guest page entrance), 'video' (timeline for frame capture), 'static' (no animation)
-export function renderPoster(input, { mode = 'page', preview = false, to = '' } = {}) {
+// Ornament SVG depends only on the theme (and the monogram letter for «حبر»), so it is built once and cached.
+const ornCache = new Map();
+function ornamentsFor(theme, d, lite) {
+  const key = theme + '|' + (theme === 'editorial' ? (d.name1 || 'ع').trim().charAt(0) : '') + (lite ? '|lite' : '');
+  if (!ornCache.has(key)) {
+    const bot = BOTANICAL[theme];
+    ornCache.set(key, bot ? { bg: bot.bg(d, lite), frame: bot.frame(d) } : ORNAMENTS[theme](d, rng(hash(theme))));
+    if (ornCache.size > 40) ornCache.delete(ornCache.keys().next().value);
+  }
+  return { key, ...ornCache.get(key) };
+}
+
+export function renderPoster(input, opts = {}) {
+  const p = posterParts(input, opts);
+  return `
+<div class="${p.className}" data-key="${p.key}">
+  <div class="p-bg">${p.bg}</div>
+  <div class="p-frame">${p.frame}</div>
+  <div class="p-content">${p.content}</div>
+  <div class="p-particles">${p.particles}</div>
+  ${p.overlay}
+</div>`;
+}
+
+// Same poster, returned as parts so live previews can patch only the text layer.
+export function posterParts(input, { mode = 'page', preview = false, to = '' } = {}) {
   const occ = OCCASIONS[input.occasion] || OCCASIONS.wedding;
   const d = { ...occ.defaults, ...stripEmpty(input) };
   const theme = ORNAMENTS[d.template] || BOTANICAL[d.template] ? d.template : 'sage';
-  const r = rng(hash(theme + (d.name1 || '')));
+  const r = rng(hash(theme + 'particles'));
   const bot = BOTANICAL[theme];
-  const orn = bot ? { bg: bot.bg(d), frame: bot.frame(d) } : ORNAMENTS[theme](d, r);
+  const orn = ornamentsFor(theme, d, mode !== 'video');
   const dates = formatDates(d.date, d.time);
   const aud = AUDIENCES[d.audience] || '';
   const hasName2 = occ.hasName2 && d.name2;
@@ -397,7 +433,7 @@ export function renderPoster(input, { mode = 'page', preview = false, to = '' } 
   const at = (v, p) => `style="--v:${v}s;--p:${p}s"`;
   let particles = '';
   if (mode !== 'static') {
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0, n = mode === 'video' ? 18 : 8; i < n; i++) {
       particles += `<i style="--x:${(r() * 100).toFixed(1)}%;--y:${(40 + r() * 60).toFixed(1)}%;--s:${(2 + r() * 4).toFixed(1)}px;--t:${(5 + r() * 6).toFixed(1)}s;--dl:${(-r() * 10).toFixed(1)}s"></i>`;
     }
   }
@@ -405,11 +441,11 @@ export function renderPoster(input, { mode = 'page', preview = false, to = '' } 
   const nameLen = (d.name1 || '').length + (hasName2 ? (d.name2 || '').length : 0);
   const nameSize = nameLen > 16 ? 'xs' : nameLen > 11 ? 's' : nameLen > 7 ? 'm' : 'l';
 
-  return `
-<div class="poster t-${theme}${bot ? ' t-botanical' : ''} m-${mode}${preview ? ' is-preview' : ''}">
-  <div class="p-bg">${orn.bg}</div>
-  <div class="p-frame">${orn.frame}</div>
-  <div class="p-content">
+  return {
+    key: orn.key + '|' + mode + '|' + (preview ? 1 : 0),
+    className: `poster t-${theme}${bot ? ' t-botanical' : ''} m-${mode}${preview ? ' is-preview' : ''}`,
+    bg: orn.bg, frame: orn.frame, particles,
+    content: `
     ${bot ? (to ? `<div class="p-to a" ${at(0.4, 0.05)}>إلى: ${esc(to)}</div>` : '') + bot.layout({ d, occ, dates, esc, at, hasName2, aud }) : `
     ${to ? `<div class="p-to a" ${at(0.6, 0.1)}>إلى: ${esc(to)}</div>` : ''}
     ${d.topLine ? `<div class="p-top a" ${at(1.0, 0.15)}>${esc(d.topLine)}</div>` : ''}
@@ -429,12 +465,9 @@ export function renderPoster(input, { mode = 'page', preview = false, to = '' } 
     </div>` : ''}
     ${d.venue || d.city ? `<div class="p-venue a" ${at(9.4, 1.4)}>${pin()}<span>${esc([d.venue, d.city].filter(Boolean).join(' — '))}</span></div>` : ''}
     ${aud ? `<div class="p-aud a" ${at(10.0, 1.5)}>${esc(aud)}</div>` : ''}
-    ${d.closing ? `<div class="p-closing a" ${at(11.0, 1.6)}>${esc(d.closing)}</div>` : ''}`}
-  </div>
-  <div class="p-particles">${particles}</div>
-  ${mode === 'video' ? '<div class="p-shine"></div><div class="p-fade"></div>' : ''}
-  ${preview ? '<div class="p-watermark"><span>معاينة · عزيمة</span></div>' : ''}
-</div>`;
+    ${d.closing ? `<div class="p-closing a" ${at(11.0, 1.6)}>${esc(d.closing)}</div>` : ''}`}`,
+    overlay: (mode === 'video' ? '<div class="p-shine"></div><div class="p-fade"></div>' : '') + (preview ? '<div class="p-watermark"><span>معاينة · عزيمة</span></div>' : ''),
+  };
 }
 
 const dividerStar = () => `<svg viewBox="-12 -12 24 24" width="1em" height="1em">${star8(0, 0, 10, 'fill="currentColor"')}</svg>`;

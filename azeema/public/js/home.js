@@ -1,7 +1,7 @@
 import { $, $$, initCommon, openMenu } from './m3.js';
 import { blurIn, blurOut, revealOnScroll, reduced } from './motion.js';
-import { OCCASIONS } from './shared/invite.js';
 
+const OCCASIONS = window.__OCC__ || {};
 initCommon();
 revealOnScroll();
 
@@ -36,6 +36,13 @@ $('#occ-pick').addEventListener('click', (e) => {
     blurIn(label, { y: 8 }); apply();
   });
 });
+
+// Promo video plays only while visible (saves decode work while scrolling elsewhere)
+const vid = $('.promo-dark video');
+if (vid && 'IntersectionObserver' in window) {
+  vid.removeAttribute('autoplay'); vid.pause();
+  new IntersectionObserver(([e]) => (e.isIntersecting ? vid.play().catch(() => {}) : vid.pause()), { threshold: 0.4 }).observe(vid);
+}
 
 // Gentle parallax on the product stage (Apple-style depth)
 const stage = $('.sc-stage'), title = $('.hero-title');

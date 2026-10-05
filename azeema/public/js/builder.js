@@ -1,4 +1,4 @@
-import { renderPoster, OCCASIONS, formatDates } from './shared/invite.js';
+import { renderPoster, posterParts, OCCASIONS, formatDates } from './shared/invite.js';
 import { $, $$, api, initCommon, myOrders, openSheet, setLoading, snackbar } from './m3.js';
 import { spring, blurIn } from './motion.js';
 
@@ -53,9 +53,15 @@ function draw() {
     const d = collect();
     const o = OCCASIONS[d.occasion] || OCCASIONS.wedding;
     const shown = { ...d, name1: d.name1 || o.sample[0], name2: o.hasName2 ? d.name2 || o.sample[1] : '' };
-    const html = renderPoster(shown, { mode: animateNext ? 'page' : 'static' });
-    $('#preview').innerHTML = html;
-    if (!$('#preview-sheet').hidden) $('#preview-m').innerHTML = html;
+    const opts = { mode: animateNext ? 'page' : 'static' };
+    const parts = posterParts(shown, opts);
+    const targets = [$('#preview'), ...($('#preview-sheet').hidden ? [] : [$('#preview-m')])];
+    for (const t of targets) {
+      const el = t.firstElementChild;
+      // same artwork → swap only the text layer (no re-parse of the SVG drawing)
+      if (el && el.dataset.key === parts.key) { el.className = parts.className; el.querySelector('.p-content').innerHTML = parts.content; }
+      else t.innerHTML = renderPoster(shown, opts);
+    }
     animateNext = false;
     const f = formatDates(d.date, d.time);
     $('#hijri-hint').textContent = f.hijri ? `يوافق ${f.weekday} ${f.hijri}` : '';

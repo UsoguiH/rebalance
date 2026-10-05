@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config, PACKAGES, priceOf } from './src/config.js';
@@ -13,7 +14,14 @@ app.disable('x-powered-by');
 app.set('trust proxy', true);
 app.use(express.json({ limit: '64kb' }));
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
-app.use(express.static(path.join(config.root, 'public'), { maxAge: '7d', index: false }));
+app.use(compression({ threshold: 1024 }));
+// Long-lived caching: fonts/images never change; CSS/JS are versioned with ?v= in the HTML.
+app.use(express.static(path.join(config.root, 'public'), {
+  index: false,
+  setHeaders(res, file) {
+    res.setHeader('Cache-Control', /\.(woff2|jpg|png|svg|mp4)$/.test(file) ? 'public, max-age=2592000, immutable' : 'public, max-age=604800');
+  },
+}));
 
 // ---------- validation ----------
 const LIMITS = {

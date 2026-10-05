@@ -27,7 +27,7 @@ export function springEasing({ stiffness, damping, mass, velocity = 0 }) {
   }
   const duration = Math.round(t * 1000);
   const pts = [];
-  const n = Math.min(64, Math.max(24, Math.round(duration / 14)));
+  const n = Math.min(32, Math.max(16, Math.round(duration / 26))); // enough samples for a smooth curve, short enough to parse cheaply
   for (let i = 0; i <= n; i++) {
     const s = samples[Math.min(samples.length - 1, Math.round((i / n) * (samples.length - 1)))];
     pts.push(+s[1].toFixed(4));
@@ -62,7 +62,8 @@ export function revealOnScroll(root = document) {
   const io = new IntersectionObserver((entries) => {
     entries.filter((e) => e.isIntersecting).forEach((e, i) => {
       io.unobserve(e.target);
-      blurIn(e.target, { y: 28, delay: i * 0.06 }).finished.then(() => (e.target.style.opacity = ''));
+      // opacity + transform only (compositor-friendly; no filter work while scrolling)
+      spring(e.target, [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], 'gentle', { delay: i * 0.05 }).finished.then(() => (e.target.style.opacity = ''));
     });
   }, { rootMargin: '0px 0px -8% 0px' });
   els.forEach((el) => io.observe(el));

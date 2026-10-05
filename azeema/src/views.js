@@ -1,35 +1,25 @@
 import { config, PACKAGES, priceOf } from './config.js';
 import { renderPoster, esc, THEMES, OCCASIONS, DEMOS, formatDates, eventInstant, titleFor, FONTS_URL } from '../public/js/shared/invite.js';
 import { loadingIndicator } from '../public/js/shared/shapes.js';
+import { icon } from '../public/js/shared/icons.js';
 
-const V = '14'; // asset cache-buster
+const V = '20'; // asset cache-buster
 const ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#EF5A2A"/><text x="32" y="45" font-size="36" text-anchor="middle" fill="#fff" font-family="serif">ع</text></svg>')}`;
 const ar = (n) => new Intl.NumberFormat('en-US').format(n); // app UI uses Western digits (invitations keep Arabic-Indic)
 const img = (t) => `/img/designs/${THEMES[t] ? t : 'sage'}.jpg`;
 
-// ---------------------------------------------------------------- icons
+// ---------------------------------------------------------------- icons (Google Material Symbols, Rounded)
+const ms = (n, size = 24, cls = '') => icon(n, { size, cls });
 const I = {
-  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7.5"/><path d="M20.5 20.5 16.6 16.6"/></svg>',
-  chevDown: '<svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
-  chevUp: '<svg class="chev" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>',
-  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
-  pin: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7.5 7.5 0 0 0-7.5 7.5C4.5 15 12 22 12 22s7.5-7 7.5-12.5A7.5 7.5 0 0 0 12 2zm0 10.2a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4z"/></svg>',
-  bell: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a2.5 2.5 0 0 0 2.4-1.8H9.6A2.5 2.5 0 0 0 12 22zm7-5.5-1.6-1.9V10a5.4 5.4 0 0 0-4.2-5.3V4a1.2 1.2 0 0 0-2.4 0v.7A5.4 5.4 0 0 0 6.6 10v4.6L5 16.5c-.5.6-.1 1.5.7 1.5h12.6c.8 0 1.2-.9.7-1.5z"/></svg>',
-  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
-  wa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.2-.3-.2-.5-.3z"/></svg>',
-  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
-  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
-  map: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 4.2 9 2 3 4.3v17.4L9 19.5l6 2.2 6-2.3V2zM9 17.4l-4 1.5V5.7l4-1.5zm10 .9-4 1.5V6.6l4-1.5z"/></svg>',
-  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
-  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.4-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>',
-  // filled nav icons (bold, like the reference app bar)
-  navHome: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.6c.9 0 1.6.7 2.4 1.2.8.4 1.8.3 2.6.8s1 1.6 1.5 2.4c.5.8 1.5 1.2 1.8 2.1.2.9-.3 1.8-.3 2.7s.5 1.8.3 2.7c-.3.9-1.3 1.3-1.8 2.1-.5.8-.7 1.9-1.5 2.4s-1.8.4-2.6.8c-.8.5-1.5 1.2-2.4 1.2s-1.6-.7-2.4-1.2c-.8-.4-1.8-.3-2.6-.8s-1-1.6-1.5-2.4c-.5-.8-1.5-1.2-1.8-2.1-.2-.9.3-1.8.3-2.7s-.5-1.8-.3-2.7c.3-.9 1.3-1.3 1.8-2.1.5-.8.7-1.9 1.5-2.4s1.8-.4 2.6-.8C10.4 2.3 11.1 1.6 12 1.6z"/><path fill="#fff" d="M8.2 13.2c1 1.6 2.3 2.4 3.8 2.4s2.8-.8 3.8-2.4c.2-.4-.3-.8-.7-.5-.9.7-1.9 1.1-3.1 1.1s-2.2-.4-3.1-1.1c-.4-.3-.9.1-.7.5z"/></svg>',
-  navOffer: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M10.4 2.3a2.3 2.3 0 0 1 3.2 0l1 1c.4.4 1 .6 1.6.6h1.4c1.3 0 2.3 1 2.3 2.3v1.4c0 .6.2 1.2.7 1.6l1 1a2.3 2.3 0 0 1 0 3.2l-1 1c-.5.4-.7 1-.7 1.6v1.4c0 1.3-1 2.3-2.3 2.3h-1.4c-.6 0-1.2.2-1.6.7l-1 1a2.3 2.3 0 0 1-3.2 0l-1-1c-.4-.5-1-.7-1.6-.7H6.4c-1.3 0-2.3-1-2.3-2.3v-1.4c0-.6-.2-1.2-.7-1.6l-1-1a2.3 2.3 0 0 1 0-3.2l1-1c.5-.4.7-1 .7-1.6V6.2c0-1.3 1-2.3 2.3-2.3h1.4c.6 0 1.2-.2 1.6-.6z"/><g fill="#fff"><circle cx="9.2" cy="9.4" r="1.5"/><circle cx="14.8" cy="14.6" r="1.5"/><rect x="11.1" y="5.6" width="1.8" height="12.8" rx=".9" transform="rotate(40 12 12)"/></g></svg>',
-  navGrid: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2.5" y="2.5" width="8.6" height="8.6" rx="2.6"/><rect x="12.9" y="2.5" width="8.6" height="8.6" rx="2.6"/><rect x="2.5" y="12.9" width="8.6" height="8.6" rx="2.6"/><rect x="12.9" y="12.9" width="8.6" height="8.6" rx="2.6"/></svg>',
-  navBox: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.9 2.2a2 2 0 0 0-1.8 0L4 5.8l8 4 8-4z" opacity=".55"/><path d="M3 7.5v9.1c0 .8.4 1.5 1.1 1.8l7 3.5V11.5zM21 7.5v9.1c0 .8-.4 1.5-1.1 1.8l-7 3.5V11.5z"/><path d="M8 4.7l8 4v3.1l-1.6-.8V9.6l-8-4z" fill="#fff" opacity=".7"/></svg>',
-  navCreate: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 7.4A3.4 3.4 0 0 1 6.4 4h11.2A3.4 3.4 0 0 1 21 7.4v9.2a3.4 3.4 0 0 1-3.4 3.4H6.4A3.4 3.4 0 0 1 3 16.6z"/><path d="m4.5 7 7.5 5.4L19.5 7" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  search: ms('search', 26), chevDown: ms('expand_more', 22, 'chev'), chevUp: ms('expand_less', 28, 'chev'), back: ms('arrow_back', 24, 'flip-rtl'),
+  pin: ms('location_on_f', 22), bell: ms('notifications_f', 30), copy: ms('content_copy', 20), cal: ms('calendar_month', 22),
+  share: ms('ios_share', 22), map: ms('map_f', 22), x: ms('close', 22), check: ms('check', 20), play: ms('play_arrow_f', 18), star: ms('star', 20),
+  wa: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.2-.3-.2-.5-.3z"/></svg>',
 };
+// navigation: outlined when idle, filled when active (M3 navigation bar behaviour)
+const navIcon = (n) => `<span class="ni">${ms(n, 28, 'ni-o')}${ms(n + '_f', 28, 'ni-f')}</span>`;
+const OCC_ICON = { wedding: 'favorite', milka: 'auto_awesome', graduation: 'school', newborn: 'child_care', opening: 'storefront', gathering: 'coffee' };
+const occIcon = (k, size = 22) => ms(OCC_ICON[k] + '_f', size);
 
 const brand = (href = '/') => `<a class="brand pressable" href="${href}" aria-label="عزيمة — الرئيسية"><span class="brand-mark">ع</span><span class="brand-word">عزيمة</span></a>`;
 
@@ -50,7 +40,8 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:image" content="${esc(og.image || `${config.baseUrl}/img/og.jpg`)}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${ICON}">
-<link rel="preload" href="/fonts/IBMPlexSansArabic-400-arabic.woff2" as="font" type="font/woff2" crossorigin>
+${(bodyClass.includes('is-guest') ? ['Tajawal-300-arabic', 'Tajawal-400-arabic', 'ArefRuqaa-700-arabic', 'IBMPlexSansArabic-400-arabic'] : ['IBMPlexSansArabic-400-arabic', 'IBMPlexSansArabic-600-arabic', 'IBMPlexSansArabic-700-arabic', 'ArefRuqaa-700-arabic'])
+    .map((f) => `<link rel="preload" href="/fonts/${f}.woff2" as="font" type="font/woff2" crossorigin>`).join('\n')}
 <link rel="stylesheet" href="${FONTS_URL}?v=${V}">
 ${['springs.css', 'm3.css', 'app.css', ...css].map((c) => `<link rel="stylesheet" href="/css/${c}?v=${V}">`).join('\n')}
 </head>
@@ -68,12 +59,12 @@ function navbar(active) {
   return `<nav class="navbar" aria-label="التنقل">
   <div class="nav-group">
     <i class="nav-indicator"></i>
-    ${item('home', '/', I.navHome, 'الرئيسية')}
-    ${item('offers', '/#pricing', I.navOffer, 'الأسعار والعروض')}
-    ${item('designs', '/designs', I.navGrid, 'التصاميم')}
-    ${item('orders', '/orders', `<span class="badge-wrap">${I.navBox}<span class="badge" data-orders-badge></span></span>`, 'طلباتي')}
+    ${item('home', '/', navIcon('home'), 'الرئيسية')}
+    ${item('offers', '/#pricing', navIcon('sell'), 'الأسعار والعروض')}
+    ${item('designs', '/designs', navIcon('grid_view'), 'التصاميم')}
+    ${item('orders', '/orders', `<span class="badge-wrap">${navIcon('package_2')}<span class="badge" data-orders-badge></span></span>`, 'طلباتي')}
   </div>
-  <div class="nav-solo"><a class="nav-item pressable" href="/create" ${active === 'create' ? 'aria-current="page"' : ''} aria-label="صمّم دعوتك">${I.navCreate}<span class="tip">صمّم دعوتك</span></a></div>
+  <div class="nav-solo"><a class="nav-item pressable" href="/create" ${active === 'create' ? 'aria-current="page"' : ''} aria-label="صمّم دعوتك">${ms('add', 32)}<span class="tip">صمّم دعوتك</span></a></div>
 </nav>`;
 }
 
@@ -85,13 +76,13 @@ const GROUPS = [
 ];
 // Palm frond: curved rib + paired leaflets (for the hero still-life)
 function frond(x, y, rot, sc, seed) {
-  let leaf = '';
+  let d = ''; // all leaflets in one path (one element instead of ~30)
   for (let i = 2; i < 17; i++) {
     const t = i / 17, px = Math.sin(t * 1.2) * 18, py = -t * 240, L = 26 + Math.sin(t * Math.PI) * 30;
-    for (const side of [-1, 1]) leaf += `<path d="M${px.toFixed(1)} ${py.toFixed(1)} q ${side * L * 0.5} ${-L * 0.15} ${side * L} ${L * 0.35}" />`;
+    for (const side of [-1, 1]) d += `M${px.toFixed(1)} ${py.toFixed(1)}q${(side * L * 0.5).toFixed(1)} ${(-L * 0.15).toFixed(1)} ${(side * L).toFixed(1)} ${(L * 0.35).toFixed(1)}`;
   }
   return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})" fill="none" stroke="hsl(${125 + seed * 4} 28% ${14 + seed * 2.2}%)" stroke-linecap="round">
-    <path d="M0 0 C 8 -80 18 -160 18 -250" stroke-width="3.2"/><g stroke-width="${2.6 - seed * 0.1}">${leaf}</g></g>`;
+    <path d="M0 0 C 8 -80 18 -160 18 -250" stroke-width="3.2"/><path d="${d}" stroke-width="${2.6 - seed * 0.1}"/></g>`;
 }
 const demoData = (t) => ({ ...(DEMOS[t] || DEMOS.sage), template: t });
 
@@ -123,7 +114,7 @@ export function landing() {
   </div>
   <div class="dots" role="tablist" aria-label="الشرائح">${slides.map((_, i) => `<button role="tab" aria-label="شريحة ${i + 1}" ${i === 0 ? 'aria-selected="true"' : ''} data-go="${i}"></button>`).join('')}</div>
   <div class="occ-strip">
-    ${Object.entries(OCCASIONS).map(([k, o], i) => `${i ? '<i class="sep"></i>' : ''}<a href="/designs?occasion=${k}" class="occ-logo pressable"><span>${o.icon}</span>${esc(o.label)}</a>`).join('')}
+    ${Object.entries(OCCASIONS).map(([k, o], i) => `${i ? '<i class="sep"></i>' : ''}<a href="/designs?occasion=${k}" class="occ-logo pressable">${occIcon(k, 24)}${esc(o.label)}</a>`).join('')}
   </div>
 </header>
 
@@ -140,7 +131,7 @@ export function landing() {
       <span class="promo-brand">ليلك</span><span class="promo-tag">إكليل مرسوم باليد</span>
     </a>
     <article class="promo promo-dark pressable" data-reveal>
-      <video src="/media/sage-preview.mp4" poster="${img('sage')}" autoplay muted loop playsinline preload="metadata"></video>
+      <video src="/media/sage-preview.mp4" poster="${img('sage')}" autoplay muted loop playsinline preload="none"></video>
       <div class="promo-dark-in"><span class="promo-kicker">${I.play} فيديو متحرك</span><h2>١٥ ثانية<br>من الفرح</h2></div>
     </article>
     <a class="promo promo-photo pressable" href="/create?template=arch" data-reveal style="--bg:url(${img('arch')})">
@@ -150,7 +141,7 @@ export function landing() {
 
   <section class="wrap sec" data-reveal>
     <div class="sec-head"><h2 class="headline-s">لكل مناسباتكم</h2><a class="btn btn-text btn-sm" href="/designs">عرض الكل</a></div>
-    <div class="chips">${Object.entries(OCCASIONS).map(([k, o], i) => `<a class="chip pressable${i === 0 ? ' on' : ''}" href="/designs?occasion=${k}"><span class="ico">${o.icon}</span>${esc(o.label)}</a>`).join('')}</div>
+    <div class="chips">${Object.entries(OCCASIONS).map(([k, o], i) => `<a class="chip pressable${i === 0 ? ' on' : ''}" href="/designs?occasion=${k}">${occIcon(k, 20)}${esc(o.label)}</a>`).join('')}</div>
   </section>
 
   <section class="wrap sec" id="designs">
@@ -217,7 +208,8 @@ export function landing() {
   </section>
   <footer class="wrap foot">${brand()}<p class="body-m on-variant">صُنعت بحب في السعودية 🇸🇦 — © ${new Date().getFullYear()}</p></footer>
 </main>`;
-  return page({ title: 'عزيمة — دعوات رقمية متحركة وتأكيد حضور', body, js: ['home.js'], nav: 'home', bodyClass: 'is-home', theme: '#0F1011' });
+  const occJson = JSON.stringify(Object.fromEntries(Object.entries(OCCASIONS).map(([k, o]) => [k, { label: o.label, icon: occIcon(k, 22) }])));
+  return page({ title: 'عزيمة — دعوات رقمية متحركة وتأكيد حضور', body: body + `<script>window.__OCC__=${occJson};</script>`, js: ['home.js'], nav: 'home', bodyClass: 'is-home', theme: '#0F1011' });
 }
 
 // ================================================================ DESIGNS (categories)
@@ -230,7 +222,7 @@ export function designsPage({ q = '', occasion = 'wedding' } = {}) {
   </form>
   <div class="wrap cat-body">
     <aside class="cat-side" aria-label="المناسبات">
-      ${Object.entries(OCCASIONS).map(([k, o]) => `<button class="side-item pressable${k === occ ? ' on' : ''}" data-occ="${k}" type="button"><span class="side-ico">${o.icon}</span><span>${esc(o.label)}</span></button>`).join('')}
+      ${Object.entries(OCCASIONS).map(([k, o]) => `<button class="side-item pressable${k === occ ? ' on' : ''}" data-occ="${k}" type="button"><span class="side-ico">${occIcon(k, 30)}</span><span>${esc(o.label)}</span></button>`).join('')}
     </aside>
     <div class="cat-main">
       ${GROUPS.map((g) => `
@@ -307,7 +299,7 @@ export function builder({ edit, template, occasion, ref }) {
   <form id="builder" class="b-form" novalidate>
     <section class="card b-sec" id="s-occasion">
       <h2 class="title-l">وش المناسبة؟</h2>
-      <div class="chips wrap-chips">${Object.entries(OCCASIONS).map(([k, o]) => `<label class="chip pressable"><input type="radio" name="occasion" value="${k}" class="vh"><span class="ico">${o.icon}</span>${esc(o.label)}</label>`).join('')}</div>
+      <div class="chips wrap-chips">${Object.entries(OCCASIONS).map(([k, o]) => `<label class="chip pressable"><input type="radio" name="occasion" value="${k}" class="vh">${occIcon(k, 20)}${esc(o.label)}</label>`).join('')}</div>
     </section>
 
     <section class="card b-sec" id="s-design">
