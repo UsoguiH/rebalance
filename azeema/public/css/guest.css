@@ -4,9 +4,9 @@
 .g-poster { max-width: 480px; margin: 0 auto; }
 .g-poster .poster { box-shadow: 0 30px 80px -40px rgba(0, 0, 0, .45); }
 @media (min-width: 520px) { .g-poster { padding-top: 24px; } .g-poster .poster { border-radius: 32px; } }
-.guest.closed .poster, .guest.closed .poster * { animation-play-state: paused !important; }
 .g-col { width: min(480px, 100% - 32px); margin: 18px auto 0; display: grid; gap: 14px; }
-.g-col .card { background: rgba(255, 255, 255, .86); backdrop-filter: blur(12px); text-align: center; display: grid; gap: 12px; }
+.g-col > .g-rsvp { content-visibility: auto; contain-intrinsic-size: auto 560px; }
+.g-col .card { background: rgba(255, 255, 255, .9); text-align: center; display: grid; gap: 12px; }
 .count { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .count div { background: color-mix(in srgb, var(--g-bg) 55%, white); border-radius: 18px; padding: 12px 4px; }
 .count b { display: block; font: 600 2rem/1.15 var(--md-font); color: var(--md-primary); font-variant-numeric: tabular-nums; }

@@ -304,7 +304,6 @@
 .m-page .a-name { animation-name: nameLite; }
 @keyframes riseLite { from { opacity: 0; transform: translateY(2.2cqw); } to { opacity: 1; transform: none; } }
 @keyframes nameLite { from { opacity: 0; transform: scale(1.08); } to { opacity: 1; transform: none; } }
-.p-particles i { will-change: transform, opacity; }
 .p-bg, .p-frame { contain: strict; }
 /* Artwork on its own compositor layer: text edits/animations never repaint the filtered SVG beneath */
 .m-page .p-bg, .m-page .p-frame, .m-static .p-bg, .m-static .p-frame { will-change: transform; }

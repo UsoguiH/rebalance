@@ -107,8 +107,8 @@ const patch = (rel, pairs) => {
 patch('designs.js', [['`/img/designs/${k}.jpg`', '`img/designs/${k}.jpg`'], ['`/create?template=${k}&occasion=${occ}`', '`create-${k}.html`'], ['`/demo/${k}`', '`demo-${k}.html`']]);
 patch('orders.js', [['/img/designs/', 'img/designs/'], ['href="/host/${esc(o.slug)}?key=${esc(o.key)}"', 'href="host.html"'], ['href="/checkout/${esc(o.slug)}?key=${esc(o.key)}"', 'href="checkout.html"']]);
 patch('host.js', [['`/media/${slug}/poster.jpg?t=${Date.now()}`', "'media/poster.jpg'"], ['`/media/${slug}/video.mp4?t=${Date.now()}`', "'media/video.mp4'"]]);
-patch('guest.js', [['setTimeout(() => (f.src = card.dataset.embed), 150);', "setTimeout(() => card.classList.add('ready'), 700); // map embeds are not allowed in the prototype"],
-  ["f.onload = () => { f.classList.add('loaded'); card.classList.add('ready'); };\n      card.prepend(f);", '']]);
+patch('guest.js', [['f.src = card.dataset.embed;', "card.classList.add('ready'); $('.map-loading', card)?.remove(); // map embeds are not allowed in the prototype"],
+  ['      card.prepend(f);\n', '']]);
 patch('motion.js', [['export function revealOnScroll(root = document) {', 'export function revealOnScroll(root = document) {\n  return; // prototype: content is visible at rest']]);
 
 const files = [];

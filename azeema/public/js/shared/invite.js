@@ -442,7 +442,7 @@ export function posterParts(input, { mode = 'page', preview = false, to = '' } =
   const nameSize = nameLen > 16 ? 'xs' : nameLen > 11 ? 's' : nameLen > 7 ? 'm' : 'l';
 
   return {
-    key: orn.key + '|' + mode + '|' + (preview ? 1 : 0),
+    key: orn.key + '|' + (mode === 'video' ? 'v' : '') + (preview ? 1 : 0), // page↔static share artwork, so a mode change only swaps classes
     className: `poster t-${theme}${bot ? ' t-botanical' : ''} m-${mode}${preview ? ' is-preview' : ''}`,
     bg: orn.bg, frame: orn.frame, particles,
     content: `

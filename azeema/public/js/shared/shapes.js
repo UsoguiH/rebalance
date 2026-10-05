@@ -21,12 +21,15 @@ export const SHAPES = [
   polar(poly(3, 0.5)),                                               // soft triangle
 ];
 
+// Compositor-only: a static expressive shape that rotates and breathes (transform only).
+// The previous SMIL outline morph re-ran style/layout/paint every frame on the main thread.
 export function loadingIndicator({ size = '', contained = false, label = 'جارٍ التحميل' } = {}) {
-  const values = [...SHAPES, SHAPES[0]].join(';');
-  const n = SHAPES.length;
-  const keyTimes = Array.from({ length: n + 1 }, (_, i) => (i / n).toFixed(3)).join(';');
-  const splines = Array.from({ length: n }, () => '0.45 0 0.15 1').join(';');
   return `<span class="loading-indicator ${size}${contained ? ' contained' : ''}" role="progressbar" aria-label="${label}">
-    <svg viewBox="0 0 100 100"><path fill="currentColor" d="${SHAPES[0]}"><animate attributeName="d" dur="${n * 0.65}s" repeatCount="indefinite" calcMode="spline" keyTimes="${keyTimes}" keySplines="${splines}" values="${values}"/></path></svg>
+    <svg viewBox="0 0 100 100"><path fill="currentColor" d="${SHAPES[0]}"/></svg>
   </span>`;
+}
+
+// Static (non-animated) shape for empty states.
+export function shapeBadge({ shape = 0, size = 72 } = {}) {
+  return `<span class="shape-badge" style="--s:${size}px" aria-hidden="true"><svg viewBox="0 0 100 100"><path fill="currentColor" d="${SHAPES[shape]}"/></svg></span>`;
 }

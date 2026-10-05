@@ -1,9 +1,9 @@
 import { config, PACKAGES, priceOf } from './config.js';
 import { renderPoster, esc, THEMES, OCCASIONS, DEMOS, formatDates, eventInstant, titleFor, FONTS_URL } from '../public/js/shared/invite.js';
-import { loadingIndicator } from '../public/js/shared/shapes.js';
+import { loadingIndicator, shapeBadge } from '../public/js/shared/shapes.js';
 import { icon } from '../public/js/shared/icons.js';
 
-const V = '20'; // asset cache-buster
+const V = '21'; // asset cache-buster
 const ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#EF5A2A"/><text x="32" y="45" font-size="36" text-anchor="middle" fill="#fff" font-family="serif">ع</text></svg>')}`;
 const ar = (n) => new Intl.NumberFormat('en-US').format(n); // app UI uses Western digits (invitations keep Arabic-Indic)
 const img = (t) => `/img/designs/${THEMES[t] ? t : 'sage'}.jpg`;
@@ -24,7 +24,17 @@ const occIcon = (k, size = 22) => ms(OCC_ICON[k] + '_f', size);
 const brand = (href = '/') => `<a class="brand pressable" href="${href}" aria-label="عزيمة — الرئيسية"><span class="brand-mark">ع</span><span class="brand-word">عزيمة</span></a>`;
 
 // ---------------------------------------------------------------- shell
-function page({ title, desc = 'دعوات رقمية متحركة مع صفحة تأكيد حضور — جاهزة خلال ساعة.', body, js = [], css = [], og = {}, bodyClass = '', noindex = false, nav = null, theme = '#F9F5F2' }) {
+// Fonts each invitation theme actually renders with (preloaded on the guest page)
+const THEME_FONTS = {
+  sage: ['Tajawal-300-arabic', 'Tajawal-400-arabic', 'ArefRuqaa-700-arabic'],
+  arch: ['Tajawal-300-arabic', 'Tajawal-400-arabic', 'ReemKufi-400_700-arabic', 'ArefRuqaa-400-arabic'],
+  lilac: ['Tajawal-300-arabic', 'Tajawal-400-arabic', 'ReemKufi-400_700-arabic', 'ArefRuqaa-700-arabic'],
+  royal: ['Amiri-400-arabic', 'ArefRuqaa-700-arabic'], hijazi: ['Amiri-400-arabic', 'ArefRuqaa-700-arabic'],
+  sadu: ['Amiri-400-arabic', 'ReemKufi-400_700-arabic'], bloom: ['Amiri-400-arabic', 'ElMessiri-400_700-arabic'],
+  editorial: ['Amiri-700-arabic', 'IBMPlexSansArabic-300-arabic'], oasis: ['ReemKufi-400_700-arabic', 'IBMPlexSansArabic-400-arabic'],
+};
+
+function page({ title, desc = 'دعوات رقمية متحركة مع صفحة تأكيد حضور — جاهزة خلال ساعة.', body, js = [], css = [], og = {}, bodyClass = '', noindex = false, nav = null, theme = '#F9F5F2', fonts = null }) {
   return `<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -40,7 +50,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:image" content="${esc(og.image || `${config.baseUrl}/img/og.jpg`)}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${ICON}">
-${(bodyClass.includes('is-guest') ? ['Tajawal-300-arabic', 'Tajawal-400-arabic', 'ArefRuqaa-700-arabic', 'IBMPlexSansArabic-400-arabic'] : ['IBMPlexSansArabic-400-arabic', 'IBMPlexSansArabic-600-arabic', 'IBMPlexSansArabic-700-arabic', 'ArefRuqaa-700-arabic'])
+${(fonts || ['IBMPlexSansArabic-400-arabic', 'IBMPlexSansArabic-600-arabic', 'IBMPlexSansArabic-700-arabic', 'ArefRuqaa-700-arabic'])
     .map((f) => `<link rel="preload" href="/fonts/${f}.woff2" as="font" type="font/woff2" crossorigin>`).join('\n')}
 <link rel="stylesheet" href="${FONTS_URL}?v=${V}">
 ${['springs.css', 'm3.css', 'app.css', ...css].map((c) => `<link rel="stylesheet" href="/css/${c}?v=${V}">`).join('\n')}
@@ -131,7 +141,7 @@ export function landing() {
       <span class="promo-brand">ليلك</span><span class="promo-tag">إكليل مرسوم باليد</span>
     </a>
     <article class="promo promo-dark pressable" data-reveal>
-      <video src="/media/sage-preview.mp4" poster="${img('sage')}" autoplay muted loop playsinline preload="none"></video>
+      <video src="/media/sage-preview.mp4" poster="${img('sage')}" muted loop playsinline preload="none"></video>
       <div class="promo-dark-in"><span class="promo-kicker">${I.play} فيديو متحرك</span><h2>١٥ ثانية<br>من الفرح</h2></div>
     </article>
     <a class="promo promo-photo pressable" href="/create?template=arch" data-reveal style="--bg:url(${img('arch')})">
@@ -243,6 +253,7 @@ export function designsPage({ q = '', occasion = 'wedding' } = {}) {
 </main>
 <div class="sheet" id="design-sheet" hidden role="dialog" aria-modal="true" aria-label="تفاصيل التصميم">
   <div class="handle" aria-hidden="true"></div>
+  <button class="icon-btn pressable sheet-close" type="button" data-close aria-label="إغلاق">${I.x}</button>
   <div class="ds">
     <img class="ds-img" alt="">
     <div class="ds-info">
@@ -273,7 +284,7 @@ export function ordersPage() {
   </div>
   <div class="order-list" id="list" aria-busy="true">${sk}${sk}</div>
   <div class="empty card" id="empty" hidden>
-    ${loadingIndicator({ size: 'lg', contained: true })}
+    ${shapeBadge({ shape: 4, size: 76 })}
     <h2 class="title-l">ما عندك دعوات على هالجهاز</h2>
     <p class="body-m on-variant">دعواتك تنحفظ هنا تلقائياً لما تصممها من هذا الجوال.</p>
     <a class="btn btn-filled pressable" href="/create">صمّم دعوتك الأولى</a>
@@ -366,8 +377,9 @@ export function builder({ edit, template, occasion, ref }) {
   </aside>
 </main>
 <button class="fab pressable preview-fab" id="preview-open" type="button">${I.play} معاينة</button>
-<div class="sheet" id="preview-sheet" hidden role="dialog" aria-modal="true" aria-label="معاينة الدعوة">
-  <div class="handle"></div><div class="sheet-preview" id="preview-m"></div>
+<div class="sheet" id="preview-sheet" hidden data-keep role="dialog" aria-modal="true" aria-label="معاينة الدعوة">
+  <div class="handle"></div>
+  <button class="icon-btn pressable sheet-close" type="button" data-close aria-label="إغلاق">${I.x}</button><div class="sheet-preview" id="preview-m"></div>
 </div>
 <script>window.__INITIAL__=${JSON.stringify({ ...initial, edit: edit ? { slug: edit.slug, key: edit.host_key } : null, ref: ref || null }).replace(/</g, '\\u003c')};</script>`;
   return page({ title: 'صمّم دعوتك — عزيمة', body, css: ['invite.css'], js: ['builder.js'], bodyClass: 'is-app is-builder', noindex: !!edit });
@@ -483,7 +495,7 @@ export function guestPage({ inv, demo, to = '' }) {
     <footer class="g-foot"><a class="pressable" href="/?ref=${esc(slug || 'demo')}">صمّم دعوتك مع <b>عزيمة</b></a></footer>
   </div>
 </main>`;
-  return page({ title, desc: og.desc, body, css: ['invite.css', 'guest.css'], js: ['guest.js'], og, bodyClass: 'is-guest', noindex: !isDemo, theme: theme.swatch[0] });
+  return page({ title, desc: og.desc, body, css: ['invite.css', 'guest.css'], js: ['guest.js'], og, bodyClass: 'is-guest', noindex: !isDemo, theme: theme.swatch[0], fonts: [...(THEME_FONTS[d.template] || THEME_FONTS.sage), 'IBMPlexSansArabic-400-arabic'] });
 }
 
 // ================================================================ HOST
@@ -564,7 +576,7 @@ export function hostPage(inv, rsvps, sum, { welcome, progress = 0 }) {
 }
 
 export function guestRows(rsvps) {
-  if (!rsvps.length) return `<li class="empty">${loadingIndicator({ contained: true })}<span>بانتظار أول رد — أرسل الدعوة 🤍</span></li>`;
+  if (!rsvps.length) return `<li class="empty">${shapeBadge({ shape: 0, size: 56 })}<span>بانتظار أول رد — أرسل الدعوة 🤍</span></li>`;
   return rsvps.map((r) => `<li data-a="${r.attending ? 'yes' : 'no'}">
     <span class="g-avatar ${r.attending ? 'ok' : 'no'}">${esc(r.name.trim().charAt(0))}</span>
     <div><b>${esc(r.name)}</b>${r.message ? `<em>«${esc(r.message)}»</em>` : ''}</div>
@@ -610,6 +622,6 @@ const r=await fetch('/api/admin/'+b.dataset.slug+'/'+b.dataset.admin+'?key=${enc
 export function notFound() {
   return page({
     title: 'غير موجود — عزيمة', noindex: true, nav: 'none', bodyClass: 'is-app',
-    body: `<main class="wrap nf">${loadingIndicator({ size: 'lg', contained: true })}<h1 class="headline-m">الصفحة غير موجودة</h1><p class="body-l on-variant">ممكن الرابط ناقص أو انتهت صلاحيته.</p><a class="btn btn-filled pressable" href="/">الرئيسية</a></main>`,
+    body: `<main class="wrap nf">${shapeBadge({ shape: 5, size: 84 })}<h1 class="headline-m">الصفحة غير موجودة</h1><p class="body-l on-variant">ممكن الرابط ناقص أو انتهت صلاحيته.</p><a class="btn btn-filled pressable" href="/">الرئيسية</a></main>`,
   });
 }

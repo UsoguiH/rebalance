@@ -3,8 +3,10 @@ import { spring, blurIn, springEasing, SPRINGS } from './motion.js';
 
 initSegmented();
 
-// Envelope cover → open
+// Envelope cover → open. Poster animations are paused here (not via a CSS rule on every
+// descendant, which made opening the envelope restyle the whole drawing).
 const cover = $('#cover'), guest = $('#guest');
+if (cover) $$('.poster', guest).forEach((p) => p.getAnimations({ subtree: true }).forEach((a) => a.pause()));
 $('#open')?.addEventListener('click', () => {
   cover.classList.add('opening');
   guest.classList.remove('closed');
@@ -50,7 +52,7 @@ async function toggleMap() {
     if (!card.querySelector('iframe')) { // created after the morph so it never competes with the animation
       const f = document.createElement('iframe');
       f.title = 'الخريطة'; f.loading = 'lazy'; f.referrerPolicy = 'no-referrer-when-downgrade'; f.allowFullscreen = true;
-      f.onload = () => { f.classList.add('loaded'); card.classList.add('ready'); };
+      f.onload = () => { f.classList.add('loaded'); card.classList.add('ready'); setTimeout(() => $('.map-loading', card)?.remove(), 450); };
       card.prepend(f);
       f.src = card.dataset.embed;
     }

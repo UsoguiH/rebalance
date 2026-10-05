@@ -220,7 +220,10 @@
 /* M3 Expressive loading indicator: a morphing shape that spins */
 .loading-indicator { display: inline-grid; place-items: center; width: 48px; height: 48px; color: var(--md-primary); }
 .loading-indicator.contained { border-radius: 50%; background: var(--md-primary-container); }
-.loading-indicator svg { width: 76%; height: 76%; animation: li-spin 4.2s linear infinite; }
+.loading-indicator svg { width: 76%; height: 76%; will-change: transform; animation: li-spin 1.6s cubic-bezier(.45, .05, .55, .95) infinite, li-breathe .8s ease-in-out infinite alternate; }
+@keyframes li-breathe { from { scale: .82; } to { scale: 1; } }
+.shape-badge { display: grid; place-items: center; width: var(--s); height: var(--s); border-radius: 50%; background: var(--md-primary-container); color: var(--md-primary); }
+.shape-badge svg { width: 62%; height: 62%; }
 .loading-indicator.sm { width: 28px; height: 28px; }
 .loading-indicator.lg { width: 72px; height: 72px; }
 @keyframes li-spin { to { transform: rotate(360deg); } }
@@ -277,9 +280,12 @@
   position: fixed; inset-inline: 0; bottom: 0; z-index: 111; max-height: 92vh; overflow: auto; margin: 0 auto; max-width: 640px;
   border-radius: var(--md-shape-xl) var(--md-shape-xl) 0 0; background: var(--md-surface-container-low);
   padding: 8px 20px max(24px, env(safe-area-inset-bottom)); box-shadow: var(--md-elev-3); overscroll-behavior: contain;
-  translate: 0 105%; touch-action: none;
+  translate: 0 105%; touch-action: pan-y;
 }
-.sheet .handle { width: 36px; height: 4px; border-radius: 2px; background: var(--md-outline); margin: 8px auto 16px; }
+/* drag handle: only this area captures the drag gesture (48px tall hit target) */
+.sheet .handle { position: relative; width: 36px; height: 4px; border-radius: 2px; background: var(--md-outline); margin: 8px auto 16px; touch-action: none; cursor: grab; }
+.sheet .handle::before { content: ''; position: absolute; inset: -22px -60px; }
+.sheet-close { position: absolute; top: 10px; inset-inline-end: 12px; }
 
 /* ---------- menu ---------- */
 .menu {
@@ -309,3 +315,5 @@
 .nav-item[aria-current="page"] .ni-f { opacity: 1; transform: none; }
 .nav-item[aria-current="page"] .ni-o { opacity: 0; transform: scale(1.2); }
 .chip .ms { width: 20px; height: 20px; }
+/* a "parked" sheet stays laid out off-screen (visibility only), so opening it costs no layout */
+.sheet[hidden][data-keep] { display: block !important; visibility: hidden; pointer-events: none; }

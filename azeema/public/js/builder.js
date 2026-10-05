@@ -46,26 +46,41 @@ function collect() {
   return d;
 }
 
-let animateNext = true, raf = 0;
-function draw() {
-  cancelAnimationFrame(raf);
-  raf = requestAnimationFrame(() => {
-    const d = collect();
-    const o = OCCASIONS[d.occasion] || OCCASIONS.wedding;
-    const shown = { ...d, name1: d.name1 || o.sample[0], name2: o.hasName2 ? d.name2 || o.sample[1] : '' };
-    const opts = { mode: animateNext ? 'page' : 'static' };
-    const parts = posterParts(shown, opts);
-    const targets = [$('#preview'), ...($('#preview-sheet').hidden ? [] : [$('#preview-m')])];
-    for (const t of targets) {
-      const el = t.firstElementChild;
-      // same artwork → swap only the text layer (no re-parse of the SVG drawing)
-      if (el && el.dataset.key === parts.key) { el.className = parts.className; el.querySelector('.p-content').innerHTML = parts.content; }
-      else t.innerHTML = renderPoster(shown, opts);
-    }
-    animateNext = false;
-    const f = formatDates(d.date, d.time);
-    $('#hijri-hint').textContent = f.hijri ? `يوافق ${f.weekday} ${f.hijri}` : '';
-  });
+let animateNext = true, raf = 0, stale = false;
+const isPhone = matchMedia('(max-width: 980px)');
+isPhone.addEventListener('change', () => { animateNext = true; draw(); });
+const sheetClosed = () => $('#preview-sheet').hidden;
+
+function render() {
+  const d = collect();
+  const f = formatDates(d.date, d.time);
+  $('#hijri-hint').textContent = f.hijri ? `يوافق ${f.weekday} ${f.hijri}` : '';
+  // phones: the preview lives in a closed sheet — don't touch it while typing, refresh on open
+  if (isPhone.matches && sheetClosed()) { stale = true; scheduleIdleRefresh(); return; }
+  stale = false;
+  const o = OCCASIONS[d.occasion] || OCCASIONS.wedding;
+  const shown = { ...d, name1: d.name1 || o.sample[0], name2: o.hasName2 ? d.name2 || o.sample[1] : '' };
+  const opts = { mode: animateNext ? 'page' : 'static' };
+  const parts = posterParts(shown, opts);
+  const t = isPhone.matches ? $('#preview-m') : $('#preview');
+  const el = t.firstElementChild;
+  // same artwork → swap only the text layer (no re-parse of the SVG drawing)
+  if (el && el.dataset.key === parts.key) { el.className = parts.className; el.querySelector('.p-content').innerHTML = parts.content; }
+  else t.innerHTML = renderPoster(shown, opts);
+  animateNext = false;
+}
+function draw() { cancelAnimationFrame(raf); raf = requestAnimationFrame(render); }
+// after typing pauses, refresh the parked sheet in idle time so opening it is instant
+let idleT = 0;
+const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1));
+function scheduleIdleRefresh() {
+  clearTimeout(idleT);
+  idleT = setTimeout(() => idle(() => { if (stale && sheetClosed()) renderSheetNow(); }, { timeout: 1000 }), 450);
+}
+// first phone render happens in idle time, so it never blocks the page load or a tap
+function renderSheetNow() {
+  const sheet = $('#preview-sheet');
+  sheet.hidden = false; render(); sheet.hidden = true; // render into the parked (laid-out, invisible) sheet
 }
 
 // ---- init ----
@@ -109,11 +124,17 @@ addEventListener('scroll', () => {
 }, { passive: true });
 
 // Mobile preview → bottom sheet
+(window.requestIdleCallback || ((fn) => setTimeout(fn, 600)))(() => isPhone.matches && renderSheetNow(), { timeout: 2000 });
+
 $('#preview-open').addEventListener('click', () => {
-  animateNext = true;
-  $('#preview-sheet').hidden = false;
-  draw();
-  openSheet($('#preview-sheet'));
+  const sheet = $('#preview-sheet');
+  if (stale || !$('#preview-m .poster')) renderSheetNow(); // cheap: usually just the text layer
+  const poster = $('#preview-m .poster');
+  // pause the entrance until the sheet has landed, then play it (no work competes with the slide-up)
+  const anims = poster ? poster.getAnimations({ subtree: true }) : [];
+  anims.forEach((a) => { a.pause(); a.currentTime = 0; });
+  openSheet(sheet);
+  setTimeout(() => anims.forEach((a) => a.play()), 380);
 });
 
 form.addEventListener('submit', async (e) => {
