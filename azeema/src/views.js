@@ -2,7 +2,7 @@ import { config, PACKAGES, priceOf } from './config.js';
 import { renderPoster, esc, THEMES, OCCASIONS, DEMOS, formatDates, eventInstant, titleFor, FONTS_URL } from '../public/js/shared/invite.js';
 import { loadingIndicator } from '../public/js/shared/shapes.js';
 
-const V = '13'; // asset cache-buster
+const V = '14'; // asset cache-buster
 const ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#EF5A2A"/><text x="32" y="45" font-size="36" text-anchor="middle" fill="#fff" font-family="serif">ع</text></svg>')}`;
 const ar = (n) => new Intl.NumberFormat('en-US').format(n); // app UI uses Western digits (invitations keep Arabic-Indic)
 const img = (t) => `/img/designs/${THEMES[t] ? t : 'sage'}.jpg`;

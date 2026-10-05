@@ -95,6 +95,7 @@ h1, h2, h3, p { margin: 0; }
   text-decoration: none; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--md-elev-2);
 }
 .promo-white { background: #F3F1F3; padding: 30px 20px 0; color: #4A2B2A; }
+.promo > * { flex: none; }
 .promo-kicker { font: 600 .82rem var(--md-font); opacity: .8; display: inline-flex; gap: 6px; align-items: center; }
 .promo-kicker svg { width: 14px; }
 .promo-white h2 { font: 700 2.5rem/1.15 var(--md-font); margin: 10px 0 6px; }
