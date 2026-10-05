@@ -1,0 +1,9 @@
+node_modules/
+data/
+public/_snap.html
+public/css/_fonts_file.css
+# showcase renders are reproducible (npm run showcase); keep three samples in git
+marketing/videos/*.mp4
+!marketing/videos/sage.mp4
+!marketing/videos/arch.mp4
+!marketing/videos/lilac.mp4

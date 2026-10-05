@@ -1,0 +1,294 @@
+/* ===== عزيمة — invitation poster (shared by guest page, builder preview, and video) ===== */
+
+.poster {
+  --ease: cubic-bezier(.2, .7, .15, 1);
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  container-type: inline-size;
+  overflow: hidden;
+  isolation: isolate;
+  direction: rtl;
+  color: var(--ink);
+  font-family: var(--f-body), 'Amiri', serif;
+  text-align: center;
+  -webkit-font-smoothing: antialiased;
+}
+.poster svg { display: block; }
+.p-bg, .p-frame, .p-particles { position: absolute; inset: 0; pointer-events: none; }
+.p-bg > svg, .p-frame > svg { width: 100%; height: 100%; }
+.p-frame { z-index: 1; }
+
+.p-content {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+  gap: 1.7cqw;
+  padding: var(--pad-top, 24%) 12cqw var(--pad-bottom, 12%);
+}
+.p-content > * { margin: 0; max-width: 100%; }
+
+.p-to { font-size: 3.4cqw; letter-spacing: .02em; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); padding: .5cqw 3cqw; border-radius: 99px; }
+.p-top { font-family: 'Amiri', serif; font-size: 4.3cqw; color: var(--accent); }
+.p-verse { font-family: 'Amiri', serif; font-size: 3.35cqw; line-height: 1.7; color: var(--muted); max-width: 68cqw; }
+.p-hosts { font-size: 4.5cqw; font-weight: 700; line-height: 1.45; }
+.p-invite { font-size: 3.9cqw; color: var(--muted); line-height: 1.5; }
+.p-names {
+  font-family: var(--f-name), serif; font-weight: var(--w-name, 700);
+  line-height: 1.12; margin: 1.4cqw 0 .4cqw;
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; column-gap: 2.6cqw;
+  color: var(--name, var(--ink));
+}
+.p-names.n-l { font-size: 15cqw; }
+.p-names.n-m { font-size: 12cqw; }
+.p-names.n-s { font-size: 9.6cqw; }
+.p-names.n-xs { font-size: 7.6cqw; }
+.p-names .amp { font-size: .55em; color: var(--accent); font-family: 'Aref Ruqaa', serif; }
+.p-sub { font-size: 3.7cqw; color: var(--muted); }
+.p-divider { display: flex; align-items: center; gap: 2.4cqw; color: var(--accent); font-size: 3.4cqw; width: 52cqw; }
+.p-divider span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, currentColor, transparent); }
+.p-date { display: grid; gap: 1cqw; }
+.p-day { font-size: 4.3cqw; font-weight: 700; }
+.p-dates { display: flex; align-items: center; justify-content: center; gap: 2.4cqw; font-size: 3.5cqw; color: var(--muted); flex-wrap: wrap; }
+.p-dates b { width: 1.1cqw; height: 1.1cqw; background: var(--accent); transform: rotate(45deg); display: inline-block; }
+.p-time { font-size: 3.7cqw; color: var(--accent); font-weight: 700; }
+.p-venue { display: flex; align-items: center; gap: 1.6cqw; font-size: 3.7cqw; }
+.p-venue svg { color: var(--accent); flex: none; }
+.p-aud { font-size: 3.1cqw; padding: .5cqw 3.2cqw; border-radius: 99px; background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); font-weight: 700; }
+.p-closing { font-family: 'Aref Ruqaa', 'Amiri', serif; font-size: 5cqw; color: var(--accent); margin-top: .8cqw; }
+
+/* ---- particles ---- */
+.p-particles { z-index: 3; }
+.p-particles i {
+  position: absolute; left: var(--x); top: var(--y); width: var(--s); height: var(--s);
+  border-radius: 50%; background: var(--particle, #F3D28A); opacity: 0;
+  box-shadow: 0 0 6px var(--particle, #F3D28A);
+  animation: floatUp var(--t) linear var(--dl) infinite;
+}
+@keyframes floatUp {
+  0% { opacity: 0; transform: translateY(0) scale(.6); }
+  20% { opacity: var(--po, .75); }
+  100% { opacity: 0; transform: translateY(-45cqw) scale(1); }
+}
+
+/* ---- preview watermark ---- */
+.p-watermark { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; overflow: hidden; }
+.p-watermark span {
+  transform: rotate(-28deg); font: 700 9cqw 'IBM Plex Sans Arabic', sans-serif; white-space: nowrap;
+  color: rgba(255, 255, 255, .16); -webkit-text-stroke: 1px rgba(0, 0, 0, .12); letter-spacing: .05em;
+}
+
+/* ================= animation timeline ================= */
+.poster .a { animation: rise 1.1s var(--ease) both; }
+.poster .a-name { animation: nameIn 1.9s var(--ease) both; }
+.m-video .a, .m-video .a-name { animation-delay: var(--v); }
+.m-page .a, .m-page .a-name { animation-delay: var(--p); }
+.m-page .a { animation-duration: .9s; }
+.m-page .a-name { animation-duration: 1.3s; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(2.6cqw); filter: blur(5px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes nameIn { from { opacity: 0; transform: scale(1.12); filter: blur(14px); letter-spacing: .08em; } to { opacity: 1; transform: none; filter: blur(0); letter-spacing: 0; } }
+
+.poster .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 2.8s var(--ease) .3s both; }
+.poster .draw.d2 { animation-delay: .9s; }
+.poster .draw.d3 { animation-delay: 1.4s; }
+.m-page .draw { animation-duration: 1.6s; animation-delay: 0s; }
+.m-page .draw.d2 { animation-delay: .3s; }
+.m-page .draw.d3 { animation-delay: .5s; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+.poster .pop { transform-box: fill-box; transform-origin: center; animation: pop .9s var(--ease) 2.2s both; }
+.poster .pop.d2 { animation-delay: 2.6s; }
+.m-page .pop { animation-delay: .6s; }
+.m-page .pop.d2 { animation-delay: .8s; }
+@keyframes pop { from { opacity: 0; transform: scale(0) rotate(-90deg); } to { opacity: 1; transform: none; } }
+
+.m-video .p-fade { position: absolute; inset: 0; z-index: 9; background: #000; animation: fadeOut 1.2s ease both; pointer-events: none; }
+@keyframes fadeOut { to { opacity: 0; } }
+.m-video .p-shine {
+  position: absolute; inset: -30% -80%; z-index: 4; pointer-events: none;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 244, 214, .32) 50%, transparent 58%);
+  animation: shine 2.4s ease-in-out 12.2s both;
+}
+@keyframes shine { from { transform: translateX(-60%); opacity: 1; } to { transform: translateX(60%); opacity: 1; } }
+
+.twinkle { animation: twinkle 3.2s ease-in-out calc(var(--i) * -.37s) infinite; }
+@keyframes twinkle { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+.m-static *, .m-static *::before, .m-static *::after { animation: none !important; }
+.m-static .draw { stroke-dashoffset: 0; }
+
+/* ================= themes ================= */
+
+/* ذهبي ملكي */
+.t-royal {
+  --ink: #F5E9CC; --accent: #D8B46A; --muted: #C8B993; --particle: #F3D28A;
+  --f-name: 'Aref Ruqaa'; --f-body: 'Amiri';
+  --pad-top: 31%; --pad-bottom: 11%;
+  background: #05080F;
+}
+.t-royal .p-names {
+  background: linear-gradient(100deg, #A87E36 0%, #F7E2A8 30%, #C99A4A 50%, #FFF0C4 70%, #B88A3E 100%);
+  background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  padding: 0 1cqw;
+}
+.t-royal .p-names .amp { -webkit-text-fill-color: #D8B46A; }
+.t-royal .lantern { transform-box: view-box; animation: swing 4.6s ease-in-out calc(var(--i) * -1.1s) infinite alternate; }
+@keyframes swing { from { transform: rotate(-2.4deg); } to { transform: rotate(2.4deg); } }
+.t-royal .halo { animation: breathe 6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes breathe { from { opacity: .55; transform: scale(.94); } to { opacity: 1; transform: scale(1.04); } }
+
+/* سدو */
+.t-sadu {
+  --ink: #1C1512; --accent: #A63A24; --muted: #6B5444; --particle: #A63A24; --po: .35;
+  --f-name: 'Reem Kufi'; --f-body: 'Amiri';
+  --pad-top: 22%; --pad-bottom: 20%;
+  background: #F2E7D6;
+}
+.t-sadu .p-names { letter-spacing: .01em; }
+.t-sadu .p-hosts { color: var(--ink); }
+.t-sadu .sadu-t { animation: bandIn 2.2s var(--ease) .2s both; }
+.t-sadu .sadu-b { animation: bandInR 2.2s var(--ease) .4s both; }
+.m-page.t-sadu .sadu-t, .m-page.t-sadu .sadu-b { animation-duration: 1.4s; animation-delay: 0s; }
+@keyframes bandIn { from { transform: translateX(-110%); } to { transform: none; } }
+@keyframes bandInR { from { transform: translateX(110%); } to { transform: none; } }
+
+/* رواشين */
+.t-hijazi {
+  --ink: #F6EAD7; --accent: #DDAA76; --muted: #C9D6CF; --particle: #F1C48F;
+  --f-name: 'Aref Ruqaa'; --f-body: 'Amiri';
+  --pad-top: 33%; --pad-bottom: 9%;
+  background: #0A2B2A;
+}
+.t-hijazi .lattice { animation: fadeIn 2.4s ease .4s both; }
+.t-hijazi .rawshan { animation: rawshanIn 1.8s var(--ease) both; }
+.m-page.t-hijazi .lattice { animation-duration: 1.2s; animation-delay: 0s; }
+@keyframes rawshanIn { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ورد */
+.t-bloom {
+  --ink: #4E342E; --accent: #B26E60; --muted: #85675C; --particle: #E2B4A6;
+  --f-name: 'El Messiri'; --f-body: 'Amiri'; --w-name: 600;
+  --pad-top: 30%; --pad-bottom: 12%;
+  background: #F7ECE6;
+}
+.t-bloom .stem { stroke: #8A9A7B; stroke-width: 1.6; }
+.t-bloom .leaf { fill: #9DAE8C; animation: fadeIn 1s ease calc(.5s + var(--i) * .14s) both; }
+.t-bloom .flower ellipse { fill: #E6B9AB; }
+.t-bloom .flower .fc { fill: #C98473; }
+.t-bloom .flower { animation: fadeIn 1.2s ease 1.6s both; }
+.t-bloom .blob { transform-box: fill-box; transform-origin: center; animation: breathe 7s ease-in-out infinite alternate; }
+.t-bloom .p-names { color: #5A3A31; }
+
+/* حبر */
+.t-editorial {
+  --ink: #161412; --accent: #9C7A45; --muted: #5D574F; --particle: #B08D57; --po: .4;
+  --f-name: 'Amiri'; --f-body: 'IBM Plex Sans Arabic'; --w-name: 700;
+  --pad-top: 16%; --pad-bottom: 14%;
+  background: #F4F1EA;
+}
+.t-editorial .p-top, .t-editorial .p-verse { font-family: 'Amiri', serif; }
+.t-editorial .p-hosts { font-weight: 600; letter-spacing: .01em; }
+.t-editorial .p-invite, .t-editorial .p-dates { font-weight: 300; }
+.t-editorial .p-closing { font-family: 'Amiri', serif; font-size: 4.4cqw; color: var(--ink); }
+.t-editorial .mono { font-family: 'Aref Ruqaa', serif; animation: fadeIn 3s ease both; }
+.t-editorial .p-names .amp { color: var(--accent); }
+
+/* واحة */
+.t-oasis {
+  --ink: #FFF4E2; --accent: #F6CF96; --muted: #EBD7C4; --particle: #FFE2B0;
+  --f-name: 'Reem Kufi'; --f-body: 'IBM Plex Sans Arabic';
+  --pad-top: 15%; --pad-bottom: 28%;
+  background: #161433;
+}
+.t-oasis .p-content { text-shadow: 0 2px 18px rgba(20, 10, 40, .55); }
+.t-oasis .sunset { animation: sunset 15s ease-out both; }
+.t-oasis .dune { animation: duneIn 2s var(--ease) both; }
+.t-oasis .dune.d2 { animation-delay: .25s; }
+.t-oasis .dune.d3 { animation-delay: .5s; }
+.t-oasis .palms { animation: duneIn 2.2s var(--ease) .7s both; }
+@keyframes sunset { from { transform: translateY(-90px); } to { transform: translateY(10px); } }
+@keyframes duneIn { from { transform: translateY(120px); } to { transform: none; } }
+.m-page.t-oasis .dune, .m-page.t-oasis .palms { animation-duration: 1.3s; }
+
+/* ================= botanical (light) themes ================= */
+.t-botanical .p-content { gap: 2.1cqw; padding: var(--pad-top) var(--pad-x, 14cqw) var(--pad-bottom); }
+.t-botanical .p-to { font-family: 'Tajawal', sans-serif; font-weight: 400; }
+.b-line { font-family: 'Tajawal', sans-serif; font-weight: 300; font-size: 4.1cqw; color: var(--muted); line-height: 1.6; }
+.b-strong { font-weight: 400; color: var(--ink); font-size: 4.3cqw; }
+.b-big { font-weight: 400; color: var(--ink); font-size: 5.3cqw; }
+.b-mono {
+  font-family: 'Aref Ruqaa', serif; font-weight: 700; font-size: 26cqw; line-height: 1.05;
+  background: linear-gradient(160deg, #66733F 0%, #A6AF7C 55%, #7A8653 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 2cqw;
+}
+.b-stack {
+  display: flex; flex-direction: column; width: 70cqw; line-height: .95; margin: 1cqw 0;
+  font-family: 'Aref Ruqaa', serif; font-weight: 700;
+}
+.b-stack span {
+  background: linear-gradient(160deg, #66733F 0%, #A9B27F 50%, #7A8653 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0 2cqw;
+}
+.b-stack .s1 { font-size: 17cqw; align-self: flex-start; }
+.b-stack .s2 { font-size: 14cqw; align-self: flex-end; margin-bottom: -4cqw; }
+.b-stack .s1:only-child { align-self: center; }
+
+.b-info { display: grid; grid-template-columns: repeat(3, 1fr); width: 78cqw; margin-top: 1.4cqw; }
+.b-col {
+  display: flex; flex-direction: column; align-items: center; gap: .5cqw; padding: 0 1.4cqw;
+  font-family: 'Tajawal', sans-serif; font-weight: 300; font-size: 3.3cqw; color: var(--muted); line-height: 1.45;
+}
+.b-col + .b-col { border-inline-start: 1px solid color-mix(in srgb, var(--muted) 45%, transparent); }
+.b-ic { font-size: 6.2cqw; color: var(--icon, var(--olive)); margin-bottom: 1.2cqw; line-height: 1; }
+.b-ic svg { display: block; }
+.b-num { font-weight: 400; }
+.b-small { font-size: 2.7cqw; opacity: .85; }
+.b-notes { list-style: none; padding: 0; margin: 0; display: grid; gap: .8cqw; font-family: 'Tajawal', sans-serif; font-weight: 300; font-size: 3.6cqw; color: var(--muted); }
+.b-notes li::before { content: '•'; margin-inline-end: 1.6cqw; color: var(--olive, var(--muted)); }
+
+.b-basmala { font-family: 'Aref Ruqaa', serif; font-size: 6.6cqw; color: #6C6C64; margin-bottom: 1cqw; }
+.b-hosts { display: grid; grid-template-columns: 1fr 1fr; gap: 5cqw; width: 68cqw; font-family: 'Tajawal', sans-serif; font-size: 3.6cqw; color: var(--muted); }
+.b-hosts div { display: flex; flex-direction: column; gap: .5cqw; line-height: 1.5; }
+.b-pair { display: flex; align-items: flex-end; justify-content: center; gap: 6cqw; margin: 1.5cqw 0; }
+.b-pair div { display: flex; flex-direction: column; align-items: center; gap: .6cqw; }
+.b-pair small { font-family: 'Tajawal', sans-serif; font-weight: 300; font-size: 3.4cqw; color: var(--muted); }
+.b-pair b, .b-single {
+  font-family: 'Reem Kufi', sans-serif; font-weight: 500; font-size: 10.5cqw; line-height: 1.25;
+  background: linear-gradient(180deg, #CDB97F, #9C874B); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.b-single { font-size: 12cqw; }
+.b-pair i { font-style: normal; font-family: 'Tajawal', sans-serif; font-size: 3cqw; color: var(--muted); padding-bottom: 3.4cqw; }
+.b-dateblock { display: flex; flex-direction: column; gap: .5cqw; font-family: 'Tajawal', sans-serif; font-size: 3.8cqw; color: var(--ink); line-height: 1.55; }
+
+.b-wreath { position: relative; width: 58cqw; aspect-ratio: 300 / 220; margin-bottom: 1cqw; }
+.b-wreath > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.b-wreath .b-mono { position: absolute; inset: 6% 0 auto; font-size: 21cqw; }
+.b-dotdate { position: absolute; inset: auto 0 -4%; font-family: 'Tajawal', sans-serif; font-weight: 300; font-size: 3.7cqw; letter-spacing: .12em; color: var(--olive); direction: ltr; }
+.b-dua { font-family: 'Aref Ruqaa', serif; font-size: 5.4cqw; color: #4A4650; line-height: 1.5; }
+.b-names { display: flex; align-items: center; justify-content: center; gap: 3cqw; font-family: 'Reem Kufi', sans-serif; font-weight: 400; font-size: 10.5cqw; color: var(--olive); line-height: 1.3; }
+.b-names i { font-style: normal; font-family: 'Tajawal', sans-serif; font-weight: 200; font-size: .72em; }
+.b-rings { width: 26cqw; margin-top: 1cqw; }
+.b-rings svg { width: 100%; display: block; }
+
+.t-botanical .sway { transform-box: view-box; animation: sway 7s ease-in-out infinite alternate; }
+.t-botanical .sway:nth-of-type(2n) { animation-duration: 8.5s; animation-direction: alternate-reverse; }
+@keyframes sway { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
+.t-botanical .bloom-in { animation: fadeIn 2.4s ease .2s both; }
+.m-page.t-botanical .bloom-in { animation-duration: 1.2s; animation-delay: 0s; }
+
+.t-sage {
+  --ink: #5D5D56; --muted: #74746C; --olive: #7F8A5A; --icon: #7F8A5A; --particle: #C3CC9E; --po: .45;
+  --pad-top: 8%; --pad-bottom: 27%;
+  background: #F1F1E8;
+}
+.t-arch {
+  --ink: #55554F; --muted: #77776F; --olive: #A8955A; --particle: #D9CFA8; --po: .45;
+  --pad-top: 31%; --pad-bottom: 10%; --pad-x: 19cqw;
+  background: #F8F8F5;
+}
+.t-lilac {
+  --ink: #474747; --muted: #5C5C5C; --olive: #7E8B4E; --icon: #4A4A4A; --particle: #C7B8E0; --po: .45;
+  --pad-top: 5%; --pad-bottom: 6%;
+  background: #FAF9F7;
+}
