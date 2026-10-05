@@ -1,10 +1,40 @@
 import { config, PACKAGES, priceOf } from './config.js';
 import { renderPoster, esc, THEMES, OCCASIONS, DEMOS, formatDates, eventInstant, titleFor, FONTS_URL } from '../public/js/shared/invite.js';
+import { loadingIndicator } from '../public/js/shared/shapes.js';
 
-const V = '7'; // asset cache-buster
-const ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#6E7B47"/><text x="32" y="44" font-size="34" text-anchor="middle" fill="#F7F5EE" font-family="serif">ع</text></svg>')}`;
+const V = '13'; // asset cache-buster
+const ICON = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#EF5A2A"/><text x="32" y="45" font-size="36" text-anchor="middle" fill="#fff" font-family="serif">ع</text></svg>')}`;
+const ar = (n) => new Intl.NumberFormat('en-US').format(n); // app UI uses Western digits (invitations keep Arabic-Indic)
+const img = (t) => `/img/designs/${THEMES[t] ? t : 'sage'}.jpg`;
 
-function page({ title, desc = 'دعوات رقمية متحركة مع صفحة تأكيد حضور — جاهزة خلال ساعة.', body, css = [], js = [], og = {}, bodyClass = '', noindex = false }) {
+// ---------------------------------------------------------------- icons
+const I = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7.5"/><path d="M20.5 20.5 16.6 16.6"/></svg>',
+  chevDown: '<svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  chevUp: '<svg class="chev" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7.5 7.5 0 0 0-7.5 7.5C4.5 15 12 22 12 22s7.5-7 7.5-12.5A7.5 7.5 0 0 0 12 2zm0 10.2a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4z"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a2.5 2.5 0 0 0 2.4-1.8H9.6A2.5 2.5 0 0 0 12 22zm7-5.5-1.6-1.9V10a5.4 5.4 0 0 0-4.2-5.3V4a1.2 1.2 0 0 0-2.4 0v.7A5.4 5.4 0 0 0 6.6 10v4.6L5 16.5c-.5.6-.1 1.5.7 1.5h12.6c.8 0 1.2-.9.7-1.5z"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
+  wa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.2-.3-.2-.5-.3z"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 4.2 9 2 3 4.3v17.4L9 19.5l6 2.2 6-2.3V2zM9 17.4l-4 1.5V5.7l4-1.5zm10 .9-4 1.5V6.6l4-1.5z"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.4-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>',
+  // filled nav icons (bold, like the reference app bar)
+  navHome: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.6c.9 0 1.6.7 2.4 1.2.8.4 1.8.3 2.6.8s1 1.6 1.5 2.4c.5.8 1.5 1.2 1.8 2.1.2.9-.3 1.8-.3 2.7s.5 1.8.3 2.7c-.3.9-1.3 1.3-1.8 2.1-.5.8-.7 1.9-1.5 2.4s-1.8.4-2.6.8c-.8.5-1.5 1.2-2.4 1.2s-1.6-.7-2.4-1.2c-.8-.4-1.8-.3-2.6-.8s-1-1.6-1.5-2.4c-.5-.8-1.5-1.2-1.8-2.1-.2-.9.3-1.8.3-2.7s-.5-1.8-.3-2.7c.3-.9 1.3-1.3 1.8-2.1.5-.8.7-1.9 1.5-2.4s1.8-.4 2.6-.8C10.4 2.3 11.1 1.6 12 1.6z"/><path fill="#fff" d="M8.2 13.2c1 1.6 2.3 2.4 3.8 2.4s2.8-.8 3.8-2.4c.2-.4-.3-.8-.7-.5-.9.7-1.9 1.1-3.1 1.1s-2.2-.4-3.1-1.1c-.4-.3-.9.1-.7.5z"/></svg>',
+  navOffer: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M10.4 2.3a2.3 2.3 0 0 1 3.2 0l1 1c.4.4 1 .6 1.6.6h1.4c1.3 0 2.3 1 2.3 2.3v1.4c0 .6.2 1.2.7 1.6l1 1a2.3 2.3 0 0 1 0 3.2l-1 1c-.5.4-.7 1-.7 1.6v1.4c0 1.3-1 2.3-2.3 2.3h-1.4c-.6 0-1.2.2-1.6.7l-1 1a2.3 2.3 0 0 1-3.2 0l-1-1c-.4-.5-1-.7-1.6-.7H6.4c-1.3 0-2.3-1-2.3-2.3v-1.4c0-.6-.2-1.2-.7-1.6l-1-1a2.3 2.3 0 0 1 0-3.2l1-1c.5-.4.7-1 .7-1.6V6.2c0-1.3 1-2.3 2.3-2.3h1.4c.6 0 1.2-.2 1.6-.6z"/><g fill="#fff"><circle cx="9.2" cy="9.4" r="1.5"/><circle cx="14.8" cy="14.6" r="1.5"/><rect x="11.1" y="5.6" width="1.8" height="12.8" rx=".9" transform="rotate(40 12 12)"/></g></svg>',
+  navGrid: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2.5" y="2.5" width="8.6" height="8.6" rx="2.6"/><rect x="12.9" y="2.5" width="8.6" height="8.6" rx="2.6"/><rect x="2.5" y="12.9" width="8.6" height="8.6" rx="2.6"/><rect x="12.9" y="12.9" width="8.6" height="8.6" rx="2.6"/></svg>',
+  navBox: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.9 2.2a2 2 0 0 0-1.8 0L4 5.8l8 4 8-4z" opacity=".55"/><path d="M3 7.5v9.1c0 .8.4 1.5 1.1 1.8l7 3.5V11.5zM21 7.5v9.1c0 .8-.4 1.5-1.1 1.8l-7 3.5V11.5z"/><path d="M8 4.7l8 4v3.1l-1.6-.8V9.6l-8-4z" fill="#fff" opacity=".7"/></svg>',
+  navCreate: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 7.4A3.4 3.4 0 0 1 6.4 4h11.2A3.4 3.4 0 0 1 21 7.4v9.2a3.4 3.4 0 0 1-3.4 3.4H6.4A3.4 3.4 0 0 1 3 16.6z"/><path d="m4.5 7 7.5 5.4L19.5 7" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+const brand = (href = '/') => `<a class="brand pressable" href="${href}" aria-label="عزيمة — الرئيسية"><span class="brand-mark">ع</span><span class="brand-word">عزيمة</span></a>`;
+
+// ---------------------------------------------------------------- shell
+function page({ title, desc = 'دعوات رقمية متحركة مع صفحة تأكيد حضور — جاهزة خلال ساعة.', body, js = [], css = [], og = {}, bodyClass = '', noindex = false, nav = null, theme = '#F9F5F2' }) {
   return `<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -12,332 +42,378 @@ function page({ title, desc = 'دعوات رقمية متحركة مع صفحة 
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
-<meta name="theme-color" content="#F7F5EE">
+<meta name="theme-color" content="${theme}">
 ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:type" content="website">
 <meta property="og:title" content="${esc(og.title || title)}">
 <meta property="og:description" content="${esc(og.desc || desc)}">
-${og.image ? `<meta property="og:image" content="${esc(og.image)}"><meta name="twitter:card" content="summary_large_image">` : ''}
+<meta property="og:image" content="${esc(og.image || `${config.baseUrl}/img/og.jpg`)}">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="${ICON}">
-<link rel="preload" href="/fonts/Tajawal-400-arabic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/IBMPlexSansArabic-400-arabic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="${FONTS_URL}?v=${V}">
-${['app.css', ...css].map((c) => `<link rel="stylesheet" href="/css/${c}?v=${V}">`).join('\n')}
+${['springs.css', 'm3.css', 'app.css', ...css].map((c) => `<link rel="stylesheet" href="/css/${c}?v=${V}">`).join('\n')}
 </head>
 <body class="${bodyClass}">
 ${body}
+${nav ? navbar(nav) : ''}
 ${js.map((s) => `<script type="module" src="/js/${s}?v=${V}"></script>`).join('\n')}
 </body>
 </html>`;
 }
 
-const logo = (href = '/') => `<a class="logo" href="${href}" aria-label="عزيمة"><span class="logo-mark">${leafMark()}</span><span class="logo-word">عزيمة</span></a>`;
-const leafMark = () => `<svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true"><path d="M6 27 C 10 18 16 10 27 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M12 19 C 9 15 9 11 12 8 C 15 11 15 15 12 19Z" fill="currentColor" opacity=".55"/><path d="M18 13 C 18 9 20 6 24 5 C 24 9 22 12 18 13Z" fill="currentColor" opacity=".8"/><path d="M15 17 C 19 17 22 19 23 22 C 19 23 16 21 15 17Z" fill="currentColor" opacity=".7"/></svg>`;
-
-const header = (cta = true) => `
-<header class="site-header">
-  <div class="wrap header-in">
-    ${logo()}
-    <nav class="nav">
-      <a href="/#designs">التصاميم</a><a href="/#features">المميزات</a><a href="/#how">كيف تشتغل</a><a href="/#pricing">الأسعار</a><a href="/#faq">الأسئلة</a>
-    </nav>
-    ${cta ? '<a class="btn btn-primary btn-sm" href="/create">صمّم دعوتك</a>' : ''}
+function navbar(active) {
+  const item = (k, href, icon, label) =>
+    `<a class="nav-item pressable" href="${href}" ${active === k ? 'aria-current="page"' : ''} aria-label="${label}">${icon}<span class="tip">${label}</span></a>`;
+  return `<nav class="navbar" aria-label="التنقل">
+  <div class="nav-group">
+    <i class="nav-indicator"></i>
+    ${item('home', '/', I.navHome, 'الرئيسية')}
+    ${item('offers', '/#pricing', I.navOffer, 'الأسعار والعروض')}
+    ${item('designs', '/designs', I.navGrid, 'التصاميم')}
+    ${item('orders', '/orders', `<span class="badge-wrap">${I.navBox}<span class="badge" data-orders-badge></span></span>`, 'طلباتي')}
   </div>
-</header>`;
-
-const footer = () => `
-<footer class="site-footer">
-  <div class="wrap footer-in">
-    <div>${logo()}<p class="muted">دعوات رقمية متحركة لمناسباتكم السعيدة.<br>صُنعت بحب في السعودية 🇸🇦</p></div>
-    <div class="footer-links">
-      <a href="/create">صمّم دعوتك</a><a href="/#designs">التصاميم</a><a href="/#pricing">الأسعار</a>
-      ${config.whatsappContact ? `<a href="https://wa.me/${esc(config.whatsappContact)}">تواصل واتساب</a>` : ''}
-    </div>
-  </div>
-  <div class="wrap fine">© ${new Date().getFullYear()} عزيمة</div>
-</footer>`;
-
-const themeOrder = ['sage', 'arch', 'lilac', 'royal', 'sadu', 'hijazi', 'bloom', 'editorial', 'oasis'];
-const demoData = (t) => ({ ...(DEMOS[t] || DEMOS.sage), template: t });
-
-const check = `<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const ic = {
-  video: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="M16 10l5-3v10l-5-3"/></svg>',
-  page: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10 18.5h4"/></svg>',
-  users: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14.5c2.4.2 4 1.8 4.6 4.5"/></svg>',
-  link: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>',
-  wa: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.2-.3-.2-.5-.3z"/></svg>',
-  copy: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
-  pin: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
-  cal: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
-  share: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 15V3M7.5 7.5L12 3l4.5 4.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
-};
-
-// ======================= landing =======================
-export function landing() {
-  const heroThemes = ['sage', 'lilac', 'arch'];
-  const full = PACKAGES.full, video = PACKAGES.video;
-  const body = `
-${header()}
-<main>
-  <section class="hero">
-    <div class="wash w1"></div><div class="wash w2"></div><div class="wash w3"></div>
-    <div class="wrap hero-in">
-      <div class="hero-copy">
-        <span class="eyebrow">${leafMark()} دعوات رقمية فاخرة</span>
-        <h1>دعوتك تُفتح<br>كأنها <em>هدية</em></h1>
-        <p class="lead">فيديو دعوة متحرك بتصاميم سعودية أنيقة، وصفحة دعوة فيها العدّاد والموقع وتأكيد الحضور. <strong>جاهزة خلال ساعة.</strong></p>
-        <div class="hero-cta">
-          <a class="btn btn-primary btn-lg" href="/create">صمّم دعوتك الآن</a>
-          <a class="btn btn-ghost btn-lg" href="/demo/sage?to=${encodeURIComponent('أبو محمد')}">شاهد دعوة حقيقية</a>
-        </div>
-        <ul class="trust">
-          <li>${check} جاهزة خلال ساعة</li><li>${check} بدون تطبيق</li><li>${check} تعديل مجاني</li>
-        </ul>
-      </div>
-      <div class="hero-visual">
-        <div class="phone" data-rotator>
-          <div class="phone-notch"></div>
-          <div class="phone-screen">
-            ${heroThemes.map((t, i) => `<div class="rot-item${i === 0 ? ' on' : ''}">${renderPoster(demoData(t), { mode: 'page' })}</div>`).join('')}
-          </div>
-        </div>
-        <div class="float-card fc-1"><span class="dot ok"></span><div><b>أبو فيصل</b><small>أكّد حضوره + ٣ مرافقين</small></div></div>
-        <div class="float-card fc-2"><b class="num">١٤٨</b><small>ضيف أكدوا الحضور</small></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="occasions">
-    <div class="wrap">
-      <p class="muted center">لكل مناسباتكم</p>
-      <div class="chips">${Object.entries(OCCASIONS).map(([k, o]) => `<a class="chip" href="/create?occasion=${k}"><span>${o.icon}</span>${esc(o.label)}</a>`).join('')}</div>
-    </div>
-  </section>
-
-  <section id="designs" class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="eyebrow">${leafMark()} التصاميم</span>
-        <h2>اختر الطابع اللي <em>يشبهكم</em></h2>
-        <p class="muted">كل تصميم يتحرك بهدوء في الفيديو وصفحة الدعوة. اضغط «معاينة حية» وشوفه مثل ما بيشوفه ضيوفك.</p>
-      </div>
-      <div class="gallery">
-        ${themeOrder.map((t) => `
-        <article class="design-card">
-          <div class="design-thumb">${renderPoster(demoData(t), { mode: 'static' })}</div>
-          <div class="design-meta">
-            <div><h3>${esc(THEMES[t].name)}</h3><p class="muted">${esc(THEMES[t].desc)}</p></div>
-            <div class="design-actions">
-              <a class="btn btn-primary btn-sm" href="/create?template=${t}">استخدم التصميم</a>
-              <a class="btn btn-link btn-sm" href="/demo/${t}">معاينة حية ←</a>
-            </div>
-          </div>
-        </article>`).join('')}
-      </div>
-    </div>
-  </section>
-
-  <section id="features" class="section section-alt">
-    <div class="wrap">
-      <div class="section-head">
-        <span class="eyebrow">${leafMark()} وش تحصل</span>
-        <h2>أكثر من بطاقة… <em>تجربة كاملة</em></h2>
-      </div>
-      <div class="features">
-        <div class="feature"><span class="f-ic">${ic.video}</span><h3>فيديو دعوة متحرك</h3><p>١٥ ثانية بمقاس الجوال، تتحرك فيه النقوش والخطوط بنعومة. جاهز للواتساب والسناب والستوري.</p></div>
-        <div class="feature"><span class="f-ic">${ic.page}</span><h3>صفحة دعوة أنيقة</h3><p>تُفتح مثل الظرف، فيها عدّاد تنازلي، وزر الموقع على الخريطة، وإضافة الموعد للتقويم.</p></div>
-        <div class="feature"><span class="f-ic">${ic.users}</span><h3>تأكيد الحضور</h3><p>الضيف يأكد حضوره وعدد المرافقين بضغطة. وأنت تشوف القائمة والعدد لحظة بلحظة.</p></div>
-        <div class="feature"><span class="f-ic">${ic.link}</span><h3>روابط بأسماء ضيوفك</h3><p>«إلى: أبو محمد» — كل ضيف يفتح دعوة باسمه. لمسة صغيرة تفرق كثير.</p></div>
-      </div>
-      <div class="dash-mock">
-        <div class="dm-head"><b>لوحة الضيوف</b><span class="pill ok">مباشر</span></div>
-        <div class="dm-stats"><div><b>١٤٨</b><small>سيحضرون</small></div><div><b>٤٢</b><small>ردود</small></div><div><b>٩</b><small>معتذرين</small></div><div><b>٦١٢</b><small>مشاهدة</small></div></div>
-        <div class="dm-rows">
-          <div><span class="dot ok"></span><b>أم خالد</b><small>+٤ مرافقين</small><em>«الله يتمم بخير ويسعدكم»</em></div>
-          <div><span class="dot ok"></span><b>سارة العتيبي</b><small>+١</small><em>«مبروك مقدماً 🤍»</em></div>
-          <div><span class="dot no"></span><b>نوف</b><small>معتذرة</small><em>«ألف مبروك، والله يعوضني بشوفتكم»</em></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="how" class="section">
-    <div class="wrap">
-      <div class="section-head"><span class="eyebrow">${leafMark()} كيف تشتغل</span><h2>ثلاث خطوات <em>وبس</em></h2></div>
-      <ol class="steps">
-        <li><span class="step-n">١</span><h3>اختر التصميم</h3><p>واكتب الأسماء والموعد والقاعة، وتشوف دعوتك تتشكل قدامك.</p></li>
-        <li><span class="step-n">٢</span><h3>ادفع بأمان</h3><p>مدى، Apple Pay، أو بطاقة ائتمانية.</p></li>
-        <li><span class="step-n">٣</span><h3>أرسلها لضيوفك</h3><p>خلال ساعة يجيك الفيديو ورابط الدعوة ولوحة الحضور.</p></li>
-      </ol>
-    </div>
-  </section>
-
-  <section id="pricing" class="section section-alt">
-    <div class="wrap">
-      <div class="section-head"><span class="eyebrow">${leafMark()} الأسعار</span><h2>سعر واحد، <em>بدون مفاجآت</em></h2></div>
-      <div class="pricing">
-        <div class="price-card featured">
-          <span class="badge">عرض الإطلاق</span>
-          <h3>${esc(full.name)}</h3>
-          <div class="price"><b>${full.launchPrice}</b><span>ريال</span><s>${full.price}</s></div>
-          <ul>${full.features.map((f) => `<li>${check}${esc(f)}</li>`).join('')}</ul>
-          <a class="btn btn-primary btn-block" href="/create?package=full">ابدأ الآن</a>
-        </div>
-        <div class="price-card">
-          <h3>${esc(video.name)}</h3>
-          <div class="price"><b>${video.price}</b><span>ريال</span></div>
-          <ul>${video.features.map((f) => `<li>${check}${esc(f)}</li>`).join('')}</ul>
-          <a class="btn btn-ghost btn-block" href="/create?package=video">اختر الباقة</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="faq" class="section">
-    <div class="wrap narrow">
-      <div class="section-head"><span class="eyebrow">${leafMark()} أسئلة شائعة</span><h2>عندك سؤال؟</h2></div>
-      <div class="faq">
-        ${[
-    ['متى توصلني الدعوة؟', 'صفحة الدعوة تشتغل فوراً بعد الدفع، والفيديو يجهز عادةً خلال دقائق، وأقصاها ساعة.'],
-    ['هل أقدر أعدّل بعد الدفع؟', 'نعم، عندك تعديل مجاني مرة واحدة (اسم، وقت، قاعة…) ويتجدد الفيديو تلقائياً.'],
-    ['هل الضيوف يحتاجون تطبيق؟', 'لا. الدعوة رابط يفتح مباشرة من الواتساب على أي جوال.'],
-    ['هل أقدر أخلي الحفل للنساء فقط أو عائلي؟', 'أكيد، تختار نوع الحضور ويظهر بوضوح في الدعوة.'],
-    ['هل بيانات ضيوفي خاصة؟', 'نعم. قائمة الحضور ما يشوفها إلا أنت عبر رابط لوحة التحكم الخاص فيك.'],
-    ['أبي تصميم خاص بشعار أو ألوان معينة؟', 'تواصل معنا وبنجهزه لك.'],
-  ].map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}
-      </div>
-    </div>
-  </section>
-
-  <section class="cta-band">
-    <div class="wrap cta-in">
-      <h2>فرحتكم تستاهل دعوة <em>تليق فيها</em></h2>
-      <a class="btn btn-light btn-lg" href="/create">صمّم دعوتك خلال دقائق</a>
-    </div>
-  </section>
-</main>
-${footer()}`;
-  return page({ title: 'عزيمة — دعوات رقمية متحركة وتأكيد حضور', body, css: ['invite.css'], js: ['landing.js'], og: { image: `${config.baseUrl}/img/og.jpg` } });
+  <div class="nav-solo"><a class="nav-item pressable" href="/create" ${active === 'create' ? 'aria-current="page"' : ''} aria-label="صمّم دعوتك">${I.navCreate}<span class="tip">صمّم دعوتك</span></a></div>
+</nav>`;
 }
 
-// ======================= builder =======================
+const themeOrder = ['sage', 'arch', 'lilac', 'royal', 'sadu', 'hijazi', 'bloom', 'editorial', 'oasis'];
+const GROUPS = [
+  { title: 'ناعمة ونباتية', themes: ['sage', 'arch', 'lilac', 'bloom'] },
+  { title: 'تراثية سعودية', themes: ['sadu', 'hijazi', 'royal'] },
+  { title: 'عصرية وهادئة', themes: ['editorial', 'oasis'] },
+];
+// Palm frond: curved rib + paired leaflets (for the hero still-life)
+function frond(x, y, rot, sc, seed) {
+  let leaf = '';
+  for (let i = 2; i < 17; i++) {
+    const t = i / 17, px = Math.sin(t * 1.2) * 18, py = -t * 240, L = 26 + Math.sin(t * Math.PI) * 30;
+    for (const side of [-1, 1]) leaf += `<path d="M${px.toFixed(1)} ${py.toFixed(1)} q ${side * L * 0.5} ${-L * 0.15} ${side * L} ${L * 0.35}" />`;
+  }
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${sc})" fill="none" stroke="hsl(${125 + seed * 4} 28% ${14 + seed * 2.2}%)" stroke-linecap="round">
+    <path d="M0 0 C 8 -80 18 -160 18 -250" stroke-width="3.2"/><g stroke-width="${2.6 - seed * 0.1}">${leaf}</g></g>`;
+}
+const demoData = (t) => ({ ...(DEMOS[t] || DEMOS.sage), template: t });
+
+// ================================================================ HOME
+export function landing() {
+  const full = PACKAGES.full, video = PACKAGES.video;
+  const slides = [['دعوتك', 'هديّة'], ['فرحتكم', 'تستاهل'], ['حضوركم', 'يسعدنا']];
+  const stage = ['bloom', 'lilac', 'sage', 'arch', 'royal'];
+  const body = `
+<header class="hero" data-hero>
+  <div class="scene" aria-hidden="true">
+    <div class="sc-window"><i></i><i></i></div>
+    <div class="sc-light"></div>
+    <svg class="sc-plant" viewBox="0 0 220 320">${frond(70, 320, -58, 1, 1)}${frond(70, 320, -32, .95, 2)}${frond(70, 320, -8, 1.05, 3)}${frond(70, 320, 16, .85, 4)}${frond(70, 320, -78, .75, 5)}${frond(70, 320, 34, .7, 6)}</svg>
+    <div class="sc-stones"><i></i><i></i><i></i></div>
+    <div class="sc-stage">${stage.map((t, i) => `<figure class="bottle b${i}" style="--i:${i}"><img src="${img(t)}" alt="" loading="eager"><span class="refl"></span></figure>`).join('')}</div>
+    <div class="sc-wood">${[0, 1, 2, 3, 4].map((i) => `<i style="--i:${i}"></i>`).join('')}</div>
+    <div class="sc-vignette"></div>
+  </div>
+  <div class="hero-top wrap">
+    <button class="glass-pill pressable" id="occ-pick" type="button" aria-haspopup="menu">${I.pin}<span id="occ-label">زواج</span>${I.chevDown}</button>
+    <a class="avatar pressable badge-wrap" href="/orders" aria-label="طلباتي"><span class="brand-mark lg">ع</span><span class="badge dark" data-orders-badge></span></a>
+  </div>
+  <form class="wrap hero-search" action="/designs" role="search">
+    <label class="search glass"><input name="q" placeholder="ابحث عن تصميم أو مناسبة" aria-label="ابحث عن تصميم أو مناسبة"><button class="icon-plain" aria-label="بحث">${I.search}</button></label>
+  </form>
+  <div class="hero-title" aria-live="polite">
+    ${slides.map(([a, b], i) => `<h1 class="calli${i === 0 ? ' on' : ''}" data-slide="${i}"><span>${a}</span><b>${b}</b></h1>`).join('')}
+  </div>
+  <div class="dots" role="tablist" aria-label="الشرائح">${slides.map((_, i) => `<button role="tab" aria-label="شريحة ${i + 1}" ${i === 0 ? 'aria-selected="true"' : ''} data-go="${i}"></button>`).join('')}</div>
+  <div class="occ-strip">
+    ${Object.entries(OCCASIONS).map(([k, o], i) => `${i ? '<i class="sep"></i>' : ''}<a href="/designs?occasion=${k}" class="occ-logo pressable"><span>${o.icon}</span>${esc(o.label)}</a>`).join('')}
+  </div>
+</header>
+
+<main class="home">
+  <section class="promo-row" aria-label="عروض">
+    <article class="promo promo-white pressable" data-reveal>
+      <p class="promo-kicker">${esc(full.name)} · عرض الإطلاق</p>
+      <h2>دعوتك كاملة</h2>
+      <p class="promo-sub">فيديو + صفحة دعوة + تأكيد حضور</p>
+      <a class="btn btn-filled btn-sm" href="/create">اطلبها الآن</a>
+      <img class="promo-img tilt" src="${img('sage')}" alt="" loading="lazy">
+    </article>
+    <a class="promo promo-photo pressable" href="/create?template=lilac" data-reveal style="--bg:url(${img('lilac')})">
+      <span class="promo-brand">ليلك</span><span class="promo-tag">إكليل مرسوم باليد</span>
+    </a>
+    <article class="promo promo-dark pressable" data-reveal>
+      <video src="/media/sage-preview.mp4" poster="${img('sage')}" autoplay muted loop playsinline preload="metadata"></video>
+      <div class="promo-dark-in"><span class="promo-kicker">${I.play} فيديو متحرك</span><h2>١٥ ثانية<br>من الفرح</h2></div>
+    </article>
+    <a class="promo promo-photo pressable" href="/create?template=arch" data-reveal style="--bg:url(${img('arch')})">
+      <span class="promo-brand">قوس</span><span class="promo-tag">قوس ذهبي وأوراق مائية</span>
+    </a>
+  </section>
+
+  <section class="wrap sec" data-reveal>
+    <div class="sec-head"><h2 class="headline-s">لكل مناسباتكم</h2><a class="btn btn-text btn-sm" href="/designs">عرض الكل</a></div>
+    <div class="chips">${Object.entries(OCCASIONS).map(([k, o], i) => `<a class="chip pressable${i === 0 ? ' on' : ''}" href="/designs?occasion=${k}"><span class="ico">${o.icon}</span>${esc(o.label)}</a>`).join('')}</div>
+  </section>
+
+  <section class="wrap sec" id="designs">
+    <div class="sec-head" data-reveal><h2 class="headline-s">الأكثر طلباً</h2><a class="btn btn-text btn-sm" href="/designs">كل التصاميم</a></div>
+    <div class="tiles">
+      ${themeOrder.slice(0, 6).map((t) => `<a class="tile pressable" href="/create?template=${t}" data-reveal>
+        <span class="tile-img"><img src="${img(t)}" alt="" loading="lazy"></span>
+        <span class="tile-meta"><b>${esc(THEMES[t].name)}</b><small>${esc(THEMES[t].desc)}</small><em>من ${ar(priceOf('video'))} ر.س</em></span>
+      </a>`).join('')}
+    </div>
+  </section>
+
+  <section class="wrap sec" data-reveal>
+    <h2 class="headline-s">وش يوصلك؟</h2>
+    <section class="xp details" data-morph data-open="false">
+      <button class="xp-head pressable" type="button" aria-expanded="false">${I.chevDown}<span>تفاصيل الباقة الكاملة</span></button>
+      <div class="xp-body"><div class="xp-inner">
+        <dl class="kv">
+          <div class="span2"><dt>الباقة</dt><dd>${esc(full.name)}</dd></div>
+          <div><dt>الفيديو</dt><dd>١٥ ثانية</dd></div><div><dt>المقاس</dt><dd dir="ltr">1080×1920</dd></div>
+          <div><dt>التسليم</dt><dd>خلال ساعة</dd></div><div><dt>التعديل</dt><dd>مرة مجاناً</dd></div>
+          <div><dt>تأكيد الحضور</dt><dd>غير محدود</dd></div><div><dt>السعر</dt><dd>${ar(full.launchPrice)} ر.س</dd></div>
+        </dl>
+      </div></div>
+    </section>
+  </section>
+
+  <section class="wrap sec steps" data-reveal>
+    ${[['١', 'اختر التصميم', 'اكتب الأسماء والموعد وشوف دعوتك تتشكل قدامك.'], ['٢', 'ادفع بأمان', 'مدى، Apple Pay أو بطاقة.'], ['٣', 'أرسلها لضيوفك', 'الفيديو ورابط الدعوة ولوحة الحضور خلال ساعة.']]
+    .map(([n, t, d]) => `<div class="step card"><span class="step-n">${n}</span><div><h3 class="title-m">${t}</h3><p class="body-m on-variant">${d}</p></div></div>`).join('')}
+  </section>
+
+  <section class="wrap sec" id="pricing">
+    <h2 class="headline-s" data-reveal>الأسعار</h2>
+    <div class="prices">
+      <article class="price card featured" data-reveal>
+        <span class="pill-orange">عرض الإطلاق</span>
+        <h3 class="title-l">${esc(full.name)}</h3>
+        <p class="amount"><b>${ar(full.launchPrice)}</b> ر.س <s>${ar(full.price)}</s></p>
+        <ul>${full.features.map((f) => `<li>${I.check}${esc(f)}</li>`).join('')}</ul>
+        <a class="btn btn-filled btn-block btn-lg" href="/create?package=full">ابدأ الآن</a>
+      </article>
+      <article class="price card" data-reveal>
+        <h3 class="title-l">${esc(video.name)}</h3>
+        <p class="amount"><b>${ar(video.price)}</b> ر.س</p>
+        <ul>${video.features.map((f) => `<li>${I.check}${esc(f)}</li>`).join('')}</ul>
+        <a class="btn btn-tonal btn-block btn-lg" href="/create?package=video">اختر الباقة</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap sec" id="faq">
+    <h2 class="headline-s" data-reveal>أسئلة شائعة</h2>
+    <div class="faq">
+      ${[
+    ['متى توصلني الدعوة؟', 'صفحة الدعوة تشتغل فوراً بعد الدفع، والفيديو يجهز عادةً خلال دقائق.'],
+    ['هل أقدر أعدّل بعد الدفع؟', 'نعم، تعديل مجاني مرة واحدة ويتجدد الفيديو تلقائياً.'],
+    ['هل الضيوف يحتاجون تطبيق؟', 'لا. الدعوة رابط يفتح مباشرة من الواتساب.'],
+    ['هل بيانات ضيوفي خاصة؟', 'نعم. قائمة الحضور ما يشوفها إلا أنت عبر رابط لوحتك الخاص.'],
+  ].map(([q, a]) => `<section class="xp faq-item" data-open="false" data-reveal>
+        <button class="xp-head pressable" type="button" aria-expanded="false"><span>${esc(q)}</span>${I.chevDown}</button>
+        <div class="xp-body"><div class="xp-inner"><p>${esc(a)}</p></div></div></section>`).join('')}
+    </div>
+  </section>
+  <footer class="wrap foot">${brand()}<p class="body-m on-variant">صُنعت بحب في السعودية 🇸🇦 — © ${new Date().getFullYear()}</p></footer>
+</main>`;
+  return page({ title: 'عزيمة — دعوات رقمية متحركة وتأكيد حضور', body, js: ['home.js'], nav: 'home', bodyClass: 'is-home', theme: '#0F1011' });
+}
+
+// ================================================================ DESIGNS (categories)
+export function designsPage({ q = '', occasion = 'wedding' } = {}) {
+  const occ = OCCASIONS[occasion] ? occasion : 'wedding';
+  const body = `
+<main class="cat">
+  <form class="wrap cat-search" role="search" onsubmit="return false">
+    <label class="search"><input id="q" value="${esc(q)}" placeholder="ابحث عن اللي في بالك" aria-label="ابحث في التصاميم"><span aria-hidden="true">${I.search}</span></label>
+  </form>
+  <div class="wrap cat-body">
+    <aside class="cat-side" aria-label="المناسبات">
+      ${Object.entries(OCCASIONS).map(([k, o]) => `<button class="side-item pressable${k === occ ? ' on' : ''}" data-occ="${k}" type="button"><span class="side-ico">${o.icon}</span><span>${esc(o.label)}</span></button>`).join('')}
+    </aside>
+    <div class="cat-main">
+      ${GROUPS.map((g) => `
+      <section class="xp group card-flat" data-open="true" data-reveal>
+        <button class="xp-head pressable" type="button" aria-expanded="true">
+          <span class="g-title"><b>${esc(g.title)}</b><small>${ar(g.themes.length)} تصاميم</small></span>${I.chevUp}
+        </button>
+        <div class="xp-body"><div class="xp-inner">
+          <div class="g-grid">
+            ${g.themes.map((t) => `<button type="button" class="g-tile pressable" data-theme="${t}" data-name="${esc(THEMES[t].name)} ${esc(THEMES[t].desc)}">
+              <span class="g-img"><img src="${img(t)}" alt="" loading="lazy"></span><span>${esc(THEMES[t].name)}</span></button>`).join('')}
+          </div>
+        </div></div>
+      </section>`).join('')}
+      <p class="empty-q on-variant" hidden>ما لقينا تصميم بهالاسم — جرّب كلمة ثانية</p>
+    </div>
+  </div>
+</main>
+<div class="sheet" id="design-sheet" hidden role="dialog" aria-modal="true" aria-label="تفاصيل التصميم">
+  <div class="handle" aria-hidden="true"></div>
+  <div class="ds">
+    <img class="ds-img" alt="">
+    <div class="ds-info">
+      <h2 class="headline-s ds-name"></h2>
+      <p class="body-l on-variant ds-desc"></p>
+      <p class="title-m">من ${ar(priceOf('video'))} ر.س <span class="on-variant body-m">· الباقة الكاملة ${ar(priceOf('full'))} ر.س</span></p>
+      <div class="ds-actions"><a class="btn btn-filled btn-lg ds-use">استخدم التصميم</a><a class="btn btn-tonal btn-lg ds-demo">معاينة حية</a></div>
+    </div>
+  </div>
+</div>
+<script>window.__THEMES__=${JSON.stringify(Object.fromEntries(themeOrder.map((t) => [t, { name: THEMES[t].name, desc: THEMES[t].desc }])))};</script>`;
+  return page({ title: 'التصاميم — عزيمة', body, js: ['designs.js'], nav: 'designs', bodyClass: 'is-app' });
+}
+
+// ================================================================ ORDERS
+export function ordersPage() {
+  const sk = `<div class="order card skel-card" aria-hidden="true"><div class="o-head"><span class="skeleton" style="width:56px;height:56px;border-radius:50%"></span><span class="skeleton" style="width:46%;height:20px"></span></div><span class="skeleton" style="display:block;width:30%;height:22px;margin:18px 0"></span><span class="skeleton" style="display:block;width:100%;height:18px"></span></div>`;
+  const body = `
+<main class="orders wrap">
+  <header class="app-head">
+    <h1 class="headline-l">طلباتي</h1>
+    <a class="badge-wrap bell pressable" href="#list" aria-label="الردود الجديدة" id="bell">${I.bell}<span class="badge" id="bell-n" data-n="0"></span></a>
+  </header>
+  <div class="chips" role="tablist" aria-label="تصفية">
+    <button class="chip pressable on" data-f="all" type="button">الكل</button>
+    <button class="chip pressable" data-f="ready" type="button">جاهزة</button>
+    <button class="chip pressable" data-f="pending" type="button">بانتظار الدفع</button>
+  </div>
+  <div class="order-list" id="list" aria-busy="true">${sk}${sk}</div>
+  <div class="empty card" id="empty" hidden>
+    ${loadingIndicator({ size: 'lg', contained: true })}
+    <h2 class="title-l">ما عندك دعوات على هالجهاز</h2>
+    <p class="body-m on-variant">دعواتك تنحفظ هنا تلقائياً لما تصممها من هذا الجوال.</p>
+    <a class="btn btn-filled pressable" href="/create">صمّم دعوتك الأولى</a>
+  </div>
+</main>`;
+  return page({ title: 'طلباتي — عزيمة', body, js: ['orders.js'], nav: 'orders', bodyClass: 'is-app', noindex: true });
+}
+
+// ================================================================ BUILDER
 export function builder({ edit, template, occasion, ref }) {
   const initial = edit
     ? { data: edit.data, package: edit.package, contactName: edit.contact_name, contactPhone: edit.contact_phone }
     : { data: { template: THEMES[template] ? template : 'sage', occasion: OCCASIONS[occasion] ? occasion : 'wedding' }, package: 'full' };
+  const sw = (name, label, sub) => `<label class="switch"><span class="sw-text"><b class="title-s">${label}</b>${sub ? `<small class="body-m on-variant">${sub}</small>` : ''}</span><input type="checkbox" data-toggle="${name}" checked><span class="track"><span class="thumb">${I.check}</span></span></label>`;
   const body = `
-<header class="site-header slim"><div class="wrap header-in">${logo()}<span class="muted small">${edit ? 'تعديل الدعوة' : 'صمّم دعوتك'}</span></div></header>
+<header class="app-bar">
+  <a class="icon-btn pressable" href="/" aria-label="رجوع">${I.back}</a>
+  <h1 class="title-l">${edit ? 'تعديل الدعوة' : 'صمّم دعوتك'}</h1>
+  <span class="app-bar-space"></span>
+  <div class="progress-linear" aria-hidden="true"><i id="step-progress"></i></div>
+</header>
 <main class="builder wrap">
   <form id="builder" class="b-form" novalidate>
-    <nav class="b-steps" aria-label="الخطوات">
-      <a href="#s-occasion">المناسبة</a><a href="#s-design">التصميم</a><a href="#s-text">النصوص</a><a href="#s-when">الموعد</a><a href="#s-pay">الباقة</a>
-    </nav>
+    <section class="card b-sec" id="s-occasion">
+      <h2 class="title-l">وش المناسبة؟</h2>
+      <div class="chips wrap-chips">${Object.entries(OCCASIONS).map(([k, o]) => `<label class="chip pressable"><input type="radio" name="occasion" value="${k}" class="vh"><span class="ico">${o.icon}</span>${esc(o.label)}</label>`).join('')}</div>
+    </section>
 
-    <section id="s-occasion" class="b-card">
-      <h2><span>١</span> وش المناسبة؟</h2>
-      <div class="opt-grid occ">
-        ${Object.entries(OCCASIONS).map(([k, o]) => `<label class="opt"><input type="radio" name="occasion" value="${k}"><span><i>${o.icon}</i>${esc(o.label)}</span></label>`).join('')}
+    <section class="card b-sec" id="s-design">
+      <h2 class="title-l">اختر التصميم</h2>
+      <div class="d-scroll">
+        ${themeOrder.map((t) => `<label class="d-opt pressable"><input type="radio" name="template" value="${t}" class="vh"><span class="d-img"><img src="${img(t)}" alt="" loading="lazy"><i class="d-check">${I.check}</i></span><span class="label-l">${esc(THEMES[t].name)}</span></label>`).join('')}
       </div>
     </section>
 
-    <section id="s-design" class="b-card">
-      <h2><span>٢</span> اختر التصميم</h2>
-      <div class="opt-grid themes">
-        ${themeOrder.map((t) => `<label class="opt theme-opt"><input type="radio" name="template" value="${t}">
-          <span><b class="sw" style="--a:${THEMES[t].swatch[0]};--b:${THEMES[t].swatch[1]}"></b>${esc(THEMES[t].name)}</span></label>`).join('')}
+    <section class="card b-sec" id="s-text">
+      <h2 class="title-l">الأسماء والنصوص</h2>
+      <div class="grid2">
+        <label class="field"><span class="lbl" data-label="name1">الاسم</span><input name="name1" maxlength="40" required></label>
+        <label class="field" data-show="name2"><span class="lbl" data-label="name2">الاسم الثاني</span><input name="name2" maxlength="40"></label>
+        <label class="field"><span class="lbl">أصحاب الدعوة <small>اختياري</small></span><textarea name="hosts" rows="2" maxlength="200" placeholder="عائلة …"></textarea></label>
+        <label class="field"><span class="lbl">الطرف الثاني <small>اختياري</small></span><textarea name="hosts2" rows="2" maxlength="200" placeholder="عائلة …"></textarea></label>
+        <label class="field span2"><span class="lbl">نص الدعوة</span><input name="inviteText" maxlength="140"></label>
+        <label class="field span2"><span class="lbl">سطر إضافي <small>تخصص، شعار… اختياري</small></span><input name="subtitle" maxlength="120"></label>
+        <label class="field span2"><span class="lbl">العبارة الختامية</span><input name="closing" maxlength="90"></label>
+      </div>
+      <div class="toggles">
+        <div class="tg">${sw('topLine', 'البسملة')}<div class="tg-body"><label class="field"><input name="topLine" maxlength="80" aria-label="البسملة"></label></div></div>
+        <div class="tg">${sw('verse', 'آية أو دعاء', 'يظهر تحت البسملة')}<div class="tg-body"><label class="field"><input name="verse" maxlength="160" aria-label="آية أو دعاء"></label></div></div>
+        <div class="tg">${sw('notes', 'ملاحظات للضيوف', 'مثل: جنة الأطفال منازلهم')}<div class="tg-body"><label class="field"><textarea name="notes" rows="2" maxlength="240" aria-label="ملاحظات — كل ملاحظة بسطر"></textarea></label></div></div>
       </div>
     </section>
 
-    <section id="s-text" class="b-card">
-      <h2><span>٣</span> الأسماء والنصوص</h2>
-      <div class="fields">
-        <label class="f"><span data-label="name1">الاسم</span><input name="name1" maxlength="40" required></label>
-        <label class="f" data-show="name2"><span data-label="name2">الاسم الثاني</span><input name="name2" maxlength="40"></label>
-        <label class="f wide"><span>العبارة الافتتاحية <small>(البسملة)</small></span><input name="topLine" maxlength="80"></label>
-        <label class="f wide"><span>آية أو دعاء أو بيت شعر</span><input name="verse" maxlength="160"></label>
-        <label class="f"><span>أصحاب الدعوة</span><textarea name="hosts" rows="2" maxlength="200" placeholder="عائلة …"></textarea></label>
-        <label class="f"><span>أصحاب الدعوة (الطرف الثاني) <small>اختياري</small></span><textarea name="hosts2" rows="2" maxlength="200"></textarea></label>
-        <label class="f wide"><span>نص الدعوة</span><input name="inviteText" maxlength="140"></label>
-        <label class="f wide"><span>سطر إضافي <small>(تخصص، شعار…) اختياري</small></span><input name="subtitle" maxlength="120"></label>
-        <label class="f wide"><span>ملاحظات للضيوف <small>كل ملاحظة بسطر</small></span><textarea name="notes" rows="2" maxlength="240" placeholder="جنة الأطفال منازلهم"></textarea></label>
-        <label class="f wide"><span>العبارة الختامية</span><input name="closing" maxlength="90"></label>
+    <section class="card b-sec" id="s-when">
+      <h2 class="title-l">الموعد والمكان</h2>
+      <div class="grid2">
+        <label class="field"><span class="lbl">التاريخ</span><input type="date" name="date" required><span class="hint" id="hijri-hint"></span></label>
+        <label class="field"><span class="lbl">وقت الاستقبال</span><input type="time" name="time" value="20:30"></label>
+        <label class="field"><span class="lbl">القاعة / المكان</span><input name="venue" maxlength="90" placeholder="قاعة …"></label>
+        <label class="field"><span class="lbl">المدينة</span><input name="city" maxlength="60" placeholder="الرياض"></label>
+        <label class="field span2"><span class="lbl">رابط قوقل ماب <small>اختياري</small></span><input name="mapUrl" type="url" inputmode="url" placeholder="https://maps.app.goo.gl/…" dir="ltr"></label>
       </div>
+      <p class="title-s sub-lbl">الحضور</p>
+      <div class="segmented" role="radiogroup" aria-label="الحضور">
+        ${[['', 'الكل'], ['women', 'نساء'], ['men', 'رجال'], ['family', 'عائلي']].map(([v, l]) => `<label><input type="radio" name="audience" value="${v}"><span>${l}</span></label>`).join('')}
+      </div>
+      <p class="title-s sub-lbl">أقصى عدد مرافقين لكل ضيف</p>
+      <div class="slider"><span class="bubble"></span><input type="range" name="maxCompanions" min="0" max="10" value="3" aria-label="أقصى عدد مرافقين"></div>
     </section>
 
-    <section id="s-when" class="b-card">
-      <h2><span>٤</span> الموعد والمكان</h2>
-      <div class="fields">
-        <label class="f"><span>التاريخ (ميلادي)</span><input type="date" name="date" required><small class="hint" id="hijri-hint"></small></label>
-        <label class="f"><span>وقت الاستقبال</span><input type="time" name="time" value="20:30"></label>
-        <label class="f"><span>اسم القاعة / المكان</span><input name="venue" maxlength="90" placeholder="قاعة …"></label>
-        <label class="f"><span>المدينة</span><input name="city" maxlength="60" placeholder="الرياض"></label>
-        <label class="f wide"><span>رابط الموقع في قوقل ماب <small>اختياري</small></span><input name="mapUrl" type="url" inputmode="url" placeholder="https://maps.app.goo.gl/…" dir="ltr"></label>
-        <label class="f"><span>الحضور</span><select name="audience"><option value="">بدون تحديد</option><option value="women">للنساء</option><option value="men">للرجال</option><option value="family">عائلي</option></select></label>
-        <label class="f"><span>أقصى عدد مرافقين لكل ضيف</span><input type="number" name="maxCompanions" min="0" max="10" value="3"></label>
+    <section class="card b-sec" id="s-pay">
+      <h2 class="title-l">الباقة</h2>
+      <div class="pkgs">
+        ${Object.entries(PACKAGES).map(([k, p]) => `<label class="pkg pressable"><input type="radio" name="package" value="${k}" class="vh"><span class="pkg-in">
+          <b class="title-m">${esc(p.name)}</b><span class="pkg-price"><b>${ar(priceOf(k))}</b> ر.س ${p.launchPrice ? `<s>${ar(p.price)}</s>` : ''}</span>
+          <small class="body-m on-variant">${esc(p.features.slice(0, 3).join('، '))}</small><i class="pkg-radio"></i></span></label>`).join('')}
       </div>
-    </section>
-
-    <section id="s-pay" class="b-card">
-      <h2><span>٥</span> الباقة وبيانات التواصل</h2>
-      <div class="pkg-grid">
-        ${Object.entries(PACKAGES).map(([k, p]) => `<label class="pkg"><input type="radio" name="package" value="${k}">
-          <span><b>${esc(p.name)}</b><em>${priceOf(k)} ريال ${p.launchPrice ? `<s>${p.price}</s>` : ''}</em><small>${esc(p.features.slice(0, 3).join('، '))}</small></span></label>`).join('')}
+      <div class="grid2">
+        <label class="field"><span class="lbl">اسمك</span><input name="contactName" maxlength="60" autocomplete="name"></label>
+        <label class="field"><span class="lbl">جوالك (واتساب)</span><input name="contactPhone" inputmode="tel" autocomplete="tel" placeholder="05XXXXXXXX" dir="ltr" required></label>
       </div>
-      <div class="fields">
-        <label class="f"><span>اسمك</span><input name="contactName" maxlength="60" autocomplete="name"></label>
-        <label class="f"><span>جوالك (واتساب)</span><input name="contactPhone" inputmode="tel" autocomplete="tel" placeholder="05XXXXXXXX" dir="ltr" required></label>
-      </div>
-      <p class="error" id="form-error" role="alert" hidden></p>
-      <button class="btn btn-primary btn-lg btn-block" type="submit">${edit ? 'احفظ التعديلات' : 'التالي: الدفع ←'}</button>
-      <p class="muted small center">تقدر تعدّل الدعوة مجاناً مرة واحدة بعد الدفع.</p>
+      <button class="btn btn-filled btn-lg btn-block submit" type="submit">${edit ? 'احفظ التعديلات' : 'التالي: الدفع'}</button>
+      <p class="body-m on-variant center">تقدر تعدّل مجاناً مرة واحدة بعد الدفع.</p>
     </section>
   </form>
 
   <aside class="b-preview" aria-label="معاينة">
-    <div class="phone sm"><div class="phone-notch"></div><div class="phone-screen" id="preview"></div></div>
-    <p class="muted small center">معاينة مباشرة — تتحدث مع كل حرف</p>
+    <div class="phone"><div class="phone-notch"></div><div class="phone-screen" id="preview"></div></div>
+    <p class="label-m on-variant center">معاينة مباشرة</p>
   </aside>
-  <button type="button" class="preview-fab btn btn-primary" id="preview-toggle">👁 معاينة</button>
 </main>
+<button class="fab pressable preview-fab" id="preview-open" type="button">${I.play} معاينة</button>
+<div class="sheet" id="preview-sheet" hidden role="dialog" aria-modal="true" aria-label="معاينة الدعوة">
+  <div class="handle"></div><div class="sheet-preview" id="preview-m"></div>
+</div>
 <script>window.__INITIAL__=${JSON.stringify({ ...initial, edit: edit ? { slug: edit.slug, key: edit.host_key } : null, ref: ref || null }).replace(/</g, '\\u003c')};</script>`;
-  return page({ title: 'صمّم دعوتك — عزيمة', body, css: ['invite.css', 'builder.css'], js: ['builder.js'], bodyClass: 'is-builder', noindex: !!edit });
+  return page({ title: 'صمّم دعوتك — عزيمة', body, css: ['invite.css'], js: ['builder.js'], bodyClass: 'is-app is-builder', noindex: !!edit });
 }
 
-// ======================= checkout =======================
+// ================================================================ CHECKOUT
 export function checkout(inv, mode) {
   const p = PACKAGES[inv.package];
   const d = inv.data;
   const dates = formatDates(d.date, d.time);
   const hostUrl = `${config.baseUrl}/host/${inv.slug}?key=${inv.host_key}`;
   const body = `
-<header class="site-header slim"><div class="wrap header-in">${logo()}<span class="muted small">إتمام الطلب</span></div></header>
-<main class="wrap checkout">
-  <div class="co-preview"><div class="phone sm"><div class="phone-notch"></div><div class="phone-screen">${renderPoster(d, { mode: 'static', preview: true })}</div></div></div>
-  <div class="co-card b-card">
-    <h1>${esc(titleFor(d))}</h1>
-    <p class="muted">${esc([`${dates.weekday} ${dates.hijri}`, d.venue].filter(Boolean).join(' — '))}</p>
-    <div class="co-line"><span>${esc(p.name)}</span><b>${inv.price} ريال ${p.launchPrice ? `<s>${p.price}</s>` : ''}</b></div>
-    <ul class="co-feats">${p.features.map((f) => `<li>${check}${esc(f)}</li>`).join('')}</ul>
-    <div id="pay-area" data-slug="${esc(inv.slug)}" data-key="${esc(inv.host_key)}" data-mode="${mode}">
-      ${mode === 'moyasar' ? `<button class="btn btn-primary btn-lg btn-block" data-pay>ادفع ${inv.price} ريال بأمان</button><p class="pay-logos">مدى · Apple Pay · Visa · Mastercard</p>` : ''}
-      ${mode === 'link' ? `<a class="btn btn-primary btn-lg btn-block" href="${esc(config.paymentLink)}" target="_blank" rel="noopener">ادفع ${inv.price} ريال</a>
-        <p class="note">بعد الدفع نفعّل دعوتك خلال دقائق (رقم الطلب: <b dir="ltr">${esc(inv.slug)}</b>)، وتوصلك رسالة واتساب.</p>` : ''}
-      ${mode === 'demo' ? `<button class="btn btn-primary btn-lg btn-block" data-pay data-demo>تفعيل تجريبي (بيئة التجربة)</button>` : ''}
-      ${mode === 'none' ? `<p class="note">الدفع غير مفعّل بعد. رقم طلبك: <b dir="ltr">${esc(inv.slug)}</b></p>` : ''}
-      <p class="error" role="alert" hidden></p>
-    </div>
-    <div class="keep-link">
-      <b>🔑 احفظ رابط لوحة التحكم</b>
-      <p class="muted small">من خلاله تتابع الحضور وتحمّل الفيديو. لا تشاركه مع أحد.</p>
-      <div class="copy-row"><input readonly value="${esc(hostUrl)}" dir="ltr"><button class="btn btn-ghost btn-sm" data-copy="${esc(hostUrl)}">${ic.copy} نسخ</button></div>
-    </div>
-    <a class="btn btn-link" href="/create?edit=${esc(inv.slug)}&key=${esc(inv.host_key)}">← تعديل البيانات</a>
+<header class="app-bar"><a class="icon-btn pressable" href="/create?edit=${esc(inv.slug)}&key=${esc(inv.host_key)}" aria-label="رجوع">${I.back}</a><h1 class="title-l">إتمام الطلب</h1><span class="app-bar-space"></span></header>
+<main class="wrap checkout" data-slug="${esc(inv.slug)}" data-key="${esc(inv.host_key)}">
+  <div class="co-poster" data-reveal>${renderPoster(d, { mode: 'static', preview: true })}</div>
+  <div class="co-col">
+    <section class="card" data-reveal>
+      <div class="o-head"><img class="o-avatar" src="${img(d.template)}" alt=""><div><h2 class="title-m">${esc(titleFor(d))}</h2><p class="body-m on-variant">${esc([`${dates.weekday} ${dates.hijri}`, d.venue].filter(Boolean).join(' — '))}</p></div></div>
+      <div class="co-line"><span class="title-m">${esc(p.name)}</span><span class="pkg-price"><b>${ar(inv.price)}</b> ر.س ${p.launchPrice ? `<s>${ar(p.price)}</s>` : ''}</span></div>
+      <ul class="feats">${p.features.map((f) => `<li>${I.check}${esc(f)}</li>`).join('')}</ul>
+      <div id="pay-area" data-mode="${mode}">
+        ${mode === 'moyasar' ? `<button class="btn btn-filled btn-lg btn-block" data-pay>ادفع ${ar(inv.price)} ر.س بأمان</button><p class="label-m on-variant center">مدى · Apple Pay · Visa · Mastercard</p>` : ''}
+        ${mode === 'link' ? `<a class="btn btn-filled btn-lg btn-block" href="${esc(config.paymentLink)}" target="_blank" rel="noopener">ادفع ${ar(inv.price)} ر.س</a><p class="note">بعد الدفع نفعّل دعوتك خلال دقائق (رقم الطلب: <b dir="ltr">${esc(inv.slug)}</b>).</p>` : ''}
+        ${mode === 'demo' ? `<button class="btn btn-dark btn-lg btn-block" data-pay data-demo>تفعيل تجريبي</button>` : ''}
+        ${mode === 'none' ? `<p class="note">الدفع غير مفعّل بعد. رقم طلبك: <b dir="ltr">${esc(inv.slug)}</b></p>` : ''}
+      </div>
+    </section>
+    <section class="card keep" data-reveal>
+      <p class="title-m">🔑 رابط لوحة التحكم</p>
+      <p class="body-m on-variant">انحفظ في «طلباتي» على هذا الجوال. لا تشاركه مع أحد.</p>
+      <div class="copy-row"><input class="input" readonly value="${esc(hostUrl)}" dir="ltr"><button class="btn btn-tonal btn-sm pressable" data-copy="${esc(hostUrl)}">${I.copy} نسخ</button></div>
+    </section>
   </div>
 </main>`;
-  return page({ title: 'إتمام الطلب — عزيمة', body, css: ['invite.css', 'builder.css'], js: ['checkout.js'], noindex: true });
+  return page({ title: 'إتمام الطلب — عزيمة', body, css: ['invite.css'], js: ['checkout.js'], bodyClass: 'is-app', noindex: true });
 }
 
-// ======================= guest page =======================
+// ================================================================ GUEST
 export function guestPage({ inv, demo, to = '' }) {
   const isDemo = !!demo;
   const d = isDemo ? demoData(demo) : inv.data;
@@ -348,61 +424,78 @@ export function guestPage({ inv, demo, to = '' }) {
   const theme = THEMES[d.template] || THEMES.sage;
   const occ = OCCASIONS[d.occasion] || OCCASIONS.wedding;
   const mono = [occ.hasName2 ? (d.name2 || '').charAt(0) : '', (d.name1 || '').charAt(0)].join('');
-  const mapHref = d.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([d.venue, d.city].filter(Boolean).join(' '))}`;
+  const place = [d.venue, d.city].filter(Boolean).join(' ');
+  const mapHref = d.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`;
+  const embed = `https://maps.google.com/maps?q=${encodeURIComponent(place || 'الرياض')}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
   const slug = isDemo ? '' : inv.slug;
   const title = titleFor(d);
   const og = {
     title, desc: `${dates.weekday} ${dates.hijri} — ${[d.venue, d.city].filter(Boolean).join('، ')}`,
-    image: !isDemo && paid ? `${config.baseUrl}/media/${slug}/poster.jpg` : undefined,
+    image: !isDemo && paid ? `${config.baseUrl}/media/${slug}/poster.jpg` : `${config.baseUrl}${img(d.template)}`,
   };
+  const ac = theme.swatch[1];
   const body = `
-<div class="cover" id="cover" style="--c-bg:${theme.swatch[0]};--c-ac:${theme.swatch[1]}">
+<div class="cover" id="cover" style="--c-bg:${theme.swatch[0]};--c-ac:${ac}">
   <div class="cover-half r"></div><div class="cover-half l"></div>
   <div class="cover-in">
     <p class="cover-kicker">دعوة خاصة</p>
     ${to ? `<p class="cover-to">إلى: ${esc(to)}</p>` : ''}
-    <button class="seal" id="open" aria-label="افتح الدعوة"><span>${esc(mono)}</span></button>
+    <button class="seal pressable" id="open" aria-label="افتح الدعوة"><span>${esc(mono)}</span></button>
     <p class="cover-hint">اضغط لفتح الدعوة</p>
   </div>
 </div>
-<main class="guest closed" id="guest" style="--g-bg:${theme.swatch[0]};--g-ac:${theme.swatch[1]}">
+<main class="guest closed" id="guest" style="--g-bg:${theme.swatch[0]};--md-primary:${ac}">
   <div class="g-poster">${renderPoster(d, { mode: 'page', preview: !paid, to })}</div>
-  <section class="g-card g-count" data-start="${start ? start.toISOString() : ''}">
-    <p class="g-kicker">باقي على الموعد</p>
-    <div class="count"><div><b data-u="d">٠</b><small>يوم</small></div><div><b data-u="h">٠</b><small>ساعة</small></div><div><b data-u="m">٠</b><small>دقيقة</small></div><div><b data-u="s">٠</b><small>ثانية</small></div></div>
-    <p class="g-when">${esc(`يوم ${dates.weekday}، ${dates.hijri}`)}<br><span>${esc(dates.greg)}${dates.time ? ' — الساعة ' + esc(dates.time) : ''}</span></p>
-  </section>
-  <section class="g-actions">
-    <a class="g-act" href="${esc(mapHref)}" target="_blank" rel="noopener">${ic.pin}<span>الموقع</span></a>
-    <a class="g-act" href="${isDemo ? '#' : `/i/${esc(slug)}/invite.ics`}">${ic.cal}<span>أضف للتقويم</span></a>
-    <button class="g-act" data-share data-title="${esc(title)}">${ic.share}<span>مشاركة</span></button>
-  </section>
-  ${rsvp ? `
-  <section class="g-card g-rsvp" id="rsvp">
-    <h2>تأكيد الحضور</h2>
-    <p class="muted">${esc(d.closing || 'يسعدنا حضوركم')}</p>
-    <form id="rsvp-form" data-slug="${esc(slug)}" data-demo="${isDemo ? 1 : 0}">
-      <label class="f"><span>الاسم</span><input name="name" maxlength="60" required value="${esc(to)}" autocomplete="name"></label>
-      <div class="seg" role="radiogroup">
-        <label><input type="radio" name="attending" value="yes" checked><span>سأحضر بإذن الله</span></label>
-        <label><input type="radio" name="attending" value="no"><span>أعتذر</span></label>
+  <div class="g-col">
+    <section class="card g-count" data-start="${start ? start.toISOString() : ''}">
+      <p class="label-l on-variant">باقي على الموعد</p>
+      <div class="count">${['d:يوم', 'h:ساعة', 'm:دقيقة', 's:ثانية'].map((x) => { const [k, l] = x.split(':'); return `<div><b data-u="${k}">0</b><small>${l}</small></div>`; }).join('')}</div>
+      <p class="body-l">${esc(`يوم ${dates.weekday}، ${dates.hijri}`)}<br><span class="on-variant body-m">${esc(dates.greg)}${dates.time ? ' — الساعة ' + esc(dates.time) : ''}</span></p>
+    </section>
+
+    <div class="map-slot" id="map-slot">
+      <button class="map-pill pressable" id="map-pill" type="button">
+        <span class="map-tex" aria-hidden="true"></span><span class="map-label">${I.map}<b>عرض على الخريطة</b></span>
+      </button>
+      <div class="map-card" id="map-card" hidden data-embed="${esc(embed)}">
+        <div class="map-loading">${loadingIndicator({ contained: true })}</div>
+        <button class="map-close pressable" id="map-close" type="button" aria-label="إغلاق الخريطة">${I.x}</button>
+        <a class="btn btn-light btn-sm map-open pressable" href="${esc(mapHref)}" target="_blank" rel="noopener">${I.pin} فتح في قوقل ماب</a>
       </div>
-      ${(d.maxCompanions ?? 3) > 0 ? `<label class="f companions"><span>عدد المرافقين</span>
-        <div class="stepper"><button type="button" data-step="-1" aria-label="أقل">−</button><input name="companions" type="number" min="0" max="${d.maxCompanions ?? 3}" value="0" readonly><button type="button" data-step="1" aria-label="أكثر">+</button></div></label>` : ''}
-      <label class="f"><span>رسالة تهنئة <small>اختياري</small></span><textarea name="message" rows="2" maxlength="300" placeholder="ألف مبروك…"></textarea></label>
-      <button class="btn btn-primary btn-lg btn-block" type="submit">إرسال</button>
-      <p class="error" role="alert" hidden></p>
-    </form>
-    <div class="rsvp-done" hidden><div class="done-ic">✓</div><h3>وصلنا ردّك</h3><p class="muted">شكراً لك، ونتشرف فيك 🤍</p></div>
-  </section>` : ''}
-  ${!paid ? '<p class="g-note">هذه معاينة — تأكيد الحضور يتفعّل بعد إتمام الطلب.</p>' : ''}
-  <footer class="g-foot"><a href="/?ref=${esc(slug || 'demo')}">${leafMark()} صمّم دعوتك مع <b>عزيمة</b></a></footer>
+    </div>
+
+    <div class="g-actions">
+      <a class="btn btn-tonal pressable" href="${isDemo ? '#' : `/i/${esc(slug)}/invite.ics`}">${I.cal} أضف للتقويم</a>
+      <button class="btn btn-tonal pressable" data-share data-title="${esc(title)}" type="button">${I.share} مشاركة</button>
+    </div>
+
+    ${rsvp ? `
+    <section class="card g-rsvp" id="rsvp">
+      <h2 class="headline-s">تأكيد الحضور</h2>
+      <p class="body-m on-variant">${esc(d.closing || 'يسعدنا حضوركم')}</p>
+      <form id="rsvp-form" data-slug="${esc(slug)}" data-demo="${isDemo ? 1 : 0}">
+        <label class="field"><span class="lbl">الاسم</span><input name="name" maxlength="60" required value="${esc(to)}" autocomplete="name"></label>
+        <div class="segmented" role="radiogroup" aria-label="الحضور">
+          <label><input type="radio" name="attending" value="yes" checked><span>سأحضر بإذن الله</span></label>
+          <label><input type="radio" name="attending" value="no"><span>أعتذر</span></label>
+        </div>
+        ${(d.maxCompanions ?? 3) > 0 ? `<div class="companions"><span class="title-s">عدد المرافقين</span>
+          <div class="stepper"><button type="button" class="icon-btn pressable" data-step="1" aria-label="زيادة">+</button><output id="comp-out">0</output><button type="button" class="icon-btn pressable" data-step="-1" aria-label="إنقاص">−</button></div>
+          <input type="hidden" name="companions" value="0" data-max="${d.maxCompanions ?? 3}"></div>` : ''}
+        <label class="field"><span class="lbl">رسالة تهنئة <small>اختياري</small></span><textarea name="message" rows="2" maxlength="300" placeholder="ألف مبروك…"></textarea></label>
+        <button class="btn btn-filled btn-lg btn-block" type="submit">إرسال</button>
+      </form>
+      <div class="rsvp-done" hidden><div class="done-ic">${I.check}</div><h3 class="title-l">وصلنا ردّك</h3><p class="body-m on-variant">شكراً لك، ونتشرف فيك 🤍</p></div>
+    </section>` : ''}
+    ${!paid ? '<p class="g-note body-m">هذه معاينة — تأكيد الحضور يتفعّل بعد إتمام الطلب.</p>' : ''}
+    <footer class="g-foot"><a class="pressable" href="/?ref=${esc(slug || 'demo')}">صمّم دعوتك مع <b>عزيمة</b></a></footer>
+  </div>
 </main>`;
-  return page({ title, desc: og.desc, body, css: ['invite.css', 'guest.css'], js: ['guest.js'], og, bodyClass: 'is-guest', noindex: !isDemo });
+  return page({ title, desc: og.desc, body, css: ['invite.css', 'guest.css'], js: ['guest.js'], og, bodyClass: 'is-guest', noindex: !isDemo, theme: theme.swatch[0] });
 }
 
-// ======================= host dashboard =======================
-export function hostPage(inv, rsvps, sum, { welcome }) {
+// ================================================================ HOST
+export function hostPage(inv, rsvps, sum, { welcome, progress = 0 }) {
   const d = inv.data;
   const url = `${config.baseUrl}/i/${inv.slug}`;
   const dates = formatDates(d.date, d.time);
@@ -410,77 +503,83 @@ export function hostPage(inv, rsvps, sum, { welcome }) {
   const shareText = `${titleFor(d)}\nيوم ${dates.weekday} ${dates.hijri}${dates.time ? ' الساعة ' + dates.time : ''}\nبانتظاركم 🤍\n${url}`;
   const reminder = `تذكير لطيف 🤍\nموعدنا يوم ${dates.weekday} ${dates.hijri}${dates.time ? ' الساعة ' + dates.time : ''}\n📍 ${[d.venue, d.city].filter(Boolean).join(' — ')}\nالموقع والتفاصيل: ${url}`;
   const key = inv.host_key;
+  const kv = (k, v, span) => `<div${span ? ' class="span2"' : ''}><dt>${k}</dt><dd>${esc(v || '—')}</dd></div>`;
   const body = `
-<header class="site-header slim"><div class="wrap header-in">${logo()}<span class="muted small">لوحة التحكم</span></div></header>
 <main class="wrap host" id="host" data-slug="${esc(inv.slug)}" data-key="${esc(key)}" data-url="${esc(url)}">
-  ${welcome ? `<div class="welcome">🎉 <b>مبروك! دعوتك جاهزة.</b> أرسل الرابط لضيوفك، والفيديو يتجهز الحين.</div>` : ''}
-  <div class="host-head">
-    <div><h1>${esc(titleFor(d))}</h1><p class="muted">${esc(`يوم ${dates.weekday}، ${dates.hijri} — ${dates.greg}`)}</p></div>
-    <a class="btn btn-ghost btn-sm" href="/create?edit=${esc(inv.slug)}&key=${esc(key)}">تعديل ${inv.edits_left > 0 ? `<small>(متبقي ${inv.edits_left})</small>` : ''}</a>
-  </div>
+  <header class="app-head">
+    <div class="o-head"><img class="o-avatar" src="${img(d.template)}" alt=""><div><h1 class="title-l">${esc(titleFor(d))}</h1><p class="body-m on-variant">${esc(`${dates.weekday}، ${dates.hijri}`)}</p></div></div>
+    ${p.rsvp ? `<a class="badge-wrap bell pressable" href="#guests" aria-label="الردود">${I.bell}<span class="badge" data-k="responses" data-n="${sum.responses}">${sum.responses ? ar(sum.responses) : ''}</span></a>` : ''}
+  </header>
+  ${welcome ? `<div class="welcome card" data-reveal>🎉 <b>مبروك! دعوتك جاهزة.</b> أرسل الرابط لضيوفك، والفيديو يتجهز الحين.</div>` : ''}
+
+  <section class="xp details" data-morph data-open="false">
+    <button class="xp-head pressable" type="button" aria-expanded="false">${I.chevDown}<span>التفاصيل</span></button>
+    <div class="xp-body"><div class="xp-inner">
+      <dl class="kv">
+        ${kv('المناسبة', `${OCCASIONS[d.occasion]?.label || ''} — ${THEMES[d.template]?.name || ''}`, true)}
+        ${kv('التاريخ', dates.greg)}${kv('الهجري', dates.hijri)}
+        ${kv('الوقت', dates.time)}${kv('المكان', [d.venue, d.city].filter(Boolean).join('، '))}
+        ${kv('الباقة', p.name)}${kv('التعديلات المتبقية', ar(inv.edits_left))}
+      </dl>
+      <a class="btn btn-tonal btn-sm pressable" href="/create?edit=${esc(inv.slug)}&key=${esc(key)}">تعديل الدعوة</a>
+    </div></div>
+  </section>
+
+  ${p.rsvp ? `<section class="stats">
+    ${[['guests', 'الحضور المتوقع', sum.guests], ['yes', 'أكدوا', sum.yes], ['no', 'اعتذروا', sum.no], ['views', 'مشاهدة', inv.views]].map(([k, l, n]) => `<div class="stat card-flat"><b data-k="${k}">${ar(n)}</b><small>${l}</small></div>`).join('')}
+  </section>` : ''}
 
   <div class="host-grid">
-    <section class="b-card h-link">
-      <h2>رابط الدعوة</h2>
-      <div class="copy-row"><input readonly value="${esc(url)}" dir="ltr"><button class="btn btn-ghost btn-sm" data-copy="${esc(url)}">${ic.copy} نسخ</button></div>
-      <div class="row-btns">
-        <a class="btn btn-wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(shareText)}">${ic.wa} أرسل بالواتساب</a>
-        <a class="btn btn-ghost" href="/i/${esc(inv.slug)}" target="_blank">فتح الدعوة</a>
-      </div>
-    </section>
-
-    <section class="b-card h-video" data-video="${esc(inv.video_status)}">
-      <h2>فيديو الدعوة</h2>
+    <section class="card h-video" data-video="${esc(inv.video_status)}">
+      <div class="h-title"><h2 class="title-l">فيديو الدعوة</h2></div>
       <div class="vid-wrap">
-        <video ${inv.video_status === 'ready' ? `src="/media/${esc(inv.slug)}/video.mp4"` : ''} playsinline controls muted loop poster="${inv.video_status === 'ready' ? `/media/${esc(inv.slug)}/poster.jpg` : ''}"></video>
-        <div class="vid-wait"><span class="spinner"></span><p>نجهّز الفيديو… عادةً خلال دقائق</p></div>
-        <div class="vid-fail"><p>تعذّر تجهيز الفيديو — نعيد المحاولة تلقائياً.</p></div>
+        <video ${inv.video_status === 'ready' ? `src="/media/${esc(inv.slug)}/video.mp4" poster="/media/${esc(inv.slug)}/poster.jpg"` : ''} playsinline controls muted loop></video>
+        <div class="vid-wait">${loadingIndicator({ size: 'lg', contained: true, label: 'نجهز الفيديو' })}<p class="title-m">نجهّز الفيديو…</p><div class="progress-linear"><i id="vid-progress" style="--v:${progress}%"></i></div><p class="label-m on-variant" id="vid-pct">${ar(progress)}%</p></div>
+        <div class="vid-fail"><p class="title-m">تعذّر تجهيز الفيديو</p><p class="body-m on-variant">نعيد المحاولة تلقائياً.</p></div>
       </div>
-      <a class="btn btn-primary btn-block vid-dl" href="/media/${esc(inv.slug)}/video.mp4?dl=1">تحميل الفيديو</a>
+      <a class="btn btn-dark btn-block vid-dl pressable" href="/media/${esc(inv.slug)}/video.mp4?dl=1">تحميل الفيديو</a>
     </section>
 
-    ${p.rsvp ? `
-    <section class="b-card h-stats">
-      <div class="stat"><b data-k="guests">${sum.guests}</b><small>إجمالي الحضور المتوقع</small></div>
-      <div class="stat"><b data-k="yes">${sum.yes}</b><small>أكدوا</small></div>
-      <div class="stat"><b data-k="no">${sum.no}</b><small>اعتذروا</small></div>
-      <div class="stat"><b data-k="views">${inv.views}</b><small>مشاهدة</small></div>
-    </section>
-
-    <section class="b-card h-personal">
-      <h2>رابط باسم الضيف</h2>
-      <p class="muted small">الضيف يشوف «إلى: اسمه» على الدعوة، والاسم يتعبّى تلقائياً في تأكيد الحضور.</p>
-      <div class="copy-row"><input id="guest-name" placeholder="مثال: أبو محمد"><button class="btn btn-ghost btn-sm" id="make-link">إنشاء</button></div>
-      <div class="personal-out" hidden><input readonly dir="ltr"><div class="row-btns"><button class="btn btn-ghost btn-sm" data-copy>${ic.copy} نسخ</button><a class="btn btn-wa btn-sm" target="_blank" rel="noopener">${ic.wa} واتساب</a></div></div>
-    </section>
-
-    <section class="b-card h-reminder">
-      <h2>رسالة التذكير</h2>
-      <textarea rows="5" id="reminder">${esc(reminder)}</textarea>
-      <div class="row-btns"><button class="btn btn-ghost btn-sm" data-copy-from="#reminder">${ic.copy} نسخ</button><a class="btn btn-wa btn-sm" id="reminder-wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(reminder)}">${ic.wa} أرسل</a></div>
-    </section>
-
-    <section class="b-card h-guests">
-      <div class="h-guests-head"><h2>قائمة الضيوف</h2><a class="btn btn-ghost btn-sm" href="/host/${esc(inv.slug)}/rsvps.csv?key=${esc(key)}">تصدير Excel</a></div>
-      <div class="filter"><button class="on" data-f="all">الكل</button><button data-f="yes">سيحضرون</button><button data-f="no">معتذرون</button></div>
-      <ul class="guest-list" id="guest-list">${guestRows(rsvps)}</ul>
-    </section>` : `
-    <section class="b-card"><h2>تأكيد الحضور</h2><p class="muted">باقتك الحالية تشمل الفيديو فقط. للترقية للباقة الكاملة تواصل معنا.</p></section>`}
+    <div class="h-col">
+      <section class="card">
+        <h2 class="title-l">رابط الدعوة</h2>
+        <div class="copy-row"><input class="input" readonly value="${esc(url)}" dir="ltr"><button class="btn btn-tonal btn-sm pressable" data-copy="${esc(url)}">${I.copy} نسخ</button></div>
+        <div class="row-btns"><a class="btn btn-wa pressable" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(shareText)}">${I.wa} أرسل بالواتساب</a><a class="btn btn-tonal pressable" href="/i/${esc(inv.slug)}" target="_blank">فتح الدعوة</a></div>
+      </section>
+      ${p.rsvp ? `
+      <section class="card">
+        <h2 class="title-l">رابط باسم الضيف</h2>
+        <p class="body-m on-variant">يشوف «إلى: اسمه» على الدعوة، ويتعبّى اسمه في تأكيد الحضور.</p>
+        <div class="copy-row"><input class="input" id="guest-name" placeholder="مثال: أبو محمد"><button class="btn btn-dark btn-sm pressable" id="make-link" type="button">إنشاء</button></div>
+        <div class="personal-out" hidden><input class="input" readonly dir="ltr"><div class="row-btns"><button class="btn btn-tonal btn-sm pressable" data-copy type="button">${I.copy} نسخ</button><a class="btn btn-wa btn-sm pressable" target="_blank" rel="noopener">${I.wa} واتساب</a></div></div>
+      </section>
+      <section class="card">
+        <h2 class="title-l">رسالة التذكير</h2>
+        <label class="field"><textarea rows="5" id="reminder" aria-label="نص التذكير">${esc(reminder)}</textarea></label>
+        <div class="row-btns"><button class="btn btn-tonal btn-sm pressable" data-copy-from="#reminder" type="button">${I.copy} نسخ</button><a class="btn btn-wa btn-sm pressable" id="reminder-wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(reminder)}">${I.wa} أرسل</a></div>
+      </section>` : ''}
+    </div>
   </div>
+
+  ${p.rsvp ? `
+  <section class="card guests" id="guests">
+    <div class="h-title"><h2 class="title-l">قائمة الضيوف</h2><a class="btn btn-tonal btn-sm pressable" href="/host/${esc(inv.slug)}/rsvps.csv?key=${esc(key)}">تصدير Excel</a></div>
+    <div class="chips"><button class="chip pressable on" data-f="all" type="button">الكل</button><button class="chip pressable" data-f="yes" type="button">سيحضرون</button><button class="chip pressable" data-f="no" type="button">معتذرون</button></div>
+    <ul class="guest-list" id="guest-list">${guestRows(rsvps)}</ul>
+  </section>` : `<section class="card"><h2 class="title-l">تأكيد الحضور</h2><p class="body-m on-variant">باقتك تشمل الفيديو فقط.</p></section>`}
 </main>`;
-  return page({ title: 'لوحة التحكم — عزيمة', body, css: ['builder.css', 'host.css'], js: ['host.js'], noindex: true });
+  return page({ title: 'لوحة الدعوة — عزيمة', body, js: ['host.js'], nav: 'orders', bodyClass: 'is-app', noindex: true });
 }
 
-const arNum = (n) => new Intl.NumberFormat('ar-SA-u-nu-arab').format(n);
 export function guestRows(rsvps) {
-  if (!rsvps.length) return '<li class="empty">ما وصلت ردود للحين — أرسل الدعوة وتابع هنا 🤍</li>';
+  if (!rsvps.length) return `<li class="empty">${loadingIndicator({ contained: true })}<span>بانتظار أول رد — أرسل الدعوة 🤍</span></li>`;
   return rsvps.map((r) => `<li data-a="${r.attending ? 'yes' : 'no'}">
-    <span class="dot ${r.attending ? 'ok' : 'no'}"></span>
+    <span class="g-avatar ${r.attending ? 'ok' : 'no'}">${esc(r.name.trim().charAt(0))}</span>
     <div><b>${esc(r.name)}</b>${r.message ? `<em>«${esc(r.message)}»</em>` : ''}</div>
-    <small>${r.attending ? (r.companions ? `+${arNum(r.companions)} مرافق` : 'سيحضر') : 'معتذر'}</small></li>`).join('');
+    <small class="g-status ${r.attending ? 'ok' : 'no'}">${r.attending ? (r.companions ? `+${ar(r.companions)} مرافق` : 'سيحضر') : 'معتذر'}</small></li>`).join('');
 }
 
-// ======================= video page (renderer only) =======================
+// ================================================================ VIDEO (renderer only)
 export function videoPage({ data, template }) {
   const d = data || demoData(template);
   return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
@@ -493,32 +592,32 @@ export function videoPage({ data, template }) {
 </script></body></html>`;
 }
 
-// ======================= admin =======================
+// ================================================================ ADMIN
 export function adminPage(list, stats, key) {
   const body = `
-<header class="site-header slim"><div class="wrap header-in">${logo()}<span class="muted small">الإدارة</span></div></header>
 <main class="wrap admin">
-  <div class="h-stats b-card"><div class="stat"><b>${stats.total}</b><small>طلبات</small></div><div class="stat"><b>${stats.paid || 0}</b><small>مدفوعة</small></div><div class="stat"><b>${stats.revenue}</b><small>ريال</small></div></div>
-  <div class="b-card"><table class="tbl"><thead><tr><th>الطلب</th><th>العميل</th><th>الباقة</th><th>الحالة</th><th>الفيديو</th><th>التاريخ</th><th></th></tr></thead><tbody>
-  ${list.map((i) => `<tr><td><a href="/i/${esc(i.slug)}" target="_blank">${esc(titleFor(i.data))}</a><br><small dir="ltr">${esc(i.slug)}</small></td>
-    <td>${esc(i.contact_name || '')}<br><a dir="ltr" href="https://wa.me/${esc(String(i.contact_phone || '').replace(/^0/, '966').replace(/\D/g, ''))}" target="_blank">${esc(i.contact_phone || '')}</a></td>
-    <td>${esc(PACKAGES[i.package]?.name || i.package)}<br>${i.price} ر.س</td>
-    <td><span class="pill ${i.status === 'paid' ? 'ok' : ''}">${i.status === 'paid' ? 'مدفوع' : 'بانتظار الدفع'}</span></td>
-    <td>${esc(i.video_status)}${i.video_error ? `<br><small title="${esc(i.video_error)}">خطأ</small>` : ''}</td>
-    <td><small>${esc(i.created_at)}</small></td>
-    <td class="row-btns">${i.status !== 'paid' ? `<button class="btn btn-sm btn-primary" data-admin="mark-paid" data-slug="${esc(i.slug)}">تأكيد الدفع</button>` : ''}
-      <button class="btn btn-sm btn-ghost" data-admin="rerender" data-slug="${esc(i.slug)}">إعادة الفيديو</button>
-      <a class="btn btn-sm btn-ghost" href="/host/${esc(i.slug)}?key=${esc(i.host_key)}" target="_blank">اللوحة</a></td></tr>`).join('')}
-  </tbody></table></div>
+  <header class="app-head"><h1 class="headline-l">الإدارة</h1></header>
+  <section class="stats">${[['طلبات', stats.total], ['مدفوعة', stats.paid || 0], ['ريال', stats.revenue]].map(([l, n]) => `<div class="stat card-flat"><b>${ar(n)}</b><small>${l}</small></div>`).join('')}</section>
+  <div class="order-list">
+  ${list.map((i) => `<article class="order card">
+    <div class="o-head"><img class="o-avatar" src="${img(i.data.template)}" alt=""><div class="o-title"><b class="title-m">${esc(titleFor(i.data))}</b><small class="on-variant" dir="ltr">${esc(i.slug)}</small></div>
+      <span class="status-chip ${i.status === 'paid' ? 'ok' : ''}">${i.status === 'paid' ? 'مدفوع' : 'بانتظار الدفع'}</span></div>
+    <p class="body-m on-variant">${esc(i.contact_name || '')} · <a dir="ltr" href="https://wa.me/${esc(String(i.contact_phone || '').replace(/^0/, '966').replace(/\D/g, ''))}" target="_blank">${esc(i.contact_phone || '')}</a> · ${esc(PACKAGES[i.package]?.name || i.package)} ${ar(i.price)} ر.س · فيديو: ${esc(i.video_status)} · ${esc(i.created_at)}</p>
+    <div class="row-btns">${i.status !== 'paid' ? `<button class="btn btn-filled btn-sm pressable" data-admin="mark-paid" data-slug="${esc(i.slug)}">تأكيد الدفع</button>` : ''}
+      <button class="btn btn-tonal btn-sm pressable" data-admin="rerender" data-slug="${esc(i.slug)}">إعادة الفيديو</button>
+      <a class="btn btn-tonal btn-sm pressable" href="/host/${esc(i.slug)}?key=${esc(i.host_key)}" target="_blank">اللوحة</a></div>
+  </article>`).join('')}
+  </div>
 </main>
-<script>document.addEventListener('click',async e=>{const b=e.target.closest('[data-admin]');if(!b)return;b.disabled=true;
-const r=await fetch('/api/admin/'+b.dataset.slug+'/'+b.dataset.admin+'?key=${encodeURIComponent(key)}',{method:'POST'});b.textContent=r.ok?'✓':'خطأ';setTimeout(()=>location.reload(),600)});</script>`;
-  return page({ title: 'الإدارة — عزيمة', body, css: ['builder.css', 'host.css'], noindex: true });
+<script type="module">import { snackbar } from '/js/m3.js';
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-admin]');if(!b)return;b.disabled=true;
+const r=await fetch('/api/admin/'+b.dataset.slug+'/'+b.dataset.admin+'?key=${encodeURIComponent(key)}',{method:'POST'});snackbar(r.ok?'تم ✓':'خطأ');setTimeout(()=>location.reload(),900)});</script>`;
+  return page({ title: 'الإدارة — عزيمة', body, bodyClass: 'is-app', noindex: true });
 }
 
 export function notFound() {
   return page({
-    title: 'غير موجود — عزيمة', noindex: true,
-    body: `${header()}<main class="wrap nf"><h1>الصفحة غير موجودة</h1><p class="muted">ممكن الرابط ناقص أو انتهت صلاحيته.</p><a class="btn btn-primary" href="/">الرئيسية</a></main>`,
+    title: 'غير موجود — عزيمة', noindex: true, nav: 'none', bodyClass: 'is-app',
+    body: `<main class="wrap nf">${loadingIndicator({ size: 'lg', contained: true })}<h1 class="headline-m">الصفحة غير موجودة</h1><p class="body-l on-variant">ممكن الرابط ناقص أو انتهت صلاحيته.</p><a class="btn btn-filled pressable" href="/">الرئيسية</a></main>`,
   });
 }

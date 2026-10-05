@@ -6,11 +6,10 @@
 - 💌 **A guest page** that opens like an envelope, with a countdown, a map button, add-to-calendar and an RSVP form
 - 📋 **A host dashboard** with live RSVP counts, guest messages, a CSV export, personal "إلى: فلان" links and a ready-made reminder message
 
-![Landing](docs/landing.jpg)
+![Home · Designs · My invitations](docs/screens-1.jpg)
+![Builder · Dashboard details · Guest map morph](docs/screens-2.jpg)
 
-| Builder (live preview) | Guest page | Host dashboard |
-|---|---|---|
-| ![](docs/builder.jpg) | ![](docs/guest.jpg) | ![](docs/dashboard.jpg) |
+**App UI:** Google **Material 3** components and tokens in a Saudi super-app layout, with spring physics and Apple-style micro-interactions. See [`DESIGN.md`](DESIGN.md) and [`ANIMATION.md`](ANIMATION.md).
 
 ## Designs
 
@@ -33,6 +32,8 @@ The botanical themes use **kashida typography** (`stretch()` inserts tatweel whi
 ## How it works
 
 ```
+public/css/m3.css · app.css    ← Material 3 tokens + components · app screens (DESIGN.md)
+public/js/motion.js · m3.js     ← spring physics → CSS linear() + component behaviours (ANIMATION.md)
 public/js/shared/invite.js     ← ONE renderer used by the server, the builder preview and the video
 public/js/shared/botanical.js  ← watercolor / foliage / dahlia / wreath generators + kashida
 public/css/invite.css          ← themes + a single animation timeline (page mode vs video mode)
@@ -84,7 +85,8 @@ Any VPS with 2 or more vCPUs works. Put it behind HTTPS (Caddy or Nginx).
 
 | Route | Who |
 |---|---|
-| `/` · `/create` · `/demo/:theme` | Public |
+| `/` · `/designs` · `/create` · `/demo/:theme` | Public |
+| `/orders` | Customer: invitations saved on this device (`POST /api/my`) |
 | `/checkout/:slug?key=` · `/host/:slug?key=` | Customer (secret host key) |
 | `/i/:slug[?to=اسم]` · `/i/:slug/invite.ics` | Guests |
 | `/admin?key=` | Operator |

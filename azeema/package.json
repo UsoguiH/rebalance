@@ -4,12 +4,15 @@
   "description": "عزيمة — دعوات رقمية متحركة مع صفحة تأكيد حضور",
   "type": "module",
   "private": true,
-  "engines": { "node": ">=22.5" },
+  "engines": {
+    "node": ">=22.5"
+  },
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning server.js",
     "dev": "DEMO_MODE=1 node --disable-warning=ExperimentalWarning --watch server.js",
     "showcase": "node --disable-warning=ExperimentalWarning scripts/showcase.js",
-    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "springs": "node scripts/springs.mjs"
   },
   "dependencies": {
     "express": "^4.21.2",

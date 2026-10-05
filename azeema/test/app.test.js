@@ -70,6 +70,25 @@ test('validation rejects missing names and bad phones', async () => {
   assert.equal((await post('/api/invitations', { data: { name1: 'x', date: '2026-12-17' }, contactPhone: '12' })).status, 400);
 });
 
+test('app screens render and "my invitations" only returns owned invitations', async () => {
+  for (const u of ['/', '/designs', '/orders', '/create', '/demo/sage']) assert.equal((await fetch(base + u)).status, 200, u);
+  const r = await post('/api/invitations', { data: { name1: 'سلطان', date: '2026-11-26', template: 'arch' }, contactPhone: '0511111111' });
+  const { slug, key } = await r.json();
+  const mine = await (await post('/api/my', { items: [{ slug, key }, { slug, key: 'stolen' }, { slug: 'nope', key: 'x' }] })).json();
+  assert.equal(mine.items.length, 1);
+  assert.equal(mine.items[0].status, 'pending');
+  assert.equal(mine.items[0].template, 'arch');
+});
+
+test('springs settle exactly and overshoot like the reference physics', async () => {
+  const { springEasing } = await import('../public/js/motion.js');
+  const s = springEasing({ stiffness: 200, damping: 22, mass: 1.2 });
+  const pts = s.easing.slice(7, -1).split(',').map(Number);
+  assert.equal(pts.at(-1), 1);
+  assert.ok(Math.max(...pts) > 1.02, 'underdamped spring overshoots');
+  assert.ok(s.duration > 400 && s.duration < 1500);
+});
+
 test('renderer page requires the render token', async () => {
   assert.equal((await fetch(`${base}/v/demo-sage`)).status, 404);
 });

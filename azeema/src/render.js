@@ -12,6 +12,8 @@ import { VIDEO_SECONDS } from '../public/js/shared/invite.js';
 const FPS = 30;
 const WORKERS = Math.max(1, Number(process.env.RENDER_WORKERS || Math.min(4, os.cpus().length)));
 const queue = [];
+const progress = new Map(); // slug → 0..100
+export const renderProgress = (slug) => progress.get(slug) ?? 0;
 let active = 0;
 let browserP = null;
 
@@ -79,6 +81,7 @@ export async function renderInvitation(slug, { url, outDir, seconds = VIDEO_SECO
       for (let i = w; i < frames; i += pages.length) {
         await page.evaluate((ms) => window.__seek(ms), (i * 1000) / FPS);
         ready.set(i, await page.screenshot({ type: 'jpeg', quality: 92 }));
+        progress.set(slug, Math.min(99, Math.round((next / frames) * 100)));
         writing = writing.then(flush);
         // keep workers from racing too far ahead of the writer
         while (i - next > pages.length * 12) await new Promise((r) => setTimeout(r, 10));
@@ -88,6 +91,7 @@ export async function renderInvitation(slug, { url, outDir, seconds = VIDEO_SECO
     ff.stdin.end();
     await done;
     fs.renameSync(tmp, path.join(dir, 'video.mp4'));
+    progress.delete(slug);
 
     // Poster (final composed frame) — used for WhatsApp/OG previews
     await pages[0].evaluate((ms) => window.__seek(ms), seconds * 1000 - 200);

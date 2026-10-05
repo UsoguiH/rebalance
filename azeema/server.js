@@ -4,8 +4,8 @@ import path from 'node:path';
 import { config, PACKAGES, priceOf } from './src/config.js';
 import { Invitations, Rsvps } from './src/db.js';
 import { createCheckout, verifyMoyasar, paymentMode } from './src/payments.js';
-import { enqueueRender, mediaDir } from './src/render.js';
-import { OCCASIONS, THEMES, AUDIENCES, eventInstant, titleFor } from './public/js/shared/invite.js';
+import { enqueueRender, mediaDir, renderProgress } from './src/render.js';
+import { OCCASIONS, THEMES, AUDIENCES, eventInstant, titleFor, formatDates } from './public/js/shared/invite.js';
 import * as V from './src/views.js';
 
 const app = express();
@@ -53,6 +53,26 @@ app.get('/create', (req, res) => {
   }
   res.send(V.builder({ edit, template: req.query.template, occasion: req.query.occasion, ref: req.query.ref }));
 });
+app.get('/designs', (req, res) => res.send(V.designsPage({ q: String(req.query.q || '').slice(0, 60), occasion: req.query.occasion })));
+app.get('/orders', (req, res) => res.send(V.ordersPage()));
+
+// "My invitations" — the device keeps {slug,key} pairs; we return a summary for each valid one.
+app.post('/api/my', (req, res) => {
+  const items = Array.isArray(req.body.items) ? req.body.items.slice(0, 50) : [];
+  const out = [];
+  for (const { slug, key } of items) {
+    const inv = Invitations.bySlug(String(slug || ''));
+    if (!inv || inv.host_key !== String(key || '')) continue;
+    const dates = formatDates(inv.data.date, inv.data.time);
+    out.push({
+      slug: inv.slug, key: inv.host_key, title: titleFor(inv.data), template: inv.data.template, status: inv.status,
+      price: inv.price, created_at: inv.created_at, video: inv.video_status, date: inv.data.date, when: `${dates.weekday} ${dates.hijri}`,
+      summary: PACKAGES[inv.package]?.rsvp ? Rsvps.summary(inv.id) : null,
+    });
+  }
+  res.json({ items: out });
+});
+
 app.get('/demo/:theme', (req, res) => {
   if (!THEMES[req.params.theme]) return res.status(404).send(V.notFound());
   res.send(V.guestPage({ demo: req.params.theme, to: req.query.to }));
@@ -160,10 +180,10 @@ app.post('/api/i/:slug/rsvp', (req, res) => {
 // ---------- host dashboard ----------
 app.get('/host/:slug', hostAuth, (req, res) => {
   if (req.inv.status !== 'paid') return res.redirect(`/checkout/${req.inv.slug}?key=${req.inv.host_key}`);
-  res.send(V.hostPage(req.inv, Rsvps.list(req.inv.id), Rsvps.summary(req.inv.id), { welcome: !!req.query.welcome }));
+  res.send(V.hostPage(req.inv, Rsvps.list(req.inv.id), Rsvps.summary(req.inv.id), { welcome: !!req.query.welcome, progress: renderProgress(req.inv.slug) }));
 });
 app.get('/api/host/:slug', hostAuth, (req, res) => {
-  res.json({ video: req.inv.video_status, summary: Rsvps.summary(req.inv.id), views: req.inv.views, rsvps: Rsvps.list(req.inv.id) });
+  res.json({ video: req.inv.video_status, progress: renderProgress(req.inv.slug), summary: Rsvps.summary(req.inv.id), views: req.inv.views, rsvps: Rsvps.list(req.inv.id) });
 });
 app.get('/host/:slug/rsvps.csv', hostAuth, (req, res) => {
   const rows = Rsvps.list(req.inv.id);
