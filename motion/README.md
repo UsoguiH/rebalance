@@ -74,6 +74,10 @@ motion/
   tools/capture.js  headless frame exporter
 ```
 
+## Also here
+
+`base44/` is a second recreation, of a 16-second product-launch piece (prompt box, file tree, dashboard cards, Publish, BASE 44). See `base44/README.md`.
+
 ## Known differences
 
 - The source's head and hand are real thermal/depth footage. Here they are traced outlines with a procedural heat field, so their internal texture is simpler.

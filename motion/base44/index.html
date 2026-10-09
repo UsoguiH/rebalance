@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Base 44 — motion study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Inter+Tight:wght@700&family=Figtree:wght@400&family=Instrument+Serif&family=DM+Mono&display=block">
+<style>
+  :root { color-scheme: dark; --bg: #0d0d0d; --fg: #d8d4d0; --muted: #77716d; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.4 Inter, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
+  #stage { display: block; width: min(100%, calc((100vh - 90px) * 16 / 9)); aspect-ratio: 1156 / 650; height: auto; background: #f6f6f6; }
+  .bar { display: flex; align-items: center; gap: 12px; width: min(100%, calc((100vh - 90px) * 16 / 9)); }
+  button { background: #222; color: var(--fg); border: 1px solid #3a3634; border-radius: 6px; padding: 6px 14px; font: inherit; cursor: pointer; min-width: 70px; }
+  button:hover { background: #2c2a29; }
+  input[type=range] { flex: 1; accent-color: #f26a35; }
+  #time { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 120px; text-align: right; }
+</style>
+</head>
+<body>
+<canvas id="stage" width="1156" height="650" aria-label="Motion graphics animation"></canvas>
+<div class="bar">
+  <button id="play" aria-pressed="true">Pause</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline">
+  <span id="time">0.00s</span>
+</div>
+<script src="js/core.js"></script>
+<script src="js/band-data.js"></script>
+<script src="js/scene-prompt.js"></script>
+<script src="js/scene-tree.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/scene-dash.js"></script>
+<script src="js/scene-end.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

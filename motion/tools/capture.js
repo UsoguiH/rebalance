@@ -1,6 +1,7 @@
 // Render the animation frame-by-frame with headless Chromium.
 //
 //   node motion/tools/capture.js --out frames/ [--fps 30] [--from 0] [--to 17.75] [--times 1.2,3.4]
+//   node motion/tools/capture.js --page base44 --out frames/ --to 16.07   (the Base 44 piece)
 //   ffmpeg -framerate 30 -i frames/%04d.png -pix_fmt yuv420p show-it.mp4
 //
 // Needs the `playwright` package (set PLAYWRIGHT_MODULE to its path if it is
@@ -20,7 +21,8 @@ fs.mkdirSync(out, { recursive: true });
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1200, height: 1000 } });
-  const url = 'file://' + path.resolve(__dirname, '..', 'index.html') + '?capture';
+  const page_ = args.page ? path.join(String(args.page), 'index.html') : 'index.html';
+  const url = 'file://' + path.resolve(__dirname, '..', page_) + '?capture';
   await page.goto(url);
   await page.evaluate(() => window.motionReady);
   const times = args.times
