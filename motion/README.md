@@ -78,6 +78,8 @@ motion/
 
 `base44/` is a second recreation, of a 16-second product-launch piece (prompt box, file tree, dashboard cards, Publish, BASE 44). See `base44/README.md`.
 
+`island/` is a launch film for [Island](https://github.com/UsoguiH/dynamic-island-windows) built on the Base 44 choreography, beat for beat. See `island/README.md`.
+
 ## Known differences
 
 - The source's head and hand are real thermal/depth footage. Here they are traced outlines with a procedural heat field, so their internal texture is simpler.

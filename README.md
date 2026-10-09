@@ -110,4 +110,4 @@ Progress saves automatically to `localStorage`.
 
 ## Also in this repo
 
-`motion/` holds **Show It**, a canvas recreation of a 17.75 s kinetic-type and pixel-art motion piece. Open `motion/index.html`; see `motion/README.md` for details. `motion/base44/` holds a second recreation, the **Base 44** launch piece.
+`motion/` holds **Show It**, a canvas recreation of a 17.75 s kinetic-type and pixel-art motion piece. Open `motion/index.html`; see `motion/README.md` for details. `motion/base44/` holds a second recreation, the **Base 44** launch piece, and `motion/island/` is a launch film for Island built on its choreography.
