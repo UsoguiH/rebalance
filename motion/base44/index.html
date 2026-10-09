@@ -23,9 +23,14 @@
 <canvas id="stage" width="1156" height="650" aria-label="Motion graphics animation"></canvas>
 <div class="bar">
   <button id="play" aria-pressed="true">Pause</button>
+  <button id="sound" aria-pressed="false">Sound off</button>
   <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline">
   <span id="time">0.00s</span>
 </div>
+<audio id="track" preload="auto">
+  <source src="audio/soundtrack.webm" type="audio/webm; codecs=opus">
+  <source src="audio/soundtrack.m4a" type="audio/mp4">
+</audio>
 <script src="js/core.js"></script>
 <script src="js/band-data.js"></script>
 <script src="js/scene-prompt.js"></script>

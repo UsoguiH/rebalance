@@ -28,25 +28,45 @@ function render(t) {
   Grain.draw(ctx, t, 0.035);
 }
 
-const ui = { play: document.getElementById('play'), scrub: document.getElementById('scrub'), time: document.getElementById('time') };
+const ui = { play: document.getElementById('play'), scrub: document.getElementById('scrub'), time: document.getElementById('time'), sound: document.getElementById('sound') };
+
+// Soundtrack: the original post's audio, cut to this timeline. Browsers only
+// allow sound after a click, so it starts muted behind the Sound button and
+// is kept within a frame of the picture.
+const track = document.getElementById('track');
+let soundOn = false;
+function syncAudio() {
+  if (!track) return;
+  const want = soundOn && playing && now < DURATION;
+  if (!want) { if (!track.paused) track.pause(); return; }
+  if (Math.abs(track.currentTime - now) > 0.06) track.currentTime = now;
+  if (track.paused) track.play().catch(() => {});
+}
 const params = new URLSearchParams(location.search);
 let playing = !params.has('t');
 let now = params.has('t') ? parseFloat(params.get('t')) || 0 : 0;
 let last = null;
 
-function setPlaying(p) { playing = p; ui.play.textContent = p ? 'Pause' : 'Play'; ui.play.setAttribute('aria-pressed', String(p)); last = null; }
+function setPlaying(p) { playing = p; ui.play.textContent = p ? 'Pause' : 'Play'; ui.play.setAttribute('aria-pressed', String(p)); last = null; syncAudio(); }
 function frame(ts) {
   if (playing) {
     if (last !== null) now += (ts - last) / 1000;
     last = ts;
-    if (now >= DURATION) now = 0;
+    if (now >= DURATION) { now = 0; if (track) track.currentTime = 0; }
   }
+  syncAudio();
   render(now);
   ui.scrub.value = String(Math.round((now / DURATION) * 1000));
   ui.time.textContent = `${now.toFixed(2)}s / ${DURATION.toFixed(2)}s`;
   requestAnimationFrame(frame);
 }
 ui.play.addEventListener('click', () => setPlaying(!playing));
+ui.sound.addEventListener('click', () => {
+  soundOn = !soundOn;
+  ui.sound.textContent = soundOn ? 'Sound on' : 'Sound off';
+  ui.sound.setAttribute('aria-pressed', String(soundOn));
+  syncAudio();
+});
 ui.scrub.addEventListener('input', () => { now = (ui.scrub.value / 1000) * DURATION; setPlaying(false); });
 window.addEventListener('keydown', e => {
   if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }

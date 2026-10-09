@@ -4,13 +4,14 @@ This is a 16-second launch video for [**Island**](https://github.com/UsoguiH/dyn
 
 ## Run
 
-Open `motion/island/index.html`. Space plays and pauses, ← → step one frame, and the scrub bar seeks.
+Open `motion/island/index.html`. Space plays and pauses, **Sound** turns the soundtrack on (browsers need a click before playing audio), ← → step one frame, and the scrub bar seeks.
 
 To export a video:
 
 ```sh
 node motion/tools/capture.js --page island --out frames --fps 30 --to 16.07
-ffmpeg -framerate 30 -i frames/%04d.png -pix_fmt yuv420p island-launch.mp4
+ffmpeg -framerate 30 -i frames/%04d.png -i motion/island/audio/soundtrack.m4a \
+       -c:v libx264 -pix_fmt yuv420p -c:a copy -shortest island-launch.mp4
 ```
 
 ## Shot list
@@ -25,6 +26,10 @@ ffmpeg -framerate 30 -i frames/%04d.png -pix_fmt yuv420p island-launch.mp4
 | 10.0 – 11.2 | Dive onto **Publish**, click, ripples, iris | Dive onto the permission prompt's **Allow** (with Deny), click, ripples, iris |
 | 11.2 – 13.6 | *fast. secure. live.* | ***native. local. alive.*** (C# + Direct3D, no telemetry, a living island), with Bloub as the bullet cycling through the agent colours and blinking |
 | 13.6 – 16.1 | Blob becomes the sun mark and **BASE 44** types out | The blob becomes **Bloub** (the app icon), who glances over and blinks as **Island** types out |
+
+## Sound
+
+The film uses the Base 44 post's original soundtrack, taken from the screen recording, cut to 0–16.07 s and synced within a frame. The cuts line up because the timing is identical: the card impact at 6.0 s, the backdrop change at 8.5 s, the Allow label at 10.2 s and the first word at 11.4 s. Files: `audio/soundtrack.m4a` (AAC) and `audio/soundtrack.webm` (Opus, for browsers without AAC).
 
 ## Brand references
 
