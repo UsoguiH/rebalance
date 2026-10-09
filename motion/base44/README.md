@@ -51,4 +51,4 @@ motion/base44/
 - The course thumbnail in the reference is a 3D render. Here it is a flat vector stand-in: white plinth, tilted panels and an orange play triangle.
 - The cards in the reference have a slight 3D perspective tilt. Here they use 2D rotation only.
 - The marble, sky and sunset backdrops are procedural noise tuned to the reference's colours, not the original footage.
-- Sound: the reference's soundtrack isn't included. `audio/soundtrack.m4a` (plus an Opus `.webm` copy) is the original score composed for the Island film (`../island/audio/compose.py`). It's scored to the same cut list, so it fits this timeline too.
+- Sound: the reference's own soundtrack isn't included. The music is "Upbeat Forever" by Kevin MacLeod (incompetech.com, CC BY 4.0), the same excerpt the Island film uses; its drop lands on the card slam at 5.93 s. The credit is in `audio/CREDITS.md`.

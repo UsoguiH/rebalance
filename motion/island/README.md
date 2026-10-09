@@ -29,22 +29,15 @@ ffmpeg -framerate 30 -i frames/%04d.png -i motion/island/audio/soundtrack.m4a \
 
 ## Sound
 
-The score is original and synthesised in code by `audio/compose.py`, with no samples or recordings. It's at 120 BPM in F major and scored to the film's cut list:
+The music is **"Upbeat Forever" by Kevin MacLeod** (incompetech.com), a real published track licensed under [Creative Commons: By Attribution 4.0](http://creativecommons.org/licenses/by/4.0/). It's free to use, including commercially, as long as he's credited.
 
-- a soft bloom as the composer appears, with a plucked arpeggio and typing ticks
-- a punch on the zoom and a click on Send
-- a riser through the file tree into the **drop at 5.93 s**, timed to the cards slamming in
-- four-on-the-floor with sub and claps through the dashboard, with whooshes on each camera move
-- a click plus ripple tones on **Allow**, then a zap as the iris closes
-- bright pops on *native. local. alive.*
-- a riser into the flash, then a full F major 9 chord with shimmer under the Bloub mark
+The film uses a 16.07 s excerpt starting at 2:03.20, at 164 BPM. That window was chosen out of 18 candidate tracks because its build-up sits under the composer and file tree and its **drop lands on the card slam at 5.93 s**, accurate to the frame. The excerpt has a short fade-in and fade-out and is normalised to −14 LUFS stereo.
 
-It's mastered to −14 LUFS stereo at 48 kHz, as `audio/soundtrack.m4a` (AAC) plus `audio/soundtrack.webm` (Opus).
+Files: `audio/soundtrack.m4a` (AAC) and `audio/soundtrack.webm` (Opus), with the credit in `audio/CREDITS.md`. **When you post the video, put this credit in its description:**
 
-```sh
-python3 motion/island/audio/compose.py score.wav     # needs numpy + scipy
-ffmpeg -i score.wav -af loudnorm=I=-14:TP=-1 -c:a aac -b:a 192k motion/island/audio/soundtrack.m4a
-```
+> "Upbeat Forever" Kevin MacLeod (incompetech.com)
+> Licensed under Creative Commons: By Attribution 4.0 License
+> http://creativecommons.org/licenses/by/4.0/
 
 ## Brand references
 

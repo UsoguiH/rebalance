@@ -30,9 +30,8 @@ function render(t) {
 
 const ui = { play: document.getElementById('play'), scrub: document.getElementById('scrub'), time: document.getElementById('time'), sound: document.getElementById('sound') };
 
-// Soundtrack: the original post's audio, cut to this timeline. Browsers only
-// allow sound after a click, so it starts muted behind the Sound button and
-// is kept within a frame of the picture.
+// Soundtrack: "Upbeat Forever" by Kevin MacLeod (CC BY 4.0, see audio/CREDITS.md),
+// cut to this timeline. It is kept within a frame of the picture.
 const track = document.getElementById('track');
 let soundOn = false;
 function syncAudio() {
