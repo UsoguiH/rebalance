@@ -107,3 +107,7 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+## Also in this repo
+
+`motion/` holds **Show It**, a canvas recreation of a 17.75 s kinetic-type and pixel-art motion piece. Open `motion/index.html`; see `motion/README.md` for details.
