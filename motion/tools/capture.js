@@ -2,6 +2,7 @@
 //
 //   node motion/tools/capture.js --out frames/ [--fps 30] [--from 0] [--to 17.75] [--times 1.2,3.4]
 //   node motion/tools/capture.js --page base44 --out frames/ --to 16.07   (the Base 44 piece)
+//   node motion/tools/capture.js --page perplexity --out frames/ --to 16.37   (the Perplexity piece)
 //   ffmpeg -framerate 30 -i frames/%04d.png -pix_fmt yuv420p show-it.mp4
 //
 // Needs the `playwright` package (set PLAYWRIGHT_MODULE to its path if it is

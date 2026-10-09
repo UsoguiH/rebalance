@@ -78,6 +78,8 @@ motion/
 
 `base44/` is a second recreation, of a 16-second product-launch piece (prompt box, file tree, dashboard cards, Publish, BASE 44). See `base44/README.md`.
 
+`perplexity/` is a third recreation, of a 16-second Perplexity finance ad (3D mark, prompt, light burst, finance cards, Spending Overview heatmap, end card). See `perplexity/README.md`.
+
 `island/` is a launch film for [Island](https://github.com/UsoguiH/dynamic-island-windows) built on the Base 44 choreography, beat for beat. See `island/README.md`.
 
 ## Known differences
