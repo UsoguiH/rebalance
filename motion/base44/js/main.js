@@ -43,7 +43,10 @@ function syncAudio() {
   if (track.paused) track.play().catch(() => {});
 }
 const params = new URLSearchParams(location.search);
-let playing = !params.has('t');
+// Opens paused behind a "Play with sound" button: browsers only allow audio
+// after a click, so the first click starts the picture and the music together.
+const startBtn = document.getElementById('start');
+let playing = false;
 let now = params.has('t') ? parseFloat(params.get('t')) || 0 : 0;
 let last = null;
 
@@ -60,16 +63,26 @@ function frame(ts) {
   ui.time.textContent = `${now.toFixed(2)}s / ${DURATION.toFixed(2)}s`;
   requestAnimationFrame(frame);
 }
-ui.play.addEventListener('click', () => setPlaying(!playing));
-ui.sound.addEventListener('click', () => {
-  soundOn = !soundOn;
+ui.play.addEventListener('click', () => { if (startBtn) startBtn.hidden = true; setPlaying(!playing); });
+function setSound(on) {
+  soundOn = on;
   ui.sound.textContent = soundOn ? 'Sound on' : 'Sound off';
   ui.sound.setAttribute('aria-pressed', String(soundOn));
   syncAudio();
-});
+}
+if (startBtn) {
+  if (params.has('t') || params.has('capture')) startBtn.hidden = true;
+  startBtn.addEventListener('click', () => {
+    startBtn.hidden = true;
+    if (now >= DURATION - 0.05) now = 0;
+    setSound(true);
+    setPlaying(true);
+  });
+}
+ui.sound.addEventListener('click', () => setSound(!soundOn));
 ui.scrub.addEventListener('input', () => { now = (ui.scrub.value / 1000) * DURATION; setPlaying(false); });
 window.addEventListener('keydown', e => {
-  if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
+  if (e.code === 'Space') { e.preventDefault(); if (startBtn && !startBtn.hidden) startBtn.click(); else setPlaying(!playing); }
   if (e.code === 'ArrowRight') { now = Math.min(DURATION, now + 1 / 30); setPlaying(false); }
   if (e.code === 'ArrowLeft') { now = Math.max(0, now - 1 / 30); setPlaying(false); }
 });

@@ -4,7 +4,7 @@ This is a 16-second launch video for [**Island**](https://github.com/UsoguiH/dyn
 
 ## Run
 
-Open `motion/island/index.html`. Space plays and pauses, **Sound** turns the soundtrack on (browsers need a click before playing audio), ← → step one frame, and the scrub bar seeks.
+Open `motion/island/index.html`. Space plays and pauses, the page opens on **Play with sound** (browsers need a click before they play audio), **Sound** toggles the music, ← → step one frame, and the scrub bar seeks.
 
 To export a video:
 
@@ -29,7 +29,22 @@ ffmpeg -framerate 30 -i frames/%04d.png -i motion/island/audio/soundtrack.m4a \
 
 ## Sound
 
-The film uses the Base 44 post's original soundtrack, taken from the screen recording, cut to 0–16.07 s and synced within a frame. The cuts line up because the timing is identical: the card impact at 6.0 s, the backdrop change at 8.5 s, the Allow label at 10.2 s and the first word at 11.4 s. Files: `audio/soundtrack.m4a` (AAC) and `audio/soundtrack.webm` (Opus, for browsers without AAC).
+The score is original and synthesised in code by `audio/compose.py`, with no samples or recordings. It's at 120 BPM in F major and scored to the film's cut list:
+
+- a soft bloom as the composer appears, with a plucked arpeggio and typing ticks
+- a punch on the zoom and a click on Send
+- a riser through the file tree into the **drop at 5.93 s**, timed to the cards slamming in
+- four-on-the-floor with sub and claps through the dashboard, with whooshes on each camera move
+- a click plus ripple tones on **Allow**, then a zap as the iris closes
+- bright pops on *native. local. alive.*
+- a riser into the flash, then a full F major 9 chord with shimmer under the Bloub mark
+
+It's mastered to −14 LUFS stereo at 48 kHz, as `audio/soundtrack.m4a` (AAC) plus `audio/soundtrack.webm` (Opus).
+
+```sh
+python3 motion/island/audio/compose.py score.wav     # needs numpy + scipy
+ffmpeg -i score.wav -af loudnorm=I=-14:TP=-1 -c:a aac -b:a 192k motion/island/audio/soundtrack.m4a
+```
 
 ## Brand references
 

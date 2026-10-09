@@ -6,7 +6,7 @@ There are no images or video files. The fonts come from Google Fonts: Inter, Int
 
 ## Run
 
-Open `motion/base44/index.html`, or serve the repo root and visit `/motion/base44/`. Space plays and pauses, **Sound** turns the soundtrack on (browsers need a click before playing audio), ← → step one frame, the scrub bar seeks, and `?t=8.9` opens the page paused at that time.
+Open `motion/base44/index.html`, or serve the repo root and visit `/motion/base44/`. Space plays and pauses, the page opens on **Play with sound** (browsers need a click before they play audio), **Sound** toggles the music, ← → step one frame, the scrub bar seeks, and `?t=8.9` opens the page paused at that time.
 
 To export a video:
 
@@ -51,4 +51,4 @@ motion/base44/
 - The course thumbnail in the reference is a 3D render. Here it is a flat vector stand-in: white plinth, tilted panels and an orange play triangle.
 - The cards in the reference have a slight 3D perspective tilt. Here they use 2D rotation only.
 - The marble, sky and sunset backdrops are procedural noise tuned to the reference's colours, not the original footage.
-- Sound: `audio/soundtrack.m4a` (plus an Opus `.webm` copy) is the reference post's own soundtrack, cut to this clip's 0–16.07 s and kept within a frame of the picture. It is not a recreation.
+- Sound: the reference's soundtrack isn't included. `audio/soundtrack.m4a` (plus an Opus `.webm` copy) is the original score composed for the Island film (`../island/audio/compose.py`). It's scored to the same cut list, so it fits this timeline too.
