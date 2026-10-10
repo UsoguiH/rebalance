@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ElevenAgents Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=block">
+<style>
+  :root { color-scheme: dark; --bg: #0d0d0d; --fg: #d8d4d0; --muted: #77716d; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.4 Inter, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
+  #stage { display: block; width: min(100%, calc((100vh - 90px) * 884 / 632)); aspect-ratio: 884 / 632; height: auto; background: #fff; }
+  .bar { display: flex; align-items: center; gap: 12px; width: min(100%, calc((100vh - 90px) * 884 / 632)); }
+  button { background: #222; color: var(--fg); border: 1px solid #3a3634; border-radius: 6px; padding: 6px 14px; font: inherit; cursor: pointer; min-width: 70px; }
+  button:hover { background: #2c2a29; }
+  input[type=range] { flex: 1; accent-color: #1a1a1a; }
+  .stagewrap { position: relative; width: min(100%, calc((100vh - 90px) * 884 / 632)); }
+  .stagewrap #stage { width: 100%; }
+  #start { position: absolute; inset: 0; margin: auto; width: max-content; height: max-content; padding: 14px 26px; font-size: 17px; font-weight: 600; color: #fff; background: #1a1a1a; border: 0; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  #start:hover { filter: brightness(1.08); background: #1a1a1a; }
+  #start[hidden] { display: none; }
+  #time { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 120px; text-align: right; }
+</style>
+</head>
+<body>
+<div class="stagewrap">
+<canvas id="stage" width="1768" height="1264" aria-label="ElevenAgents launch animation"></canvas>
+<button id="start">▶&nbsp; Play with sound</button>
+</div>
+<div class="bar">
+  <button id="play" aria-pressed="true">Pause</button>
+  <button id="sound" aria-pressed="false">Sound off</button>
+  <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline">
+  <span id="time">0.00s</span>
+</div>
+<audio id="track" preload="auto">
+  <source src="audio/soundtrack.webm" type="audio/webm; codecs=opus">
+  <source src="audio/soundtrack.m4a" type="audio/mp4">
+</audio>
+<script src="js/core.js"></script>
+<script src="js/frame.js"></script>
+<script src="js/grad.js"></script>
+<script src="js/cues.js"></script>
+<script src="js/scenes-intro.js"></script>
+<script src="js/scenes-demo.js"></script>
+<script src="js/scenes-features.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
