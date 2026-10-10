@@ -1,9 +1,9 @@
 'use strict';
-// Typed captions and the typing sound under them. Each caption plays one of the
+// Typed text and the typing sound under it. Each cue plays one of the
 // reference video's own typing passages (../sfx/typing/), untouched, and its
 // letters land on that passage's key clicks. `at` is when the first click
-// sounds. tools/mix.py reads this same file to place the passages in the
-// soundtrack, so picture and sound can't drift apart.
+// sounds. tools/mix.py reads this same file to build the soundtrack, so
+// picture and sound can't drift apart.
 const PASSAGES = {
   'typing-1.wav': [0.03, 0.125, 0.265, 0.317, 0.442, 0.487, 0.539],
   'typing-2.wav': [0.03, 0.097, 0.162, 0.225, 0.269, 0.329, 0.424, 0.614, 0.711, 0.843, 0.896, 0.993],
@@ -11,14 +11,12 @@ const PASSAGES = {
   'typing-4.wav': [0.03, 0.125, 0.179, 0.282, 0.374, 0.469, 0.561, 0.621, 0.726],
 };
 const CUES = [
-  { "id": "agents", "text": "Your agents are working.", "at": 0.40, "passage": "typing-2.wav" },
-  { "id": "needs", "text": "One needs you.", "at": 4.35, "passage": "typing-3.wav" },
-  { "id": "done", "text": "One just finished.", "at": 7.62, "passage": "typing-1.wav" },
-  { "id": "music", "text": "Your music, right there.", "at": 9.15, "passage": "typing-2.wav" },
-  { "id": "limits", "text": "Your real limits.", "at": 11.62, "passage": "typing-1.wav" },
-  { "id": "tabs", "text": "17 tabs. Your way.", "at": 14.02, "passage": "typing-4.wav" },
-  { "id": "retract", "text": "Never in your way.", "at": 16.45, "passage": "typing-1.wav" },
-  { "id": "end", "text": "A living Dynamic Island for Windows.", "at": 19.85, "passage": "typing-2.wav" }
+  { "id": "headline", "text": "Bring your agents to life", "at": 0.40, "passage": "typing-1.wav" },
+  { "id": "prompt", "text": "Add a dark mode toggle to the settings page", "at": 1.75, "passage": "typing-2.wav" },
+  { "id": "agent0", "text": "aurora-web", "at": 10.02, "passage": "typing-3.wav" },
+  { "id": "agent1", "text": "pixel-api", "at": 10.36, "passage": "typing-1.wav" },
+  { "id": "agent2", "text": "notes-cli", "at": 10.84, "passage": "typing-3.wav" },
+  { "id": "name", "text": "Island", "at": 21.46, "passage": "typing-3.wav" }
 ];
 
 // When each letter of a cue appears: the letters are shared out over the

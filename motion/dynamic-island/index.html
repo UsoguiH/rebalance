@@ -6,12 +6,12 @@
 <title>Dynamic Island Film</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;800&family=Figtree:wght@400&family=Instrument+Serif&family=DM+Mono&display=block">
 <style>
   :root { color-scheme: dark; --bg: #0d0d0d; --fg: #d8d4d0; --muted: #77716d; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.4 Inter, system-ui, sans-serif; }
   body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; box-sizing: border-box; }
-  #stage { display: block; width: min(100%, calc((100vh - 90px) * 16 / 9)); aspect-ratio: 1156 / 650; height: auto; background: #ecebfa; }
+  #stage { display: block; width: min(100%, calc((100vh - 90px) * 16 / 9)); aspect-ratio: 1156 / 650; height: auto; background: #0c0810; }
   .bar { display: flex; align-items: center; gap: 12px; width: min(100%, calc((100vh - 90px) * 16 / 9)); }
   button { background: #222; color: var(--fg); border: 1px solid #3a3634; border-radius: 6px; padding: 6px 14px; font: inherit; cursor: pointer; min-width: 70px; }
   button:hover { background: #2c2a29; }
@@ -42,7 +42,14 @@
 <script src="js/core.js"></script>
 <script src="js/cues.js"></script>
 <script src="js/ui.js"></script>
-<script src="js/scenes.js"></script>
+<script src="../island/js/band-data.js"></script>
+<script src="../island/js/scene-prompt.js"></script>
+<script src="../island/js/scene-tree.js"></script>
+<script src="../island/js/cards.js"></script>
+<script src="../island/js/scene-dash.js"></script>
+<script src="../island/js/scene-end.js"></script>
+<script src="js/suno.js"></script>
+<script src="js/bl.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
