@@ -1,2 +1,4 @@
 node_modules/
 .DS_Store
+motion/teaser/footage/
+motion/teaser/out/

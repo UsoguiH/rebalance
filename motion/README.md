@@ -80,6 +80,8 @@ motion/
 
 `perplexity/` is a third recreation, of a 16-second Perplexity finance ad (3D mark, prompt, light burst, finance cards, Spending Overview heatmap, end card). See `perplexity/README.md`.
 
+`teaser/` is a 17-second Island teaser cut from real stock footage with typed captions. `sfx/typing/` holds the typing clicks every typed line uses. See `teaser/README.md`.
+
 `island/` is a launch film for [Island](https://github.com/UsoguiH/dynamic-island-windows) built on the Base 44 choreography, beat for beat. See `island/README.md`.
 
 ## Known differences
