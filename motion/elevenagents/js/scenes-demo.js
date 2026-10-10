@@ -89,9 +89,11 @@ function scenePrompt(ctx, t) {
     }
   } else {
     const content = seg(t, FR(244), FR(252));
-    ctx.save(); if (content < 1) ctx.filter = `blur(${(1 - content) * 2 * SCALE}px)`;
-    promptCard(ctx, t, content);
-    ctx.restore();
+    if (content < 1) { // soft focus while it settles: blur the card as one layer
+      ctx.restore();
+      layer(ctx, 'card', g => { g.translate(L, T); g.scale(s, s); g.translate(-CARD0.x, -CARD0.y); promptCard(g, t, content); }, { blur: (1 - content) * 2 });
+      ctx.save();
+    } else promptCard(ctx, t, content);
   }
   ctx.restore();
   // the pointer comes in and sends

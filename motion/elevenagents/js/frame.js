@@ -15,6 +15,19 @@ function makeWave() {
   for (let x = 67; x < 818; x += 5.45, k++) WAVE.push([x, (k % 2 ? 0.35 : 0.75) + 0.25 * r()]);
 }
 
+let WAVE_IMG = null;
+function waveImage() {
+  if (WAVE_IMG) return WAVE_IMG;
+  const c = document.createElement('canvas'); c.width = SW * SCALE; c.height = 44 * SCALE;
+  const g = c.getContext('2d'); g.scale(SCALE, SCALE);
+  g.filter = `blur(${0.6 * SCALE}px)`;
+  for (const [x, v] of WAVE) {
+    const h = 6 + v * 20;
+    g.fillStyle = 'rgba(150,150,150,0.42)'; rrect(g, x - 1.3, 22 - h / 2, 2.6, h, 1.3); g.fill();
+  }
+  WAVE_IMG = c;
+  return c;
+}
 function chrome(ctx, t) {
   // page: white above the panel, a soft grey gradient under it
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, SW, SH);
@@ -33,13 +46,8 @@ function chrome(ctx, t) {
     ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 0.8; ctx.stroke();
     text(ctx, name, (x0 + x1) / 2, 556, { size: 11.5, color: [44, 44, 44], align: 'center' });
   }
-  // waveform strip
-  ctx.save(); ctx.filter = `blur(${0.6 * SCALE}px)`;
-  for (const [x, v] of WAVE) {
-    const h = 6 + v * 20;
-    ctx.fillStyle = 'rgba(150,150,150,0.42)'; rrect(ctx, x - 1.3, 602 - h / 2, 2.6, h, 1.3); ctx.fill();
-  }
-  ctx.restore();
+  // waveform strip (static, so it is painted once and reused)
+  ctx.drawImage(waveImage(), 0, 580, SW, 44);
   // playhead
   const px = playheadX(t);
   ctx.fillStyle = '#4a4a4a'; ctx.fillRect(px - 0.5, 521, 1.1, 55);
