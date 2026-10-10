@@ -78,6 +78,8 @@ motion/
 
 `base44/` is a second recreation, of a 16-second product-launch piece (prompt box, file tree, dashboard cards, Publish, BASE 44). See `base44/README.md`.
 
+`island-studio/` is a 36.6-second Island launch film in the ElevenAgents UI and motion style, with the typing sound only. See `island-studio/README.md`.
+
 `elevenagents/` recreates a 34-second ElevenAgents Architect launch piece (timeline-framed film panel, agent prompt, procedure builder, proposals, test mosaic) with the reference typing sound. See `elevenagents/README.md`.
 
 `perplexity/` is a third recreation, of a 16-second Perplexity finance ad (3D mark, prompt, light burst, finance cards, Spending Overview heatmap, end card). See `perplexity/README.md`.
