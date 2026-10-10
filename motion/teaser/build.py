@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Island typewriter teaser: real stock footage, small typed captions, and the
-typing clicks from motion/sfx/typing/.
+reference's own typing passages from motion/sfx/typing/ (played untouched).
 
     sh motion/teaser/fetch-footage.sh      # once: downloads the Mixkit clips
     python3 motion/teaser/build.py         # writes motion/teaser/out/island-teaser.mp4
@@ -8,6 +8,7 @@ typing clicks from motion/sfx/typing/.
 Needs ffmpeg, numpy and Pillow, plus the Inter font (set INTER_DIR if it is not
 in a standard font folder).
 """
+import json
 import os
 import random
 import subprocess
@@ -49,32 +50,30 @@ FONT_SUB = ImageFont.truetype(find_font('Inter-Regular.otf'), 24)
 
 
 # ------------------------------------------------------------------ typing
+with open(os.path.join(SFX, 'passages.json')) as f:
+    PASSAGES = json.load(f)
+
+
 def type_schedule(text, start, rnd):
-    """Per-character reveal times and the click events that go with them.
+    """Type `text` over one of the reference's own typing passages.
 
-    The reference doesn't click on every letter: a click lands on roughly every
-    second or third keystroke, irregularly, which is what makes it read as fast
-    human typing rather than a metronome."""
-    times, clicks, t, last_click = [], [], start, -1.0
-    for i, ch in enumerate(text):
-        times.append(t)
-        if (i == 0 or text[i - 1] == ' ' or rnd.random() < 0.38) and t - last_click > 0.05:
-            clicks.append((t, rnd.randrange(12), rnd.uniform(0.62, 1.0)))
-            last_click = t
-        gap = rnd.uniform(0.032, 0.062)
-        if ch == ' ':
-            gap += rnd.uniform(0.01, 0.04)
-        if ch in ',.':
-            gap += 0.1
-        t += gap
-    return times, clicks
+    The passage plays untouched from `start`; the letters are shared out over
+    its key clicks, so each burst of letters lands exactly on a click."""
+    want = len(text) / 2.4
+    p = min(PASSAGES, key=lambda q: (abs(len(q['clicks']) - want), rnd.random()))
+    clicks = [start + c for c in p['clicks']]
+    times = []
+    for i in range(len(text)):
+        k = min(len(clicks) - 1, int(i * len(clicks) / len(text)))
+        times.append(clicks[k])
+    return times, (start - p['clicks'][0], p['file'])
 
 
-def load_clicks():
-    out = []
-    for k in range(1, 13):
-        with wave.open(os.path.join(SFX, f'key{k:02d}.wav')) as w:
-            out.append(np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768)
+def load_passages():
+    out = {}
+    for p in PASSAGES:
+        with wave.open(os.path.join(SFX, p['file'])) as w:
+            out[p['file']] = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
     return out
 
 
@@ -148,15 +147,15 @@ def visible(times, t):
 
 def main():
     rnd = random.Random(7)
-    clicks = load_clicks()
+    passages = load_passages()
     total = sum(s[2] for s in SHOTS) + END
     audio = np.zeros(int(total * SR) + SR, np.float32)
 
-    def add_clicks(events):
-        for t, k, g in events:
-            s = clicks[k] * g * 0.8
-            i = int(t * SR)
-            audio[i:i + len(s)] += s
+    def add_clicks(ev):
+        at, name = ev
+        s = passages[name]
+        i = int(round(at * SR))
+        audio[i:i + len(s)] += s
 
     os.makedirs(os.path.join(HERE, 'out'), exist_ok=True)
     video_tmp = os.path.join(HERE, 'out', 'video.mp4')
@@ -186,7 +185,8 @@ def main():
     # end card: the name types in, then the line under it
     times_a, ev_a = type_schedule('Island', t0 + 0.45, rnd)
     times_b, ev_b = type_schedule('Dynamic Island for Windows', times_a[-1] + 0.45, rnd)
-    add_clicks(ev_a + ev_b)
+    add_clicks(ev_a)
+    add_clicks(ev_b)
     bg = np.zeros((H, W, 3), np.float32) + np.array([0.035, 0.035, 0.04], np.float32)
     bg = bg + 0.05 * VIGNETTE
     for fi in range(round(END * FPS)):
@@ -205,9 +205,8 @@ def main():
     enc.stdin.close()
     enc.wait()
 
-    audio = audio[:int(total * SR)]
-    audio *= 0.9 / max(1e-6, np.abs(audio).max())
-    wav_tmp = os.path.join(HERE, 'out', 'clicks.wav')
+    audio = audio[:int(total * SR)]  # passages keep their original level
+    wav_tmp = os.path.join(HERE, 'out', 'typing.wav')
     with wave.open(wav_tmp, 'w') as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
         w.writeframes((audio * 32767).astype(np.int16).tobytes())

@@ -1,6 +1,6 @@
 # Island: typewriter teaser
 
-This is a 17-second teaser for [Island](https://github.com/UsoguiH/dynamic-island-windows) in the style of the "premium launch video" reference. Real-life stock footage cuts with whip-blur transitions, a small white caption types out over each shot, and every keystroke group plays one of the typing clicks from `../sfx/typing/`. It ends on a dark card where **Island** and *Dynamic Island for Windows* type in.
+This is a 17-second teaser for [Island](https://github.com/UsoguiH/dynamic-island-windows) in the style of the "premium launch video" reference. Real-life stock footage cuts with whip-blur transitions, a small white caption types out over each shot, and each caption plays one of the reference video's own typing passages from `../sfx/typing/`, untouched, with the letters landing on its key clicks. It ends on a dark card where **Island** and *Dynamic Island for Windows* type in.
 
 ```sh
 sh motion/teaser/fetch-footage.sh   # once: downloads six Mixkit clips into footage/
@@ -20,6 +20,15 @@ It needs ffmpeg, numpy, Pillow and the Inter font (set `INTER_DIR` if Inter isn'
 | 13.8 – 17.0 | End card | Island / Dynamic Island for Windows |
 
 To change the film, edit `SHOTS` in `build.py` (clip id, start offset, length, caption) and add the clip to `fetch-footage.sh`. Mixkit's free videos are searchable at `https://mixkit.co/free-stock-video/<topic>/`, and a clip downloads from `https://assets.mixkit.co/videos/<id>/<id>-720.mp4` (or `-1080`).
+
+## Cut to the reference soundtrack
+
+`build_sync.py` makes a second version, 21 seconds long, that runs on the reference launch video's whole soundtrack, copied bit for bit. Words pop on its pops, letters type on its key clicks, and the footage cuts on its booms. The soundtrack isn't committed, so pass the file extracted from the reference:
+
+```sh
+ffmpeg -i reference.mp4 -vn -c:a copy launch-video-original-audio.m4a
+python3 motion/teaser/build_sync.py launch-video-original-audio.m4a   # writes out/island-teaser-original-sound.mp4
+```
 
 ## Footage licence
 
