@@ -107,3 +107,9 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+## Also in this repo: Sidecraft
+
+[`sidecraft/`](sidecraft/) is a separate game: a Minecraft-style survival sandbox
+seen from the side, Terraria-style, with a Minecraft-style interface. Open
+`sidecraft/index.html` to play. See [`sidecraft/README.md`](sidecraft/README.md).

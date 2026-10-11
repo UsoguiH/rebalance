@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sidecraft</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; outline: none; cursor: default; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<canvas id="screen" tabindex="0" aria-label="Sidecraft game screen"></canvas>
+<script src="js/core.js"></script>
+<script src="js/font.js"></script>
+<script src="js/blocks.js"></script>
+<script src="js/recipes.js"></script>
+<script src="js/world.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/render.js"></script>
+<script src="js/gui.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+<script src="js/play.js"></script>
+<script>
+  SC.boot();
+  document.getElementById('screen').focus();
+</script>
+</body>
+</html>
