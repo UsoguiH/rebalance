@@ -11,7 +11,7 @@ const js = await esbuild.build({
   absWorkingDir: root,
   entryPoints: PAGES.map((p) => `js/${p}.js`),
   outdir: 'js/dist',
-  bundle: true, splitting: true, chunkNames: 'shared-[hash]', format: 'esm', minify: true, target: 'es2020', legalComments: 'none', metafile: true,
+  bundle: true, splitting: true, chunkNames: 'shared-[hash]', format: 'esm', minify: true, target: 'es2020', legalComments: 'none', metafile: true, charset: 'utf8', // Arabic stays readable (and 3x smaller than \u escapes)
 });
 
 // each page: its entry + the shared chunk it imports, requested together (modulepreload) instead of one after another
@@ -38,11 +38,11 @@ for (const page of PAGES) {
 writeFileSync(`${root}css/.app.entry.css`, ['fonts', 'springs', 'm3', 'molu'].map((n) => `@import "./${n}.css";`).join('\n'));
 await esbuild.build({
   absWorkingDir: root, entryPoints: ['css/.app.entry.css'], outfile: 'css/app.min.css',
-  bundle: true, minify: true, external: ['*.woff2'], legalComments: 'none',
+  bundle: true, minify: true, external: ['*.woff2'], legalComments: 'none', charset: 'utf8',
 });
 
 // the tiny classic transition script: minify in place for the copy pages load
-const vt = await esbuild.transform(readFileSync(`${root}js/vt.js`, 'utf8'), { minify: true, target: 'es2017' });
+const vt = await esbuild.transform(readFileSync(`${root}js/vt.js`, 'utf8'), { minify: true, target: 'es2017', charset: 'utf8' });
 writeFileSync(`${root}js/dist/vt.js`, vt.code);
 
 for (const [f, o] of Object.entries(js.metafile.outputs)) console.log(f.padEnd(28), `${(o.bytes / 1024).toFixed(1)} KB`);
