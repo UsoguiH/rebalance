@@ -1,67 +1,62 @@
-/* Gate — "لمين الموعد؟": dark stage, MoLu logo, two cream cards that show each scene of the artwork in full,
-   with an «أو» between them. Self-contained (no app CSS/JS) so it paints instantly. Motion: one quick CSS fade-up. */
+/* Gate — dark stage, MoLu logo, two cards. Each card shows its whole scene on a tint of its own
+   (the artwork's cream × a tint, so the picture melts into the card): blush for حواء, silver for آدم.
+   Three words per card. Static: no app CSS/JS. Motion: one short fade-up, the scene settles. */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .16s; }
-:root { --cream: #FAF6E2; --ink: #2D2D2D; --orange: #FF5028; --eve: #B23A63; --adam: #2D5875; --ease: cubic-bezier(.22, 1, .36, 1); }
+:root {
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  /* card colour = artwork cream (250,246,226) × tint, so image and card meet without an edge */
+  --eve-bg: #F8E3E0; --eve-tint: #FDEBFD; --eve-ink: #9E2F55;
+  --adam-bg: #E6E3DA; --adam-tint: #EBEBF6; --adam-ink: #24475F;
+}
 * { box-sizing: border-box; }
 html, body { margin: 0; background: #0B0B0C; }
 body { color: #fff; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 a { color: inherit; text-decoration: none; }
-.gx { position: relative; height: 100dvh; min-height: 600px; display: flex; flex-direction: column; gap: 12px; padding: max(12px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
-  background: radial-gradient(80% 40% at 50% 30%, rgba(229, 138, 160, .17), transparent 70%), radial-gradient(80% 40% at 50% 80%, rgba(138, 167, 189, .15), transparent 70%), #0B0B0C; }
+.gx { height: 100dvh; min-height: 560px; display: flex; flex-direction: column; gap: 14px; padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)); background: #0B0B0C; }
 
-/* header: logo, the question, one line of help */
-.gx-head { display: grid; justify-items: center; text-align: center; gap: 2px; animation: up .35s var(--ease) both; }
-.molu-logo { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 4px; }
-.logo-mark { width: 30px; height: 30px; border-radius: 9px; flex: none; }
+.gx-head { display: grid; justify-items: center; gap: 6px; padding-top: 4px; animation: fade .4s var(--ease) both; }
+.gx-head p { margin: 0; font: 600 .85rem 'IBM Plex Sans Arabic', sans-serif; color: rgba(255, 255, 255, .55); }
+.molu-logo { display: inline-flex; align-items: center; gap: 8px; }
+.logo-mark { width: 34px; height: 34px; border-radius: 10px; flex: none; }
 .logo-latin { display: inline-flex; align-items: baseline; line-height: 1; }
-.logo-latin .mo { font: 700 1.15rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #F4E6E0; }
-.logo-latin .lu { display: inline-block; font: 400 1.6rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #D7798A; margin-left: -.08em; transform: translateY(.12em); }
-.logo-sep { width: 1px; height: 18px; background: rgba(255, 255, 255, .2); }
-.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.05rem; line-height: 1; }
+.logo-latin .mo { font: 700 1.3rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #F4E6E0; }
+.logo-latin .lu { display: inline-block; font: 400 1.8rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #D7798A; margin-left: -.08em; transform: translateY(.12em); }
+.logo-sep { width: 1px; height: 20px; background: rgba(255, 255, 255, .2); }
+.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.15rem; line-height: 1; }
 .logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #F4E6E0; }
 .logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #D7798A; margin-inline-start: -.12em; transform: translateY(.12em); }
-.gx-head h1 { margin: 0; font: 800 clamp(1.6rem, 7vw, 2.3rem)/1.2 'IBM Plex Sans Arabic', sans-serif; letter-spacing: -.01em; }
-.gx-head p { margin: 0; font: 500 .9rem/1.5 'IBM Plex Sans Arabic', sans-serif; color: rgba(255, 255, 255, .68); }
-.gx-head em { font-style: normal; color: #FF7A55; font-weight: 700; }
 
-/* the two cards + «أو» */
-.gx-doors { position: relative; flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr 1fr; gap: 12px; }
+.gx-doors { flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr 1fr; gap: 14px; }
 @media (min-width: 820px) { .gx-doors { grid-template-rows: none; grid-template-columns: 1fr 1fr; gap: 22px; } .gx { padding-inline: 28px; } }
-.gx-or { position: absolute; z-index: 5; left: 50%; top: 50%; translate: -50% -50%; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
-  background: #0B0B0C; color: #fff; font: 800 .95rem 'IBM Plex Sans Arabic', sans-serif; box-shadow: 0 0 0 4px #0B0B0C, inset 0 0 0 1.5px rgba(255, 255, 255, .3);
-  animation: pop .4s .22s cubic-bezier(.3, 1.4, .5, 1) both; }
-@keyframes pop { from { opacity: 0; scale: .4; } }
 
-.gd { --c: var(--eve); position: relative; isolation: isolate; display: flex; align-items: stretch; min-height: 0; overflow: hidden; border-radius: 28px; background: var(--cream); color: var(--ink);
-  box-shadow: 0 24px 50px -28px rgba(0, 0, 0, .9), inset 0 0 0 1px rgba(255, 255, 255, .6); -webkit-tap-highlight-color: transparent;
-  animation: up .38s .06s var(--ease) both; transition: transform .18s cubic-bezier(.3, 0, .2, 1), box-shadow .2s; }
-.gd.adam { --c: var(--adam); flex-direction: row-reverse; animation-delay: .12s; }   /* آدم's scene on the right, as in the picture */
-@keyframes up { from { opacity: 0; transform: translateY(14px); } }
+.gd { --bg: var(--eve-bg); --tint: var(--eve-tint); --ink: var(--eve-ink);
+  position: relative; isolation: isolate; display: flex; align-items: stretch; min-height: 0; overflow: hidden; border-radius: 32px; background: var(--bg); container-type: size;
+  -webkit-tap-highlight-color: transparent; animation: up .45s var(--ease) both; transition: transform .2s cubic-bezier(.3, 0, .2, 1); }
+.gd.eve { flex-direction: row-reverse; }   /* حواء's scene on the left, آدم's on the right — as in the picture */
+.gd.adam { --bg: var(--adam-bg); --tint: var(--adam-tint); --ink: var(--adam-ink); animation-delay: .08s; }
 .gd:active { transform: scale(.975); }
-@media (hover: hover) { .gd:hover { transform: translateY(-3px); box-shadow: 0 30px 60px -28px rgba(0, 0, 0, .95), inset 0 0 0 1px rgba(255, 255, 255, .6); } }
+@media (hover: hover) { .gd:hover { transform: translateY(-3px); } }
 .gd:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 
-.gd-scene { position: relative; flex: none; height: 100%; aspect-ratio: 560 / 788; max-width: 62%; }
-.gd-scene img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; }
-.gd-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 16px 14px 16px 4px; }
-.gd.adam .gd-txt { padding: 16px 4px 16px 14px; }
-.gd-proof { align-self: flex-start; font: 700 .7rem/1.3 'IBM Plex Sans Arabic', sans-serif; color: #6D655B; }
-.gd-name { display: grid; }
-.gd-name small { font: 700 .8rem 'IBM Plex Sans Arabic', sans-serif; color: #7A6F63; }
-.gd-name b { font: 700 clamp(2.5rem, 12vw, 4.4rem)/1.05 'Aref Ruqaa', serif; color: var(--c); padding-bottom: .24em; margin-bottom: -.14em; }
-.gd-name span { font: 600 .8rem/1.4 'IBM Plex Sans Arabic', sans-serif; color: #5E574E; }
-.gd-svc { display: flex; flex-wrap: wrap; gap: 3px; }
-.gd-svc span { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 9px; background: #fff; font-size: 15px; line-height: 1; box-shadow: 0 2px 6px -3px rgba(60, 40, 20, .3);
-  font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif; }
-.gd-cta { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 16px 0 10px; border-radius: 23px; background: var(--orange); color: #fff;
-  font: 800 1rem 'IBM Plex Sans Arabic', sans-serif; box-shadow: 0 10px 24px -10px rgba(255, 80, 40, .9), inset 0 1px 0 rgba(255, 255, 255, .25); }
-.gd-cta svg { transition: transform .2s var(--ease); }
-.gd:hover .gd-cta svg, .gd:active .gd-cta svg { transform: translateX(-4px); }
-.gd-from { position: absolute; bottom: 12px; inset-inline-end: 12px; height: 26px; padding: 0 10px; border-radius: 13px; background: rgba(255, 255, 255, .92); color: var(--ink);
-  font: 700 .72rem/26px 'IBM Plex Sans Arabic', sans-serif; box-shadow: 0 4px 12px -6px rgba(60, 40, 20, .4); }
-.gd.adam .gd-from { inset-inline-end: auto; inset-inline-start: 12px; }
-.gd.last .gd-proof::after { content: ' · آخر زيارة'; color: var(--orange); }
+/* the box always has the picture's own shape (full height, or 62% of the width if that's smaller), so nothing is cropped or letterboxed */
+.gd-scene { position: relative; flex: none; align-self: flex-end; width: min(62cqw, 71cqh); aspect-ratio: 560 / 788; background: var(--tint); }
+.gd-scene img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; transform-origin: 50% 100%;
+  animation: settle .6s .1s var(--ease) both; }
+.gd.adam .gd-scene img { animation-delay: .18s; }
+
+.gd-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 18px 6px 18px 16px; color: var(--ink); animation: fade .45s .2s var(--ease) both; }
+.gd.eve .gd-txt { padding: 18px 16px 18px 6px; }
+.gd.adam .gd-txt { animation-delay: .28s; }
+.gd-txt small { font: 700 .82rem 'IBM Plex Sans Arabic', sans-serif; opacity: .7; }
+.gd-txt b { font: 700 clamp(3rem, 15vw, 5.2rem)/1.05 'Aref Ruqaa', serif; padding-bottom: .22em; margin-bottom: -.12em; }
+.gd-txt > span:not(.gd-go) { font: 600 .82rem/1.45 'IBM Plex Sans Arabic', sans-serif; opacity: .78; }
+.gd-go { margin-top: 16px; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #FF5028; color: #fff;
+  box-shadow: 0 12px 24px -10px rgba(255, 80, 40, .85); transition: transform .2s var(--ease); }
+.gd:hover .gd-go, .gd:active .gd-go { transform: translateX(-4px); }
+
+@keyframes up { from { opacity: 0; transform: translateY(16px); } }
+@keyframes fade { from { opacity: 0; transform: translateY(8px); } }
+@keyframes settle { from { opacity: 0; transform: scale(.94); } }
 .ms { display: block; flex: none; }
-@media (max-height: 700px) { .gd-svc { display: none; } .gx-head p { display: none; } }
-@media (prefers-reduced-motion: reduce) { .gd, .gx-head, .gx-or { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .gd, .gd-txt, .gd-scene img, .gx-head { animation: none; } }
