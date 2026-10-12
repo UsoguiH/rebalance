@@ -3,13 +3,13 @@
 export const SECTIONS = {
   eve: {
     key: 'eve', name: 'حواء', for: 'للسيدات', tagline: 'صالونات ومراكز التجميل', img: 'img/eve',
-    enter: 'ادخلي', book: 'احجزي', bookNow: 'احجزي الآن', you: 'كِ', near: 'القريبة منكِ', searchPh: 'ابحثي عن صالون أو خدمة',
+    enter: 'تفضّلي', book: 'احجزي', bookNow: 'احجزي الآن', you: 'كِ', near: 'القريبة منكِ', searchPh: 'ابحثي عن صالون أو خدمة',
     title: 'صالونات حواء', start: 'ابدئي مجاناً', choose: 'اختاري', place: 'صالون',
     staffWord: 'المختصة', anyStaff: 'أي مختصة متاحة', hello: 'أهلاً بكِ',
   },
   adam: {
     key: 'adam', name: 'آدم', for: 'للرجال', tagline: 'حلاقون ومراكز العناية', img: 'img/adam',
-    enter: 'ادخل', book: 'احجز', bookNow: 'احجز الآن', you: 'ك', near: 'القريبة منك', searchPh: 'ابحث عن حلاق أو خدمة',
+    enter: 'تفضّل', book: 'احجز', bookNow: 'احجز الآن', you: 'ك', near: 'القريبة منك', searchPh: 'ابحث عن حلاق أو خدمة',
     title: 'صالونات آدم', start: 'ابدأ مجاناً', choose: 'اختر', place: 'صالون',
     staffWord: 'الحلاق', anyStaff: 'أي حلاق متاح', hello: 'أهلاً بك',
   },
