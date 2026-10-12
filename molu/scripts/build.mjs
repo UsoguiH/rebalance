@@ -3,7 +3,7 @@
 import * as esbuild from 'esbuild';
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 
-const PAGES = ['explore', 'salon', 'appointments', 'favorites', 'account', 'categories', 'offers', 'business', 'join'];
+const PAGES = ['explore', 'salon', 'appointments', 'favorites', 'account', 'categories', 'offers', 'business', 'join', 'dashboard'];
 const root = new URL('..', import.meta.url).pathname;
 
 rmSync(`${root}js/dist`, { recursive: true, force: true });

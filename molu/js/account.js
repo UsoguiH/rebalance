@@ -102,7 +102,7 @@ export default function mount() {
       <div class="list-card">
         <button type="button" id="notif"><span class="ic">${icon('notifications', 22)}</span>التذكيرات<span class="end">قبل الموعد بساعتين${icon('chevron_left', 20)}</span></button>
         <button type="button" id="lang"><span class="ic">${icon('language', 22)}</span>اللغة<span class="end">العربية${icon('chevron_left', 20)}</span></button>
-        ${mine ? `<a href="salon.html?id=mine"><span class="ic">${icon('storefront', 22)}</span>${mine.name}<span class="end">صفحتي${icon('chevron_left', 20)}</span></a>` : `<a href="join.html"><span class="ic">${icon('storefront', 22)}</span>سجّل صالونك<span class="end">مجاناً${icon('chevron_left', 20)}</span></a>`}
+        ${mine ? `<a href="dashboard.html"><span class="ic">${icon('storefront', 22)}</span>${mine.name}<span class="end">لوحتي${icon('chevron_left', 20)}</span></a>` : `<a href="business.html"><span class="ic">${icon('storefront', 22)}</span>سجّل صالونك أو محل الحلاقة<span class="end">مجاناً${icon('chevron_left', 20)}</span></a>`}
         <button type="button" id="out"><span class="ic" style="color:#D93025">${icon('logout', 22)}</span>تسجيل الخروج</button>
       </div>`;
     $('.acc-card .face').style.cssText = 'width:64px;height:64px';

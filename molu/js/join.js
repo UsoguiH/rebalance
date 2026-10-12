@@ -17,7 +17,11 @@ export default function mount() {
   const read = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
   const write = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
+  const q = new URLSearchParams(location.search);
   let d = read(DRAFT) || { step: 0, section: getSection(), kind: '', name: '', lat: ME.lat, lng: ME.lng, district: '', areas: [], fee: 30, services: [], hours: 'day', friday: true, team: 1, owner: '', phone: '' };
+  // from the owner page: the side (and maybe the kind) is already chosen, so those questions are skipped
+  if (['eve', 'adam'].includes(q.get('s')) && !d.step) { if (d.section !== q.get('s')) d.services = []; d.section = q.get('s'); d.step = 1; }
+  if (['centre', 'home'].includes(q.get('kind')) && d.step <= 1) { d.kind = q.get('kind'); d.step = 2; }
   boot({ page: 'join', nav: false, section: d.section });
   const F = () => d.section === 'eve';
   const g = (f, m) => (F() ? f : m);
@@ -265,7 +269,7 @@ export default function mount() {
       <div class="mini-map" id="done-map"></div>
       <div class="j-trial">${icon('workspace_premium', 24)}<span class="grow"><b>تجربتك المجانية بدأت: 14 يوم بكل المزايا</b><small>بدون بطاقة وبدون عمولة. بعدها ننصحك بـ«${plan[0]}» بـ ${ar(plan[1])} ر.س شهرياً، أو تكمّل على المجانية (40 حجز بالشهر).</small></span></div>
       <ol class="j-next"><li>${icon('photo_camera', 20)}أضف صور ${g('صالونكِ', 'محلّك')} وشغلك</li><li>${icon('share', 20)}حط الرابط في البايو وفي الواتساب</li><li>${icon('qr_code_2', 20)}اطبع ملصق QR وحطه عند الكاشير</li></ol>
-      <div class="j-actions"><a class="btn btn-black btn-lg btn-block pressable" href="salon.html?id=mine">${g('شوفي صفحتكِ', 'شوف صفحتك')}</a><a class="btn btn-tonal btn-lg btn-block pressable" href="business.html#pricing">قارن الباقات</a></div>`;
+      <div class="j-actions"><a class="btn btn-black btn-lg btn-block pressable" href="dashboard.html">${g('افتحي لوحتكِ', 'افتح لوحتك')}</a><a class="btn btn-tonal btn-lg btn-block pressable" href="salon.html?id=mine">${g('شوفي صفحتكِ كما يشوفها العملاء', 'شوف صفحتك كما يشوفها العملاء')}</a></div>`;
     $('#next').hidden = true;
     spring($('.j-tick'), [{ transform: 'scale(.3) rotate(-30deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], 'bouncy');
     blurIn($('#step'), { y: 22 });

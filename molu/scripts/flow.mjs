@@ -15,7 +15,7 @@ p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
 const shot = (n) => p.screenshot({ path: `${out}/${n}.png` });
 const step = async (label, fn) => { try { await fn(); console.log('✓', label); } catch (e) { errs.push(`${label}: ${e.message.split('\n')[0]}`); console.log('✗', label); } };
 
-await step('gate: the whole picture, names and buttons visible', async () => { await p.goto(B + 'index.html', { waitUntil: 'networkidle' }); await p.waitForTimeout(1500); await shot('01-gate'); const ok = await p.evaluate(() => { const r = document.querySelector('.pic img').getBoundingClientRect(); const inView = (el) => { const b = el.getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight + 1; }; return !!document.querySelector('.molu-logo .logo-mark') && r.left >= -1 && r.right <= innerWidth + 1 && inView(document.querySelector('.pic')) && Math.abs(r.width / r.height - 1312 / 1199) < 0.01 && [...document.querySelectorAll('.go')].every(inView); }); if (!ok) throw new Error('picture not whole or buttons hidden'); });
+await step('gate: both scenes whole (≈1.45× bigger), names, buttons, nearby chip and owner link visible', async () => { await p.goto(B + 'index.html', { waitUntil: 'networkidle' }); await p.waitForTimeout(1500); await shot('01-gate'); const ok = await p.evaluate(() => { const inView = (el) => { const b = el.getBoundingClientRect(); return b.top >= -1 && b.bottom <= innerHeight + 1 && b.left >= -1 && b.right <= innerWidth + 1; }; const whole = (k, w) => { const r = document.querySelector(`.scene.${k} .pic img`).getBoundingClientRect(); return Math.abs(r.width / r.height - w / 898) < 0.01; }; return !!document.querySelector('.molu-logo .logo-mark') && whole('eve', 630) && whole('adam', 656) && [...document.querySelectorAll('.pic, .go, .near, .biz')].every(inView) && document.querySelector('.scene.eve .pic').getBoundingClientRect().width > innerWidth * 630 / 1312 * 1.3; }); if (!ok) throw new Error('a scene is cut, too small, or something is off screen'); });
 await step('enter حواء', async () => { await p.click('.go.eve'); await p.waitForURL(/explore/); await p.waitForTimeout(1200); await shot('03-explore'); });
 await step('shortcut filter', async () => { await p.click('[data-sc="nails"]'); await p.waitForTimeout(900); await shot('04-filtered'); if (!(await p.locator('#reset').count())) throw new Error('no filter chip'); await p.click('#reset'); await p.waitForTimeout(600); });
 await step('search', async () => { await p.fill('#q', 'استشوار'); await p.waitForTimeout(700); await shot('05-search'); await p.click('#clear'); await p.waitForTimeout(400); });
@@ -64,6 +64,15 @@ await step('salon sign-up (join): 7 steps → page + map', async () => {
   if (await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('horizontal overflow');
   await p.goto(B + 'explore.html?s=eve'); await p.waitForTimeout(700);
   if (!(await p.locator('[data-id="mine"]').count())) throw new Error('new salon not in the feed');
+});
+await step('owner dashboard: walk-in booking, attendance, prices, QR', async () => {
+  await p.goto(B + 'dashboard.html'); await p.waitForTimeout(800); await shot('18-dashboard');
+  await p.click('#add'); await p.waitForTimeout(500); await p.fill('#c-name', 'هيا'); await p.locator('#c-day .chip').nth(1).click(); await p.locator('#c-time .chip').first().click(); await p.click('#c-save'); await p.waitForTimeout(600);
+  if (!(await p.locator('.d-line').innerText()).includes('هيا')) throw new Error('walk-in booking not on the timeline');
+  await p.locator('.d-bk').first().click(); await p.waitForTimeout(500); await p.click('[data-set="done"]'); await p.waitForTimeout(500);
+  if (!(await p.locator('.d-line li').first().getAttribute('class')).includes('st-done')) throw new Error('attendance not saved');
+  await p.locator('.d-tabs label').nth(3).click(); await p.waitForTimeout(1200);
+  if (!(await p.locator('#qr svg, #qr .ms').count())) throw new Error('no QR');
 });
 const v = p.video();
 await ctx.close(); await b.close();
