@@ -1,0 +1,47 @@
+/* Gate — dark, MoLu logo, حواء and آدم as two big cards showing each scene in full.
+   Self-contained (no m3.css/app JS) so the first screen paints fast. One quick, simple entrance. */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .16s; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #0B0B0C; }
+body { color: #fff; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
+a { color: inherit; text-decoration: none; }
+.gx { height: 100dvh; min-height: 560px; display: flex; flex-direction: column; gap: 12px; padding: max(12px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  background: radial-gradient(90% 45% at 50% 22%, rgba(229, 138, 160, .16), transparent 70%), radial-gradient(90% 45% at 50% 82%, rgba(138, 167, 189, .14), transparent 70%), #0B0B0C; }
+
+/* MoLu logo */
+.gx-head { display: flex; justify-content: center; padding-top: 2px; }
+.molu-logo { display: inline-flex; align-items: center; gap: 8px; }
+.logo-mark { width: 36px; height: 36px; border-radius: 10px; flex: none; }
+.logo-latin { display: inline-flex; align-items: baseline; line-height: 1; }
+.logo-latin .mo { font: 700 1.35rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #F4E6E0; }
+.logo-latin .lu { display: inline-block; font: 400 1.9rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #D7798A; margin-left: -.08em; transform: translateY(.12em); }
+.logo-sep { width: 1px; height: 22px; background: rgba(255, 255, 255, .2); }
+.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.2rem; line-height: 1; }
+.logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #F4E6E0; }
+.logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #D7798A; margin-inline-start: -.12em; transform: translateY(.12em); }
+
+.gx-doors { flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr 1fr; gap: 12px; }
+@media (min-width: 820px) { .gx-doors { grid-template-rows: none; grid-template-columns: 1fr 1fr; gap: 18px; } .gx { padding-inline: 28px; } }
+
+/* card: cream like the artwork, the whole scene visible (contain), words over a soft shade at the bottom */
+.gd { position: relative; isolation: isolate; display: block; min-height: 0; overflow: hidden; border-radius: 28px; background: #FAF6E2;
+  box-shadow: 0 24px 50px -28px rgba(0, 0, 0, .9); -webkit-tap-highlight-color: transparent;
+  animation: in .38s cubic-bezier(.22, 1, .36, 1) both; transition: transform .18s cubic-bezier(.3, 0, .2, 1); }
+.gd.adam { animation-delay: .06s; }
+@keyframes in { from { opacity: 0; transform: translateY(14px); } }
+.gd:active { transform: scale(.975); }
+@media (hover: hover) { .gd:hover { transform: translateY(-3px); } }
+.gd img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: contain; object-position: 50% 30%; }
+.gd::after { content: ''; position: absolute; inset: 52% 0 0; z-index: -1; background: linear-gradient(180deg, rgba(14, 12, 10, 0), rgba(14, 12, 10, .62) 55%, rgba(14, 12, 10, .86)); }
+.gd-chip { position: absolute; top: 12px; inset-inline-start: 12px; display: inline-flex; align-items: center; gap: 3px; height: 30px; padding: 0 11px 0 9px; border-radius: 15px; background: #fff; color: #1A1A1A; font: 700 .76rem var(--f, 'IBM Plex Sans Arabic', sans-serif); box-shadow: 0 4px 14px -6px rgba(0, 0, 0, .35); }
+.gd-chip svg { color: #FF5028; }
+.gd-txt { position: absolute; inset-inline: 18px 90px; bottom: 14px; display: grid; }
+.gd-txt small { font: 700 .8rem 'IBM Plex Sans Arabic', sans-serif; color: rgba(255, 255, 255, .85); }
+.gd-txt b { font: 700 clamp(2.8rem, 13.5vw, 4.8rem)/1.05 'Aref Ruqaa', serif; padding-bottom: .24em; margin-bottom: -.12em; text-shadow: 0 6px 24px rgba(0, 0, 0, .45); }
+.gd-txt span { font: 600 .8rem 'IBM Plex Sans Arabic', sans-serif; color: rgba(255, 255, 255, .9); }
+.gd-go { position: absolute; inset-inline-end: 16px; bottom: 18px; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: #FF5028; color: #fff; box-shadow: 0 12px 26px -10px rgba(255, 80, 40, .9); }
+.gd.last .gd-chip::after { content: '· آخر زيارة'; margin-inline-start: 4px; color: #848A98; font-weight: 600; }
+.gd:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.ms { display: block; flex: none; }
+@media (prefers-reduced-motion: reduce) { .gd { animation: none; } }

@@ -4,10 +4,10 @@
    Motion: محلي's ease-out-quint for UI entrances + our physical springs for touch.
    ===================================================================== */
 @view-transition { navigation: auto; }
-::view-transition-old(root) { animation: .22s var(--ease-out) both vt-out; }
-::view-transition-new(root) { animation: .34s var(--ease-out) both vt-in; }
+::view-transition-old(root) { animation: .12s ease-out both vt-out; }
+::view-transition-new(root) { animation: .18s var(--ease-out) both vt-in; }
 @keyframes vt-out { to { opacity: 0; } }
-@keyframes vt-in { from { opacity: 0; transform: translateY(10px); } }
+@keyframes vt-in { from { opacity: 0; } }
 
 :root {
   --ease-out: cubic-bezier(.22, 1, .36, 1);
@@ -470,68 +470,14 @@ body.store { padding-bottom: 130px; }
 .list > .sc-card, .carousel > .sc-card { content-visibility: auto; contain-intrinsic-size: auto 260px; }
 .order, .group { content-visibility: auto; contain-intrinsic-size: auto 220px; }
 
-/* =================== GATE: dark stage, MoLu logo, حواء and آدم as two big cream cards that show each
-   scene of the illustration in full (nothing cropped). Flat motion only. =================== */
-body.gate-page { padding: 0; background: #0B0B0C; color: #fff; overscroll-behavior: none; }
-.gx { position: relative; isolation: isolate; height: 100dvh; min-height: 600px; display: flex; flex-direction: column; gap: 12px; padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)); overflow: hidden; }
-.gx-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
-.gx-bg i { position: absolute; inset-inline: -25%; height: 55%; border-radius: 50%; filter: blur(70px); opacity: .28; transition: opacity .6s var(--ease-out), transform .8s var(--ease-out); }
-.gx-bg i.eve { top: 6%; background: #E58AA0; }
-.gx-bg i.adam { bottom: -4%; background: #8AA7BD; }
-.gx[data-hot="eve"] .gx-bg i.eve, .gx[data-hot="adam"] .gx-bg i.adam { opacity: .5; transform: scale(1.08); }
-.gx[data-hot="eve"] .gx-bg i.adam, .gx[data-hot="adam"] .gx-bg i.eve { opacity: .1; }
-
-.gx-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px; }
-.gx-hl { display: grid; }
-.gx-hl small { font: 600 .82rem var(--md-font); color: rgba(255, 255, 255, .6); }
-.gx-hl h1 { margin: 0; font: 800 clamp(1.5rem, 6.6vw, 2.3rem)/1.15 var(--md-font); }
-.gx-hl h1 > span, .gx-hl em { display: inline-block; }
-.gx-hl em { font: 700 1.25em/1 var(--md-font-brand); font-style: normal; color: #FF7A55; }
-
-/* MoLu logo (their mark + wordmark, dark-mode colours) */
-.molu-logo { display: inline-flex; align-items: center; gap: 8px; color: #fff; }
-.logo-mark { width: 38px; height: 38px; flex: none; border-radius: 11px; box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .7); }
-.logo-latin { display: inline-flex; align-items: baseline; line-height: 1; }
-.logo-latin .mo { font: 700 1.4rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #F4E6E0; }
-.logo-latin .lu { display: inline-block; font: 400 1.95rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #D7798A; margin-left: -.08em; transform: translateY(.12em); }
-.logo-sep { width: 1px; height: 24px; background: rgba(255, 255, 255, .2); }
-.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.25rem; line-height: 1; }
-.logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #F4E6E0; }
-.logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #D7798A; margin-inline-start: -.12em; transform: translateY(.12em); }
-@media (max-width: 370px) { .logo-latin, .logo-sep { display: none; } }
-
-.gx-doors { flex: 1; display: grid; grid-template-rows: 1fr 1fr; gap: 12px; min-height: 0; }
-@media (min-width: 820px) { .gx-doors { grid-template-rows: none; grid-template-columns: 1fr 1fr; gap: 20px; } .gx { padding-inline: 28px; } }
-
-/* card: cream like the artwork; the whole scene on one side, the words on the other */
-.gd {
-  --c: #B23A63; position: relative; isolation: isolate; display: flex; align-items: stretch; min-height: 0; border-radius: 30px; overflow: hidden;
-  background: var(--cream); color: #2D2D2D; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
-  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .9), inset 0 0 0 1px rgba(255, 255, 255, .5); transition: opacity .4s var(--ease-out), filter .4s var(--ease-out); will-change: transform;
-}
-.gd.adam { --c: #2D5875; flex-direction: row-reverse; }   /* آدم's scene sits on the right, as in the picture */
-.gd-scene { position: relative; flex: none; height: 100%; aspect-ratio: 960 / 1350; max-width: 66%; }
-.gd-scene img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; transform-origin: 50% 100%; animation: breathe 7s ease-in-out infinite alternate; will-change: transform; }
-.gd.adam .gd-scene img { animation-delay: -3.5s; }
-@keyframes breathe { from { transform: scale(1); } to { transform: scale(1.025); } }
-.gd-txt { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 16px 14px 16px 6px; }
-.gd.adam .gd-txt { padding: 16px 6px 16px 14px; }
-.gd-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 3px; height: 28px; padding: 0 10px 0 8px; border-radius: 14px; background: #fff; color: #1A1A1A; font: 700 .72rem var(--md-font); box-shadow: 0 4px 12px -6px rgba(60, 40, 20, .35); white-space: nowrap; }
-.gd-chip svg { color: var(--md-primary); }
-.gd-name { display: grid; }
-.gd-name small { font: 700 .8rem var(--md-font); color: #7A6F63; }
-.gd-name b { font: 700 clamp(2.6rem, 12.5vw, 4.6rem)/1.05 var(--md-font-brand); color: var(--c); padding-bottom: .26em; margin-bottom: -.08em; }
-.gd-name > span { font: 600 .8rem/1.45 var(--md-font); color: #5E574E; }
-.gd-name .from { font: 800 .84rem var(--md-font); font-style: normal; color: var(--md-primary); margin-top: 4px; }
-.gd-go { align-self: flex-start; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--md-primary); color: #fff; box-shadow: 0 12px 26px -10px rgba(255, 80, 40, .9), inset 0 1px 0 rgba(255, 255, 255, .3); }
-/* the illustration's little dots, drifting */
-.gd .dot { position: absolute; border-radius: 50%; pointer-events: none; }
-.gd .d1 { width: 7px; height: 7px; background: #1A1A1A; top: 22%; inset-inline-end: 22%; }
-.gd .d2 { width: 10px; height: 10px; box-shadow: inset 0 0 0 1.6px #1A1A1A; top: 46%; inset-inline-end: 10%; }
-.gd .d3 { width: 5px; height: 5px; background: #1A1A1A; bottom: 30%; inset-inline-end: 34%; }
-.gd-sheen { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .45) 50%, transparent 62%); opacity: 0; }
-.gx-doors.has-hot .gd:not(.hot) { opacity: .45; filter: saturate(.6) brightness(.85); }
-.gd:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
-.gx-zoom { position: fixed; z-index: 50; overflow: hidden; background: var(--cream); }
-.gx-zoom img { position: absolute; object-fit: contain; object-position: 50% 100%; }
-@media (prefers-reduced-motion: reduce) { .gd-scene img { animation: none; } }
+/* حواء | آدم switch (sliding thumb) + fast content swap */
+.sec-seg { position: relative; display: inline-flex; flex: none; padding: 4px; border-radius: 24px; background: #fff; box-shadow: var(--md-elev-1); }
+.sec-seg button { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px 0 6px; border: 0; border-radius: 19px; background: none; font: 700 .92rem var(--md-font); color: var(--md-on-surface-variant); cursor: pointer; transition: color .2s; -webkit-tap-highlight-color: transparent; }
+.sec-seg button[aria-pressed="true"] { color: #fff; }
+.sec-seg .face { width: 28px; height: 28px; transition: transform .25s var(--ease-out); }
+.sec-seg button[aria-pressed="false"] .face { filter: grayscale(.6); opacity: .8; }
+.sec-seg .ss-thumb { position: absolute; top: 4px; bottom: 4px; left: 4px; border-radius: 19px; background: #1A1A1A; transition: transform .26s cubic-bezier(.3, 1.3, .5, 1), width .26s cubic-bezier(.3, 1.3, .5, 1); }
+.sec-seg button:active .face { transform: scale(.88); }
+.swap-out { opacity: 0; transform: translateY(4px); transition: opacity .09s ease-in, transform .09s ease-in; }
+.swap-in { animation: swapin .2s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes swapin { from { opacity: 0; transform: translateY(6px); } }

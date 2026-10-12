@@ -1,4 +1,4 @@
-import { boot, $, $$, ar, icon, getSection, setSection, faceImg } from './shell.js';
+import { boot, $, $$, ar, icon, getSection, secSwitch, swap } from './shell.js';
 import { PLANS } from './data.js';
 import { initSegmented, initSliders } from './m3.js';
 import { spring, revealOnScroll } from './motion.js';
@@ -16,7 +16,7 @@ const VALUES = [
 ];
 
 $('#app').innerHTML = `
-  <header class="page-h"><a class="round pressable" href="index.html" aria-label="رجوع">${icon('arrow_back', 22, 'flip-rtl')}</a><button class="sec-toggle pressable" id="sec" type="button" aria-label="بدّل القسم"></button></header>
+  <header class="page-h"><a class="round pressable" href="index.html" aria-label="رجوع">${icon('arrow_back', 22, 'flip-rtl')}</a><div id="sec"></div></header>
   <section class="biz-hero" data-reveal>
     <span class="muted" style="display:flex;align-items:center;gap:6px;font-weight:600">${icon('storefront', 18)}<span id="k-for"></span></span>
     <h1 style="margin-top:14px">صالونك مليان، <em>وجوالك هادي</em></h1>
@@ -78,7 +78,6 @@ initSegmented($('#app')); initSliders($('#app'));
 
 function paint() {
   const f = F();
-  $('#sec').innerHTML = `${faceImg(section)}${section === 'eve' ? 'حواء' : 'آدم'}${icon('expand_more', 18)}`;
   $('#k-for').textContent = f ? 'لصالونات ومراكز التجميل النسائية' : 'للحلاقين ومراكز العناية الرجالية';
   
   $('#p-name').textContent = f ? 'صالون لمسة' : 'صالون الفرسان';
@@ -94,10 +93,7 @@ paint();
 const playChat = () => ['#b1', '#b2', '#b3'].forEach((id, i) => spring($(id), [{ opacity: 0, transform: 'translateY(16px) scale(.92)' }, { opacity: 1, transform: 'none' }], 'bouncy', { delay: 0.3 + i * 0.7 }));
 new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && playChat()), { threshold: 0.6 }).observe($('.phone'));
 
-$('#sec').addEventListener('click', () => {
-  const go = () => { section = section === 'eve' ? 'adam' : 'eve'; setSection(section); document.body.dataset.section = section; paint(); };
-  document.startViewTransition ? document.startViewTransition(go) : go();
-});
+secSwitch($('#sec'), section, (k) => { section = k; swap($('#app'), paint); });
 
 // monthly ⇄ yearly: numbers roll (old slides up and out, new rises in)
 $$('[name="bill"]').forEach((r) => r.addEventListener('change', () => {

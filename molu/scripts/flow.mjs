@@ -19,6 +19,12 @@ await step('gate: logo + both full-scene cards visible', async () => { await p.g
 await step('enter حواء', async () => { await p.click('.gd.eve'); await p.waitForURL(/explore/); await p.waitForTimeout(1200); await shot('03-explore'); });
 await step('shortcut filter', async () => { await p.click('[data-sc="nails"]'); await p.waitForTimeout(900); await shot('04-filtered'); if (!(await p.locator('#reset').count())) throw new Error('no filter chip'); await p.click('#reset'); await p.waitForTimeout(600); });
 await step('search', async () => { await p.fill('#q', 'استشوار'); await p.waitForTimeout(700); await shot('05-search'); await p.click('#clear'); await p.waitForTimeout(400); });
+await step('switch حواء ↔ آدم (fast swap)', async () => {
+  await p.click('#sec [data-k="adam"]'); await p.waitForTimeout(450); await shot('05b-switch-adam');
+  if (!(await p.locator('[data-sc="beard"]').count())) throw new Error('آدم categories not shown');
+  await p.click('#sec [data-k="eve"]'); await p.waitForTimeout(450);
+  if (!(await p.locator('[data-sc="nails"]').count())) throw new Error('حواء categories not shown');
+});
 await step('map morph', async () => { await p.click('#map-fab'); await p.waitForTimeout(1100); await shot('06-map'); await p.locator('.map-full .pin').nth(2).click(); await p.waitForTimeout(700); await p.click('.map-full .round'); await p.waitForTimeout(800); });
 await step('open salon', async () => { await p.locator('.sc-card .img').first().click(); await p.waitForURL(/salon/); await p.waitForTimeout(1200); await shot('07-salon'); });
 await step('pick 2 services', async () => { await p.locator('.pop-card').first().click(); await p.waitForTimeout(500); await p.locator('.menu-sec .svc').nth(2).click(); await p.waitForTimeout(700); await shot('08-picked'); if (await p.locator('#cta.hide').count()) throw new Error('cta hidden'); });

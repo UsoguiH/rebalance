@@ -1,4 +1,4 @@
-import { boot, $, $$, ar, icon, salonCard, bindFavs, setSection, faceImg, money, catArt, appts } from './shell.js';
+import { boot, $, $$, ar, icon, salonCard, bindFavs, money, catArt, appts, secSwitch, swap } from './shell.js';
 import { SECTIONS, CATEGORIES, CITIES, SALONS, salonById, fmtTime } from './data.js';
 import { mapArt, coverArt } from './art.js';
 import { openMenu } from './m3.js';
@@ -17,8 +17,6 @@ const shortcutList = () => [
 
 function header() {
   const S = SECTIONS[section];
-  $('#sec').innerHTML = `${faceImg(section)}${S.name}${icon('expand_more', 18)}`;
-  $('#sec .face img').style.viewTransitionName = `gate-${section}`; // the gate picture morphs into this avatar
   $('#q').placeholder = S.searchPh;
   $('#q').value = state.q;
   $('#sbox').classList.toggle('has', !!state.q);
@@ -70,9 +68,10 @@ render(false);
 bindFavs(document);
 
 // ---------- interactions ----------
-$('#sec').addEventListener('click', () => {
-  const go = () => { section = section === 'eve' ? 'adam' : 'eve'; setSection(section); document.body.dataset.section = section; state.cat = ''; history.replaceState(null, '', `?s=${section}`); render(false); };
-  document.startViewTransition ? document.startViewTransition(go) : go();
+secSwitch($('#sec'), section, (k) => {
+  section = k; state.cat = ''; state.home = false; state.offer = false;
+  history.replaceState(null, '', `?s=${section}`);
+  swap($('main.wrap'), () => render(false));
 });
 let qT;
 $('#q').addEventListener('input', (e) => { state.q = e.target.value; $('#sbox').classList.toggle('has', !!state.q); clearTimeout(qT); qT = setTimeout(() => { feed(); }, 120); });

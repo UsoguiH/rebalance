@@ -1,4 +1,4 @@
-import { boot, $, $$, ar, icon, setSection, faceImg, money, catArt } from './shell.js';
+import { boot, $, $$, ar, icon, money, catArt, secSwitch, swap } from './shell.js';
 import { SECTIONS, CATEGORIES, SALONS } from './data.js';
 import { spring, blurIn } from './motion.js';
 import { initials } from './art.js';
@@ -32,7 +32,6 @@ const catGroups = (c) => {
 };
 
 function rail() {
-  $('#sec').innerHTML = `${faceImg(section)}${SECTIONS[section].name}${icon('expand_more', 18)}`;
   const items = [{ id: 'offers', name: 'العروض', icon: 'percent' }, ...CATEGORIES[section]];
   $('#rail').innerHTML = items.map((c) => `<button type="button" role="tab" data-rail="${c.id}" aria-selected="${c.id === sel}"><span class="ri">${catArt(section, c.id === 'offers' ? 'offer' : c.id, 40)}</span>${c.name}</button>`).join('');
 }
@@ -69,8 +68,5 @@ $('#panel').addEventListener('click', (e) => {
   if (!open) blurIn($('.gtiles', body), { y: 16 });
 });
 
-$('#sec').addEventListener('click', () => {
-  const go = () => { section = section === 'eve' ? 'adam' : 'eve'; setSection(section); document.body.dataset.section = section; sel = 'offers'; rail(); panel(); };
-  document.startViewTransition ? document.startViewTransition(go) : go();
-});
+secSwitch($('#sec'), section, (k) => { section = k; sel = 'offers'; swap($('.cat-layout'), () => { rail(); panel(); }); });
 $('#q').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.value.trim()) location.href = `explore.html?s=${section}&q=${encodeURIComponent(e.target.value.trim())}`; });

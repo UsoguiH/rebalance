@@ -104,7 +104,7 @@ function profile(fresh = false) {
   $('.acc-card .face').style.cssText = 'width:64px;height:64px';
   $('#sec').onclick = () => {
     const go = () => { section = section === 'eve' ? 'adam' : 'eve'; setSection(section); document.body.dataset.section = section; userStore.set({ ...u, section }); profile(); };
-    document.startViewTransition ? document.startViewTransition(go) : go();
+    go();
   };
   $('#notif').onclick = () => snackbar('نذكّرك قبل كل موعد بساعتين برسالة نصية');
   $('#lang').onclick = () => snackbar('English — قريباً');

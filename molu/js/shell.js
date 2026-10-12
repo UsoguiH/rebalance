@@ -120,6 +120,36 @@ export function hydrateIcons(root = document) {
   $$('[data-i]', root).forEach((el) => { el.outerHTML = icon(el.dataset.i, +el.dataset.s || 24, el.className); });
 }
 
+// حواء | آدم switch: two options, a thumb that slides (CSS transition), and a quick content swap.
+export function secSwitch(host, current, onChange) {
+  host.classList.add('sec-seg');
+  host.setAttribute('role', 'group'); host.setAttribute('aria-label', 'القسم');
+  host.innerHTML = `<i class="ss-thumb" aria-hidden="true"></i>` + ['eve', 'adam'].map((k) => `<button type="button" data-k="${k}" aria-pressed="${k === current}">${faceImg(k)}<span>${SECTIONS[k].name}</span></button>`).join('');
+  const thumb = host.querySelector('.ss-thumb');
+  const place = (animate) => {
+    const on = host.querySelector('[aria-pressed="true"]');
+    if (!animate) thumb.style.transition = 'none';
+    thumb.style.width = on.offsetWidth + 'px';
+    thumb.style.transform = `translateX(${on.offsetLeft - 4}px)`;
+    if (!animate) requestAnimationFrame(() => (thumb.style.transition = ''));
+  };
+  requestAnimationFrame(() => place(false));
+  addEventListener('resize', () => place(false));
+  host.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-k]');
+    if (!b || b.getAttribute('aria-pressed') === 'true') return;
+    host.querySelectorAll('[data-k]').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    place(true);
+    setSection(b.dataset.k); document.body.dataset.section = b.dataset.k;
+    onChange(b.dataset.k);
+  });
+}
+// fast content swap: 90ms out, re-render, 200ms in (no page snapshot)
+export function swap(el, render) {
+  el.classList.add('swap-out');
+  setTimeout(() => { render(); el.classList.remove('swap-out'); el.classList.remove('swap-in'); void el.offsetWidth; el.classList.add('swap-in'); }, 90);
+}
+
 export function boot({ page, section = getSection(), nav = true } = {}) {
   document.body.dataset.section = section;
   hydrateIcons();
