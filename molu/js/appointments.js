@@ -1,4 +1,4 @@
-import { boot, $, $$, ar, icon, appts, isUpcoming, snackbar, money, seedDemo } from './shell.js';
+import { boot, $, $$, ar, icon, appts, isUpcoming, snackbar, money, seedDemo, catArt } from './shell.js';
 import { salonById, SALONS, CATEGORIES, SECTIONS, fmtTime } from './data.js';
 import { initials } from './art.js';
 import { openSheet, closeSheet } from './m3.js';
@@ -18,7 +18,7 @@ function until(at) {
   const d = Math.round(h / 24);
   return d === 1 ? 'موعدك بكرة' : d === 2 ? 'موعدك بعد يومين' : `موعدك بعد ${ar(d)} ${d <= 10 ? 'أيام' : 'يوماً'}`;
 }
-const svcIcon = (a) => (CATEGORIES[a.section] || []).find((c) => c.services.some(([n]) => n === a.services[0]))?.icon || 'content_cut';
+const svcCat = (a) => (CATEGORIES[a.section] || []).find((c) => c.services.some(([n]) => n === a.services[0]))?.id || 'all';
 
 function card(a, i) {
   const s = salonById(a.salonId), d = new Date(a.at), up = isUpcoming(a), x = a.status === 'cancelled';
@@ -29,7 +29,7 @@ function card(a, i) {
   return `
   <article class="order" style="--i:${i}" data-id="${a.id}">
     <div class="o1"><a class="o-logo" href="salon.html?id=${s.id}" style="--c:${a.section === 'eve' ? 'var(--eve)' : 'var(--adam)'}">${initials(s.name)}</a><a class="o-name" href="salon.html?id=${s.id}">${s.name}</a>${action}</div>
-    <div class="o2"><span class="o-thumb">${icon(svcIcon(a), 26)}</span><span class="o-svc">${a.services.join('، ')}<br><span class="muted">${fmtTime(d.getHours() * 60 + d.getMinutes())} · ${a.staff}</span></span><span class="o-price">${money(a.total)}</span></div>
+    <div class="o2"><span class="o-thumb">${catArt(a.section, svcCat(a), 30)}</span><span class="o-svc">${a.services.join('، ')}<br><span class="muted">${fmtTime(d.getHours() * 60 + d.getMinutes())} · ${a.staff}</span></span><span class="o-price">${money(a.total)}</span></div>
     <div class="o3">${up ? `<span class="up">${until(a.at)}</span>` : x ? '<span class="x">موعد ملغى</span>' : '<span>تمت الزيارة</span>'}<span>${ddmmyyyy(d)}</span></div>
   </article>`;
 }

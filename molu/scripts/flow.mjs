@@ -15,10 +15,8 @@ p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
 const shot = (n) => p.screenshot({ path: `${out}/${n}.png` });
 const step = async (label, fn) => { try { await fn(); console.log('✓', label); } catch (e) { errs.push(`${label}: ${e.message.split('\n')[0]}`); console.log('✗', label); } };
 
-await step('home loads', async () => { await p.goto(B + 'index.html', { waitUntil: 'networkidle' }); await p.waitForTimeout(1600); await shot('01-home'); });
-await step('hero carousel advances', async () => { await p.waitForTimeout(4200); if (!(await p.locator('.calli.on').nth(0).textContent()).includes('جمالك')) throw new Error('slide did not change'); });
-await step('scroll to doors', async () => { await p.mouse.wheel(0, 380); await p.waitForTimeout(900); await shot('02-doors'); });
-await step('enter حواء', async () => { await p.click('.door.eve'); await p.waitForURL(/explore/); await p.waitForTimeout(1200); await shot('03-explore'); });
+await step('gate loads (حواء / آدم only)', async () => { await p.goto(B + 'index.html', { waitUntil: 'networkidle' }); await p.waitForTimeout(1400); await shot('01-gate'); if ((await p.locator('.g2').count()) !== 2) throw new Error('expected two doors'); });
+await step('enter حواء', async () => { await p.click('.g2.eve'); await p.waitForURL(/explore/); await p.waitForTimeout(1200); await shot('03-explore'); });
 await step('shortcut filter', async () => { await p.click('[data-sc="nails"]'); await p.waitForTimeout(900); await shot('04-filtered'); if (!(await p.locator('#reset').count())) throw new Error('no filter chip'); await p.click('#reset'); await p.waitForTimeout(600); });
 await step('search', async () => { await p.fill('#q', 'استشوار'); await p.waitForTimeout(700); await shot('05-search'); await p.click('#clear'); await p.waitForTimeout(400); });
 await step('map morph', async () => { await p.click('#map-fab'); await p.waitForTimeout(1100); await shot('06-map'); await p.locator('.map-full .pin').nth(2).click(); await p.waitForTimeout(700); await p.click('.map-full .round'); await p.waitForTimeout(800); });

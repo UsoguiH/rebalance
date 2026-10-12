@@ -1,4 +1,4 @@
-import { boot, $, $$, ar, icon, favs, appts, bindFavs, setSection, snackbar, money, verified } from './shell.js';
+import { boot, $, $$, ar, icon, favs, appts, bindFavs, setSection, snackbar, money, verified, catArt } from './shell.js';
 import { SECTIONS, salonById, SALONS, days, slots, fmtTime } from './data.js';
 import { coverArt, mapArt, initials } from './art.js';
 import { openSheet, closeSheet, setLoading, copyText } from './m3.js';
@@ -47,7 +47,7 @@ $('#app').innerHTML = `
 
     <section class="sec"><div class="sec-h"><h2>الأكثر طلباً</h2></div>
       <div class="carousel">${popular.map(({ c, ci, s }) => `
-        <div class="pop-card" data-pick="${key(ci, 0)}"><span class="ti">${icon(c.icon, 36)}</span>${addBtn(key(ci, 0), s)}<b>${s.name}</b><span>${money(s.price)} · ${ar(s.minutes)} د</span></div>`).join('')}</div>
+        <div class="pop-card" data-pick="${key(ci, 0)}"><span class="ti">${catArt(salon.section, c.id, 48)}</span>${addBtn(key(ci, 0), s)}<b>${s.name}</b><span>${money(s.price)} · ${ar(s.minutes)} د</span></div>`).join('')}</div>
     </section>
   </div>
 

@@ -46,7 +46,7 @@ export const userStore = store('molu_user', null);
 
 // ---------- محلي floating nav: 4 in a glass pill + 1 solo circle ----------
 const NAV = [
-  ['home', 'index.html', 'home', 'الرئيسية'],
+  ['home', 'explore.html', 'home', 'الرئيسية'],
   ['cats', 'categories.html', 'grid_view', 'التصنيفات'],
   ['offers', 'offers.html', 'percent', 'العروض'],
   ['favs', 'favorites.html', 'favorite', 'المفضلة'],
@@ -60,6 +60,21 @@ export function renderNav(active) {
       <div class="nav-group"><i class="nav-indicator"></i>${items}</div>
       <div class="nav-solo"><a class="nav-item pressable" href="appointments.html"${active === 'appts' ? ' aria-current="page"' : ''} aria-label="مواعيدي"><span class="badge-wrap">${navIcon('calendar_month')}<span class="badge" data-n="${n}">${n ? ar(n) : ''}</span></span></a></div>
     </nav>`);
+}
+
+// ---------- category art (Uber-Eats style) ----------
+// Drop generated PNG/WebP art into img/icons/<section>-<id>.webp and list the name in ICON_FILES;
+// until then each category shows its emoji.
+export const ICON_FILES = new Set([]);
+const EMOJI = {
+  offer: '🏷️', home: '🏠', all: '✨', gift: '🎁', fire: '🔥',
+  'eve-hair': '💇‍♀️', 'eve-nails': '💅', 'eve-makeup': '💄', 'eve-brows': '👁️', 'eve-skin': '🧴', 'eve-massage': '💆‍♀️', 'eve-henna': '🌿', 'eve-bride': '👰‍♀️',
+  'adam-cut': '💈', 'adam-beard': '🧔🏻', 'adam-color': '🎨', 'adam-care': '🧖‍♂️', 'adam-massage': '💆‍♂️', 'adam-groom': '🤵',
+};
+export function catArt(section, id, size = 48) {
+  const k = `${section}-${id}`;
+  if (ICON_FILES.has(k) || ICON_FILES.has(id)) return `<img class="cat-art" src="img/icons/${ICON_FILES.has(k) ? k : id}.webp" alt="" width="${size}" height="${size}" loading="lazy" decoding="async">`;
+  return `<span class="cat-emoji" style="font-size:${Math.round(size * 0.82)}px" aria-hidden="true">${EMOJI[k] || EMOJI[id] || '✨'}</span>`;
 }
 
 // ---------- shared renderers ----------

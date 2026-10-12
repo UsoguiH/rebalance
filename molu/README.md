@@ -17,8 +17,8 @@ node scripts/shoot.mjs /tmp/out index.html # screenshots
 ## Screens
 | Page | Pattern |
 |---|---|
-| `index.html` | محلي dark hero: glass location pill, avatar badge, glass search, calligraphy carousel with page dots, featured-salon strip. Below it, **حواء / آدم** appear as محلي's tall promo cards, followed by the next appointment, colourful offer tiles and the owner banner. |
-| `explore.html` | Uber Eats feed: one search bar, one row of category shortcuts, carousels (nearest, today's offers, top rated), then every salon. A floating «الخريطة» pill morphs into a full-screen map. |
+| `index.html` | **Gate**: only two big doors, **حواء** and **آدم**, and nothing else. The chosen illustration morphs (view transition) into the section avatar on the next screen. |
+| `explore.html` | Section home, Uber Eats feed: next appointment, one search bar, one row of category art shortcuts (emoji for now; see `docs/ICON-PROMPTS.md`), carousels (nearest, today's offers, top rated), then every salon. A floating «الخريطة» pill morphs into a full-screen map. |
 | `salon.html` | Uber Eats store: cover, logo, one meta line and info pills, a «الأكثر طلباً» row, sticky tabs with scroll-spy, and service rows. Tapping **+** adds a service and brings up a black «اختر الموعد» bar. |
 | Booking | **One sheet**: who (optional) · day · time · confirm. The button morphs into a loader, then a success check with confetti and a ticket. |
 | `appointments.html` | محلي «الطلبات»: bell with badge, orange chips, cards with black pill actions (manage / rate / re-book). Includes cancel with undo, an `.ics` calendar file, and rating. |

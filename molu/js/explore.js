@@ -1,5 +1,5 @@
-import { boot, $, $$, ar, icon, salonCard, bindFavs, setSection, faceImg, money } from './shell.js';
-import { SECTIONS, CATEGORIES, CITIES, SALONS } from './data.js';
+import { boot, $, $$, ar, icon, salonCard, bindFavs, setSection, faceImg, money, catArt, appts } from './shell.js';
+import { SECTIONS, CATEGORIES, CITIES, SALONS, salonById, fmtTime } from './data.js';
 import { mapArt, coverArt } from './art.js';
 import { openMenu } from './m3.js';
 import { spring, blurIn } from './motion.js';
@@ -9,8 +9,6 @@ const params = new URLSearchParams(location.search);
 let section = boot({ page: 'home' });
 const state = { q: params.get('q') || '', cat: params.get('cat') || '', home: params.get('home') === '1', offer: params.get('offer') === '1' };
 
-// pastel tile + ink per shortcut, so the row reads at a glance (Uber Eats)
-const TINT = ['#FFE9E1:#E8461F', '#FFF4D6:#B7791F', '#E6F4EA:#1E8E4E', '#E8F0FE:#1A63D6', '#F3E8FD:#8430CE', '#FCE8F0:#C2185B', '#E0F7F7:#00838F', '#FFF0E0:#C25E00'];
 const shortcutList = () => [
   { id: 'offer', name: 'عروض', icon: 'percent' },
   { id: 'home', name: 'في البيت', icon: 'home_work' },
@@ -20,13 +18,13 @@ const shortcutList = () => [
 function header() {
   const S = SECTIONS[section];
   $('#sec').innerHTML = `${faceImg(section)}${S.name}${icon('expand_more', 18)}`;
+  $('#sec .face img').style.viewTransitionName = `gate-${section}`; // the gate picture morphs into this avatar
   $('#q').placeholder = S.searchPh;
   $('#q').value = state.q;
   $('#sbox').classList.toggle('has', !!state.q);
-  $('#cats').innerHTML = shortcutList().map((c, i) => {
-    const [t, ic] = TINT[i % TINT.length].split(':');
+  $('#cats').innerHTML = shortcutList().map((c) => {
     const on = c.id === state.cat || (c.id === 'home' && state.home) || (c.id === 'offer' && state.offer);
-    return `<button class="sc" type="button" data-sc="${c.id}" aria-pressed="${on}"><span class="tile" style="--t:${t};--ic:${ic}">${icon(c.icon, 30)}</span>${c.name}</button>`;
+    return `<button class="sc" type="button" data-sc="${c.id}" aria-pressed="${on}"><span class="tile">${catArt(section, c.id, 56)}</span>${c.name}</button>`;
   }).join('');
 }
 
@@ -51,10 +49,17 @@ function feed() {
     </section>`;
   } else {
     const near = [...all].sort((a, b) => a.km - b.km);
-    f.innerHTML = row(`الأقرب ${section === 'eve' ? 'لكِ' : 'لك'}`, near.slice(0, 6)) +
+    const next = appts.upcoming()[0];
+    const nextHtml = next ? (() => {
+      const s = salonById(next.salonId), d = new Date(next.at);
+      const when = new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
+      return `<section class="sec"><a class="next-appt pressable" href="appointments.html"><span class="ic">${icon('event_available', 28)}</span><span class="grow"><b>موعدك الجاي في ${s.name}</b><span>${when} · ${fmtTime(d.getHours() * 60 + d.getMinutes())}</span></span><span class="pill-dark">التفاصيل</span></a></section>`;
+    })() : '';
+    f.innerHTML = nextHtml + row(`الأقرب ${section === 'eve' ? 'لكِ' : 'لك'}`, near.slice(0, 6)) +
       row('عروض اليوم', all.filter((s) => s.offer), 'offer') +
       row('الأعلى تقييماً', [...all].sort((a, b) => b.rating - a.rating).slice(0, 6)) +
-      `<section class="sec"><div class="sec-h"><h2>كل الصالونات</h2></div><div class="list">${near.map((s, i) => salonCard(s, { i })).join('')}</div></section>`;
+      `<section class="sec"><div class="sec-h"><h2>كل الصالونات</h2></div><div class="list">${near.map((s, i) => salonCard(s, { i })).join('')}</div></section>
+      <a class="owner-link pressable" href="business.html">${icon('storefront', 22)}<span class="grow"><b>صاحب صالون أو حلاق؟</b><span>سجّل صالونك مجاناً — بدون عمولة</span></span>${icon('chevron_left', 22)}</a>`;
   }
 }
 function render(animate = true) {
