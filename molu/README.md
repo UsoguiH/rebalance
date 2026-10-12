@@ -17,7 +17,7 @@ node scripts/shoot.mjs /tmp/out index.html # screenshots
 ## Screens
 | Page | Pattern |
 |---|---|
-| `index.html` | **Gate**: only two big doors, **حواء** and **آدم**, and nothing else. The chosen illustration morphs (view transition) into the section avatar on the next screen. |
+| `index.html` | **Gate**: only **حواء** and **آدم**. Dark, محلي-style immersive stage: the backdrop is the active illustration, blurred; a glass switch; huge calligraphy; and a 3D card carousel you can drag. Motion uses the Framer Motion engine (`motion`, vendored in `js/vendor/`): one spring-driven position value runs everything, with velocity hand-off on drag, a staggered entrance, a `whileTap` button, and a layoutId-style card → full-screen growth that a view transition then shrinks into the next page's avatar. |
 | `explore.html` | Section home, Uber Eats feed: next appointment, one search bar, one row of category art shortcuts (emoji for now; see `docs/ICON-PROMPTS.md`), carousels (nearest, today's offers, top rated), then every salon. A floating «الخريطة» pill morphs into a full-screen map. |
 | `salon.html` | Uber Eats store: cover, logo, one meta line and info pills, a «الأكثر طلباً» row, sticky tabs with scroll-spy, and service rows. Tapping **+** adds a service and brings up a black «اختر الموعد» bar. |
 | Booking | **One sheet**: who (optional) · day · time · confirm. The button morphs into a loader, then a success check with confetti and a ticket. |
