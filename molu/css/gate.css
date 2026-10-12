@@ -1,19 +1,16 @@
-/* Gate — «شارع مولو»: a little street of two shopfronts, one above the other.
-   حواء: blush salon front, rose-striped awning, rose sign. آدم: navy barber front, navy-striped awning, brass sign.
-   Each shop window shows its whole illustration (window = the picture's own shape); a black arched door says «ادخلي/ادخل».
-   Static: no app CSS/JS. Motion (2D, quick): awnings roll down, signs swing and settle, windows light up, «من هنا» draws. */
+/* Gate — expanding panels. The open panel shows its whole illustration at full width (as big and clear as the
+   phone allows); the other stays as a slim panel with its name. Tap or swipe to swap: the panels trade sizes
+   smoothly and the picture opens up as its panel grows. Static: no app CSS/JS. */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s; }
-:root { --ease: cubic-bezier(.22, 1, .36, 1); --cream: #F4ECDD; }
+:root { --ease: cubic-bezier(.22, 1, .36, 1); --cream: #F4ECDD; --dur: .6s; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--cream); }
 body { color: #2D2D2D; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-.street { height: 100dvh; min-height: 600px; display: grid; grid-template-rows: auto minmax(0, 1fr) 8px minmax(0, 1fr); padding: max(6px, env(safe-area-inset-top)) 0 0; background: var(--cream); overflow: hidden; }
-
-/* roof with the MoLu name */
-.roof { display: flex; justify-content: center; align-items: center; height: 46px; }
+.gx { height: 100dvh; min-height: 520px; display: flex; flex-direction: column; gap: 8px; padding: max(6px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); background: var(--cream); }
+.top { display: flex; justify-content: center; align-items: center; height: 40px; flex: none; animation: fade .5s var(--ease) both; }
 .molu-logo { display: inline-flex; align-items: center; gap: 7px; }
 .logo-mark { width: 30px; height: 30px; border-radius: 9px; flex: none; box-shadow: 0 4px 12px -6px rgba(90, 42, 51, .45); }
 .logo-latin { display: inline-flex; align-items: baseline; line-height: 1; }
@@ -24,59 +21,51 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 .logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #3A1C24; }
 .logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #B0485C; margin-inline-start: -.12em; transform: translateY(.12em); }
 
-.ledge { display: block; background: linear-gradient(#E9DFCB, #D8CBB3); box-shadow: 0 3px 6px -3px rgba(60, 40, 20, .4); position: relative; z-index: 3; }
+/* the two panels: the open one grows (flex-grow animates smoothly), the other stays slim */
+.panels { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 820px) { .panels { flex-direction: row; } .gx { padding-inline: 24px; } }
+.panel { --c: #A3355A; position: relative; isolation: isolate; flex: 1 1 0; min-height: 0; min-width: 0; overflow: hidden; border-radius: 30px; background: #FAF6E2;
+  box-shadow: 0 22px 44px -28px rgba(60, 40, 20, .7); transition: flex-grow var(--dur) var(--ease), transform .2s ease-out; animation: rise .6s var(--ease) both; }
+.panel.adam { --c: #24475F; animation-delay: .08s; }
+.panel.on { flex-grow: 3.4; }
+.panel:active { transform: scale(.985); }
+.panel:focus-visible { outline: 3px solid var(--c); outline-offset: 3px; }
 
-/* a shop */
-.shop { --facade: #F2D3D8; --trim: #B23A63; --stripe2: #FBEFF1; --frame: #FFF7F5; --plaque: #B23A63; --plaque-ink: #FFF4F0; --hint: #8E2B4F;
-  position: relative; display: grid; grid-template-rows: 30px minmax(0, 1fr); min-height: 0;
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .0) 0 46px, rgba(255, 255, 255, .22) 46px 48px), var(--facade); }
-.shop.adam { --facade: #2B4253; --trim: #24475F; --stripe2: #F1E8D8; --frame: #E9DCC4; --plaque: #E9DCC4; --plaque-ink: #1F3A4E; --hint: #F4ECDD;
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0) 0 46px, rgba(255, 255, 255, .05) 46px 48px), var(--facade); }
+/* picture: cover — at full size it's the whole illustration; as the panel narrows it becomes a band across the faces */
+.panel img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%;
+  transform: scale(1.06); transition: transform var(--dur) var(--ease), filter var(--dur) var(--ease); filter: saturate(.85); }
+.panel.adam img { object-position: 50% 26%; }
+.panel.on img { transform: none; filter: none; animation: settle .9s .1s var(--ease) both; }
+.panel::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, transparent 45%, rgba(16, 13, 11, .55) 75%, rgba(16, 13, 11, .85)); transition: opacity var(--dur) var(--ease); }
+.panel:not(.on)::after { background: linear-gradient(90deg, rgba(16, 13, 11, .62), rgba(16, 13, 11, .15) 70%); }
 
-/* striped awning with a scalloped edge — rolls down on load */
-.awning { position: relative; z-index: 2; display: block; transform-origin: 50% 0; animation: unroll .38s var(--ease) both;
-  background: repeating-linear-gradient(90deg, var(--trim) 0 18px, var(--stripe2) 18px 36px); box-shadow: 0 6px 10px -6px rgba(0, 0, 0, .35); }
-.awning::after { content: ''; position: absolute; inset-inline: 0; bottom: -9px; height: 9px;
-  background: radial-gradient(circle at 9px 0, var(--trim) 8.6px, transparent 9px) 0 0 / 36px 9px repeat-x,
-              radial-gradient(circle at 27px 0, var(--stripe2) 8.6px, transparent 9px) 0 0 / 36px 9px repeat-x; }
-.shop.adam .awning { animation-delay: .08s; }
+/* words: big on the open panel, compact on the slim one */
+.txt { position: absolute; inset-inline-start: 20px; bottom: 18px; display: grid; color: #fff; transform-origin: 100% 100%; transition: transform var(--dur) var(--ease), bottom var(--dur) var(--ease); }
+.txt small { font: 700 .82rem 'IBM Plex Sans Arabic', sans-serif; opacity: .88; }
+.txt b { font: 700 clamp(3.2rem, 16vw, 5.6rem)/1.05 'Aref Ruqaa', serif; padding-bottom: .28em; margin-bottom: -.2em; text-shadow: 0 4px 18px rgba(0, 0, 0, .4); }
+.txt span { font: 600 .82rem 'IBM Plex Sans Arabic', sans-serif; opacity: .92; transition: opacity .3s; }
+.panel:not(.on) .txt { transform: scale(.72); bottom: 10px; }
+.panel:not(.on) .txt span { opacity: 0; }
+.panel.on .txt > * { animation: up .5s var(--ease) both; }
+.panel.on .txt b { animation-delay: .06s; } .panel.on .txt span { animation-delay: .12s; }
 
-.facade { container-type: size; min-height: 0; display: flex; align-items: flex-end; gap: 10px; padding: 18px 12px 10px; direction: ltr; }
-.shop.adam .facade { flex-direction: row-reverse; }   /* حواء's window on the left, آدم's on the right — as in the artwork */
+/* iPhone-style black pill on the open panel; «اضغط للعرض» on the slim one */
+.pill { position: absolute; inset-inline-end: 16px; bottom: 20px; display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 20px 0 14px; border-radius: 26px;
+  background: #000; color: #fff; font: 700 1.05rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif; box-shadow: 0 12px 26px -10px rgba(0, 0, 0, .7);
+  transition: opacity .3s var(--ease), transform var(--dur) var(--ease); }
+.pill svg { transition: transform .2s var(--ease); }
+.pill:active svg { transform: translateX(-4px); }
+.panel:not(.on) .pill { opacity: 0; transform: translateY(16px); pointer-events: none; }
+.peek { position: absolute; inset-inline-end: 18px; top: 50%; translate: 0 -50%; display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 17px;
+  background: rgba(255, 255, 255, .92); color: #1A1A1A; font: 700 .8rem 'IBM Plex Sans Arabic', sans-serif; transition: opacity .3s var(--ease); }
+.panel.on .peek { opacity: 0; pointer-events: none; }
+.panels.nudge .panel:not(.on) { animation: nudge .7s var(--ease) 1; }
 
-/* the shop window: exactly the picture's shape, so the whole illustration shows */
-.window { position: relative; flex: none; height: 100%; max-width: 68cqw; aspect-ratio: var(--ar); border-radius: 18px; overflow: hidden; background: #FAF6E2;
-  box-shadow: 0 0 0 6px var(--frame), 0 14px 28px -12px rgba(0, 0, 0, .5); }
-.window img { display: block; width: 100%; height: 100%; object-fit: cover; animation: lights .6s .15s ease-out both; }
-.shop.adam .window img { animation-delay: .25s; }
-.glass { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, .28) 50%, transparent 58%), linear-gradient(115deg, transparent 60%, rgba(255, 255, 255, .14) 64%, transparent 68%); pointer-events: none; }
-
-/* sign, «من هنا», door */
-.side { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6px; direction: rtl; }
-.sign { position: relative; display: grid; justify-items: center; min-width: 92px; padding: 6px 14px 4px; border-radius: 14px; background: var(--plaque); color: var(--plaque-ink);
-  box-shadow: 0 10px 18px -10px rgba(0, 0, 0, .55), inset 0 0 0 2px rgba(255, 255, 255, .18); transform-origin: 50% -14px; animation: swing 1s .3s both; }
-.sign::before, .sign::after { content: ''; position: absolute; top: -16px; width: 2px; height: 16px; background: #6B5E50; }
-.sign::before { left: 22%; } .sign::after { right: 22%; }
-.sign small { font: 700 .7rem 'IBM Plex Sans Arabic', sans-serif; opacity: .85; }
-.sign b { font: 700 clamp(1.9rem, 9vw, 2.8rem)/1.1 'Aref Ruqaa', serif; padding-bottom: .18em; margin-top: -.1em; }
-.shop.adam .sign { animation-delay: .4s; }
-.hint { display: flex; align-items: flex-end; color: var(--hint); pointer-events: none; }
-.hint span { font: 700 1.05rem/1 'Aref Ruqaa', serif; transform: translateY(-14px); animation: fadein .3s .7s ease-out both; }
-.squig { width: 42px; height: 34px; fill: none; stroke: var(--hint); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; transform: scaleX(-1); }
-.squig path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .5s .75s ease-out forwards; }
-.squig .head { animation-delay: 1.2s; animation-duration: .18s; }
-.door { position: relative; display: grid; place-items: center; width: min(100%, 104px); flex: 1; max-height: 190px; min-height: 120px; border-radius: 52px 52px 8px 8px; background: #0E0E0E; color: #fff;
-  box-shadow: 0 0 0 4px var(--frame), 0 12px 24px -10px rgba(0, 0, 0, .7); transition: transform .16s ease-out; animation: fadein .35s .3s ease-out both; }
-.door .lbl { display: inline-flex; align-items: center; gap: 5px; font: 700 1rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif; }
-.knob { position: absolute; top: 56%; inset-inline-start: 12px; width: 8px; height: 8px; border-radius: 50%; background: #D8B46A; }
-.shop:active .door { transform: scale(.95); }
-.shop:focus-visible { outline: 3px solid var(--trim); outline-offset: -4px; }
-
-@keyframes unroll { from { transform: scaleY(0); } }
-@keyframes swing { 0% { opacity: 0; transform: rotate(-16deg); } 35% { opacity: 1; transform: rotate(9deg); } 60% { transform: rotate(-5deg); } 80% { transform: rotate(2deg); } 100% { transform: rotate(0); } }
-@keyframes lights { from { filter: brightness(.45) saturate(.5); } }
-@keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes fadein { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+@keyframes settle { from { transform: scale(1.08); } }
+@keyframes up { from { opacity: 0; transform: translateY(10px); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes nudge { 30% { transform: translateY(-8px); } 60% { transform: translateY(2px); } }
 .ms { display: block; flex: none; }
-@media (min-width: 820px) { .street { grid-template-rows: auto minmax(0, 1fr) 8px minmax(0, 1fr); max-width: 760px; margin: 0 auto; } }
-@media (prefers-reduced-motion: reduce) { .awning, .sign, .window img, .door, .hint span { animation: none; } .squig path { animation: none; stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { :root { --dur: .01s; } .panel, .top, .panel.on img, .panel.on .txt > *, .panels.nudge .panel { animation: none; } }
