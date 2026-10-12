@@ -716,3 +716,11 @@ body.owner { padding-bottom: 150px; }
 .o-plan .grow { display: grid; gap: 2px; min-width: 0; } .o-plan small { color: var(--md-on-surface-variant); font-size: .8rem; line-height: 1.5; }
 .o-plan em { font-style: normal; font-size: .7rem; padding: 1px 8px; border-radius: 8px; background: var(--md-primary-container); color: var(--md-primary); margin-inline-start: 4px; }
 .o-plan-p { display: grid; justify-items: end; flex: none; } .o-plan-p b { font: 800 1.15rem var(--md-font); }
+
+/* home: the way in for salons and barbers, right after the first row */
+.owner-link { display: flex; align-items: center; gap: 12px; margin: 4px 0 22px; padding: 12px 14px; border-radius: 22px; background: #1A1A1A; color: #fff; }
+.owner-link > svg:first-child { box-sizing: content-box; padding: 9px; border-radius: 14px; background: rgba(255, 255, 255, .1); flex: none; }
+.owner-link .grow { display: grid; gap: 1px; min-width: 0; }
+.owner-link b { font: 700 .98rem var(--md-font); }
+.owner-link .grow span { font-size: .82rem; color: rgba(255, 255, 255, .7); }
+.owner-link > svg:last-child { flex: none; opacity: .7; }

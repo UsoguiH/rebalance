@@ -58,10 +58,11 @@ export default function mount() {
         const when = new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
         return `<section class="sec"><a class="next-appt pressable" href="appointments.html"><span class="ic">${icon('event_available', 28)}</span><span class="grow"><b>موعدك الجاي في ${s.name}</b><span>${when} · ${fmtTime(d.getHours() * 60 + d.getMinutes())}</span></span><span class="pill-dark">التفاصيل</span></a></section>`;
       })() : '';
-      const first = nextHtml + row(`الأقرب ${section === 'eve' ? 'لكِ' : 'لك'}`, near.slice(0, 6)) + row('عروض اليوم', all.filter((s) => s.offer), 'offer');
+      // owners: right after the first row, so it's found without scrolling to the end
+      const owner = `<a class="owner-link pressable" href="${salonById('mine') ? 'dashboard.html' : 'business.html'}">${icon('storefront', 22)}<span class="grow"><b>${salonById('mine') ? salonById('mine').name : 'صاحب صالون أو محل حلاقة؟'}</b><span>${salonById('mine') ? 'افتح لوحتك' : 'سجّل محلّك مجاناً · بدون عمولة'}</span></span>${icon('chevron_left', 22)}</a>`;
+      const first = nextHtml + row(`الأقرب ${section === 'eve' ? 'لكِ' : 'لك'}`, near.slice(0, 6)) + owner + row('عروض اليوم', all.filter((s) => s.offer), 'offer');
       const rest = () => row('الأعلى تقييماً', [...all].sort((a, b) => b.rating - a.rating).slice(0, 6)) +
-        `<section class="sec"><div class="sec-h"><h2>كل الصالونات</h2></div><div class="list">${near.map((s, i) => salonCard(s, { i })).join('')}</div></section>
-        <a class="owner-link pressable" href="business.html">${icon('storefront', 22)}<span class="grow"><b>صاحب صالون أو حلاق؟</b><span>سجّل صالونك مجاناً — بدون عمولة</span></span>${icon('chevron_left', 22)}</a>`;
+        `<section class="sec"><div class="sec-h"><h2>كل الصالونات</h2></div><div class="list">${near.map((s, i) => salonCard(s, { i })).join('')}</div></section>`;
       // on arrival only the first screen is built; the rest (below the fold) follows right after the first paint
       if (!lazy) { f.innerHTML = first + rest(); return; }
       f.innerHTML = first;
