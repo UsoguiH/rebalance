@@ -1,64 +1,66 @@
-/* Gate — dark stage, MoLu logo, two cards. Each card shows its whole scene on a tint of its own
-   (the artwork's cream × a tint, so the picture melts into the card): blush for حواء, silver for آدم.
-   Three words per card. Static: no app CSS/JS. Motion: one short fade-up, the scene settles. */
+/* Gate — «جدار الصور»: the two scenes are posters pinned on a cream wall, tilted a little, with washi tape
+   in each section's colour. Each poster has the artwork's own shape, so the picture fills it completely.
+   A handwritten «ادخلي/ادخل من هنا» with a drawn arrow points at each one.
+   Static: no app CSS/JS. Motion (2D only): posters drop and settle, arrows draw, a tap straightens the poster. */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .16s; }
-:root {
-  --ease: cubic-bezier(.22, 1, .36, 1);
-  --page: #F4ECDD;   /* cream page, a shade deeper than the artwork's cream so the cards stand out */
-  /* card colour = artwork cream (250,246,226) × tint, so image and card meet without an edge */
-  --eve-bg: #F8E3E0; --eve-tint: #FDEBFD; --eve-ink: #9E2F55;
-  --adam-bg: #E6E3DA; --adam-tint: #EBEBF6; --adam-ink: #24475F;
-}
+:root { --ease: cubic-bezier(.22, 1, .36, 1); --wall: #F4ECDD; --eve: #A3355A; --adam: #24475F; }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--page); }
+html, body { margin: 0; background: var(--wall); }
 body { color: #2D2D2D; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
-a { color: inherit; text-decoration: none; }
-.gx { height: 100dvh; min-height: 560px; display: flex; flex-direction: column; gap: 12px; padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); background: var(--page); }
+a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+.gx { height: 100dvh; min-height: 560px; display: flex; flex-direction: column; gap: 6px; padding: max(10px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom)); overflow: hidden;
+  /* the wall: cream with the artwork's little dots */
+  background: radial-gradient(circle, rgba(45, 45, 45, .09) 1.2px, transparent 1.6px) 0 0 / 26px 26px, var(--wall); }
 
-.gx-head { display: grid; justify-items: center; gap: 4px; padding-top: 2px; animation: fade .4s var(--ease) both; }
-.gx-head p { margin: 0; font: 600 .85rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; }
+.gx-head { display: flex; justify-content: center; padding-top: 2px; animation: fade .4s var(--ease) both; }
 .molu-logo { display: inline-flex; align-items: center; gap: 8px; }
-.logo-mark { width: 34px; height: 34px; border-radius: 10px; flex: none; box-shadow: 0 4px 12px -6px rgba(90, 42, 51, .45); }
+.logo-mark { width: 32px; height: 32px; border-radius: 9px; flex: none; box-shadow: 0 4px 12px -6px rgba(90, 42, 51, .45); }
 .logo-latin { display: inline-flex; align-items: baseline; line-height: 1; }
-.logo-latin .mo { font: 700 1.3rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #3A1C24; }
-.logo-latin .lu { display: inline-block; font: 400 1.8rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #B0485C; margin-left: -.08em; transform: translateY(.12em); }
+.logo-latin .mo { font: 700 1.25rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #3A1C24; }
+.logo-latin .lu { display: inline-block; font: 400 1.75rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #B0485C; margin-left: -.08em; transform: translateY(.12em); }
 .logo-sep { width: 1px; height: 20px; background: #D9CDB9; }
-.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.15rem; line-height: 1; }
+.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.1rem; line-height: 1; }
 .logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #3A1C24; }
 .logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #B0485C; margin-inline-start: -.12em; transform: translateY(.12em); }
 
-.gx-doors { flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr 1fr; gap: 12px; }
-@media (min-width: 820px) { .gx-doors { grid-template-rows: none; grid-template-columns: 1fr 1fr; gap: 22px; } .gx { padding-inline: 28px; } }
+/* two rows, each: a poster + a handwritten note pointing at it */
+.wall { flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr 1fr; gap: 10px; container-type: size; }
+@media (min-width: 820px) { .wall { grid-template-rows: none; grid-template-columns: 1fr 1fr; gap: 24px; } }
+.row { --c: var(--eve); --r: -2.5deg; --tape: rgba(232, 140, 165, .72); position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 0; direction: ltr; }
+.row.adam { --c: var(--adam); --r: 2.5deg; --tape: rgba(120, 160, 195, .72); flex-direction: row-reverse; }  /* حواء's poster left, آدم's right — as in the artwork */
 
-.gd { --bg: var(--eve-bg); --tint: var(--eve-tint); --ink: var(--eve-ink);
-  position: relative; isolation: isolate; display: flex; align-items: stretch; min-height: 0; overflow: hidden; border-radius: 32px; background: var(--bg); container-type: size;
-  box-shadow: 0 18px 40px -26px rgba(90, 60, 30, .55), 0 1px 0 rgba(255, 255, 255, .7) inset;
-  -webkit-tap-highlight-color: transparent; animation: up .45s var(--ease) both; transition: transform .2s cubic-bezier(.3, 0, .2, 1); }
-.gd.eve { flex-direction: row-reverse; }   /* حواء's scene on the left, آدم's on the right — as in the picture */
-.gd.adam { --bg: var(--adam-bg); --tint: var(--adam-tint); --ink: var(--adam-ink); animation-delay: .08s; }
-.gd:active { transform: scale(.975); }
-@media (hover: hover) { .gd:hover { transform: translateY(-3px); } }
-.gd:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.poster { position: relative; display: block; height: calc(100% - 24px); aspect-ratio: 560 / 788; max-width: 70%; border-radius: 22px; overflow: visible;
+  transform: rotate(var(--r)); animation: drop .55s var(--ease) both; transition: transform .25s var(--ease); direction: rtl; }
+.row.adam .poster { animation-delay: .09s; }
+.poster img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 22px; background: #FAF6E2;
+  box-shadow: 0 2px 4px rgba(60, 40, 20, .08), 0 22px 40px -22px rgba(60, 40, 20, .6); }
+.poster .cap { position: absolute; inset: auto 0 0; display: grid; padding: 46px 16px 14px; border-radius: 0 0 22px 22px; color: #fff;
+  background: linear-gradient(180deg, transparent, rgba(16, 13, 11, .55) 40%, rgba(16, 13, 11, .82)); }
+.cap small { font: 700 .76rem 'IBM Plex Sans Arabic', sans-serif; opacity: .85; }
+.cap b { font: 700 clamp(2.6rem, 12vw, 4.2rem)/1.05 'Aref Ruqaa', serif; padding-bottom: .3em; margin-bottom: -.16em; text-shadow: 0 4px 18px rgba(0, 0, 0, .4); }
+.cap span { font: 600 .74rem 'IBM Plex Sans Arabic', sans-serif; opacity: .9; }
+.tape { position: absolute; top: -12px; left: 50%; width: 92px; height: 26px; translate: -50% 0; rotate: calc(var(--r) * -2); background: var(--tape); border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .08); clip-path: polygon(3% 0, 97% 0, 100% 20%, 98% 50%, 100% 80%, 97% 100%, 3% 100%, 0 80%, 2% 50%, 0 20%);
+  animation: fade .3s .45s ease-out both; }
+.row.adam .tape { animation-delay: .54s; }
+.poster:active, .poster.picked { transform: rotate(0deg) scale(1.03); }
+@media (hover: hover) { .poster:hover { transform: rotate(0deg) scale(1.02); } }
+.poster:focus-visible { outline: 3px solid var(--c); outline-offset: 5px; }
 
-/* the box always has the picture's own shape (full height, or 62% of the width if that's smaller), so nothing is cropped or letterboxed */
-.gd-scene { position: relative; flex: none; align-self: flex-end; width: min(74cqw, 71cqh); aspect-ratio: 560 / 788; background: var(--tint); }
-.gd-scene img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; transform-origin: 50% 100%;
-  animation: settle .6s .1s var(--ease) both; }
-.gd.adam .gd-scene img { animation-delay: .18s; }
+/* the handwritten pointer */
+.note { flex: 1; min-width: 0; max-width: 130px; display: grid; justify-items: center; gap: 2px; color: var(--c); direction: rtl; animation: fade .4s .35s var(--ease) both; }
+.row.adam .note { animation-delay: .44s; }
+.note span { font: 700 clamp(1.25rem, 6vw, 1.9rem)/1.15 'Aref Ruqaa', serif; text-align: center; }
+.squig { width: 100%; max-width: 110px; height: auto; fill: none; stroke: var(--c); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.row.adam .squig { transform: scaleX(-1); }
+.squig path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .7s .55s ease-out forwards; }
+.squig .head { animation-delay: 1.15s; animation-duration: .25s; }
+.row.adam .squig path { animation-delay: .64s; }
+.row.adam .squig .head { animation-delay: 1.24s; }
 
-.gd-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 16px 2px 16px 14px; color: var(--ink); animation: fade .45s .2s var(--ease) both; }
-.gd.eve .gd-txt { padding: 16px 14px 16px 2px; }
-.gd.adam .gd-txt { animation-delay: .28s; }
-.gd-txt small { font: 700 .82rem 'IBM Plex Sans Arabic', sans-serif; opacity: .7; }
-.gd-txt b { font: 700 clamp(2.7rem, 13vw, 5rem)/1.05 'Aref Ruqaa', serif; padding-bottom: .22em; margin-bottom: -.12em; }
-.gd-txt > span:not(.gd-go) { font: 600 .78rem/1.45 'IBM Plex Sans Arabic', sans-serif; opacity: .78; }
-.gd-go { margin-top: 14px; display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; background: var(--ink); color: #fff;
-  box-shadow: 0 12px 24px -10px var(--ink); transition: transform .2s var(--ease); }
-.gd:hover .gd-go, .gd:active .gd-go { transform: translateX(-4px); }
-
-@keyframes up { from { opacity: 0; transform: translateY(16px); } }
-@keyframes fade { from { opacity: 0; transform: translateY(8px); } }
-@keyframes settle { from { opacity: 0; transform: scale(.94); } }
+@keyframes drop { from { opacity: 0; transform: translateY(-22px) rotate(0deg) scale(.96); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
 .ms { display: block; flex: none; }
-@media (prefers-reduced-motion: reduce) { .gd, .gd-txt, .gd-scene img, .gx-head { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .poster, .tape, .note, .gx-head { animation: none; } .squig path { animation: none; stroke-dashoffset: 0; } }
