@@ -64,22 +64,23 @@ export default function mount() {
   const week = () => Array.from({ length: 7 }, (_, k) => bookings(-k)).flat();
 
   // ---------- screen ----------
-  const greet = new Date().getHours() < 12 ? 'صباح الخير' : 'مساء الخير';
   const trialLeft = Math.max(0, 14 - Math.floor((Date.now() - (me.createdAt || Date.now())) / 864e5));
+  const TABS = [['today', 'الحجوزات'], ['services', 'الخدمات'], ['team', 'الفريق'], ['share', 'شارك']];
   $('#app').innerHTML = `
-    <header class="d-head">
-      <a class="round pressable" href="account.html" aria-label="رجوع">${icon('arrow_back', 22, 'flip-rtl')}</a>
-      <span class="grow"><small>${greet} يا ${me.owner}</small><b>${me.name}</b></span>
-      <a class="round pressable" href="salon.html?id=mine" aria-label="شوف صفحتك">${icon('storefront', 22)}</a>
-    </header>
-    <div class="d-live"><i></i><span>صفحتك شغّالة ويشوفها العملاء في ${me.kind === 'home' ? (me.areas || []).join('، ') : me.district}</span></div>
-    <a class="d-trial pressable" href="business.html#pricing">${icon('workspace_premium', 22)}<span class="grow"><b>تجربتك المجانية: باقي ${ar(trialLeft)} يوم</b><small>كل المزايا، بدون بطاقة وبدون عمولة</small></span>${icon('chevron_left', 20)}</a>
-    <div class="segmented d-tabs" role="tablist" aria-label="أقسام اللوحة">
-      ${[['today', 'اليوم'], ['services', 'الخدمات'], ['team', 'الفريق'], ['share', 'شارك']].map(([k, t]) => `<label><input type="radio" name="dtab" value="${k}"${k === tab ? ' checked' : ''}><span>${t}</span></label>`).join('')}
-    </div>
+    <header class="page-h"><h1>لوحتي</h1><a class="bell pressable" href="account.html" aria-label="رجوع لحسابي">${icon('close', 26)}</a></header>
+    <a class="d-store pressable" href="salon.html?id=mine">
+      <span class="thumb">${coverArt({ art: hash(me.name), section: S })}</span>
+      <span class="grow"><b>${me.name}</b><small><i></i>صفحتك شغّالة · ${me.kind === 'home' ? (me.areas || []).slice(0, 2).join('، ') : me.district}</small></span>
+      <span class="pill-dark">صفحتي</span>
+    </a>
+    <a class="d-trial pressable" href="business.html">${icon('workspace_premium', 20)}<span class="grow">تجربتك المجانية · باقي <b>${ar(trialLeft)} يوم</b></span><span class="more">الباقات${icon('chevron_left', 16)}</span></a>
+    <div class="tabs-chips d-tabs" role="tablist" aria-label="أقسام اللوحة">${TABS.map(([k, t]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${k === tab}">${t}</button>`).join('')}</div>
     <div id="panel"></div>`;
-  initSegmented($('#app'));
-  $('.d-tabs').addEventListener('change', (e) => { tab = e.target.value; panel(); });
+  $('.d-tabs').addEventListener('click', (e) => {
+    const t = e.target.closest('[data-tab]'); if (!t || t.dataset.tab === tab) return;
+    tab = t.dataset.tab; $$('.d-tabs [data-tab]').forEach((x) => x.setAttribute('aria-selected', x === t));
+    spring(t, [{ transform: 'scale(.92)' }, { transform: 'none' }], 'bouncy'); panel();
+  });
 
   function panel() {
     $('#add').hidden = tab !== 'today';
@@ -89,6 +90,8 @@ export default function mount() {
   }
 
   // ---------- اليوم ----------
+  const catOf = (name) => me.services.find((x) => x.name === name)?.cat || CATEGORIES[S][0].id;
+  const STATUS = { booked: 'مؤكد', done: 'حضر', noshow: 'ما حضر', cancelled: 'ملغي' };
   function todayHtml() {
     const list = bookings(day), live = list.filter((b) => b.st !== 'cancelled');
     const income = live.filter((b) => b.st !== 'noshow').reduce((s, b) => s + b.price, 0);
@@ -96,23 +99,24 @@ export default function mount() {
     const days = Array.from({ length: 7 }, (_, k) => { const d = new Date(today); d.setDate(d.getDate() + k); return d; });
     const wd = new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { weekday: 'short' });
     const next = day === 0 ? live.find((b) => b.st === 'booked' && b.m >= nowM) : null;
+    const inMin = next ? next.m - nowM : 0;
     return `
-      <div class="d-stats">
-        <div><b>${ar(live.length)}</b><small>${day === 0 ? 'حجوزات اليوم' : 'حجوزات'}</small></div>
-        <div><b>${money(income)}</b><small>${day === 0 ? 'دخل اليوم المتوقع' : 'الدخل المتوقع'}</small></div>
+      <div class="d-days" role="tablist" aria-label="اليوم">${days.map((d, k) => `<button type="button" data-day="${k}" aria-selected="${k === day}"><small>${k === 0 ? 'اليوم' : k === 1 ? 'بكرة' : wd.format(d)}</small><b>${ar(d.getDate())}</b></button>`).join('')}</div>
+      <div class="d-sum">
+        <div><b>${ar(live.length)}</b><small>حجوزات</small></div>
+        <div><b class="acc">${money(income)}</b><small>الدخل المتوقع</small></div>
         <div><b>${ar(rate)}٪</b><small>الحضور هالأسبوع</small></div>
       </div>
-      <div class="d-days" role="tablist" aria-label="اليوم">${days.map((d, k) => `<button type="button" data-day="${k}" aria-selected="${k === day}"><small>${k === 0 ? 'اليوم' : k === 1 ? 'بكرة' : wd.format(d)}</small><b>${ar(d.getDate())}</b><i>${ar(bookings(k).filter((b) => b.st !== 'cancelled').length)}</i></button>`).join('')}</div>
-      ${next ? `<div class="d-next">${icon('schedule', 20)}<span>الجاي: <b>${next.name}</b> · ${next.svc} الساعة ${hm(next.m)}</span></div>` : ''}
-      ${list.length ? `<ol class="d-line">${list.map((b) => `
-        <li class="st-${b.st}${day === 0 && b.st === 'booked' && b.m <= nowM && nowM < b.m + b.minutes ? ' now' : ''}">
-          <time>${hm(b.m)}</time>
-          <button type="button" class="d-bk pressable" data-bk="${b.id}">
-            <span class="grow"><b>${b.name}</b><span>${b.svc} · ${ar(b.minutes)} د · مع ${b.staff}</span></span>
-            <span class="d-end"><b>${money(b.price)}</b><em>${{ booked: 'مؤكد', done: 'حضر', noshow: 'ما حضر', cancelled: 'ملغي' }[b.st]}</em></span>
-          </button>
-          <small class="src">${SOURCE[b.source]}</small>
-        </li>`).join('')}</ol>` : `<div class="d-none">${icon('event_available', 30)}<b>${day === 0 ? 'ما فيه حجوزات اليوم' : 'ما فيه حجوزات هذا اليوم'}</b><span>شارك رابطك، أو أضف موعد اتصال أو حضور مباشر من «+ موعد».</span></div>`}`;
+      ${next ? `<div class="d-next">${icon('schedule', 22)}<span class="grow"><b>${inMin < 60 ? `بعد ${ar(inMin)} دقيقة` : `الساعة ${hm(next.m)}`}</b><small>الجاي: ${next.name} · ${next.svc}</small></span></div>` : ''}
+      ${list.length ? list.map((b, i) => {
+        const now = day === 0 && b.st === 'booked' && b.m <= nowM && nowM < b.m + b.minutes;
+        return `
+        <article class="order d-order st-${b.st}${now ? ' now' : ''}" style="--i:${i}" data-bk="${b.id}">
+          <div class="o1"><span class="d-time"><b>${hm(b.m).split(' ')[0]}</b><small>${hm(b.m).split(' ')[1]}</small></span><span class="o-name">${b.name}<small>${SOURCE[b.source]}</small></span><span class="d-chip">${now ? 'الحين' : STATUS[b.st]}</span></div>
+          <div class="o2"><span class="o-thumb">${catArt(S, catOf(b.svc), 30)}</span><span class="o-svc">${b.svc}<br><span class="muted">${ar(b.minutes)} دقيقة · مع ${b.staff}</span></span><span class="o-price">${money(b.price)}</span></div>
+          <div class="o3">${b.st === 'booked' ? (day === 0 && b.m <= nowM ? `<button type="button" class="pill-dark pressable" data-quick="done">${icon('check', 18)}حضر</button><button type="button" class="d-ghost pressable" data-quick="noshow">ما حضر</button>` : `<span>${day === 0 ? `بعد ${ar(Math.max(0, Math.round((b.m - nowM) / 60)))} ساعة` : 'قادم'}</span><button type="button" class="d-ghost pressable" data-more>تفاصيل</button>`) : `<span>${{ done: 'تمت الزيارة', noshow: 'ما حضر', cancelled: 'موعد ملغى' }[b.st]}</span><button type="button" class="d-ghost pressable" data-more>تفاصيل</button>`}</div>
+        </article>`;
+      }).join('') : `<div class="d-none">${icon('event_available', 30)}<b>${day === 0 ? 'ما فيه حجوزات اليوم' : 'ما فيه حجوزات هذا اليوم'}</b><span>شارك رابطك، أو أضف موعد اتصال أو حضور مباشر من «+ موعد».</span></div>`}`;
   }
   const findBk = (id) => { for (let k = -7; k < 7; k++) { const b = bookings(k).find((x) => x.id === id); if (b) return b; } return null; };
 
@@ -262,7 +266,12 @@ export default function mount() {
   $('#panel').addEventListener('click', (e) => {
     const t = e.target;
     const dy = t.closest('[data-day]'); if (dy) { day = +dy.dataset.day; panel(); return; }
-    const bk = t.closest('[data-bk]'); if (bk) { const b = findBk(bk.dataset.bk); if (b) bookingSheet(b); return; }
+    const bk = t.closest('[data-bk]');
+    if (bk) {
+      const q = t.closest('[data-quick]');
+      if (q) { dash.status[bk.dataset.bk] = q.dataset.quick; save(); panel(); snackbar(q.dataset.quick === 'done' ? 'سجّلنا الحضور ✓' : 'سجّلنا الغياب'); return; }
+      const b = findBk(bk.dataset.bk); if (b) bookingSheet(b); return;
+    }
     const pr = t.closest('[data-price] button');
     if (pr) {
       const box = pr.closest('[data-price]'), x = me.services[+box.dataset.price], d = +pr.dataset.d;
@@ -282,6 +291,5 @@ export default function mount() {
   });
   $('#add').onclick = addSheet;
   panel();
-  spring($('.d-head'), [{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }], 'gentle');
 }
 if (!window.__softnav) mount();

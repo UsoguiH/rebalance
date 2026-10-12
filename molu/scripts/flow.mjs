@@ -68,10 +68,10 @@ await step('salon sign-up (join): 7 steps → page + map', async () => {
 await step('owner dashboard: walk-in booking, attendance, prices, QR', async () => {
   await p.goto(B + 'dashboard.html'); await p.waitForTimeout(800); await shot('18-dashboard');
   await p.click('#add'); await p.waitForTimeout(500); await p.fill('#c-name', 'هيا'); await p.locator('#c-day .chip').nth(1).click(); await p.locator('#c-time .chip').first().click(); await p.click('#c-save'); await p.waitForTimeout(600);
-  if (!(await p.locator('.d-line').innerText()).includes('هيا')) throw new Error('walk-in booking not on the timeline');
-  await p.locator('.d-bk').first().click(); await p.waitForTimeout(500); await p.click('[data-set="done"]'); await p.waitForTimeout(500);
-  if (!(await p.locator('.d-line li').first().getAttribute('class')).includes('st-done')) throw new Error('attendance not saved');
-  await p.locator('.d-tabs label').nth(3).click(); await p.waitForTimeout(1200);
+  if (!(await p.locator('#panel').innerText()).includes('هيا')) throw new Error('walk-in booking not on the list');
+  await p.locator('.d-order').first().click({ position: { x: 200, y: 30 } }); await p.waitForTimeout(500); await p.click('[data-set="done"]'); await p.waitForTimeout(500);
+  if (!(await p.locator('.d-order').first().getAttribute('class')).includes('st-done')) throw new Error('attendance not saved');
+  await p.locator('.d-tabs [data-tab]').nth(3).click(); await p.waitForTimeout(1200);
   if (!(await p.locator('#qr svg, #qr .ms').count())) throw new Error('no QR');
 });
 const v = p.video();
