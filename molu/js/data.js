@@ -104,7 +104,8 @@ export function slots(salon, dayIndex) {
   return list;
 }
 export const fmtTime = (m) => { const h = Math.floor(m / 60), mm = String(m % 60).padStart(2, '0'); return `${((h + 11) % 12) + 1}:${mm} ${h < 12 ? 'ص' : 'م'}`; };
-export const money = (n) => `${new Intl.NumberFormat('en-US').format(n)} ر.س`;
+const NF = new Intl.NumberFormat('en-US');
+export const money = (n) => `${NF.format(n)} ر.س`;
 
 export const PLANS = [
   { id: 'free', name: 'المجانية', month: 0, year: 0, note: 'للأبد، بلا بطاقة', feats: ['صفحة حجز باسمك على كل الجوالات', '40 حجزاً في الشهر', 'موظف واحد', 'تأكيد وتذكير تلقائي بالبريد'] },

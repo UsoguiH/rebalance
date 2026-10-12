@@ -5,7 +5,8 @@ export { loadingIndicator };
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-export const ar = (n) => new Intl.NumberFormat('en-US').format(n); // app UI digits
+const NF = new Intl.NumberFormat('en-US');
+export const ar = (n) => NF.format(n); // app UI digits
 
 // ---------- snackbar ----------
 let snackTimer;

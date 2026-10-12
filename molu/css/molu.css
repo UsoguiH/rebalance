@@ -8,6 +8,11 @@
 ::view-transition-new(root) { animation: .18s var(--ease-out) both vt-in; }
 @keyframes vt-out { to { opacity: 0; } }
 @keyframes vt-in { from { opacity: 0; } }
+/* from the start screen: the poster eases back and fades while the feed rises into place */
+html:active-view-transition-type(gate)::view-transition-old(root) { animation: .26s cubic-bezier(.4, 0, 1, 1) both vt-gate-out; }
+html:active-view-transition-type(gate)::view-transition-new(root) { animation: .42s .06s var(--ease-out) both vt-gate-in; }
+@keyframes vt-gate-out { to { opacity: 0; transform: scale(.96); } }
+@keyframes vt-gate-in { from { opacity: 0; transform: translateY(18px); } }
 
 :root {
   --ease-out: cubic-bezier(.22, 1, .36, 1);

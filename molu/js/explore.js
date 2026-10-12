@@ -35,7 +35,8 @@ const filtering = () => state.q.trim() || state.cat || state.home || state.offer
 const label = () => state.cat ? CATEGORIES[section].find((c) => c.id === state.cat)?.name : state.home ? 'خدمة في البيت' : state.offer ? 'عروض' : `«${state.q.trim()}»`;
 const row = (title, list, href = '') => list.length ? `<section class="sec"><div class="sec-h"><h2>${title}</h2>${href ? `<button type="button" data-more="${href}" aria-label="عرض الكل">${icon('arrow_back', 22)}</button>` : ''}</div><div class="carousel">${list.map((s, i) => salonCard(s, { i })).join('')}</div></section>` : '';
 
-function feed() {
+function feed(lazy = false) {
+  feedGen++;
   const all = SALONS[section];
   const f = $('#feed');
   if (filtering()) {
@@ -53,18 +54,23 @@ function feed() {
       const when = new Intl.DateTimeFormat('ar-SA-u-nu-latn-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
       return `<section class="sec"><a class="next-appt pressable" href="appointments.html"><span class="ic">${icon('event_available', 28)}</span><span class="grow"><b>موعدك الجاي في ${s.name}</b><span>${when} · ${fmtTime(d.getHours() * 60 + d.getMinutes())}</span></span><span class="pill-dark">التفاصيل</span></a></section>`;
     })() : '';
-    f.innerHTML = nextHtml + row(`الأقرب ${section === 'eve' ? 'لكِ' : 'لك'}`, near.slice(0, 6)) +
-      row('عروض اليوم', all.filter((s) => s.offer), 'offer') +
-      row('الأعلى تقييماً', [...all].sort((a, b) => b.rating - a.rating).slice(0, 6)) +
+    const first = nextHtml + row(`الأقرب ${section === 'eve' ? 'لكِ' : 'لك'}`, near.slice(0, 6)) + row('عروض اليوم', all.filter((s) => s.offer), 'offer');
+    const rest = () => row('الأعلى تقييماً', [...all].sort((a, b) => b.rating - a.rating).slice(0, 6)) +
       `<section class="sec"><div class="sec-h"><h2>كل الصالونات</h2></div><div class="list">${near.map((s, i) => salonCard(s, { i })).join('')}</div></section>
       <a class="owner-link pressable" href="business.html">${icon('storefront', 22)}<span class="grow"><b>صاحب صالون أو حلاق؟</b><span>سجّل صالونك مجاناً — بدون عمولة</span></span>${icon('chevron_left', 22)}</a>`;
+    // on arrival only the first screen is built; the rest (below the fold) follows right after the first paint
+    if (!lazy) { f.innerHTML = first + rest(); return; }
+    f.innerHTML = first;
+    const n = ++feedGen;
+    requestAnimationFrame(() => setTimeout(() => { if (n === feedGen && !filtering()) f.insertAdjacentHTML('beforeend', rest()); }, 60));
   }
 }
+let feedGen = 0;
 function render(animate = true) {
   header(); feed();
   if (animate) $$('#feed .sec').forEach((s, i) => spring(s, [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], 'gentle', { delay: i * 0.06 }));
 }
-render(false);
+header(); feed(true);
 bindFavs(document);
 
 // ---------- interactions ----------

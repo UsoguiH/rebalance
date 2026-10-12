@@ -1,7 +1,7 @@
 /* Gate — a poster built around the whole illustration. The page is the illustration's own cream (#F9F6E2), so the
    picture has no frame: it sits edge to edge, complete, nothing cropped. Each name stands above its own scene, each
    button below it. Static: no app CSS/JS. Motion: the picture develops from blur, names float down, buttons rise;
-   touching one side softly dims the other; entering is one quick fade. */
+   touching one side softly dims the other; entering: the poster eases back while the feed rises in (see css/molu.css, type "gate"). */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s; }
 :root { --ease: cubic-bezier(.22, 1, .36, 1); --paper: #F9F6E2; --eve: #A3355A; --adam: #24475F; }
@@ -42,15 +42,17 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 .poster[data-hot="eve"] .name.adam, .poster[data-hot="adam"] .name.eve,
 .poster[data-hot="eve"] .go.adam, .poster[data-hot="adam"] .go.eve { opacity: .35; }
 
-.btns { gap: 12px; padding-top: 4px; }
-.go { justify-self: center; display: inline-flex; align-items: center; gap: 8px; height: 54px; padding: 0 24px 0 18px; border-radius: 27px; background: #000; color: #fff; direction: rtl;
-  font: 700 1.08rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif; box-shadow: 0 14px 28px -12px rgba(0, 0, 0, .55);
-  transition: transform .16s ease-out, opacity .35s var(--ease); animation: rise .5s .35s var(--ease) both; }
+.btns { gap: 12px; padding-top: 6px; }
+/* simple flat capsules: black, no shadow, no border — a word and a thin chevron */
+.go { justify-self: center; width: min(100%, 164px); height: 50px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 25px;
+  background: #111; color: #fff; direction: rtl; font: 600 1.05rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif;
+  transition: transform .18s var(--ease), opacity .35s var(--ease), background-color .18s; animation: rise .5s .35s var(--ease) both; }
 .go.adam { animation-delay: .42s; }
-.go:active { transform: scale(.95); }
-.go svg { transition: transform .2s var(--ease); }
-.go:active svg { transform: translateX(-4px); }
-.go:focus-visible { outline: 3px solid #000; outline-offset: 3px; }
+.go svg { flex: none; opacity: .7; transition: transform .2s var(--ease), opacity .2s; }
+.go:active { transform: scale(.96); background: #2a2a2a; }
+.go:active svg { transform: translateX(-3px); opacity: 1; }
+@media (hover: hover) { .go:hover svg { transform: translateX(-3px); opacity: 1; } }
+.go:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
 .line { margin: 8px 0 0; text-align: center; font: 600 .86rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; animation: fade .5s .5s var(--ease) both; }
 
 @keyframes develop { from { opacity: 0; filter: blur(12px); transform: scale(.97); } }
