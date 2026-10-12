@@ -1,86 +1,129 @@
-// لأصحاب الصالونات — for owners. Built to be understood without reading: a short promise, a picture of what you get
-// (a booking arriving on your phone, and your own page), three benefits in a few words, three steps, one price line,
-// and one button that stays on screen. Plans open in a sheet for those who want the detail.
-import { boot, $, $$, ar, icon, getSection, secSwitch, swap, catArt } from './shell.js';
+// For business — a merchant page in the manner of Uber Eats': a black hero with the sign-up form right in it
+// (type of place, its name, a phone number → the sign-up opens with all three filled in), three facts, why join,
+// three steps, plans side by side, questions, and a closing call to action. Black and white, bold type, green ticks.
+import { boot, $, $$, ar, icon, getSection, catArt, snackbar } from './shell.js';
 import { PLANS, CATEGORIES, salonById } from './data.js';
-import { coverArt } from './art.js';
-import { openSheet } from './m3.js';
+import { initSegmented } from './m3.js';
 import { spring } from './motion.js';
 
 export default function mount() {
   let section = getSection();
   boot({ page: 'home', section, nav: false });
-  document.body.classList.add('owner');
+  document.body.classList.add('merchant');
   const mine = salonById('mine');
-  const F = () => section === 'eve';
-  const g = (f, m) => (F() ? f : m);
+  const g = (f, m) => (section === 'eve' ? f : m);
+  const tick = icon('check_circle_f', 20);
+  const FAQ = [
+    ['هل يحتاج العميل يحمّل تطبيق؟', 'لا. يفتح رابط صفحتك من أي جوال ويحجز خلال 30 ثانية.'],
+    ['هل فيه عمولة على الحجوزات؟', 'لا. اشتراك ثابت فقط، وكل ريال من خدماتك لك.'],
+    ['وش يصير بعد الـ 14 يوم المجانية؟', 'إذا ما اشتركت تنتقل للباقة المجانية (40 حجز بالشهر)، وتبقى صفحتك وبياناتك.'],
+    ['أقدر أضيف حجوزات الاتصال والحضور؟', 'نعم، من لوحتك بضغطة «+ موعد»، وتظهر مع حجوزات صفحتك في جدول واحد.'],
+  ];
 
   $('#app').innerHTML = `
-    <header class="o-top">
-      <a class="round pressable" href="explore.html" aria-label="رجوع">${icon('arrow_back', 22, 'flip-rtl')}</a>
-      <div id="sec"></div>
+    <header class="m-bar">
+      <a class="m-brand" href="explore.html" aria-label="رجوع للتطبيق">${icon('arrow_back', 20, 'flip-rtl')}<b>مولو</b><span>للأعمال</span></a>
+      ${mine ? '<a class="m-bar-btn" href="dashboard.html">لوحتي</a>' : '<a class="m-bar-btn" href="#start">ابدأ</a>'}
     </header>
-    <div id="o-body"></div>`;
+
+    <section class="m-hero">
+      <div class="m-art"><img id="m-img" alt="" width="628" height="868"></div>
+      <h1 id="m-title"></h1>
+      <p id="m-sub"></p>
+    </section>
+
+    <form class="m-form" id="start" novalidate>
+      <h2>${mine ? 'صفحتك شغّالة' : 'ابدأ مجاناً'}</h2>
+      ${mine ? `<p class="m-note">${mine.name} · ${mine.district}</p><a class="btn btn-black btn-lg btn-block pressable" href="dashboard.html">افتح لوحتك</a>` : `
+      <div class="segmented" role="radiogroup" aria-label="نوع المحل">
+        <label><input type="radio" name="type" value="eve"${section === 'eve' ? ' checked' : ''}><span>صالون نسائي</span></label>
+        <label><input type="radio" name="type" value="adam"${section === 'adam' ? ' checked' : ''}><span>محل حلاقة</span></label>
+      </div>
+      <label class="m-field"><span>اسم المحل</span><input id="f-name" maxlength="40" autocomplete="organization"></label>
+      <label class="m-field"><span>رقم الجوال</span><span class="m-phone"><i>+966</i><input id="f-phone" type="tel" inputmode="numeric" maxlength="11" autocomplete="tel-national" placeholder="5X XXX XXXX"></span></label>
+      <button class="btn btn-black btn-lg btn-block pressable" type="submit">ابدأ ${icon('chevron_left', 20)}</button>
+      <p class="m-note">14 يوم مجاناً بكل المزايا · بدون بطاقة · بدون عمولة</p>`}
+    </form>
+
+    <section class="m-facts">
+      <div><b>٠٪</b><small>عمولة على الحجوزات</small></div>
+      <div><b>١٤</b><small>يوم مجاناً</small></div>
+      <div><b>٥</b><small>دقائق وتجهز صفحتك</small></div>
+    </section>
+
+    <section class="m-sec">
+      <h2 class="m-h">ليش تنضم؟</h2>
+      <div class="m-why">
+        <article><span class="m-pic"><img src="img/icons/fire.webp" alt="" width="96" height="96"></span><b>عملاء جدد يلقونك</b><p>تطلع لكل من يبحث في حيّك، في الدليل وعلى الخريطة.</p></article>
+        <article><span class="m-pic"><img src="img/icons/home.webp" alt="" width="96" height="96"></span><b>صفحة حجز باسمك</b><p>رابط واحد للإنستقرام والواتساب وقوقل ماب. يحجزون 24 ساعة.</p></article>
+        <article><span class="m-pic"><img src="img/icons/gift.webp" alt="" width="96" height="96"></span><b>غياب أقل، دخل أكثر</b><p>تأكيد وتذكير تلقائي، وعروض وبطاقة ولاء ترجّع عملاءك.</p></article>
+      </div>
+    </section>
+
+    <section class="m-sec m-gray">
+      <h2 class="m-h">كيف تبدأ</h2>
+      <ol class="m-steps">
+        <li><i>1</i><div><b>سجّل محلّك</b><p>الاسم، الموقع على الخريطة، ورقم جوالك.</p></div></li>
+        <li><i>2</i><div><b>أضف خدماتك</b><p>جهّزنا لك الخدمات بأسعار السوق، عدّل اللي تبي.</p></div></li>
+        <li><i>3</i><div><b>استقبل الحجوزات</b><p>شارك رابطك، وتابع كل شي من لوحتك.</p></div></li>
+      </ol>
+      <div class="m-svcs" id="m-svcs"></div>
+    </section>
+
+    <section class="m-sec">
+      <h2 class="m-h">الباقات</h2>
+      <p class="m-lead">كلها تبدأ بـ 14 يوم مجاناً. بدون عمولة، وتلغي متى ما تبي.</p>
+      <div class="m-plans">${PLANS.map((p) => `
+        <article class="${p.popular ? 'pop' : ''}">
+          ${p.popular ? '<em>الأكثر اختياراً</em>' : ''}
+          <b>${p.solo ? 'المستقل' : p.name}</b>
+          <div class="m-price">${p.month ? `<strong>${ar(p.month)}</strong><small>ر.س / شهر</small>` : '<strong>مجاناً</strong><small>للأبد</small>'}</div>
+          <ul>${p.feats.slice(0, 4).map((f) => `<li>${tick}${f}</li>`).join('')}</ul>
+          <a class="btn ${p.popular ? 'btn-black' : 'btn-outlined'} btn-block pressable" href="#start" data-plan>اختر ${p.solo ? 'المستقل' : p.name}</a>
+        </article>`).join('')}</div>
+    </section>
+
+    <section class="m-sec">
+      <h2 class="m-h">أسئلة شائعة</h2>
+      <div class="m-faq">${FAQ.map(([q, a]) => `<details><summary>${q}${icon('expand_more', 22)}</summary><p>${a}</p></details>`).join('')}</div>
+    </section>
+
+    <section class="m-end">
+      <h2>جاهز تملأ جدولك؟</h2>
+      <a class="btn btn-lg pressable" href="#start">ابدأ مجاناً</a>
+    </section>`;
 
   function paint() {
-    const S = section, name = g('صالون لمسة', 'حلاق الفخامة'), cats = CATEGORIES[S];
-    const join = (home) => `join.html?s=${S}${home ? '&kind=home' : ''}`;
-    $('#o-body').innerHTML = `
-      ${mine ? `<a class="o-mine pressable" href="dashboard.html">${icon('storefront', 20)}<span class="grow"><b>${mine.name}</b><small>صفحتك شغّالة</small></span><span class="pill-dark">لوحتي</span></a>` : ''}
-      <section class="o-hero">
-        <span class="o-eyebrow">${g('لأصحاب الصالونات', 'لأصحاب محلات الحلاقة')}</span>
-        <h1>${g('حجوزات صالونك', 'حجوزات محلّك')}<br><em>بدون اتصالات</em></h1>
-        <p>${g('عميلاتك يحجزن بأنفسهن، 24 ساعة', 'زبائنك يحجزون بأنفسهم، 24 ساعة')}</p>
-      </section>
-
-      <div class="o-show" aria-hidden="true">
-        <div class="o-page">
-          <span class="o-cover">${coverArt({ art: S === 'eve' ? 11 : 23, section: S })}</span>
-          <div class="o-page-b"><b>${name}</b><small>${ar(cats.length)} أقسام · ${g('تحجزين', 'تحجز')} بدقيقة</small>
-            <div class="o-icons">${cats.slice(0, 4).map((c) => `<span>${catArt(S, c.id, 30)}</span>`).join('')}</div>
-            <span class="o-book">${g('احجزي', 'احجز')}</span></div>
-        </div>
-        <div class="o-ping"><span class="o-ping-ic">${icon('event_available', 20)}</span><span class="grow"><b>حجز جديد</b><small>${g('نورة · استشوار · اليوم 7:30 م', 'فهد · قص وتحديد · اليوم 7:30 م')}</small></span><i>الآن</i></div>
-      </div>
-
-      <section class="o-perks">
-        <div><span>${icon('schedule', 26)}</span><b>حجز 24 ساعة</b><small>من رابط واحد</small></div>
-        <div><span>${icon('notifications_active', 26)}</span><b>تذكير تلقائي</b><small>غياب أقل</small></div>
-        <div><span>${icon('percent', 26)}</span><b>بدون عمولة</b><small>كل الريال لك</small></div>
-      </section>
-
-      <section class="o-steps">
-        <h2>تبدأ في دقيقتين</h2>
-        <ol>
-          <li><i>١</i><b>${g('اسم صالونك', 'اسم محلّك')}</b></li>
-          <li><i>٢</i><b>خدماتك وأسعارك</b></li>
-          <li><i>٣</i><b>شارك رابطك</b></li>
-        </ol>
-      </section>
-
-      <button type="button" class="o-price pressable" id="plans">
-        <span class="grow"><b>مجاناً 14 يوم</b><small>بعدها مجانية للأبد، أو من 99 ر.س بالشهر</small></span>
-        <span class="o-more">الباقات${icon('chevron_left', 18)}</span>
-      </button>
-
-      <a class="o-solo" href="${join(true)}">${icon('home_work', 20)}<span>${g('تشتغلين في البيوت؟ سجّلي كمستقلة', 'تشتغل في البيوت؟ سجّل كمستقل')}</span>${icon('chevron_left', 18)}</a>`;
-    $('#cta').href = mine ? 'dashboard.html' : join(false);
-    $('#cta span').textContent = mine ? 'افتح لوحتك' : g('سجّلي صالونك مجاناً', 'سجّل محلّك مجاناً');
-    spring($('.o-ping'), [{ opacity: 0, transform: 'translateY(-14px) scale(.96)' }, { opacity: 1, transform: 'none' }], 'bouncy', { delay: 0.35 });
+    $('#m-img').src = `img/${section}-full-960.webp`;
+    $('#m-title').textContent = g('حجوزات أكثر لصالونك', 'حجوزات أكثر لمحلّك');
+    $('#m-sub').textContent = g('عميلاتك يحجزن بأنفسهن من صفحة باسمك، والتذكير يوصلهن تلقائياً.', 'زبائنك يحجزون بأنفسهم من صفحة باسمك، والتذكير يوصلهم تلقائياً.');
+    $('#m-svcs').innerHTML = CATEGORIES[section].map((c) => `<span>${catArt(section, c.id, 44)}<small>${c.name}</small></span>`).join('');
   }
-
-  // the one action, always on screen
-  document.body.insertAdjacentHTML('beforeend', `<div class="o-cta"><a class="btn btn-black btn-lg btn-block pressable" id="cta" href="join.html"><span></span>${icon('chevron_left', 20)}</a><small>بدون بطاقة · تلغي متى ما تبي</small></div>
-    <div class="sheet" id="plans-sheet" hidden role="dialog" aria-label="الباقات"><div class="handle"></div><div id="plans-body"></div></div>`);
   paint();
+  initSegmented($('#app'));
 
-  $('#app').addEventListener('click', (e) => {
-    if (!e.target.closest('#plans')) return;
-    $('#plans-body').innerHTML = `<h2 class="title-l">الباقات</h2><p class="muted" style="margin:2px 0 14px">كلها تبدأ بـ 14 يوم مجاناً بكل المزايا</p>
-      <div class="o-plans">${PLANS.map((p) => `<div class="o-plan${p.popular ? ' pop' : ''}"><span class="grow"><b>${p.solo ? g('المستقلة', 'المستقل') : p.name}${p.popular ? ' <em>الأكثر اختياراً</em>' : ''}</b><small>${p.feats.slice(0, 3).join(' · ')}</small></span><span class="o-plan-p">${p.month ? `<b>${ar(p.month)}</b><small>ر.س/شهر</small>` : '<b>مجاناً</b><small>للأبد</small>'}</span></div>`).join('')}</div>
-      <p class="muted" style="font-size:.84rem;margin:12px 0 0">السنوي بشهرين مجاناً. بدون عمولة على أي حجز.</p>`;
-    openSheet($('#plans-sheet'));
+  // the type in the form also switches the page's wording and pictures
+  $('#app').addEventListener('change', (e) => {
+    if (e.target.name !== 'type') return;
+    section = e.target.value;
+    spring($('.m-art'), [{ opacity: 0.3, transform: 'scale(.96)' }, { opacity: 1, transform: 'none' }], 'gentle');
+    paint();
   });
-  secSwitch($('#sec'), section, (k) => { section = k; swap($('#o-body'), paint); });
+  // in-page links to the form: scroll to it and put the cursor in the first field
+  $('#app').addEventListener('click', (e) => {
+    const a = e.target.closest('a[href="#start"]'); if (!a) return;
+    e.preventDefault();
+    $('#start').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => $('#f-name')?.focus({ preventScroll: true }), 450);
+  });
+  $('#start').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (mine) return;
+    const name = $('#f-name').value.trim(), phone = $('#f-phone').value.replace(/\D/g, '').replace(/^0/, '');
+    if (name.length < 2) { snackbar('اكتب اسم المحل'); $('#f-name').focus(); return; }
+    if (phone && !/^5\d{8}$/.test(phone)) { snackbar('الرقم يبدأ بـ 5 ومكوّن من 9 أرقام'); $('#f-phone').focus(); return; }
+    const q = new URLSearchParams({ s: section, name }); if (phone) q.set('phone', phone);
+    location.href = `join.html?${q}`;
+  });
 }
 if (!window.__softnav) mount();

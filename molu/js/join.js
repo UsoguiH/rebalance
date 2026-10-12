@@ -22,6 +22,9 @@ export default function mount() {
   // from the owner page: the side (and maybe the kind) is already chosen, so those questions are skipped
   if (['eve', 'adam'].includes(q.get('s')) && !d.step) { if (d.section !== q.get('s')) d.services = []; d.section = q.get('s'); d.step = 1; }
   if (['centre', 'home'].includes(q.get('kind')) && d.step <= 1) { d.kind = q.get('kind'); d.step = 2; }
+  // the owner page's form: the name (and phone) are typed already
+  if (q.get('name')) d.name = q.get('name').slice(0, 40);
+  if (/^5\d{8}$/.test(q.get('phone') || '')) d.phone = q.get('phone');
   boot({ page: 'join', nav: false, section: d.section });
   const F = () => d.section === 'eve';
   const g = (f, m) => (F() ? f : m);
