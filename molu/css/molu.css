@@ -470,45 +470,57 @@ body.store { padding-bottom: 130px; }
 .list > .sc-card, .carousel > .sc-card { content-visibility: auto; contain-intrinsic-size: auto 260px; }
 .order, .group { content-visibility: auto; contain-intrinsic-size: auto 220px; }
 
-/* =================== GATE: حواء + آدم, both on screen — محلي dark immersive, Framer Motion =================== */
+/* =================== GATE: MoLu logo + the whole picture; each half is a door (flat motion only) =================== */
 body.gate-page { padding: 0; background: #0B0B0C; color: #fff; overscroll-behavior: none; }
-.gx { position: relative; isolation: isolate; min-height: 100dvh; display: flex; flex-direction: column; gap: 14px; padding: max(18px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); overflow: hidden; }
+.gx { position: relative; isolation: isolate; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom)); overflow: hidden; }
 .gx-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
-.gx-bg i { position: absolute; inset-inline: -15%; height: 70%; background: center 30% / cover no-repeat; filter: blur(50px) saturate(1.5) brightness(.5); opacity: .75; transition: opacity .6s var(--ease-out); }
-.gx-bg i.eve { top: -10%; }
-.gx-bg i.adam { bottom: -10%; }
-.gx[data-hot="eve"] .gx-bg i.eve, .gx[data-hot="adam"] .gx-bg i.adam { opacity: 1; }
-.gx[data-hot="eve"] .gx-bg i.adam, .gx[data-hot="adam"] .gx-bg i.eve { opacity: .35; }
-.gx-bg b { position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 50%, transparent 35%, rgba(5, 5, 6, .7) 100%), linear-gradient(180deg, rgba(5, 5, 6, .6), transparent 24%, transparent 80%, rgba(5, 5, 6, .7)); }
+.gx-bg i { position: absolute; top: 18%; width: 80%; height: 70%; border-radius: 50%; filter: blur(70px); opacity: .32; transition: opacity .6s var(--ease-out), transform .8s var(--ease-out); }
+.gx-bg i.eve { left: -25%; background: #E58AA0; }
+.gx-bg i.adam { right: -25%; background: #8AA7BD; }
+.gx[data-hot="eve"] .gx-bg i.eve, .gx[data-hot="adam"] .gx-bg i.adam { opacity: .55; transform: scale(1.12); }
+.gx[data-hot="eve"] .gx-bg i.adam, .gx[data-hot="adam"] .gx-bg i.eve { opacity: .14; }
 
-.gx-head { display: grid; gap: 0; padding: 4px 6px 2px; }
-.gx-head small { font: 600 .9rem var(--md-font); letter-spacing: .02em; color: rgba(255, 255, 255, .7); }
-.gx-head h1 { margin: 0; font: 800 clamp(1.7rem, 7.6vw, 2.6rem)/1.2 var(--md-font); letter-spacing: -.01em; }
-.gx-head em { font: 700 1.25em/1 var(--md-font-brand); font-style: normal; color: #FFB59C; }
+/* MoLu logo (their mark + wordmark) */
+.gx-head { display: grid; justify-items: center; text-align: center; gap: 6px; }
+.molu-logo { display: inline-flex; align-items: center; gap: 10px; color: #fff; margin-bottom: 6px; }
+.logo-mark { width: 44px; height: 44px; flex: none; border-radius: 12px; box-shadow: 0 8px 20px -8px rgba(0, 0, 0, .7); }
+.logo-latin { display: inline-flex; align-items: baseline; line-height: 1; }
+.logo-latin .mo { font: 700 1.75rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #F4E6E0; }
+.logo-latin .lu { display: inline-block; font: 400 2.4rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #D7798A; margin-left: -.08em; transform: translateY(.12em); }
+.logo-sep { width: 1px; height: 30px; background: rgba(255, 255, 255, .22); }
+.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.5rem; line-height: 1; }
+.logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #F4E6E0; }
+.logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #D7798A; margin-inline-start: -.12em; transform: translateY(.12em); }
+.gx-kicker { font: 600 .9rem var(--md-font); color: rgba(255, 255, 255, .65); }
+.gx-h1 { margin: 0; font: 800 clamp(1.55rem, 6.6vw, 2.4rem)/1.3 var(--md-font); text-wrap: balance; max-width: 18ch; }
+.gx-h1 > span, .gx-h1 em > span { display: inline-block; }
+.gx-h1 em { font-style: normal; color: #FFB59C; }
 
-.gx-doors { flex: 1; display: grid; grid-template-rows: 1fr 1fr; gap: 14px; min-height: 0; perspective: 1200px; }
-@media (min-width: 800px) { .gx-doors { grid-template-rows: none; grid-template-columns: 1fr 1fr; gap: 20px; } .gx { padding-inline: 28px; } }
-.gd {
-  --c: var(--eve); position: relative; isolation: isolate; display: block; min-height: 250px; border-radius: 30px; overflow: hidden; background: var(--cream); color: #fff;
-  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .85), inset 0 0 0 1px rgba(255, 255, 255, .22); transform-style: preserve-3d; will-change: transform;
-  -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; transition: opacity .35s var(--ease-out), filter .35s var(--ease-out);
-}
-.gd.adam { --c: var(--adam); }
-.gd-img { position: absolute; inset: 0; z-index: -2; overflow: hidden; }
-.gd-img img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; animation: kenburns 14s ease-in-out infinite alternate; will-change: transform; }
-.gd.adam .gd-img img { animation-delay: -7s; object-position: 50% 22%; }
-@keyframes kenburns { from { transform: scale(1.02); } to { transform: scale(1.09) translateY(-1.5%); } }
-.gd::after { content: ''; position: absolute; inset: 40% 0 0; z-index: -1; background: linear-gradient(180deg, transparent, rgba(14, 12, 10, .55) 45%, rgba(14, 12, 10, .9)); }
-.gd-chip { position: absolute; top: 14px; inset-inline-start: 14px; display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 12px 0 10px; border-radius: 16px; background: rgba(255, 255, 255, .9); color: #1A1A1A; font: 700 .78rem var(--md-font); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.gd-chip svg { color: var(--md-primary); }
-.gd-txt { position: absolute; inset-inline: 20px 96px; bottom: 16px; display: grid; }
-.gd-txt small { font: 700 .82rem var(--md-font); color: rgba(255, 255, 255, .8); }
-.gd-txt b { font: 700 clamp(3.2rem, 15vw, 5.4rem)/1.05 var(--md-font-brand); padding-bottom: .16em; text-shadow: 0 8px 30px rgba(0, 0, 0, .5); }
-.gd-txt span { font: 600 .84rem var(--md-font); color: rgba(255, 255, 255, .85); margin-top: 2px; }
-.gd-go { position: absolute; inset-inline-end: 18px; bottom: 20px; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: var(--md-primary); color: #fff; box-shadow: 0 14px 30px -12px rgba(255, 80, 40, .95), inset 0 1px 0 rgba(255, 255, 255, .3); }
-.gd-sheen { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .32) 50%, transparent 62%); transform: translateX(-130%); }
-.gx-doors.has-hot .gd:not(.hot) { opacity: .55; filter: saturate(.7); }
-.gd:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
-.gx-zoom { position: fixed; z-index: 50; overflow: hidden; background: var(--cream); box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .8); }
+.gx-main { display: grid; gap: 12px; width: 100%; max-width: 700px; margin: 0 auto; }
+.pic { position: relative; border-radius: 30px; overflow: hidden; background: #FAF6E2; aspect-ratio: 1312 / 1199; box-shadow: 0 40px 80px -40px rgba(0, 0, 0, .9), inset 0 0 0 1px rgba(255, 255, 255, .2); }
+.pic img { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-select: none; pointer-events: none; }
+.half { position: absolute; top: 0; bottom: 0; width: 50%; -webkit-tap-highlight-color: transparent; }
+.half.eve { left: 0; }
+.half.adam { right: 0; }
+.half .dim { position: absolute; inset: 0; background: #0B0B0C; opacity: 0; transition: opacity .45s var(--ease-out); }
+.pic.has-hot .half:not(.hot) .dim { opacity: .55; }
+.half .tag { position: absolute; bottom: 12px; left: 50%; translate: -50% 0; height: 32px; padding: 0 14px; border-radius: 16px; background: rgba(20, 20, 20, .72); color: #fff; font: 700 .9rem/32px var(--md-font); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); white-space: nowrap; }
+.seam { position: absolute; top: 12%; bottom: 12%; left: 50%; width: 2px; translate: -50% 0; border-radius: 1px; background: linear-gradient(transparent, rgba(255, 80, 40, .9), transparent); opacity: 0; }
+.pic-sheen { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, .35) 50%, transparent 60%); transform: translateX(-120%); }
+
+.doors2 { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.door2 { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 92px; padding: 12px 16px 12px 10px; border-radius: 26px; background: rgba(255, 255, 255, .07); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14); color: #fff; -webkit-tap-highlight-color: transparent; transition: background .35s var(--ease-out); }
+.door2.eve { grid-column: 2; grid-row: 1; }   /* under the left half of the picture */
+.door2.adam { grid-column: 1; grid-row: 1; }  /* under the right half */
+.door2 .txt { display: grid; min-width: 0; }
+.door2 b { font: 700 2.3rem/1.05 var(--md-font-brand); padding-bottom: .22em; }
+.door2.eve b { color: #F7B6C6; }
+.door2.adam b { color: #B9D3E6; }
+.door2 small { font: 600 .74rem var(--md-font); color: rgba(255, 255, 255, .72); white-space: nowrap; }
+.door2 .go { display: grid; place-items: center; width: 46px; height: 46px; flex: none; border-radius: 50%; background: var(--md-primary); color: #fff; box-shadow: 0 10px 22px -10px rgba(255, 80, 40, .95); }
+.door2:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+/* the shared highlight that slides between the two doors (Framer layoutId-style) */
+.glow { position: absolute; z-index: 0; top: 0; bottom: 0; width: calc(50% - 6px); border-radius: 26px; background: linear-gradient(160deg, rgba(255, 80, 40, .28), rgba(255, 80, 40, .1)); box-shadow: inset 0 0 0 1.5px rgba(255, 120, 90, .7), 0 16px 40px -16px rgba(255, 80, 40, .6); opacity: 0; pointer-events: none; }
+.gx-zoom { position: fixed; z-index: 50; overflow: hidden; background: #FAF6E2; }
 .gx-zoom img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
-@media (prefers-reduced-motion: reduce) { .gd-img img { animation: none; } }
+@media (min-height: 860px) { .gx { gap: 24px; } }
