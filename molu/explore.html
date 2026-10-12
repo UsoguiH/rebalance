@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FAF8F7">
+<title>مولو — استكشاف</title>
+<link rel="preload" href="fonts/IBMPlexSansArabic-700-arabic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/springs.css">
+<link rel="stylesheet" href="css/m3.css">
+<link rel="stylesheet" href="css/molu.css">
+</head>
+<body>
+<header class="topbar"><div class="wrap">
+  <a class="round pressable" href="index.html" aria-label="الرئيسية"><i data-i="arrow_back" class="flip-rtl"></i></a>
+  <div class="grow"><button class="loc-line" id="loc" type="button"><i data-i="location_on_f"></i><b id="loc-l">الرياض - الروابي</b><i data-i="expand_more"></i></button></div>
+  <button class="sec-toggle pressable" id="sec" type="button" aria-label="بدّل القسم"></button>
+</div></header>
+<main class="wrap">
+  <label class="search enter" id="sbox"><i data-i="search"></i><input id="q" type="search" autocomplete="off" enterkeyhint="search"><button class="clear" type="button" id="clear" aria-label="مسح"><i data-i="close"></i></button></label>
+  <div class="shortcuts" id="cats" role="toolbar" aria-label="الخدمات"></div>
+  <div id="feed"></div>
+</main>
+<button class="map-fab pressable" id="map-fab" type="button"><i data-i="map"></i>الخريطة</button>
+<script type="module" src="js/explore.js"></script>
+</body>
+</html>
