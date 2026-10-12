@@ -16,7 +16,7 @@ const shot = (n) => p.screenshot({ path: `${out}/${n}.png` });
 const step = async (label, fn) => { try { await fn(); console.log('✓', label); } catch (e) { errs.push(`${label}: ${e.message.split('\n')[0]}`); console.log('✗', label); } };
 
 await step('gate: logo + both posters fully visible', async () => { await p.goto(B + 'index.html', { waitUntil: 'networkidle' }); await p.waitForTimeout(2000); await shot('01-gate'); const ok = await p.evaluate(() => { const inView = (el) => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight + 1 && r.width > 0; }; const cards = [...document.querySelectorAll('.poster')]; return !!document.querySelector('.molu-logo .logo-mark') && cards.length === 2 && cards.every(inView); }); if (!ok) throw new Error('logo or cards not fully visible'); });
-await step('enter حواء', async () => { await p.click('.row.eve .poster'); await p.waitForURL(/explore/); await p.waitForTimeout(1200); await shot('03-explore'); });
+await step('enter حواء', async () => { await p.click('.poster.eve'); await p.waitForURL(/explore/); await p.waitForTimeout(1200); await shot('03-explore'); });
 await step('shortcut filter', async () => { await p.click('[data-sc="nails"]'); await p.waitForTimeout(900); await shot('04-filtered'); if (!(await p.locator('#reset').count())) throw new Error('no filter chip'); await p.click('#reset'); await p.waitForTimeout(600); });
 await step('search', async () => { await p.fill('#q', 'استشوار'); await p.waitForTimeout(700); await shot('05-search'); await p.click('#clear'); await p.waitForTimeout(400); });
 await step('switch حواء ↔ آدم (fast swap)', async () => {
