@@ -1,151 +1,86 @@
+// لأصحاب الصالونات — for owners. Built to be understood without reading: a short promise, a picture of what you get
+// (a booking arriving on your phone, and your own page), three benefits in a few words, three steps, one price line,
+// and one button that stays on screen. Plans open in a sheet for those who want the detail.
 import { boot, $, $$, ar, icon, getSection, secSwitch, swap, catArt } from './shell.js';
 import { PLANS, CATEGORIES, salonById } from './data.js';
-import { initSegmented, initSliders } from './m3.js';
-import { spring, revealOnScroll } from './motion.js';
+import { coverArt } from './art.js';
+import { openSheet } from './m3.js';
+import { spring } from './motion.js';
 
-// The whole screen is one function: a full page load runs it once; moving between screens in place (js/vt.js)
-// calls it again on the fresh markup, without downloading or re-evaluating this file.
 export default function mount() {
   let section = getSection();
-  boot({ page: 'home', section });
-  const F = () => section === 'eve';
-  const n = (x) => new Intl.NumberFormat('en-US').format(Math.round(x));
-
-  const VALUES = [
-    ['schedule', 'حجز 24 ساعة', 'يحجز الساعة 2 الفجر بدون اتصال. تظهر الأوقات الفاضية فقط، فلا يتعارض موعدان أبداً.'],
-    ['notifications_active', 'غياب أقل', 'تأكيد فوري وتذكير قبل الموعد، وإضافة الموعد لتقويم الجوال بضغطة، ورابط إلغاء يفتح الوقت لغيره بدل ما يضيع.'],
-    ['groups', 'كل فريقك في شاشة', 'مواعيد كل موظف، ومن حضر ومن غاب، ودخل الشهر، وسجل كل عميل وزياراته.'],
-    ['language', 'بالعربي ومن الجوال', 'مصمم للجوال أولاً، ويدعم الدوام على فترتين والدوام بعد منتصف الليل.'],
-  ];
-  const FAQ = [
-    ['هل يحتاج العميل يحمّل تطبيق؟', 'لا. يفتح رابطك من أي جوال ويحجز خلال 30 ثانية.'],
-    ['هل تاخذون عمولة على الحجوزات؟', 'لا. اشتراك ثابت فقط، وكل ريال من خدماتك لك.'],
-    ['وش يصير بعد التجربة المجانية؟', 'إذا ما اشتركت تنتقل تلقائياً للباقة المجانية (40 حجز بالشهر)، وتبقى صفحتك وبياناتك كما هي.'],
-    ['أقدر أضيف حجوزات الاتصال والحضور المباشر؟', 'نعم، من لوحتك بضغطة «+ موعد»، وتظهر مع حجوزات صفحتك في جدول واحد.'],
-    ['كيف أدفع؟', 'مدى أو فيزا، أو Apple Pay و STC Pay، شهرياً أو سنوياً. وتلغي متى ما تبي.'],
-  ];
+  boot({ page: 'home', section, nav: false });
+  document.body.classList.add('owner');
   const mine = salonById('mine');
+  const F = () => section === 'eve';
+  const g = (f, m) => (F() ? f : m);
 
   $('#app').innerHTML = `
-    <header class="page-h"><a class="round pressable" href="index.html" aria-label="رجوع">${icon('arrow_back', 22, 'flip-rtl')}</a><div id="sec"></div></header>
-    <section class="biz-hero" data-reveal>
-      <span class="muted" style="display:flex;align-items:center;gap:6px;font-weight:600">${icon('storefront', 18)}<span id="k-for"></span></span>
-      <h1 style="margin-top:14px" id="h-title"></h1>
-      <p id="h-sub"></p>
-      <div class="btns">
-        <a class="btn btn-filled btn-lg pressable" href="join.html" data-join id="start"></a>
-        <a class="btn btn-outlined btn-lg pressable" href="#pricing">الأسعار</a>
-      </div>
-      <p class="biz-small">بدون بطاقة ائتمان · جاهز خلال 5 دقائق · <a href="join.html" data-join="home" id="solo-link"></a></p>
-      ${mine ? `<a class="biz-mine pressable" href="dashboard.html">${icon('storefront', 20)}<span class="grow"><b>${mine.name}</b><small>عندك صفحة — افتح لوحتك</small></span>${icon('chevron_left', 20)}</a>` : ''}
-    </section>
-    <div class="phone" aria-hidden="true"><div class="screen"><i class="notch"></i>
-      <div class="chat-h"><i>م</i><span id="p-name"></span></div>
-      <div class="bubble" id="b1"></div>
-      <div class="bubble me" id="b2"></div>
-      <div class="bubble" id="b3"></div>
-    </div></div>
-
-    <section class="block"><div class="block-h"><h2>كل خدمة بصورتها</h2><span class="label-m" id="svc-note"></span></div>
-      <div class="biz-svcs" id="svc-strip"></div>
-    </section>
-
-    <section class="block"><div class="block-h"><h2>كل اللي يحتاجه صالونك</h2></div>
-      <div class="values">${VALUES.map(([ic, t, d]) => `<div class="value" data-reveal><span class="ic">${icon(ic, 24)}</span><div><b>${t}</b><p>${d}</p></div></div>`).join('')}</div>
-    </section>
-
-    <section class="block"><div class="block-h"><h2>تبدأ في ثلاث خطوات</h2></div>
-      <ol class="steps"><li data-reveal>سجّل خلال دقيقتين برقم جوالك</li><li data-reveal>أضف خدماتك وأسعارك وفريقك</li><li data-reveal>شارك رابطك أو ملصق QR — وخلّ الحجوزات تجي</li></ol>
-    </section>
-
-    <section class="block" id="pricing"><div class="block-h"><h2>أسعار واضحة</h2><span class="label-m">تجربة مجانية 14 يوم لكل الباقات</span></div>
-      <div class="segmented billing" role="radiogroup" aria-label="الفوترة">
-        <label><input type="radio" name="bill" value="month" checked><span>شهري</span></label>
-        <label><input type="radio" name="bill" value="year"><span>سنوي <i class="save">شهرين مجاناً</i></span></label>
-      </div>
-      <div class="plans">${PLANS.filter((p) => !p.solo).map((p) => `
-        <article class="plan${p.popular ? ' popular' : ''}" data-reveal>
-          ${p.popular ? '<span class="pop">الأكثر اختياراً</span>' : ''}
-          <h3>${p.name}</h3>
-          <div class="price"><span class="num" data-m="${p.month}" data-y="${p.year}">${p.month ? n(p.month) : 'مجاناً'}</span>${p.month ? '<small class="per">ر.س / شهرياً</small>' : ''}</div>
-          <p class="note">${p.note || ''}</p>
-          <a class="btn ${p.popular ? 'btn-filled' : 'btn-tonal'} btn-block pressable" href="join.html" data-join>${p.month ? 'جرّبها 14 يوم' : 'ابدأ مجاناً'}</a>
-          <ul class="feats">${p.feats.map((f) => `<li>${icon('check_circle_f', 20)}${f}</li>`).join('')}</ul>
-        </article>`).join('')}</div>
-      <div class="value" style="margin-top:12px;align-items:center" data-reveal><span class="ic">${icon('person', 24)}</span><div class="grow"><b id="fl-t"></b><p>كل مزايا الاحترافية لشخص واحد، بـ <b>99 ر.س</b> شهرياً.</p></div><a class="btn btn-black btn-sm pressable" href="join.html" data-join="home">ابدأ</a></div>
-    </section>
-
-    <section class="block"><div class="block-h"><h2>كم توفّر بدون عمولة؟</h2></div>
-      <div class="calc" data-reveal>
-        <div class="lbl"><span>حجوزات في الشهر</span></div>
-        <div class="slider"><input type="range" id="c-n" min="20" max="600" step="10" value="160" aria-label="عدد الحجوزات"><span class="bubble"></span></div>
-        <div class="lbl" style="margin-top:6px"><span>متوسط الفاتورة (ر.س)</span></div>
-        <div class="slider"><input type="range" id="c-p" min="30" max="600" step="10" value="120" aria-label="متوسط الفاتورة"><span class="bubble"></span></div>
-        <div class="out"><span class="body-m">مقارنة بتطبيقات تاخذ 15٪ عمولة، توفّر شهرياً تقريباً</span><b><span id="c-out">0</span> ر.س</b><span class="label-m on-variant">بعد خصم اشتراك الاحترافية</span></div>
-      </div>
-    </section>
-
-    <section class="block"><div class="block-h"><h2>أسئلة سريعة</h2></div>
-      <div class="biz-faq">${FAQ.map(([q, a]) => `<details data-reveal><summary>${q}${icon('expand_more', 22)}</summary><p>${a}</p></details>`).join('')}</div>
-    </section>
-
-    <section class="block" style="text-align:center" data-reveal>
-      <h2 class="headline-s">جاهز تملأ جدولك؟</h2>
-      <p class="on-variant" style="margin:6px 0 14px">بدون بطاقة، وتقدر تلغي متى ما تبي.</p>
-      <a class="btn btn-filled btn-lg pressable" href="join.html" data-join>ابدأ مجاناً الحين</a>
-    </section>`;
-
-  initSegmented($('#app')); initSliders($('#app'));
+    <header class="o-top">
+      <a class="round pressable" href="explore.html" aria-label="رجوع">${icon('arrow_back', 22, 'flip-rtl')}</a>
+      <div id="sec"></div>
+    </header>
+    <div id="o-body"></div>`;
 
   function paint() {
-    const f = F();
-    $('#k-for').textContent = f ? 'قسم حواء · للصالونات النسائية ومراكز التجميل والأظافر والسبا' : 'قسم آدم · للحلاقين وصالونات الرجال والسبا الرجالي';
-    $('#h-title').innerHTML = f ? 'عميلاتك يحجزن بأنفسهن، <em>والتذكير يصلهن تلقائياً</em>' : 'زبائنك يحجزون دورهم بأنفسهم، <em>بدون انتظار في المحل</em>';
-    $('#h-sub').innerHTML = f ? 'صفحة حجز أنيقة باسم صالونك، تحطين رابطها في الإنستقرام والسناب وقوقل ماب. العميلة تختار الخدمة والوقت خلال 30 ثانية، ويوصلها تأكيد وتذكير. <b>بدون عمولة على أي حجز.</b>' : 'صفحة حجز فخمة باسم محلك، تحط رابطها في الإنستقرام والسناب وقوقل ماب. الزبون يختار الحلاق والوقت خلال 30 ثانية، ويوصله تأكيد وتذكير. <b>لا زحمة ولا اتصالات وأنت تحلق.</b>';
-    $('#start').textContent = f ? 'ابدئي مجاناً — 14 يوم بكل المزايا' : 'ابدأ مجاناً — 14 يوم بكل المزايا';
-    $('#solo-link').textContent = f ? 'كوافيرة أو ميك أب آرتست في البيوت؟ سجّلي كمستقلة' : 'حلاق متنقل في البيوت؟ سجّل كمستقل';
-    $('#svc-note').textContent = f ? 'جاهزة لكِ، أو ارفعي صور شغلك' : 'جاهزة لك، أو ارفع صور شغلك';
-    $('#svc-strip').innerHTML = CATEGORIES[section].map((c) => `<span>${catArt(section, c.id, 56)}<small>${c.name}</small></span>`).join('');
-    $$('[data-join]').forEach((a) => (a.href = `join.html?s=${section}${a.dataset.join === 'home' ? '&kind=home' : ''}`));
-  
-    $('#p-name').textContent = f ? 'صالون لمسة' : 'صالون الفرسان';
-    $('#b1').innerHTML = f ? `تذكير من <b>صالون لمسة</b> 🌸<br>موعدك بكرة <b>7:30 م</b> — استشوار وتصفيف مع نورة.<br>للتعديل: molu-app.com/r/8K2<time>9:02 م</time>` : `تذكير من <b>صالون الفرسان</b> ✂️<br>موعدك بكرة <b>9:00 م</b> — قص شعر وتحديد مع سامي.<br>للتعديل: molu-app.com/r/3F7<time>9:02 م</time>`;
-    $('#b2').innerHTML = `${f ? 'تمام، أكيد جاية' : 'تمام، أكيد جاي'} 👍<time>9:04 م</time>`;
-    $('#b3').innerHTML = `${f ? 'شكراً لزيارتك! قيّمي' : 'شكراً لزيارتك! قيّم'} تجربتك ⭐⭐⭐⭐⭐<time>بعد الزيارة</time>`;
-    $('#fl-t').textContent = f ? 'مستقلة؟ تشتغلين لحالك؟' : 'حلاق مستقل؟ تشتغل لحالك؟';
+    const S = section, name = g('صالون لمسة', 'حلاق الفخامة'), cats = CATEGORIES[S];
+    const join = (home) => `join.html?s=${S}${home ? '&kind=home' : ''}`;
+    $('#o-body').innerHTML = `
+      ${mine ? `<a class="o-mine pressable" href="dashboard.html">${icon('storefront', 20)}<span class="grow"><b>${mine.name}</b><small>صفحتك شغّالة</small></span><span class="pill-dark">لوحتي</span></a>` : ''}
+      <section class="o-hero">
+        <span class="o-eyebrow">${g('لأصحاب الصالونات', 'لأصحاب محلات الحلاقة')}</span>
+        <h1>${g('حجوزات صالونك', 'حجوزات محلّك')}<br><em>بدون اتصالات</em></h1>
+        <p>${g('عميلاتك يحجزن بأنفسهن، 24 ساعة', 'زبائنك يحجزون بأنفسهم، 24 ساعة')}</p>
+      </section>
+
+      <div class="o-show" aria-hidden="true">
+        <div class="o-page">
+          <span class="o-cover">${coverArt({ art: S === 'eve' ? 11 : 23, section: S })}</span>
+          <div class="o-page-b"><b>${name}</b><small>${ar(cats.length)} أقسام · ${g('تحجزين', 'تحجز')} بدقيقة</small>
+            <div class="o-icons">${cats.slice(0, 4).map((c) => `<span>${catArt(S, c.id, 30)}</span>`).join('')}</div>
+            <span class="o-book">${g('احجزي', 'احجز')}</span></div>
+        </div>
+        <div class="o-ping"><span class="o-ping-ic">${icon('event_available', 20)}</span><span class="grow"><b>حجز جديد</b><small>${g('نورة · استشوار · اليوم 7:30 م', 'فهد · قص وتحديد · اليوم 7:30 م')}</small></span><i>الآن</i></div>
+      </div>
+
+      <section class="o-perks">
+        <div><span>${icon('schedule', 26)}</span><b>حجز 24 ساعة</b><small>من رابط واحد</small></div>
+        <div><span>${icon('notifications_active', 26)}</span><b>تذكير تلقائي</b><small>غياب أقل</small></div>
+        <div><span>${icon('percent', 26)}</span><b>بدون عمولة</b><small>كل الريال لك</small></div>
+      </section>
+
+      <section class="o-steps">
+        <h2>تبدأ في دقيقتين</h2>
+        <ol>
+          <li><i>١</i><b>${g('اسم صالونك', 'اسم محلّك')}</b></li>
+          <li><i>٢</i><b>خدماتك وأسعارك</b></li>
+          <li><i>٣</i><b>شارك رابطك</b></li>
+        </ol>
+      </section>
+
+      <button type="button" class="o-price pressable" id="plans">
+        <span class="grow"><b>مجاناً 14 يوم</b><small>بعدها مجانية للأبد، أو من 99 ر.س بالشهر</small></span>
+        <span class="o-more">الباقات${icon('chevron_left', 18)}</span>
+      </button>
+
+      <a class="o-solo" href="${join(true)}">${icon('home_work', 20)}<span>${g('تشتغلين في البيوت؟ سجّلي كمستقلة', 'تشتغل في البيوت؟ سجّل كمستقل')}</span>${icon('chevron_left', 18)}</a>`;
+    $('#cta').href = mine ? 'dashboard.html' : join(false);
+    $('#cta span').textContent = mine ? 'افتح لوحتك' : g('سجّلي صالونك مجاناً', 'سجّل محلّك مجاناً');
+    spring($('.o-ping'), [{ opacity: 0, transform: 'translateY(-14px) scale(.96)' }, { opacity: 1, transform: 'none' }], 'bouncy', { delay: 0.35 });
   }
+
+  // the one action, always on screen
+  document.body.insertAdjacentHTML('beforeend', `<div class="o-cta"><a class="btn btn-black btn-lg btn-block pressable" id="cta" href="join.html"><span></span>${icon('chevron_left', 20)}</a><small>بدون بطاقة · تلغي متى ما تبي</small></div>
+    <div class="sheet" id="plans-sheet" hidden role="dialog" aria-label="الباقات"><div class="handle"></div><div id="plans-body"></div></div>`);
   paint();
 
-  // chat bubbles play in sequence each time the phone scrolls into view
-  const playChat = () => ['#b1', '#b2', '#b3'].forEach((id, i) => spring($(id), [{ opacity: 0, transform: 'translateY(16px) scale(.92)' }, { opacity: 1, transform: 'none' }], 'bouncy', { delay: 0.3 + i * 0.7 }));
-  new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && playChat()), { threshold: 0.6 }).observe($('.phone'));
-
-  secSwitch($('#sec'), section, (k) => { section = k; swap($('#app'), paint); });
-
-  // monthly ⇄ yearly: numbers roll (old slides up and out, new rises in)
-  $$('[name="bill"]').forEach((r) => r.addEventListener('change', () => {
-    const y = r.value === 'year';
-    $$('.plan .num').forEach((el, i) => {
-      const v = +el.dataset[y ? 'y' : 'm'];
-      if (!v) return;
-      spring(el, [{ transform: 'none', opacity: 1 }, { transform: 'translateY(-14px)', opacity: 0 }], 'snappy', { delay: i * 0.05 }).finished.then(() => {
-        el.textContent = n(v);
-        el.parentElement.querySelector('.per').textContent = y ? 'ر.س / سنوياً' : 'ر.س / شهرياً';
-        spring(el, [{ transform: 'translateY(16px)', opacity: 0 }, { transform: 'none', opacity: 1 }], 'bouncy');
-      });
-    });
-  }));
-
-  // savings calculator
-  let shown = 0;
-  function calc() {
-    const v = Math.max(0, +$('#c-n').value * +$('#c-p').value * 0.15 - 149);
-    const from = shown; shown = v;
-    const t0 = performance.now();
-    const step = (t) => { const k = Math.min(1, (t - t0) / 450); $('#c-out').textContent = n(from + (v - from) * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
-  }
-  $('#c-n').addEventListener('input', calc); $('#c-p').addEventListener('input', calc); calc();
-  revealOnScroll();
+  $('#app').addEventListener('click', (e) => {
+    if (!e.target.closest('#plans')) return;
+    $('#plans-body').innerHTML = `<h2 class="title-l">الباقات</h2><p class="muted" style="margin:2px 0 14px">كلها تبدأ بـ 14 يوم مجاناً بكل المزايا</p>
+      <div class="o-plans">${PLANS.map((p) => `<div class="o-plan${p.popular ? ' pop' : ''}"><span class="grow"><b>${p.solo ? g('المستقلة', 'المستقل') : p.name}${p.popular ? ' <em>الأكثر اختياراً</em>' : ''}</b><small>${p.feats.slice(0, 3).join(' · ')}</small></span><span class="o-plan-p">${p.month ? `<b>${ar(p.month)}</b><small>ر.س/شهر</small>` : '<b>مجاناً</b><small>للأبد</small>'}</span></div>`).join('')}</div>
+      <p class="muted" style="font-size:.84rem;margin:12px 0 0">السنوي بشهرين مجاناً. بدون عمولة على أي حجز.</p>`;
+    openSheet($('#plans-sheet'));
+  });
+  secSwitch($('#sec'), section, (k) => { section = k; swap($('#o-body'), paint); });
 }
 if (!window.__softnav) mount();
