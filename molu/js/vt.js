@@ -53,6 +53,15 @@
     if (fromSalon && !salon) { var id = new URL(from, location.href).searchParams.get('id'), art = id && cardArt(id); if (art) art.style.viewTransitionName = COVER; }
     vt.finished.finally(clearNames);
   });
+  // once this page is settled, quietly fetch the pages you are most likely to open next (small; the shared code is cached)
+  addEventListener('load', function () {
+    (window.requestIdleCallback || setTimeout)(function () {
+      ['explore', 'salon', 'favorites', 'account', 'appointments'].forEach(function (n) {
+        if (file(location.href) === n + '.html') return;
+        var l = document.createElement('link'); l.rel = 'modulepreload'; l.href = 'js/dist/' + n + '.js'; document.head.appendChild(l);
+      });
+    }, { timeout: 2500 });
+  });
   // coming back from the bfcache: drop any stale name
   addEventListener('pageshow', function (e) { if (e.persisted) clearNames(); });
 })();

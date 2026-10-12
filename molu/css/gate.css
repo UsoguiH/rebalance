@@ -2,6 +2,11 @@
    picture has no frame: it sits edge to edge, complete, nothing cropped. Each name stands above its own scene, each
    button below it. Static: no app CSS/JS. Motion: the picture develops from blur, names float down, buttons rise;
    touching one side softly dims the other; entering: the poster eases back while the feed rises in (see css/molu.css, type "gate"). */
+/* MoLu wordmark faces (only this screen shows the logo) */
+@font-face { font-family: 'MoLu Mo'; src: url(../fonts/playfair-display-700-latin.woff2) format('woff2'); font-weight: 700; font-display: block; }
+@font-face { font-family: 'MoLu Lu'; src: url(../fonts/great-vibes-latin.woff2) format('woff2'); font-display: block; }
+@font-face { font-family: 'MoLu Naskh'; src: url(../fonts/amiri-700-logo.woff2) format('woff2'); font-weight: 700; font-display: block; }
+@font-face { font-family: 'MoLu Nastaliq'; src: url(../fonts/gulzar-logo-2.woff2) format('woff2'); font-display: block; }
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s; }
 :root { --ease: cubic-bezier(.22, 1, .36, 1); --paper: #F9F6E2; --eve: #A3355A; --adam: #24475F; }

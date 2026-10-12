@@ -8,8 +8,11 @@ This is a redesign of the **MoLu** salon booking UI (حواء for women's salons
 
 It is a static prototype. All data is mock data from `js/data.js`, and appointments, favourites and the profile are saved in `localStorage`.
 
+Pages load built bundles: each page's code is one minified file plus one shared chunk, requested together, and the inner pages share one stylesheet (`css/app.min.css`). After editing anything in `js/` or `css/`, rebuild:
+
 ```bash
-cd molu && python3 -m http.server 4610      # open http://localhost:4610
+cd molu && npm install && npm run build     # esbuild → js/dist/*, css/app.min.css (also updates the <script> tags)
+python3 -m http.server 4610                 # open http://localhost:4610
 node scripts/flow.mjs /tmp/out             # recorded end-to-end booking flow (Playwright)
 node scripts/shoot.mjs /tmp/out index.html # screenshots
 ```

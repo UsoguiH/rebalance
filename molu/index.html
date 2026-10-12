@@ -67,13 +67,15 @@
       if (gate.dataset.go) return;
       if (gate.dataset.hot !== k) since = Date.now();
       gate.dataset.hot = k; gate.dataset.go = k;
-      setTimeout(function () { location.href = a.href; }, Math.max(350, 1000 - (Date.now() - since)));
+      setTimeout(function () { location.href = a.href; }, Math.max(120, 340 - (Date.now() - since)));
     });
   });
   addEventListener('pageshow', function (e) { if (e.persisted) { delete gate.dataset.go; delete gate.dataset.hot; } });
-  var warm = function () { ['js/explore.js', 'js/shell.js', 'js/data.js', 'js/icons.js', 'js/art.js', 'js/m3.js', 'js/motion.js', 'js/shapes.js', 'css/molu.css', 'css/m3.css', 'css/springs.css'].forEach(function (h) {
-    var l = document.createElement('link'); l.rel = /\.js$/.test(h) ? 'modulepreload' : 'prefetch'; l.href = h; document.head.appendChild(l); }); };
-  'requestIdleCallback' in window ? requestIdleCallback(warm, { timeout: 1500 }) : setTimeout(warm, 400);
+  var WARM = ['js/dist/explore.js', 'js/dist/shared-G3EQNBNW.js', 'js/dist/shared-TD55TVYE.js', 'css/app.min.css']; // build:warm
+  var warm = function () { WARM.forEach(function (h) {
+    var l = document.createElement('link'); l.rel = /\.js$/.test(h) ? 'modulepreload' : 'preload'; if (!/\.js$/.test(h)) l.as = 'style'; l.href = h; document.head.appendChild(l); }); };
+  'requestIdleCallback' in window ? requestIdleCallback(warm, { timeout: 800 }) : setTimeout(warm, 300);
+  gate.addEventListener('pointerdown', warm, { once: true });
 })();
 </script>
 </body>

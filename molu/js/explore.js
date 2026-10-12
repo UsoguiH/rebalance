@@ -4,7 +4,7 @@ import { mapArt, coverArt } from './art.js';
 import { openMenu } from './m3.js';
 import { spring, blurIn } from './motion.js';
 import { shapeBadge } from './shapes.js';
-import { realMap, prefetchMap, sourceNote } from './map.js';
+import { realMap, loadMap, sourceNote } from './map.js';
 
 const params = new URLSearchParams(location.search);
 let section = boot({ page: 'home' });
@@ -109,7 +109,8 @@ addEventListener('scroll', () => { const y = scrollY; $('#map-fab').classList.to
 
 // full-screen map, morphing out of the pill (clip-path spring). Real streets (OpenStreetMap) with the salons as name pills;
 // the drawn map stands in if the map can't load.
-prefetchMap();
+// the map (Leaflet + street data, ~400 KB) loads only when you reach for it, never while you browse
+['pointerenter', 'pointerdown', 'focus'].forEach((ev) => $('#map-fab').addEventListener(ev, () => loadMap().catch(() => {}), { once: true }));
 $('#map-fab').addEventListener('click', () => {
   const fab = $('#map-fab').getBoundingClientRect();
   const list = SALONS[section].filter(matches);

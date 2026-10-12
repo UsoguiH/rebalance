@@ -1,0 +1,12 @@
+{
+  "name": "molu-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/flow.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.2"
+  }
+}
