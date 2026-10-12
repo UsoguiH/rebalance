@@ -67,7 +67,7 @@ export function renderNav(active) {
 // ---------- category art (Uber-Eats style) ----------
 // Drop generated PNG/WebP art into img/icons/<section>-<id>.webp and list the name in ICON_FILES;
 // until then each category shows its emoji.
-export const ICON_FILES = new Set([]);
+export const ICON_FILES = new Set(['offer', 'home', 'gift', 'fire', 'eve-hair', 'eve-nails', 'eve-makeup', 'eve-brows', 'eve-skin', 'eve-massage', 'eve-henna', 'eve-bride', 'adam-cut', 'adam-beard', 'adam-color', 'adam-care', 'adam-massage', 'adam-groom']);
 const EMOJI = {
   offer: '🏷️', home: '🏠', all: '✨', gift: '🎁', fire: '🔥',
   'eve-hair': '💇‍♀️', 'eve-nails': '💅', 'eve-makeup': '💄', 'eve-brows': '👁️', 'eve-skin': '🧴', 'eve-massage': '💆‍♀️', 'eve-henna': '🌿', 'eve-bride': '👰‍♀️',
@@ -75,7 +75,7 @@ const EMOJI = {
 };
 export function catArt(section, id, size = 48) {
   const k = `${section}-${id}`;
-  if (ICON_FILES.has(k) || ICON_FILES.has(id)) return `<img class="cat-art" src="img/icons/${ICON_FILES.has(k) ? k : id}.webp" alt="" width="${size}" height="${size}" loading="lazy" decoding="async">`;
+  if (ICON_FILES.has(k) || ICON_FILES.has(id)) return `<img class="cat-art" src="img/icons/${ICON_FILES.has(k) ? k : id}.webp" alt="" width="${size}" height="${size}" decoding="async">`;
   return `<span class="cat-emoji" style="font-size:${Math.round(size * 0.82)}px" aria-hidden="true">${EMOJI[k] || EMOJI[id] || '✨'}</span>`;
 }
 
