@@ -1,71 +1,61 @@
-/* Gate — expanding panels. The open panel shows its whole illustration at full width (as big and clear as the
-   phone allows); the other stays as a slim panel with its name. Tap or swipe to swap: the panels trade sizes
-   smoothly and the picture opens up as its panel grows. Static: no app CSS/JS. */
+/* Gate — a poster built around the whole illustration. The page is the illustration's own cream (#F9F6E2), so the
+   picture has no frame: it sits edge to edge, complete, nothing cropped. Each name stands above its own scene, each
+   button below it. Static: no app CSS/JS. Motion: the picture develops from blur, names float down, buttons rise;
+   touching one side softly dims the other; entering is one quick fade. */
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s; }
-:root { --ease: cubic-bezier(.22, 1, .36, 1); --cream: #F4ECDD; --dur: .6s; }
+:root { --ease: cubic-bezier(.22, 1, .36, 1); --paper: #F9F6E2; --eve: #A3355A; --adam: #24475F; }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--cream); }
+html, body { margin: 0; height: 100%; background: var(--paper); }
 body { color: #2D2D2D; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
 a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-.gx { height: 100dvh; min-height: 520px; display: flex; flex-direction: column; gap: 8px; padding: max(6px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); background: var(--cream); }
-.top { display: flex; justify-content: center; align-items: center; height: 40px; flex: none; animation: fade .5s var(--ease) both; }
+.poster { min-height: 100dvh; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: max(10px, env(safe-area-inset-top)) 0 max(14px, env(safe-area-inset-bottom)); }
+.top { display: flex; justify-content: center; animation: fade .5s var(--ease) both; }
 .molu-logo { display: inline-flex; align-items: center; gap: 7px; }
-.logo-mark { width: 30px; height: 30px; border-radius: 9px; flex: none; box-shadow: 0 4px 12px -6px rgba(90, 42, 51, .45); }
+.logo-mark { width: 32px; height: 32px; border-radius: 9px; flex: none; box-shadow: 0 4px 12px -6px rgba(90, 42, 51, .45); }
 .logo-latin { display: inline-flex; align-items: baseline; line-height: 1; }
-.logo-latin .mo { font: 700 1.15rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #3A1C24; }
-.logo-latin .lu { display: inline-block; font: 400 1.6rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #B0485C; margin-left: -.08em; transform: translateY(.12em); }
+.logo-latin .mo { font: 700 1.2rem/1 'MoLu Mo', 'Playfair Display', Georgia, serif; color: #3A1C24; }
+.logo-latin .lu { display: inline-block; font: 400 1.65rem/1 'MoLu Lu', 'Great Vibes', cursive; color: #B0485C; margin-left: -.08em; transform: translateY(.12em); }
 .logo-sep { width: 1px; height: 18px; background: #D9CDB9; }
-.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.05rem; line-height: 1; }
+.logo-ar { display: inline-flex; align-items: baseline; font-size: 1.08rem; line-height: 1; }
 .logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #3A1C24; }
 .logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #B0485C; margin-inline-start: -.12em; transform: translateY(.12em); }
 
-/* the two panels: the open one grows (flex-grow animates smoothly), the other stays slim */
-.panels { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
-@media (min-width: 820px) { .panels { flex-direction: row; } .gx { padding-inline: 24px; } }
-.panel { --c: #A3355A; position: relative; isolation: isolate; flex: 1 1 0; min-height: 0; min-width: 0; overflow: hidden; border-radius: 30px; background: #FAF6E2;
-  box-shadow: 0 22px 44px -28px rgba(60, 40, 20, .7); transition: flex-grow var(--dur) var(--ease), transform .2s ease-out; animation: rise .6s var(--ease) both; }
-.panel.adam { --c: #24475F; animation-delay: .08s; }
-.panel.on { flex-grow: 3.4; }
-.panel:active { transform: scale(.985); }
-.panel:focus-visible { outline: 3px solid var(--c); outline-offset: 3px; }
+/* two columns that line up with the two scenes: left = حواء, right = آدم (as in the picture) */
+.names, .btns { display: grid; grid-template-columns: 1fr 1fr; direction: ltr; padding: 0 12px; }
+.name { display: grid; justify-items: center; direction: rtl; padding-top: 6px; transition: opacity .35s var(--ease); animation: drop .55s var(--ease) both; }
+.name.adam { animation-delay: .08s; }
+.name b { font: 700 clamp(3.2rem, 17vw, 5.6rem)/1 'Aref Ruqaa', serif; padding-bottom: .2em; margin-bottom: -.22em; }
+.name.eve b { color: var(--eve); } .name.adam b { color: var(--adam); }
+.name small { font: 700 .82rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; }
 
-/* picture: cover — at full size it's the whole illustration; as the panel narrows it becomes a band across the faces */
-.panel img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%;
-  transform: scale(1.06); transition: transform var(--dur) var(--ease), filter var(--dur) var(--ease); filter: saturate(.85); }
-.panel.adam img { object-position: 50% 26%; }
-.panel.on img { transform: none; filter: none; animation: settle .9s .1s var(--ease) both; }
-.panel::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(180deg, transparent 45%, rgba(16, 13, 11, .55) 75%, rgba(16, 13, 11, .85)); transition: opacity var(--dur) var(--ease); }
-.panel:not(.on)::after { background: linear-gradient(90deg, rgba(16, 13, 11, .62), rgba(16, 13, 11, .15) 70%); }
+/* the whole illustration, no frame, nothing cropped */
+.pic { position: relative; width: 100%; aspect-ratio: 1312 / 1199; }
+.pic img { display: block; width: 100%; height: 100%; animation: develop .9s .1s var(--ease) both; }
+.side { position: absolute; top: 0; bottom: 0; width: 50%; }
+.side.eve { left: 0; } .side.adam { right: 0; }
+.side i { position: absolute; inset: 0; background: var(--paper); opacity: 0; transition: opacity .35s var(--ease); pointer-events: none; }
+/* touching one side softly fades the other */
+.poster[data-hot="eve"] .side.adam i, .poster[data-hot="adam"] .side.eve i { opacity: .55; }
+.poster[data-hot="eve"] .name.adam, .poster[data-hot="adam"] .name.eve,
+.poster[data-hot="eve"] .go.adam, .poster[data-hot="adam"] .go.eve { opacity: .35; }
 
-/* words: big on the open panel, compact on the slim one */
-.txt { position: absolute; inset-inline-start: 20px; bottom: 18px; display: grid; color: #fff; transform-origin: 100% 100%; transition: transform var(--dur) var(--ease), bottom var(--dur) var(--ease); }
-.txt small { font: 700 .82rem 'IBM Plex Sans Arabic', sans-serif; opacity: .88; }
-.txt b { font: 700 clamp(3.2rem, 16vw, 5.6rem)/1.05 'Aref Ruqaa', serif; padding-bottom: .28em; margin-bottom: -.2em; text-shadow: 0 4px 18px rgba(0, 0, 0, .4); }
-.txt span { font: 600 .82rem 'IBM Plex Sans Arabic', sans-serif; opacity: .92; transition: opacity .3s; }
-.panel:not(.on) .txt { transform: scale(.72); bottom: 10px; }
-.panel:not(.on) .txt span { opacity: 0; }
-.panel.on .txt > * { animation: up .5s var(--ease) both; }
-.panel.on .txt b { animation-delay: .06s; } .panel.on .txt span { animation-delay: .12s; }
+.btns { gap: 12px; padding-top: 4px; }
+.go { justify-self: center; display: inline-flex; align-items: center; gap: 8px; height: 54px; padding: 0 24px 0 18px; border-radius: 27px; background: #000; color: #fff; direction: rtl;
+  font: 700 1.08rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif; box-shadow: 0 14px 28px -12px rgba(0, 0, 0, .55);
+  transition: transform .16s ease-out, opacity .35s var(--ease); animation: rise .5s .35s var(--ease) both; }
+.go.adam { animation-delay: .42s; }
+.go:active { transform: scale(.95); }
+.go svg { transition: transform .2s var(--ease); }
+.go:active svg { transform: translateX(-4px); }
+.go:focus-visible { outline: 3px solid #000; outline-offset: 3px; }
+.line { margin: 8px 0 0; text-align: center; font: 600 .86rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; animation: fade .5s .5s var(--ease) both; }
 
-/* iPhone-style black pill on the open panel; «اضغط للعرض» on the slim one */
-.pill { position: absolute; inset-inline-end: 16px; bottom: 20px; display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 20px 0 14px; border-radius: 26px;
-  background: #000; color: #fff; font: 700 1.05rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif; box-shadow: 0 12px 26px -10px rgba(0, 0, 0, .7);
-  transition: opacity .3s var(--ease), transform var(--dur) var(--ease); }
-.pill svg { transition: transform .2s var(--ease); }
-.pill:active svg { transform: translateX(-4px); }
-.panel:not(.on) .pill { opacity: 0; transform: translateY(16px); pointer-events: none; }
-.peek { position: absolute; inset-inline-end: 18px; top: 50%; translate: 0 -50%; display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 17px;
-  background: rgba(255, 255, 255, .92); color: #1A1A1A; font: 700 .8rem 'IBM Plex Sans Arabic', sans-serif; transition: opacity .3s var(--ease); }
-.panel.on .peek { opacity: 0; pointer-events: none; }
-.panels.nudge .panel:not(.on) { animation: nudge .7s var(--ease) 1; }
-
-@keyframes rise { from { opacity: 0; transform: translateY(18px); } }
-@keyframes settle { from { transform: scale(1.08); } }
-@keyframes up { from { opacity: 0; transform: translateY(10px); } }
+@keyframes develop { from { opacity: 0; filter: blur(12px); transform: scale(.97); } }
+@keyframes drop { from { opacity: 0; transform: translateY(-12px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes fade { from { opacity: 0; } }
-@keyframes nudge { 30% { transform: translateY(-8px); } 60% { transform: translateY(2px); } }
 .ms { display: block; flex: none; }
-@media (prefers-reduced-motion: reduce) { :root { --dur: .01s; } .panel, .top, .panel.on img, .panel.on .txt > *, .panels.nudge .panel { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .top, .name, .pic img, .go, .line { animation: none; } }
