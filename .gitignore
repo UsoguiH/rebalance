@@ -1,2 +1,5 @@
 node_modules/
 .DS_Store
+
+# placeholder map tiles from a provider that now needs a key (unused; the map draws OSM street data)
+molu/img/tiles/
