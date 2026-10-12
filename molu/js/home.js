@@ -1,4 +1,4 @@
-// Gate — MoLu logo + the whole Eve/Adam picture; each half of the picture is a door, with a button under it.
+// Gate — logo + the whole Eve/Adam picture; each half of the picture is a door, with a button under it.
 // Flat (2D) motion only, driven by Motion (the Framer Motion engine): the wordmark writes itself in,
 // the headline rises word by word, the picture opens from its centre seam, one shared highlight slides
 // between the doors (layoutId-style), and the chosen half grows into the next screen.
@@ -75,10 +75,12 @@ if (!reduced) {
   const words = $$('.gx-h1 span');
   M.animate($$('.gx-bg i'), { opacity: [0, 0.32] }, { duration: 1.2, ease: 'easeOut' });
   // logo: the mark pops, the wordmarks write themselves in (Latin left→right, Arabic right→left)
-  M.animate($('.logo-mark'), { scale: [0.4, 1], rotate: [-14, 0], opacity: [0, 1] }, spring(320, 15));
-  M.animate($('.logo-latin'), { clipPath: ['inset(-20% 100% -40% 0)', 'inset(-20% 0% -40% 0)'] }, { duration: 0.9, delay: 0.2, ease: EASE });
-  M.animate($('.logo-ar'), { clipPath: ['inset(-30% 0 -50% 100%)', 'inset(-30% 0 -50% 0%)'] }, { duration: 0.8, delay: 0.35, ease: EASE });
-  M.animate($('.logo-sep'), { scaleY: [0, 1] }, { duration: 0.5, delay: 0.3, ease: EASE });
+  if ($('.logo-mark')) {
+    M.animate($('.logo-mark'), { scale: [0.4, 1], rotate: [-14, 0], opacity: [0, 1] }, spring(320, 15));
+    M.animate($('.logo-latin'), { clipPath: ['inset(-20% 100% -40% 0)', 'inset(-20% 0% -40% 0)'] }, { duration: 0.9, delay: 0.2, ease: EASE });
+    M.animate($('.logo-ar'), { clipPath: ['inset(-30% 0 -50% 100%)', 'inset(-30% 0 -50% 0%)'] }, { duration: 0.8, delay: 0.35, ease: EASE });
+    M.animate($('.logo-sep'), { scaleY: [0, 1] }, { duration: 0.5, delay: 0.3, ease: EASE });
+  } else M.animate($('.molu-logo'), { opacity: [0, 1], y: [-10, 0], scale: [0.94, 1] }, { duration: 0.48, ease: EASE });
   M.animate($('.gx-kicker'), { opacity: [0, 1], y: [8, 0] }, { duration: 0.48, delay: 0.3, ease: EASE });
   // headline word by word
   M.animate(words, { opacity: [0, 1], y: [18, 0] }, { ...spring(260, 22), delay: M.stagger(0.06, { startDelay: 0.38 }) });
