@@ -19,36 +19,27 @@
 <div class="gx" id="gate">
   <div class="gx-bg" aria-hidden="true"><i class="eve" style="background-image:url(img/eve-560.webp)"></i><i class="adam" style="background-image:url(img/adam-560.webp)"></i><b></b></div>
 
-  <div class="gx-top">
-    <div class="gx-switch" role="tablist" aria-label="القسم">
-      <span class="gx-thumb" aria-hidden="true"></span>
-      <button type="button" role="tab" data-go="0" aria-selected="true">حواء</button>
-      <button type="button" role="tab" data-go="1" aria-selected="false">آدم</button>
-    </div>
-  </div>
+  <header class="gx-head">
+    <small>اختر القسم</small>
+    <h1>موعدك <em>بدقيقة</em></h1>
+  </header>
 
-  <div class="gx-title" aria-live="polite">
-    <h1 class="t eve"><small>للسيدات</small><b>حواء</b><span>صالونات ومراكز التجميل</span></h1>
-    <h1 class="t adam" aria-hidden="true"><small>للرجال</small><b>آدم</b><span>حلاقون ومراكز العناية</span></h1>
-  </div>
-
-  <div class="gx-stage" id="stage">
-    <button class="gx-card eve" type="button" data-idx="0" aria-label="ادخلي قسم حواء">
-      <img src="img/eve-960.webp" srcset="img/eve-560.webp 560w, img/eve-960.webp 960w" sizes="70vw" width="960" height="1350" alt="" draggable="false">
-      <span class="gx-chip"><i data-i="location_on_f" data-s="16"></i><span data-near="eve"></span></span>
-      <span class="gx-info"><b>حواء</b><span data-from="eve"></span></span>
-      <span class="gx-shade"></span><span class="gx-sheen"></span>
-    </button>
-    <button class="gx-card adam" type="button" data-idx="1" aria-label="ادخل قسم آدم">
-      <img src="img/adam-960.webp" srcset="img/adam-560.webp 560w, img/adam-960.webp 960w" sizes="70vw" width="960" height="1371" alt="" draggable="false">
-      <span class="gx-chip"><i data-i="location_on_f" data-s="16"></i><span data-near="adam"></span></span>
-      <span class="gx-info"><b>آدم</b><span data-from="adam"></span></span>
-      <span class="gx-shade"></span><span class="gx-sheen"></span>
-    </button>
-  </div>
-
-  <div class="gx-dots" aria-hidden="true"><i></i><i></i></div>
-  <button class="gx-cta" type="button" id="enter"><span class="lbl">ادخلي</span><span class="arr"><i data-i="arrow_back" data-s="22"></i></span></button>
+  <main class="gx-doors">
+    <a class="gd eve" href="explore.html?s=eve" data-k="eve" aria-label="ادخلي قسم حواء — صالونات ومراكز التجميل">
+      <span class="gd-img"><img src="img/eve-960.webp" srcset="img/eve-560.webp 560w, img/eve-960.webp 960w" sizes="(min-width: 800px) 45vw, 100vw" width="960" height="1350" alt="" draggable="false"></span>
+      <span class="gd-chip"><i data-i="location_on_f" data-s="16"></i><span data-near="eve"></span></span>
+      <span class="gd-txt"><small>للسيدات</small><b>حواء</b><span data-from="eve">صالونات ومراكز التجميل</span></span>
+      <span class="gd-go"><i data-i="arrow_back" data-s="24"></i></span>
+      <span class="gd-sheen"></span>
+    </a>
+    <a class="gd adam" href="explore.html?s=adam" data-k="adam" aria-label="ادخل قسم آدم — حلاقون ومراكز العناية">
+      <span class="gd-img"><img src="img/adam-960.webp" srcset="img/adam-560.webp 560w, img/adam-960.webp 960w" sizes="(min-width: 800px) 45vw, 100vw" width="960" height="1371" alt="" draggable="false"></span>
+      <span class="gd-chip"><i data-i="location_on_f" data-s="16"></i><span data-near="adam"></span></span>
+      <span class="gd-txt"><small>للرجال</small><b>آدم</b><span data-from="adam">حلاقون ومراكز العناية</span></span>
+      <span class="gd-go"><i data-i="arrow_back" data-s="24"></i></span>
+      <span class="gd-sheen"></span>
+    </a>
+  </main>
 </div>
 <script type="module" src="js/home.js"></script>
 </body>
