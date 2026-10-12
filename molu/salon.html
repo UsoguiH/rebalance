@@ -10,11 +10,13 @@
 <link rel="stylesheet" href="css/springs.css">
 <link rel="stylesheet" href="css/m3.css">
 <link rel="stylesheet" href="css/molu.css">
+<script src="js/vt.js"></script>
+<!-- in <head> and render-blocking: the page is complete in its first frame, so a transition never shows it half-built -->
+<script type="module" src="js/salon.js" blocking="render"></script>
 </head>
 <body class="store">
 <main id="app"></main>
 <div class="cta-bar hide" id="cta"><button type="button" id="cta-btn"><span class="n" id="cta-n">1</span><span class="t">اختر الموعد</span><span class="p" id="cta-p"></span></button></div>
 <div class="sheet" id="book" hidden role="dialog" aria-label="الحجز"><div class="handle"></div><div class="bk" id="bk"></div></div>
-<script type="module" src="js/salon.js"></script>
 </body>
 </html>

@@ -10,9 +10,11 @@
 <link rel="stylesheet" href="css/springs.css">
 <link rel="stylesheet" href="css/m3.css">
 <link rel="stylesheet" href="css/molu.css">
+<script src="js/vt.js"></script>
+<!-- in <head> and render-blocking: the page is complete in its first frame, so a transition never shows it half-built -->
+<script type="module" src="js/account.js" blocking="render"></script>
 </head>
 <body>
 <main class="wrap" id="app"></main>
-<script type="module" src="js/account.js"></script>
 </body>
 </html>

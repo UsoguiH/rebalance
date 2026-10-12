@@ -10,6 +10,9 @@
 <link rel="stylesheet" href="css/springs.css">
 <link rel="stylesheet" href="css/m3.css">
 <link rel="stylesheet" href="css/molu.css">
+<script src="js/vt.js"></script>
+<!-- in <head> and render-blocking: the page is complete in its first frame, so a transition never shows it half-built -->
+<script type="module" src="js/categories.js" blocking="render"></script>
 </head>
 <body>
 <header class="topbar"><div class="wrap">
@@ -17,6 +20,5 @@
   <div id="sec"></div>
 </div></header>
 <main class="wrap"><div class="cat-layout"><nav class="rail" id="rail" role="tablist" aria-orientation="vertical"></nav><div class="panel" id="panel"></div></div></main>
-<script type="module" src="js/categories.js"></script>
 </body>
 </html>

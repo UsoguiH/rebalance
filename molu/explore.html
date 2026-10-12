@@ -10,11 +10,8 @@
 <link rel="stylesheet" href="css/springs.css">
 <link rel="stylesheet" href="css/m3.css">
 <link rel="stylesheet" href="css/molu.css">
-<script>
-// arriving from the start screen: a softer, longer entrance than the usual page-to-page fade
-addEventListener('pagereveal', function (e) { try { if (e.viewTransition && sessionStorage.getItem('molu_gate')) e.viewTransition.types.add('gate'); sessionStorage.removeItem('molu_gate'); } catch (_) {} });
-</script>
-<!-- in <head> so the first frame (and the arrival transition) already shows the feed; modules still run after parsing -->
+<script src="js/vt.js"></script>
+<!-- in <head> and render-blocking: the page is complete in its first frame, so a transition never shows it half-built -->
 <script type="module" src="js/explore.js" blocking="render"></script>
 </head>
 <body>

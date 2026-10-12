@@ -4,15 +4,47 @@
    Motion: محلي's ease-out-quint for UI entrances + our physical springs for touch.
    ===================================================================== */
 @view-transition { navigation: auto; }
-::view-transition-old(root) { animation: .12s ease-out both vt-out; }
-::view-transition-new(root) { animation: .18s var(--ease-out) both vt-in; }
-@keyframes vt-out { to { opacity: 0; } }
-@keyframes vt-in { from { opacity: 0; } }
-/* from the start screen: the poster eases back and fades while the feed rises into place */
+/* page-to-page motion — js/vt.js names the move: tab (between bar pages), push (one level deeper), pop (back up), gate.
+   Everything is opacity/transform on snapshots, so it stays smooth even while the next page settles. */
+:root { --vt-spring: cubic-bezier(.2, .9, .25, 1); }
+::view-transition-old(root) { animation: .18s ease-out both vt-fade-out; }
+::view-transition-new(root) { animation: .32s var(--vt-spring) both vt-soft-in; }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-soft-in { from { opacity: 0; transform: scale(.985); } }
+/* push: the new page rises into place while the one underneath eases back and dims */
+html:active-view-transition-type(push)::view-transition-old(root) { animation: .46s var(--vt-spring) both vt-ease-back; }
+html:active-view-transition-type(push)::view-transition-new(root) { animation: .46s var(--vt-spring) both vt-rise-in; }
+html[data-vt="push"]::view-transition-old(root) { animation: .46s var(--vt-spring) both vt-ease-back; }
+html[data-vt="push"]::view-transition-new(root) { animation: .46s var(--vt-spring) both vt-rise-in; }
+/* pop: the page you leave sinks away on top; the one beneath comes forward */
+html:active-view-transition-type(pop)::view-transition-old(root) { z-index: 1; animation: .34s cubic-bezier(.4, 0, .9, .6) both vt-sink; }
+html:active-view-transition-type(pop)::view-transition-new(root) { animation: .46s var(--vt-spring) both vt-come-forward; }
+html[data-vt="pop"]::view-transition-old(root) { z-index: 1; animation: .34s cubic-bezier(.4, 0, .9, .6) both vt-sink; }
+html[data-vt="pop"]::view-transition-new(root) { animation: .46s var(--vt-spring) both vt-come-forward; }
+@keyframes vt-ease-back { to { transform: scale(.93); opacity: 0; } }
+@keyframes vt-rise-in { from { transform: translateY(9vh); opacity: 0; } 40% { opacity: 1; } }
+@keyframes vt-sink { to { transform: translateY(10vh); opacity: 0; } }
+@keyframes vt-come-forward { from { transform: scale(.94); opacity: 0; } }
+/* the bar stays put between its pages; only the active icon crossfades */
+.navbar { view-transition-name: navbar; }
+::view-transition-group(navbar) { animation-duration: .3s; animation-timing-function: var(--vt-spring); }
+::view-transition-old(navbar) { animation: .2s ease-out both vt-fade-out; }
+::view-transition-new(navbar) { animation: .3s ease-out both vt-plain-in; }
+@keyframes vt-plain-in { from { opacity: 0; } }
+/* the salon picture: the card you tapped grows into the cover (and back); the cover's buttons fade in on their own */
+::view-transition-group(salon-cover) { animation-duration: .5s; animation-timing-function: var(--vt-spring); z-index: 2; }
+::view-transition-old(salon-cover), ::view-transition-new(salon-cover) { height: 100%; object-fit: cover; animation-duration: .5s; animation-timing-function: var(--vt-spring); }
+.cover-bar { view-transition-name: cover-bar; }
+::view-transition-new(cover-bar) { animation: .3s .22s ease-out both vt-plain-in; }
+::view-transition-old(cover-bar) { animation: .12s ease-out both vt-fade-out; }
+/* from the start screen: the poster eases back and fades while the feed rises in */
 html:active-view-transition-type(gate)::view-transition-old(root) { animation: .26s cubic-bezier(.4, 0, 1, 1) both vt-gate-out; }
 html:active-view-transition-type(gate)::view-transition-new(root) { animation: .42s .06s var(--ease-out) both vt-gate-in; }
+html[data-vt="gate"]::view-transition-old(root) { animation: .26s cubic-bezier(.4, 0, 1, 1) both vt-gate-out; }
+html[data-vt="gate"]::view-transition-new(root) { animation: .42s .06s var(--ease-out) both vt-gate-in; }
 @keyframes vt-gate-out { to { opacity: 0; transform: scale(.96); } }
 @keyframes vt-gate-in { from { opacity: 0; transform: translateY(18px); } }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
 
 :root {
   --ease-out: cubic-bezier(.22, 1, .36, 1);
