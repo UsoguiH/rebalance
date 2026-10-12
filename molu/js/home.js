@@ -1,4 +1,4 @@
-// Gate — dark stage, MoLu logo, حواء and آدم as two big cream cards showing each scene in full.
+// Gate — dark stage, logo, حواء and آدم as two big cream cards showing each scene in full.
 // Flat (2D) motion only, driven by Motion (the Framer Motion engine). No side wipes or slide-ins:
 // things rise, scale and un-blur into place; the scene is its own layer; dots drift; the arrow pulses;
 // the chosen card fills the screen while its scene glides to the centre, then the next page takes over.
