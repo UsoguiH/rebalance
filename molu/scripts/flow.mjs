@@ -25,7 +25,10 @@ await step('switch حواء ↔ آدم (fast swap)', async () => {
   await p.click('#sec [data-k="eve"]'); await p.waitForTimeout(450);
   if (!(await p.locator('[data-sc="nails"]').count())) throw new Error('حواء categories not shown');
 });
-await step('map morph', async () => { await p.click('#map-fab'); await p.waitForTimeout(1100); await shot('06-map'); await p.locator('.map-full .pin').nth(2).click(); await p.waitForTimeout(700); await p.click('.map-full .round'); await p.waitForTimeout(800); });
+await step('real map: pins + card', async () => { await p.click('#map-fab'); await p.waitForSelector('.map-full .real-map .sal-pin .sp'); await p.waitForTimeout(900); await shot('06-map');
+  const pin = p.locator('.map-full .sal-pin .sp').nth(2), name = await pin.innerText(); await pin.click(); await p.waitForTimeout(700);
+  if (!(await p.locator('.map-full .map-card b').innerText()).includes(name)) throw new Error('map card did not follow the pin');
+  await p.click('.map-full .round'); await p.waitForTimeout(800); });
 await step('open salon', async () => { await p.locator('.sc-card .img').first().click(); await p.waitForURL(/salon/); await p.waitForTimeout(1200); await shot('07-salon'); });
 await step('pick 2 services', async () => { await p.locator('.pop-card').first().click(); await p.waitForTimeout(500); await p.locator('.menu-sec .svc').nth(2).click(); await p.waitForTimeout(700); await shot('08-picked'); if (await p.locator('#cta.hide').count()) throw new Error('cta hidden'); });
 await step('tabs scroll-spy', async () => { await p.locator('#tabs [data-tab]').nth(2).click(); await p.waitForTimeout(1000); await shot('09-tabs'); });

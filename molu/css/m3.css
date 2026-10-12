@@ -41,6 +41,9 @@
   --md-font: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, sans-serif;
   --md-font-brand: 'Aref Ruqaa', serif;
 }
+/* no tap square (Android/iOS highlight) and no focus ring from taps — keyboard focus still shows */
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+:focus:not(:focus-visible) { outline: none; }
 
 /* ---------- type scale ---------- */
 .display-l { font: 700 clamp(2.6rem, 7vw, 3.6rem)/1.15 var(--md-font); letter-spacing: -.01em; }

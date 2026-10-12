@@ -1,6 +1,7 @@
 import { boot, $, $$, ar, icon, favs, appts, bindFavs, setSection, snackbar, money, verified, catArt } from './shell.js';
 import { SECTIONS, salonById, SALONS, days, slots, fmtTime } from './data.js';
 import { coverArt, mapArt, initials } from './art.js';
+import { realMap, directionsUrl, sourceNote } from './map.js';
 import { openSheet, closeSheet, setLoading, copyText } from './m3.js';
 import { spring, blurIn } from './motion.js';
 
@@ -66,7 +67,8 @@ $('#app').innerHTML = `
     <section class="sec"><div class="sec-h"><h2>عن ${S.place === 'صالون' ? 'الصالون' : 'المكان'}</h2></div>
       <div class="about">
         <div class="mini-map pressable" id="mini-map" role="button" aria-label="افتح الخريطة">${mapArt([salon], { activeId: salon.id, section: salon.section })}</div>
-        <a class="row pressable" href="https://maps.google.com/?q=${encodeURIComponent(salon.district + ' ' + salon.city)}" target="_blank" rel="noopener">${icon('location_on', 24)}<span class="grow"><b>${salon.district}، ${salon.city}</b><span>${ar(salon.km)} كم ${F ? 'منكِ' : 'منك'}</span></span>${icon('chevron_left', 22)}</a>
+        <p class="muted" style="font-size:.78rem;margin:-4px 4px 0">${sourceNote(salon)}</p>
+        <a class="row pressable" href="${directionsUrl(salon)}" target="_blank" rel="noopener">${icon('location_on', 24)}<span class="grow"><b>${salon.street ? salon.street + '، ' : ''}${salon.district}، ${salon.city}</b><span>${ar(salon.km)} كم ${F ? 'منكِ' : 'منك'}</span></span>${icon('chevron_left', 22)}</a>
         <div class="row">${icon('schedule', 24)}<span class="grow"><b>كل يوم 10 ص – 11 م</b><span>الجمعة من 4 م</span></span></div>
         <div class="row">${icon('groups', 24)}<span class="grow"><b>${salon.staff.map((m) => m.name).join('، ')}</b><span>${F ? 'فريق نسائي بالكامل' : 'فريق الحلاقين'}</span></span></div>
         ${salon.amenities.length ? `<div class="row">${icon('check_circle', 24)}<span class="grow"><b>المزايا</b><span>${salon.amenities.join(' · ')}</span></span></div>` : ''}
@@ -128,22 +130,32 @@ $('#share').addEventListener('click', async () => {
   try { if (navigator.share) return await navigator.share({ title: salon.name, url: location.href }); } catch { return; }
   copyText(location.href, 'نسخنا رابط الصالون ✓');
 });
+// mini map → full-screen real map (clip-path spring out of the card); drawn map if the real one can't load
+let miniDone = false;
+const drawMini = () => { if (miniDone) return; miniDone = true; const host = $('#mini-map'); realMap(host, { salons: [salon], activeId: salon.id, interactive: false }).then(() => host.querySelector('.map-art')?.remove()).catch(() => {}); };
+new IntersectionObserver((es, io) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); drawMini(); } }, { rootMargin: '300px' }).observe($('#mini-map'));
 $('#mini-map').addEventListener('click', () => {
   const r = $('#mini-map').getBoundingClientRect();
   const clip = `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px round 20px)`;
   const el = document.createElement('div');
+  let rm;
   el.className = 'map-full';
-  el.innerHTML = `${mapArt(SALONS[salon.section], { activeId: salon.id, section: salon.section, h: Math.round(400 * innerHeight / innerWidth) })}<button class="round pressable" type="button" aria-label="إغلاق">${icon('close', 22)}</button>
+  el.innerHTML = `<div class="map-host"></div><button class="round pressable" type="button" aria-label="إغلاق">${icon('close', 22)}</button>
+    <span class="map-note">${sourceNote(salon)}</span>
     <div class="map-card"><span class="thumb">${coverArt(salon)}</span><span class="grow"><b>${salon.name}</b><br><span class="muted" style="font-size:.86rem">${salon.district} · ${ar(salon.km)} كم</span></span>
-    <a class="pill-dark" href="https://maps.google.com/?q=${encodeURIComponent(salon.district + ' ' + salon.city)}" target="_blank" rel="noopener">${icon('near_me', 18)}الاتجاهات</a></div>`;
+    <a class="pill-dark" href="${directionsUrl(salon)}" target="_blank" rel="noopener">${icon('near_me', 18)}الاتجاهات</a></div>`;
   document.body.append(el);
   document.documentElement.style.overflow = 'hidden';
   spring(el, [{ clipPath: clip }, { clipPath: 'inset(0 round 0px)' }], 'smooth');
   blurIn($('.map-card', el), { y: 30, delay: 0.25 });
+  const others = SALONS[salon.section];
+  realMap($('.map-host', el), { salons: others, activeId: salon.id, padBottom: 110, onPick: (id) => { if (id !== salon.id) location.href = `salon.html?id=${id}`; } })
+    .then((m) => { rm = m; m.map.setView([salon.lat, salon.lng], 15.5, { animate: false }); })
+    .catch(() => { $('.map-host', el).innerHTML = mapArt(others, { activeId: salon.id, section: salon.section, h: Math.round(400 * innerHeight / innerWidth) }); });
   $('.round', el).onclick = () => {
     document.documentElement.style.overflow = '';
     const r2 = $('#mini-map').getBoundingClientRect();
-    spring(el, [{ clipPath: 'inset(0 round 0px)' }, { clipPath: `inset(${r2.top}px ${innerWidth - r2.right}px ${innerHeight - r2.bottom}px ${r2.left}px round 20px)` }], 'snappy').finished.then(() => el.remove());
+    spring(el, [{ clipPath: 'inset(0 round 0px)' }, { clipPath: `inset(${r2.top}px ${innerWidth - r2.right}px ${innerHeight - r2.bottom}px ${r2.left}px round 20px)` }], 'snappy').finished.then(() => { rm?.destroy(); el.remove(); });
   };
 });
 

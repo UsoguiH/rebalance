@@ -4,6 +4,7 @@ import { mapArt, coverArt } from './art.js';
 import { openMenu } from './m3.js';
 import { spring, blurIn } from './motion.js';
 import { shapeBadge } from './shapes.js';
+import { realMap, prefetchMap, sourceNote } from './map.js';
 
 const params = new URLSearchParams(location.search);
 let section = boot({ page: 'home' });
@@ -106,32 +107,34 @@ $('#loc').addEventListener('click', (e) => {
 let lastY = scrollY;
 addEventListener('scroll', () => { const y = scrollY; $('#map-fab').classList.toggle('hide', y > lastY && y > 120); lastY = y; }, { passive: true });
 
-// full-screen map, morphing out of the pill (clip-path spring)
+// full-screen map, morphing out of the pill (clip-path spring). Real streets (OpenStreetMap) with the salons as name pills;
+// the drawn map stands in if the map can't load.
+prefetchMap();
 $('#map-fab').addEventListener('click', () => {
   const fab = $('#map-fab').getBoundingClientRect();
   const list = SALONS[section].filter(matches);
-  let active = list[0]?.id;
+  let active = list[0]?.id, rm;
   const el = document.createElement('div');
   el.className = 'map-full';
-  const paint = () => {
+  el.innerHTML = `<div class="map-host"></div><button class="round pressable" type="button" aria-label="إغلاق">${icon('close', 22)}</button><div class="card-slot"></div>`;
+  const card = () => {
     const s = list.find((x) => x.id === active);
-    el.innerHTML = `${mapArt(list, { activeId: active, section, h: Math.round(400 * innerHeight / innerWidth) })}
-      <button class="round pressable" type="button" aria-label="إغلاق">${icon('close', 22)}</button>
-      ${s ? `<a class="map-card pressable" href="salon.html?id=${s.id}"><span class="thumb">${coverArt(s)}</span><span class="grow"><b>${s.name}</b><br><span class="muted" style="font-size:.86rem">${ar(s.km)} كم · من ${money(s.from)}</span></span><span class="pill-dark">${SECTIONS[section].book}</span></a>` : ''}`;
-    $('.round', el).onclick = close;
+    $('.card-slot', el).innerHTML = s ? `<span class="map-note">${sourceNote(s)}</span><a class="map-card pressable" href="salon.html?id=${s.id}"><span class="thumb">${coverArt(s)}</span><span class="grow"><b>${s.name}</b><br><span class="muted" style="font-size:.86rem">${s.district} · ${ar(s.km)} كم · من ${money(s.from)}</span></span><span class="pill-dark">${SECTIONS[section].book}</span></a>` : '';
   };
+  const pick = (id) => { active = id; card(); spring($('.map-card', el), [{ transform: 'translateY(24px)', opacity: 0 }, { transform: 'none', opacity: 1 }], 'bouncy'); };
   const close = () => {
     document.documentElement.style.overflow = '';
-    spring(el, [{ clipPath: 'inset(0 round 0px)' }, { clipPath: `inset(${fab.top}px ${innerWidth - fab.right}px ${innerHeight - fab.bottom}px ${fab.left}px round 23px)` }], 'snappy').finished.then(() => el.remove());
+    spring(el, [{ clipPath: 'inset(0 round 0px)' }, { clipPath: `inset(${fab.top}px ${innerWidth - fab.right}px ${innerHeight - fab.bottom}px ${fab.left}px round 23px)` }], 'snappy').finished.then(() => { rm?.destroy(); el.remove(); });
   };
-  paint();
-  el.addEventListener('click', (e) => {
-    const pin = e.target.closest('.pin'); if (!pin) return;
-    active = pin.dataset.id; paint();
-    spring($('.map-card', el), [{ transform: 'translateY(24px)', opacity: 0 }, { transform: 'none', opacity: 1 }], 'bouncy');
-  });
+  $('.round', el).onclick = close;
+  card();
   document.body.append(el);
   document.documentElement.style.overflow = 'hidden';
   spring(el, [{ clipPath: `inset(${fab.top}px ${innerWidth - fab.right}px ${innerHeight - fab.bottom}px ${fab.left}px round 23px)` }, { clipPath: 'inset(0 round 0px)' }], 'smooth');
-  $$('.pin', el).forEach((p, i) => p.animate([{ opacity: 0, translate: '0 -16px' }, { opacity: 1, translate: '0 0' }], { duration: 400, delay: 250 + i * 40, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' }));
+  realMap($('.map-host', el), { salons: list, activeId: active, onPick: pick, padBottom: 110 }).then((m) => { rm = m; }).catch(() => {
+    // offline fallback: the drawn map
+    const host = $('.map-host', el);
+    host.innerHTML = mapArt(list, { activeId: active, section, h: Math.round(400 * innerHeight / innerWidth) });
+    host.addEventListener('click', (e) => { const pin = e.target.closest('.pin'); if (!pin) return; $$('.pin', host).forEach((p) => p.classList.toggle('on', p === pin)); pick(pin.dataset.id); });
+  });
 });

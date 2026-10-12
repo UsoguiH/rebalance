@@ -1,5 +1,5 @@
 // App shell: section (حواء / آدم), محلي floating nav, device stores, shared renderers.
-import { SECTIONS, money } from './data.js';
+import { SECTIONS, money, salonById } from './data.js';
 import { icon } from './icons.js';
 import { coverArt } from './art.js';
 import { $, $$, ar, initCommon, snackbar } from './m3.js';
@@ -35,9 +35,11 @@ export const favs = {
 
 const apptStore = store('molu_appts', []);
 export const isUpcoming = (a) => a.status === 'booked' && new Date(a.at) > Date.now() - 36e5;
+// bookings whose salon no longer exists in the demo data are skipped
+const known = () => apptStore.get().filter((a) => salonById(a.salonId));
 export const appts = {
-  list: () => apptStore.get(),
-  upcoming: () => apptStore.get().filter(isUpcoming).sort((a, b) => new Date(a.at) - new Date(b.at)),
+  list: known,
+  upcoming: () => known().filter(isUpcoming).sort((a, b) => new Date(a.at) - new Date(b.at)),
   add(a) { const l = apptStore.get(); l.unshift(a); apptStore.set(l); },
   update(id, patch) { apptStore.set(apptStore.get().map((a) => (a.id === id ? { ...a, ...patch } : a))); },
 };

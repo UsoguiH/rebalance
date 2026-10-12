@@ -213,7 +213,8 @@ img { display: block; max-width: 100%; }
 .map-fab svg { width: 20px; height: 20px; }
 .map-fab.hide { transform: translateY(140px); opacity: 0; }
 .map-full { position: fixed; inset: 0; z-index: 130; background: #ECE9E2; }
-.map-full .map-art { width: 100%; height: 100%; }
+.map-full .map-art, .map-full .map-host { width: 100%; height: 100%; }
+.map-full .round, .map-full .map-card { z-index: 600; }
 .map-full .round { position: absolute; top: max(16px, env(safe-area-inset-top)); inset-inline-start: 16px; }
 .map-full .pin { cursor: pointer; }
 .map-full .pin.on path { fill: #1A1A1A; }
@@ -297,7 +298,31 @@ body.store { padding-bottom: 130px; }
 .about .row > svg { color: var(--md-on-surface-variant); flex: none; }
 .about .row b { display: block; font: 600 .92rem var(--md-font); }
 .about .row span { font-size: .82rem; color: var(--md-on-surface-variant); }
-.mini-map { height: 150px; border-radius: 20px; overflow: hidden; cursor: pointer; }
+/* real map (js/map.js): OpenStreetMap streets on a warm ground; name pills for salons; you = blue dot */
+.real-map, .leaflet-container.real-map { background: #F1EEE6; font-family: var(--md-font); }
+.real-map .leaflet-control-attribution { margin: 0 8px 6px 0; padding: 1px 8px; border-radius: 10px; background: rgba(255, 255, 255, .8); font: 500 10px/1.6 var(--md-font); color: #6b6b6b; }
+.real-map .leaflet-control-attribution a { color: inherit; }
+.map-full .real-map .leaflet-bottom { bottom: auto; top: max(18px, env(safe-area-inset-top)); }
+.road-label span { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; font: 600 11px var(--md-font); color: #8A8578; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff; opacity: 0; transition: opacity .25s; pointer-events: none; }
+.real-map.z-near .road-label span { opacity: 1; }
+.me-dot i { position: absolute; inset: 4px; border-radius: 50%; background: #2F7BF6; box-shadow: 0 0 0 3px #fff, 0 2px 8px rgba(0, 0, 0, .3); }
+.me-dot::before { content: ''; position: absolute; inset: -14px; border-radius: 50%; background: rgba(47, 123, 246, .16); animation: me-pulse 2.4s ease-out infinite; }
+@keyframes me-pulse { from { transform: scale(.4); opacity: 1; } to { transform: scale(1); opacity: 0; } }
+.sal-pin { cursor: pointer; }
+.sal-pin .sp { position: absolute; left: 0; bottom: 0; transform: translate(-50%, calc(-6px - var(--dy, 0px))); display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 8px; border-radius: 16px; background: #fff; color: #1A1A1A;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .35), 0 0 0 1px rgba(0, 0, 0, .04); white-space: nowrap; font: 700 12.5px var(--md-font); transition: transform .3s var(--ease-out), background-color .2s, color .2s;
+  animation: pin-in .45s calc(.15s + var(--i) * .05s) var(--ease-out) backwards; }
+.sal-pin .sp::before { content: ''; position: absolute; left: 50%; top: 100%; width: 2px; height: var(--dy, 0px); background: #1A1A1A; opacity: .35; transform: translateX(-50%); }
+.sal-pin .sp::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; background: inherit; transform: translateX(-50%) rotate(45deg); border-radius: 0 0 3px 0; }
+.sal-pin .sp i { width: 12px; height: 12px; margin-inline-start: 4px; border-radius: 50%; background: var(--md-primary); box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 10%, transparent); flex: none; }
+body[data-section="eve"] .sal-pin .sp i { background-color: var(--eve); } body[data-section="adam"] .sal-pin .sp i { background-color: var(--adam); }
+.sal-pin.on .sp { background: #1A1A1A; color: #fff; transform: translate(-50%, calc(-6px - var(--dy, 0px))) scale(1.12); }
+.sal-pin.on .sp i { background-color: #fff; }
+@keyframes pin-in { from { opacity: 0; translate: 0 -12px; } }
+.mini-map.real-map .sal-pin .sp { animation: none; }
+.map-note { position: absolute; inset-inline-start: 12px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 104px); padding: 3px 10px; border-radius: 10px; background: rgba(255, 255, 255, .86); font: 600 11px var(--md-font); color: #6b6b6b; z-index: 500; }
+.mini-map { position: relative; height: 150px; border-radius: 20px; overflow: hidden; cursor: pointer; isolation: isolate; }
+.mini-map.real-map .leaflet-container, .mini-map .leaflet-pane { pointer-events: none; }
 .mini-map svg { width: 100%; height: 100%; display: block; }
 .review { width: 260px; padding: 14px; border-radius: 20px; background: #fff; box-shadow: var(--md-elev-1); }
 .review header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font: 700 .9rem var(--md-font); }

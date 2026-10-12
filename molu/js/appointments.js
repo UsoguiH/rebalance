@@ -1,4 +1,5 @@
 import { boot, $, $$, ar, icon, appts, isUpcoming, snackbar, money, seedDemo, catArt } from './shell.js';
+import { directionsUrl } from './map.js';
 import { salonById, SALONS, CATEGORIES, SECTIONS, fmtTime } from './data.js';
 import { initials } from './art.js';
 import { openSheet, closeSheet } from './m3.js';
@@ -59,7 +60,7 @@ $('#tabs').addEventListener('click', (e) => {
 function ics(a, s) {
   const d = new Date(a.at), e = new Date(+d + a.minutes * 6e4);
   const f = (x) => x.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-  const body = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//MoLu//AR\nBEGIN:VEVENT\nUID:${a.id}@molu\nDTSTAMP:${f(new Date())}\nDTSTART:${f(d)}\nDTEND:${f(e)}\nSUMMARY:${s.name} — ${a.services.join('، ')}\nLOCATION:${s.district}، ${s.city}\nBEGIN:VALARM\nTRIGGER:-PT2H\nACTION:DISPLAY\nDESCRIPTION:تذكير بموعدك\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
+  const body = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//MoLu//AR\nBEGIN:VEVENT\nUID:${a.id}@molu\nDTSTAMP:${f(new Date())}\nDTSTART:${f(d)}\nDTEND:${f(e)}\nSUMMARY:${s.name} — ${a.services.join('، ')}\nLOCATION:${s.street ? s.street + '، ' : ''}${s.district}، ${s.city}\nGEO:${s.lat};${s.lng}\nBEGIN:VALARM\nTRIGGER:-PT2H\nACTION:DISPLAY\nDESCRIPTION:تذكير بموعدك\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
   const url = URL.createObjectURL(new Blob([body], { type: 'text/calendar' }));
   Object.assign(document.createElement('a'), { href: url, download: 'molu-appointment.ics' }).click();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
@@ -92,7 +93,7 @@ document.addEventListener('click', (e) => {
     <div class="sheet-list">
       <a href="salon.html?id=${s.id}&reschedule=${a.id}">${icon('edit_calendar', 24)}تغيير الموعد</a>
       <button type="button" id="m-cal">${icon('event_available', 24)}أضف للتقويم</button>
-      <a href="https://maps.google.com/?q=${encodeURIComponent(s.district + ' ' + s.city)}" target="_blank" rel="noopener">${icon('near_me', 24)}الاتجاهات</a>
+      <a href="${directionsUrl(s)}" target="_blank" rel="noopener">${icon('near_me', 24)}الاتجاهات</a>
       <a href="tel:+966500000000">${icon('call', 24)}اتصل بالصالون</a>
       <button type="button" class="danger" id="m-cancel">${icon('cancel', 24)}<span>إلغاء الموعد</span></button>
     </div>`;

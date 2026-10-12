@@ -45,9 +45,21 @@ export const AMENITIES = {
 
 const NAMES = {
   eve: ['صالون لمسة', 'سبا الياسمين', 'استوديو ريم', 'صالون ورد', 'لؤلؤة للأظافر', 'بيوتي لاونج', 'صالون نوال', 'مركز الأميرة'],
-  adam: ['حلاق الأصيل', 'صالون الفرسان', 'بارب هاوس', 'الرجل الأنيق', 'حلاق النخبة', 'ستايل كات', 'صالون البحر', 'مركز الوسيم'],
 };
-const DISTRICTS = ['حي الملقا', 'حي الروابي', 'حي النرجس', 'حي العليا', 'حي الياسمين', 'حي السليمانية', 'حي الصحافة', 'حي قرطبة'];
+// آدم: five real barbershops in north Riyadh — names, districts and coordinates from OpenStreetMap (© OSM contributors, ODbL).
+// Their services, prices, ratings and reviews are demo content.
+export const REAL_BARBERS = [
+  { name: 'كويك كتس', en: 'Quick Cuts', district: 'حي الصحافة', street: 'طريق الثمامة', lat: 24.79323, lng: 46.64915, osm: 7801373209 },
+  { name: 'توب مان', en: 'Top Man', district: 'حي الربيع', street: 'شارع أبي بن معاذ الأنصاري', lat: 24.79163, lng: 46.65178, osm: 10709780206 },
+  { name: 'صالون الشنب الأسود', en: 'Black Mustache Barbershop', district: 'حي الياسمين', street: 'شارع الخيالة', lat: 24.82939, lng: 46.64608, osm: 11365657906 },
+  { name: 'حلاق لمسة القمة', en: '', district: 'حي العقيق', street: 'شارع ابن عيدان', lat: 24.78311, lng: 46.61817, osm: 12590095401 },
+  { name: 'يوسف أفندي', en: 'Yousef Afandi', district: 'حي حطين', street: 'شارع ربعي الذهلي', lat: 24.75333, lng: 46.60962, osm: 14222316678 },
+];
+// demo salons sit in real districts around the user (district centres checked against OpenStreetMap)
+const DISTRICTS = [['حي الملقا', 24.805, 46.612], ['حي الصحافة', 24.800, 46.640], ['حي الياسمين', 24.826, 46.650], ['حي العقيق', 24.776, 46.626], ['حي حطين', 24.760, 46.606], ['حي الربيع', 24.797, 46.662], ['حي النخيل', 24.745, 46.640], ['حي الملقا', 24.812, 46.620]];
+// where the demo user is: حي الصحافة, الرياض
+export const ME = { lat: 24.790, lng: 46.635, label: 'الرياض - الصحافة' };
+const kmFrom = (lat, lng) => { const R = 6371, r = Math.PI / 180, a = Math.sin((lat - ME.lat) * r / 2) ** 2 + Math.cos(ME.lat * r) * Math.cos(lat * r) * Math.sin((lng - ME.lng) * r / 2) ** 2; return +(2 * R * Math.asin(Math.sqrt(a))).toFixed(1); };
 const STAFF = {
   eve: ['نورة', 'ريم', 'سارة', 'لمى', 'هيا', 'جود', 'دانة', 'أمل'],
   adam: ['أبو فهد', 'سامي', 'محمد', 'خالد', 'ياسر', 'عمر', 'فيصل', 'بدر'],
@@ -61,20 +73,25 @@ function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 10139
 
 function makeSalons(section) {
   const r = rng(section === 'eve' ? 7 : 11);
-  return NAMES[section].map((name, i) => {
+  const list = section === 'adam' ? REAL_BARBERS : NAMES.eve.map((name, i) => {
+    const [district, lat, lng] = DISTRICTS[i % DISTRICTS.length];
+    return { name, district, lat: +(lat + (r() - 0.5) * 0.006).toFixed(5), lng: +(lng + (r() - 0.5) * 0.006).toFixed(5) };
+  });
+  return list.map((place, i) => {
+    const { name } = place;
     const cats = CATEGORIES[section].filter((_, k) => k === 0 || r() > 0.4);
     const services = cats.map((c) => ({ ...c, services: c.services.filter((_, k) => k === 0 || r() > 0.25).map(([n, m, p]) => ({ name: n, minutes: m, price: Math.round((p * (0.85 + r() * 0.35)) / 5) * 5 })) }));
     const amen = AMENITIES[section].filter(() => r() > 0.45);
     const minPrice = Math.min(...services.flatMap((c) => c.services.map((s) => s.price)));
     return {
       id: `${section}-${i + 1}`, section, name,
-      district: DISTRICTS[i % DISTRICTS.length], city: 'الرياض',
+      district: place.district, street: place.street || '', city: 'الرياض', lat: place.lat, lng: place.lng, osm: place.osm || 0, real: !!place.osm,
       rating: +(4.2 + r() * 0.8).toFixed(1), reviews: 40 + Math.floor(r() * 460),
-      km: +(0.6 + r() * 7.5).toFixed(1), open: r() > 0.2, offer: r() > 0.62 ? `خصم ${[10, 15, 20][Math.floor(r() * 3)]}٪` : '',
-      home: r() > 0.7, verified: r() > 0.3,
+      km: kmFrom(place.lat, place.lng), open: r() > 0.2, offer: r() > 0.62 ? `خصم ${[10, 15, 20][Math.floor(r() * 3)]}٪` : '',
+      home: r() > 0.7, verified: !place.osm && r() > 0.3,
       categories: services, amenities: amen, from: minPrice,
       staff: STAFF[section].slice(0, 2 + Math.floor(r() * 3)).map((n) => ({ name: n, rating: +(4.5 + r() * 0.5).toFixed(1) })),
-      art: Math.floor(r() * 1e6), x: 0.12 + r() * 0.76, y: 0.15 + r() * 0.7,
+      art: Math.floor(r() * 1e6), x: 0.12 + r() * 0.76, y: 0.15 + r() * 0.7, // x/y: offline fallback map
       nextSlots: ['اليوم 7:30 م', 'اليوم 9:00 م', 'غداً 4:15 م', 'غداً 6:00 م'].filter(() => r() > 0.35).slice(0, 2),
       reviewList: REVIEWS[section],
     };

@@ -5,6 +5,9 @@
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s; }
 :root { --ease: cubic-bezier(.22, 1, .36, 1); --paper: #F9F6E2; --eve: #A3355A; --adam: #24475F; }
+/* no tap square (Android/iOS highlight) and no focus ring from taps — keyboard focus still shows */
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+:focus:not(:focus-visible) { outline: none; }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--paper); }
 body { color: #2D2D2D; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
