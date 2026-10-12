@@ -35,7 +35,7 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 .name small { font: 700 .82rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; }
 
 /* the whole illustration, no frame, nothing cropped */
-.pic { position: relative; width: 100%; aspect-ratio: 1312 / 1199; }
+.pic { position: relative; width: 100%; aspect-ratio: 1312 / 1199; container-type: inline-size; }
 .pic img { display: block; width: 100%; height: 100%; animation: develop .9s .1s var(--ease) both; }
 .side { position: absolute; top: 0; bottom: 0; width: 50%; }
 .side.eve { left: 0; } .side.adam { right: 0; }
@@ -58,9 +58,55 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 .go:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
 .line { margin: 8px 0 0; text-align: center; font: 600 .86rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; animation: fade .5s .5s var(--ease) both; }
 
+/* press a side → its own little 2D scene plays over the picture (coordinates are image percentages, so it stays aligned):
+   حواء: the lamp switches on, warm air streams from the dryer, hearts float up, sparkles twinkle in her hair.
+   آدم: the lamp switches on, the barber pole spins, the scissors snip, cut hair falls, a shine on the fresh cut. */
+.fx { position: absolute; inset: 0; pointer-events: none; }
+.fx-eve, .fx-adam { position: absolute; inset: 0; opacity: 0; transition: opacity .2s; }
+.poster[data-hot="eve"] .fx-eve, .poster[data-hot="adam"] .fx-adam { opacity: 1; }
+.fx i, .fx .pole-box, .fx .air, .fx .snip { position: absolute; left: var(--x); top: var(--y); display: block; }
+.fx svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.fx .glow { width: var(--w); height: var(--h); background: radial-gradient(ellipse 70% 100% at 50% 0, rgba(255, 246, 214, .95), rgba(255, 240, 200, .35) 45%, rgba(255, 240, 200, 0) 80%); clip-path: polygon(32% 0, 68% 0, 100% 100%, 0 100%); opacity: 0; mix-blend-mode: screen; }
+.fx .air { left: 13.2%; top: 33.2%; width: 10.4%; height: auto; aspect-ratio: 100 / 70; }
+.fx .air path { fill: none; stroke: #fff; stroke-width: 4.2; filter: drop-shadow(0 0 1.5px rgba(200, 60, 100, .5)); stroke-linecap: round; stroke-dasharray: 24 76; stroke-dashoffset: 100; opacity: .95; }
+.fx .hrt { width: 3.4cqw; fill: #E2557B; opacity: 0; }
+.fx .hrt:nth-of-type(2n) { fill: #F48FAA; }
+.fx .spk { width: 3.8cqw; fill: #fff; opacity: 0; filter: drop-shadow(0 0 .6cqw rgba(226, 85, 123, .7)); }
+.fx .spk.w { filter: drop-shadow(0 0 .6cqw rgba(255, 220, 140, .9)); }
+.fx .pole-box { left: 91.39%; top: 26.52%; width: 3.66%; height: 14.18%; }
+.fx .snip { width: 4.6cqw; height: 4.6cqw; translate: -50% -50%; }
+.fx .snip i { left: 50%; top: 50%; width: 100%; height: .55cqw; border-radius: 1cqw; background: #1A1A1A; transform-origin: 0 50%; opacity: 0; }
+.fx .snip i:nth-child(1) { rotate: 160deg; } .fx .snip i:nth-child(2) { rotate: 200deg; } .fx .snip i:nth-child(3) { rotate: 240deg; }
+.fx .cut { width: 1.9cqw; height: .5cqw; border-radius: .3cqw; background: #3A2A22; box-shadow: 0 0 0 .12cqw rgba(255, 255, 255, .5); rotate: var(--r); opacity: 0; }
+
+.poster[data-hot="eve"] .fx-eve .glow, .poster[data-hot="adam"] .fx-adam .glow { animation: lamp-on .7s ease-out forwards; }
+.poster[data-hot="eve"] .fx .air path { animation: blow .75s linear infinite; }
+.poster[data-hot="eve"] .fx .air path:nth-child(2) { animation-delay: .25s; }
+.poster[data-hot="eve"] .fx .air path:nth-child(3) { animation-delay: .5s; }
+.poster[data-hot="eve"] .fx .air path:nth-child(4) { animation-delay: .12s; } .poster[data-hot="eve"] .fx .air path:nth-child(5) { animation-delay: .38s; }
+.poster[data-hot="eve"] .fx .hrt { animation: float-up 1.5s var(--d) ease-out infinite; }
+.poster[data-hot="eve"] .fx-eve .spk, .poster[data-hot="adam"] .fx-adam .spk { animation: twinkle 1.2s var(--d) ease-in-out infinite; }
+.poster[data-hot="adam"] .fx .spin { animation: pole-spin .8s linear infinite; }
+.poster[data-hot="adam"] .fx .snip i { animation: snip .5s ease-out infinite; }
+.poster[data-hot="adam"] .fx .snip i:nth-child(2) { animation-delay: .04s; } .poster[data-hot="adam"] .fx .snip i:nth-child(3) { animation-delay: .08s; }
+.poster[data-hot="adam"] .fx .cut { animation: fall 1.3s var(--d) cubic-bezier(.4, 0, .7, 1) infinite; }
+/* the chosen name gives a little bounce */
+.poster[data-hot="eve"] .name.eve b, .poster[data-hot="adam"] .name.adam b { animation: name-pop .7s var(--ease); }
+.name b { display: inline-block; }
+.poster[data-go] .go[data-k] svg { animation: nudge .5s ease-in-out infinite alternate; }
+
+@keyframes lamp-on { 0% { opacity: 0; } 18% { opacity: .9; } 28% { opacity: .25; } 42% { opacity: 1; } 100% { opacity: .85; } }
+@keyframes blow { to { stroke-dashoffset: 0; } }
+@keyframes float-up { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 20% { opacity: 1; transform: translate(-.6cqw, -2cqw) scale(var(--s)); } 60% { transform: translate(.8cqw, -6cqw) scale(var(--s)); } 100% { opacity: 0; transform: translate(-.4cqw, -10cqw) scale(calc(var(--s) * .8)); } }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(0) rotate(0); } 45% { opacity: 1; transform: scale(var(--s)) rotate(90deg); } 70% { opacity: .9; transform: scale(calc(var(--s) * .7)) rotate(130deg); } }
+@keyframes pole-spin { to { transform: translateY(-110px); } }
+@keyframes snip { 0% { opacity: 0; scale: .2 1; translate: 0 0; } 30% { opacity: 1; } 100% { opacity: 0; scale: 1 1; translate: 0 0; } }
+@keyframes fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-1.2cqw, 6cqw) rotate(220deg); } }
+@keyframes name-pop { 0% { transform: none; } 30% { transform: scale(1.12) rotate(-3deg); } 60% { transform: scale(.97) rotate(1deg); } 100% { transform: none; } }
+@keyframes nudge { to { transform: translateX(-5px); } }
 @keyframes develop { from { opacity: 0; filter: blur(12px); transform: scale(.97); } }
 @keyframes drop { from { opacity: 0; transform: translateY(-12px); } }
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes fade { from { opacity: 0; } }
 .ms { display: block; flex: none; }
-@media (prefers-reduced-motion: reduce) { .top, .name, .pic img, .go, .line { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .top, .name, .pic img, .go, .line { animation: none; } .fx { display: none; } }
