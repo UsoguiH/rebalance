@@ -22,7 +22,7 @@ $('#app').innerHTML = `
     <h1 style="margin-top:14px">صالونك مليان، <em>وجوالك هادي</em></h1>
     <p>عملاؤك يحجزون بأنفسهم في أي وقت، ومولو يذكّرهم قبل الموعد. <b>بدون عمولة على أي حجز.</b></p>
     <div class="btns">
-      <a class="btn btn-filled btn-lg pressable" href="account.html#owner" id="start">ابدأ مجاناً</a>
+      <a class="btn btn-filled btn-lg pressable" href="join.html" id="start">ابدأ مجاناً</a>
       <a class="btn btn-outlined btn-lg pressable" href="#pricing">الأسعار</a>
     </div>
   </section>
@@ -46,16 +46,16 @@ $('#app').innerHTML = `
       <label><input type="radio" name="bill" value="month" checked><span>شهري</span></label>
       <label><input type="radio" name="bill" value="year"><span>سنوي <i class="save">شهرين مجاناً</i></span></label>
     </div>
-    <div class="plans">${PLANS.map((p) => `
+    <div class="plans">${PLANS.filter((p) => !p.solo).map((p) => `
       <article class="plan${p.popular ? ' popular' : ''}" data-reveal>
         ${p.popular ? '<span class="pop">الأكثر اختياراً</span>' : ''}
         <h3>${p.name}</h3>
         <div class="price"><span class="num" data-m="${p.month}" data-y="${p.year}">${p.month ? n(p.month) : 'مجاناً'}</span>${p.month ? '<small class="per">ر.س / شهرياً</small>' : ''}</div>
         <p class="note">${p.note || ''}</p>
-        <a class="btn ${p.popular ? 'btn-filled' : 'btn-tonal'} btn-block pressable" href="account.html#owner">${p.month ? 'جرّبها 14 يوم' : 'ابدأ مجاناً'}</a>
+        <a class="btn ${p.popular ? 'btn-filled' : 'btn-tonal'} btn-block pressable" href="join.html">${p.month ? 'جرّبها 14 يوم' : 'ابدأ مجاناً'}</a>
         <ul class="feats">${p.feats.map((f) => `<li>${icon('check_circle_f', 20)}${f}</li>`).join('')}</ul>
       </article>`).join('')}</div>
-    <div class="value" style="margin-top:12px;align-items:center" data-reveal><span class="ic">${icon('person', 24)}</span><div class="grow"><b id="fl-t"></b><p>كل مزايا الاحترافية لشخص واحد، بـ <b>99 ر.س</b> شهرياً.</p></div><a class="btn btn-black btn-sm pressable" href="account.html#owner">ابدأ</a></div>
+    <div class="value" style="margin-top:12px;align-items:center" data-reveal><span class="ic">${icon('person', 24)}</span><div class="grow"><b id="fl-t"></b><p>كل مزايا الاحترافية لشخص واحد، بـ <b>99 ر.س</b> شهرياً.</p></div><a class="btn btn-black btn-sm pressable" href="join.html">ابدأ</a></div>
   </section>
 
   <section class="block"><div class="block-h"><h2>كم توفّر بدون عمولة؟</h2></div>
@@ -71,7 +71,7 @@ $('#app').innerHTML = `
   <section class="block" style="text-align:center" data-reveal>
     <h2 class="headline-s">جاهز تملأ جدولك؟</h2>
     <p class="on-variant" style="margin:6px 0 14px">بدون بطاقة، وتقدر تلغي متى ما تبي.</p>
-    <a class="btn btn-filled btn-lg pressable" href="account.html#owner">ابدأ مجاناً الحين</a>
+    <a class="btn btn-filled btn-lg pressable" href="join.html">ابدأ مجاناً الحين</a>
   </section>`;
 
 initSegmented($('#app')); initSliders($('#app'));

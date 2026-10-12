@@ -1,10 +1,11 @@
 import { boot, $, $$, ar, icon, getSection, setSection, favs, appts, snackbar, userStore, faceImg } from './shell.js';
-import { SECTIONS } from './data.js';
+import { SECTIONS, salonById } from './data.js';
 import { setLoading } from './m3.js';
 import { spring, blurIn } from './motion.js';
 
 let section = boot({ page: 'account' });
 const owner = location.hash === '#owner';
+if (owner) location.replace('join.html'); // salons and barbers sign up in their own flow
 const F = () => section === 'eve';
 const fmtPhone = (p) => `+966 ${p.replace(/(\d{2})(\d{3})(\d{4})/, '$1 $2 $3')}`;
 const shake = (el) => spring(el, [{ transform: 'translateX(0)' }, { transform: 'translateX(-8px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], 'bouncy');
@@ -85,7 +86,7 @@ function stepName() {
 
 // signed in
 function profile(fresh = false) {
-  const u = userStore.get();
+  const u = userStore.get(), mine = salonById('mine');
   const up = appts.upcoming().length, fv = favs.list().length;
   $('#app').innerHTML = `
     <header class="page-h"><h1>حسابي</h1></header>
@@ -98,7 +99,7 @@ function profile(fresh = false) {
     <div class="list-card">
       <button type="button" id="notif"><span class="ic">${icon('notifications', 22)}</span>التذكيرات<span class="end">قبل الموعد بساعتين${icon('chevron_left', 20)}</span></button>
       <button type="button" id="lang"><span class="ic">${icon('language', 22)}</span>اللغة<span class="end">العربية${icon('chevron_left', 20)}</span></button>
-      <a href="business.html"><span class="ic">${icon('storefront', 22)}</span>لأصحاب الصالونات<span class="end">${icon('chevron_left', 20)}</span></a>
+      ${mine ? `<a href="salon.html?id=mine"><span class="ic">${icon('storefront', 22)}</span>${mine.name}<span class="end">صفحتي${icon('chevron_left', 20)}</span></a>` : `<a href="join.html"><span class="ic">${icon('storefront', 22)}</span>سجّل صالونك<span class="end">مجاناً${icon('chevron_left', 20)}</span></a>`}
       <button type="button" id="out"><span class="ic" style="color:#D93025">${icon('logout', 22)}</span>تسجيل الخروج</button>
     </div>`;
   $('.acc-card .face').style.cssText = 'width:64px;height:64px';

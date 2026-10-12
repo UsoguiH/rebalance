@@ -41,10 +41,29 @@ await step('choose time + confirm', async () => {
 });
 await step('appointments', async () => { await p.click('.done a[href="appointments.html"]'); await p.waitForURL(/appointments/); await p.waitForTimeout(1000); await shot('13-appts'); if ((await p.locator('.order').count()) < 1) throw new Error('no orders'); });
 await step('manage sheet', async () => { await p.locator('[data-manage]').first().click(); await p.waitForTimeout(800); await shot('14-manage'); await p.mouse.click(195, 80); await p.waitForTimeout(700); });
-await step('categories rail', async () => { await p.click('.nav-item[href="categories.html"]'); await p.waitForURL(/categories/); await p.waitForTimeout(900); await p.locator('#rail [data-rail]').nth(1).click(); await p.waitForTimeout(900); await shot('15-categories'); });
+await step('categories rail', async () => { await p.goto(B + 'categories.html'); await p.waitForTimeout(900); await p.locator('#rail [data-rail]').nth(1).click(); await p.waitForTimeout(900); await shot('15-categories'); });
 await step('account sign-in', async () => {
   await p.goto(B + 'account.html'); await p.waitForTimeout(700); await p.fill('#phone', '551234567'); await p.click('#next'); await p.waitForTimeout(1200);
   for (const d of '1234') await p.keyboard.type(d); await p.waitForTimeout(1100); await p.fill('#name', 'نورة'); await p.click('#finish'); await p.waitForTimeout(900); await shot('16-account');
+});
+await step('bottom bar: home · favourites · account + appointments', async () => {
+  const hrefs = await p.$$eval('.navbar .nav-item', (l) => l.map((a) => a.getAttribute('href')));
+  if (hrefs.join() !== 'explore.html,favorites.html,account.html,appointments.html') throw new Error('nav: ' + hrefs.join());
+});
+await step('salon sign-up (join): 7 steps → page + map', async () => {
+  await p.goto(B + 'join.html'); await p.waitForTimeout(600);
+  await p.click('[data-pick="section"][data-v="eve"]'); await p.waitForTimeout(500);
+  await p.click('[data-pick="kind"][data-v="home"]'); await p.waitForTimeout(500);
+  await p.fill('#name', 'صالون جود'); await p.click('#next'); await p.waitForTimeout(500);
+  await p.click('[data-area="حي الملقا"]'); await p.click('[data-area="حي حطين"]'); await p.click('#next'); await p.waitForTimeout(500);
+  await p.click('[data-cat="hair"]'); await p.click('#next'); await p.waitForTimeout(500);
+  await p.click('[data-pick="hours"][data-v="evening"]'); await p.click('#next'); await p.waitForTimeout(500);
+  await p.fill('#owner', 'جود'); await p.fill('#phone', '512345678'); await p.click('#next'); await p.waitForTimeout(1000);
+  for (const d of '1234') await p.keyboard.type(d); await p.waitForTimeout(1300); await shot('17-joined');
+  if (!(await p.locator('.j-tick').count())) throw new Error('no done screen');
+  if (await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('horizontal overflow');
+  await p.goto(B + 'explore.html?s=eve'); await p.waitForTimeout(700);
+  if (!(await p.locator('[data-id="mine"]').count())) throw new Error('new salon not in the feed');
 });
 const v = p.video();
 await ctx.close(); await b.close();

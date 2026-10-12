@@ -46,12 +46,12 @@ export const appts = {
 
 export const userStore = store('molu_user', null);
 
-// ---------- محلي floating nav: 4 in a glass pill + 1 solo circle ----------
+// ---------- floating nav: 3 in a pill + مواعيدي in its own circle ----------
+// three things people come back for; offers and categories live on the home screen (its shortcuts), not in the bar
 const NAV = [
   ['home', 'explore.html', 'home', 'الرئيسية'],
-  ['cats', 'categories.html', 'grid_view', 'التصنيفات'],
-  ['offers', 'offers.html', 'percent', 'العروض'],
   ['favs', 'favorites.html', 'favorite', 'المفضلة'],
+  ['account', 'account.html', 'person', 'حسابي'],
 ];
 const navIcon = (n) => `<span class="ni">${icon(n, 28, 'ni-o')}${icon(n + '_f', 28, 'ni-f')}</span>`;
 export function renderNav(active) {
@@ -97,7 +97,7 @@ export function salonCard(s, { i = 0 } = {}) {
     <a class="meta" href="salon.html?id=${s.id}">
       <span class="grow"><h3>${s.name}${s.verified ? verified() : ''}</h3>
       <p>${ar(s.km)} كم · ${s.open ? 'مفتوح' : 'يفتح 10 ص'} · من ${money(s.from)}</p></span>
-      <span class="rate">${s.rating.toFixed(1)}</span>
+      <span class="rate">${s.reviews ? s.rating.toFixed(1) : 'جديد'}</span>
     </a>
   </article>`;
 }

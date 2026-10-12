@@ -37,7 +37,7 @@ $('#app').innerHTML = `
     <div class="store-head enter">
       <span class="logo" style="--c:${F ? 'var(--eve)' : 'var(--adam)'}">${initials(salon.name)}</span>
       <h1>${salon.name}${salon.verified ? verified() : ''}</h1>
-      <div class="store-meta"><b>★ ${salon.rating.toFixed(1)}</b><span>(${ar(salon.reviews)})</span>·<span>${salon.district}</span>·<span>${ar(salon.km)} كم</span>·<span class="${salon.open ? 'open' : ''}">${salon.open ? 'مفتوح حتى 11 م' : 'يفتح 10 ص'}</span></div>
+      <div class="store-meta">${salon.reviews ? `<b>★ ${salon.rating.toFixed(1)}</b><span>(${ar(salon.reviews)})</span>` : '<b>جديد</b>'}·<span>${salon.district}</span>·<span>${ar(salon.km)} كم</span>·<span class="${salon.open ? 'open' : ''}">${salon.open ? 'مفتوح حتى 11 م' : 'يفتح 10 ص'}</span></div>
       <div class="info-pills">
         ${salon.offer ? `<span class="hot">${icon('percent', 18)}${salon.offer} على كل الخدمات</span>` : ''}
         <span>${icon('payments', 18)}الدفع بعد الخدمة</span>
@@ -60,16 +60,16 @@ $('#app').innerHTML = `
           <div class="svc" data-pick="${key(ci, si)}"><div class="grow"><b>${s.name}</b><span>${money(s.price)} · ${ar(s.minutes)} دقيقة</span></div>${addBtn(key(ci, si), s)}</div>`).join('')}
       </section>`).join('')}
 
-    <section class="sec"><div class="sec-h"><h2>وش قالوا عنه</h2><span class="muted">★ ${salon.rating.toFixed(1)} · ${ar(salon.reviews)} تقييم</span></div>
+    ${salon.reviewList.length ? `<section class="sec"><div class="sec-h"><h2>وش قالوا عنه</h2><span class="muted">★ ${salon.rating.toFixed(1)} · ${ar(salon.reviews)} تقييم</span></div>
       <div class="carousel">${salon.reviewList.map(([n, r, t]) => `<article class="review"><header>${n}<span class="stars">${Array.from({ length: 5 }, (_, i) => icon(i < r ? 'star_f' : 'star', 15)).join('')}</span></header><p>${t}</p></article>`).join('')}</div>
-    </section>
+    </section>` : ''}
 
     <section class="sec"><div class="sec-h"><h2>عن ${S.place === 'صالون' ? 'الصالون' : 'المكان'}</h2></div>
       <div class="about">
         <div class="mini-map pressable" id="mini-map" role="button" aria-label="افتح الخريطة">${mapArt([salon], { activeId: salon.id, section: salon.section })}</div>
         <p class="muted" style="font-size:.78rem;margin:-4px 4px 0">${sourceNote(salon)}</p>
         <a class="row pressable" href="${directionsUrl(salon)}" target="_blank" rel="noopener">${icon('location_on', 24)}<span class="grow"><b>${salon.street ? salon.street + '، ' : ''}${salon.district}، ${salon.city}</b><span>${ar(salon.km)} كم ${F ? 'منكِ' : 'منك'}</span></span>${icon('chevron_left', 22)}</a>
-        <div class="row">${icon('schedule', 24)}<span class="grow"><b>كل يوم 10 ص – 11 م</b><span>الجمعة من 4 م</span></span></div>
+        <div class="row">${icon('schedule', 24)}<span class="grow"><b>${salon.hours?.label || 'كل يوم 10 ص – 11 م'}</b><span>${salon.hours ? (salon.hours.friday ? 'الجمعة من 4 م' : 'الجمعة إجازة') : 'الجمعة من 4 م'}</span></span></div>
         <div class="row">${icon('groups', 24)}<span class="grow"><b>${salon.staff.map((m) => m.name).join('، ')}</b><span>${F ? 'فريق نسائي بالكامل' : 'فريق الحلاقين'}</span></span></div>
         ${salon.amenities.length ? `<div class="row">${icon('check_circle', 24)}<span class="grow"><b>المزايا</b><span>${salon.amenities.join(' · ')}</span></span></div>` : ''}
       </div>

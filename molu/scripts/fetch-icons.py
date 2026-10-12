@@ -6,7 +6,8 @@ chevron_left chevron_right expand_more expand_less add remove notifications stor
 check_circle call chat ios_share bookmark payments credit_card workspace_premium groups badge qr_code_2 trending_up bolt
 notifications_active rate_review language logout apartment person_add login sell home_work spa wc diversity_1 sentiment_satisfied
 storefront event_busy lock edit_calendar timer cancel info apps apparel water_drop
-percent redeem local_fire_department history grid_view shopping_bag package_2 discount celebration keyboard_arrow_down arrow_forward""".split()
+percent redeem local_fire_department history grid_view shopping_bag package_2 discount celebration keyboard_arrow_down arrow_forward
+link touch_app content_copy photo_camera share""".split()
 out, vb = {}, {}
 for n in names:
     for fill in ('', '_fill1'):

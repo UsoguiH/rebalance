@@ -17,13 +17,18 @@ node scripts/shoot.mjs /tmp/out index.html # screenshots
 ## Screens
 | Page | Pattern |
 |---|---|
-| `index.html` | **Gate**: only **حواء** and **آدم**. Dark, محلي-style immersive stage: the backdrop is the active illustration, blurred; a glass switch; huge calligraphy; and a 3D card carousel you can drag. Motion uses the Framer Motion engine (`motion`, vendored in `js/vendor/`): one spring-driven position value runs everything, with velocity hand-off on drag, a staggered entrance, a `whileTap` button, and a layoutId-style card → full-screen growth that a view transition then shrinks into the next page's avatar. |
-| `explore.html` | Section home, Uber Eats feed: next appointment, one search bar, one row of category art shortcuts (emoji for now; see `docs/ICON-PROMPTS.md`), carousels (nearest, today's offers, top rated), then every salon. A floating «الخريطة» pill morphs into a full-screen map. |
+| `index.html` | **Gate**: the whole حواء و آدم illustration on its own cream, a name above each half and a black pill («تفضّلي» / «تفضّل») below it. Static and tiny, so it paints at once. Entering is a cross-document view transition into a fully built home feed. |
+| `explore.html` | Section home, Uber Eats feed: next appointment, one search bar, one row of category art shortcuts (emoji for now; see `docs/ICON-PROMPTS.md`), carousels (nearest, today's offers, top rated), then every salon. A floating «الخريطة» pill morphs into a **real map** (below). |
 | `salon.html` | Uber Eats store: cover, logo, one meta line and info pills, a «الأكثر طلباً» row, sticky tabs with scroll-spy, and service rows. Tapping **+** adds a service and brings up a black «اختر الموعد» bar. |
 | Booking | **One sheet**: who (optional) · day · time · confirm. The button morphs into a loader, then a success check with confetti and a ticket. |
 | `appointments.html` | محلي «الطلبات»: bell with badge, orange chips, cards with black pill actions (manage / rate / re-book). Includes cancel with undo, an `.ics` calendar file, and rating. |
 | `categories.html` | محلي side rail with collapsible groups of tiles. Offers use 3D gradient numbers. |
 | `offers.html`, `favorites.html`, `account.html`, `business.html` | Offers grid, favourites, sign-in (phone → code → name) and the owner pricing page. |
+| `join.html` | **سجّل صالونك**: salons and barbers sign up in 7 one-question screens: side (حواء / آدم) · shop or home visits · name (the booking link writes itself) · place (drag the real map under a pin, or pick districts + a visit fee) · services (pick sections, services arrive priced, edit or untick) · hours presets + team size · name, phone and a code. No password, no email, no plan choice up front (14-day trial; the plan is suggested at the end). A live card shows how customers will see you; the draft survives leaving. The new salon then appears in the feed, on the map and on its own page. |
+
+**Bottom bar**: الرئيسية · المفضلة · حسابي, with مواعيدي in its own circle. Offers and categories are reached from the home shortcuts.
+
+**Real map** (`js/map.js`): north Riyadh streets and parks from OpenStreetMap (`data/riyadh-north.json`, © OSM contributors, ODbL), drawn by Leaflet on one canvas. There is no tile server, so it works offline and in the published copy. آدم lists five real barbershops (names, districts and coordinates from OSM); their prices, ratings and reviews are demo content and are labelled so.
 
 ## Tokens (taken from محلي's CSS)
 | Token | Value |

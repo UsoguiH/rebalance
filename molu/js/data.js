@@ -56,7 +56,7 @@ export const REAL_BARBERS = [
   { name: 'يوسف أفندي', en: 'Yousef Afandi', district: 'حي حطين', street: 'شارع ربعي الذهلي', lat: 24.75333, lng: 46.60962, osm: 14222316678 },
 ];
 // demo salons sit in real districts around the user (district centres checked against OpenStreetMap)
-const DISTRICTS = [['حي الملقا', 24.805, 46.612], ['حي الصحافة', 24.800, 46.640], ['حي الياسمين', 24.826, 46.650], ['حي العقيق', 24.776, 46.626], ['حي حطين', 24.760, 46.606], ['حي الربيع', 24.797, 46.662], ['حي النخيل', 24.745, 46.640], ['حي الملقا', 24.812, 46.620]];
+export const DISTRICTS = [['حي الملقا', 24.805, 46.612], ['حي الصحافة', 24.800, 46.640], ['حي الياسمين', 24.826, 46.650], ['حي العقيق', 24.776, 46.626], ['حي حطين', 24.760, 46.606], ['حي الربيع', 24.797, 46.662], ['حي النخيل', 24.745, 46.640], ['حي الملقا', 24.812, 46.620]];
 // where the demo user is: حي الصحافة, الرياض
 export const ME = { lat: 24.790, lng: 46.635, label: 'الرياض - الصحافة' };
 const kmFrom = (lat, lng) => { const R = 6371, r = Math.PI / 180, a = Math.sin((lat - ME.lat) * r / 2) ** 2 + Math.cos(ME.lat * r) * Math.cos(lat * r) * Math.sin((lng - ME.lng) * r / 2) ** 2; return +(2 * R * Math.asin(Math.sqrt(a))).toFixed(1); };
@@ -98,6 +98,25 @@ function makeSalons(section) {
   });
 }
 export const SALONS = { eve: makeSalons('eve'), adam: makeSalons('adam') };
+
+// a salon registered on this device (join.html) joins the directory, the map and its own page
+export const MY_KEY = 'molu_my_salon';
+function mySalon() {
+  let m; try { m = JSON.parse(localStorage.getItem(MY_KEY) || 'null'); } catch { return null; }
+  if (!m || !SALONS[m.section] || !m.services?.length) return null;
+  const cats = CATEGORIES[m.section].map((c) => ({ ...c, services: m.services.filter((x) => x.cat === c.id).map(({ name, minutes, price }) => ({ name, minutes, price })) })).filter((c) => c.services.length);
+  let h = 7; for (const ch of m.name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return {
+    id: 'mine', section: m.section, name: m.name, mine: true, kind: m.kind, slug: m.slug, hours: m.hours,
+    district: m.district, street: '', city: 'الرياض', lat: m.lat, lng: m.lng, osm: 0, real: false,
+    rating: 0, reviews: 0, km: kmFrom(m.lat, m.lng), open: true, offer: '', home: m.kind === 'home', verified: false,
+    categories: cats, amenities: [], from: Math.min(...m.services.map((x) => x.price)),
+    staff: [{ name: m.owner || SECTIONS[m.section].staffWord, rating: 5 }], areas: m.areas || [], fee: m.fee || 0,
+    art: h, x: 0.5, y: 0.5, nextSlots: ['اليوم 7:30 م', 'غداً 4:15 م'], reviewList: [],
+  };
+}
+const mine = mySalon();
+if (mine) SALONS[mine.section].unshift(mine);
 export const salonById = (id) => [...SALONS.eve, ...SALONS.adam].find((s) => s.id === id);
 
 // 14 bookable days starting today; deterministic slot availability per salon/day
@@ -126,6 +145,7 @@ export const money = (n) => `${NF.format(n)} ر.س`;
 
 export const PLANS = [
   { id: 'free', name: 'المجانية', month: 0, year: 0, note: 'للأبد، بلا بطاقة', feats: ['صفحة حجز باسمك على كل الجوالات', '40 حجزاً في الشهر', 'موظف واحد', 'تأكيد وتذكير تلقائي بالبريد'] },
+  { id: 'solo', name: 'المستقل', month: 99, year: 990, solo: true, note: 'لمن يشتغل لحاله', feats: ['حجوزات بلا حد', 'لك وحدك', 'تأكيد وتذكير بلا حد', 'وقت تنقّل تلقائي بين الزيارات', 'صفحتك بدون شعار مولو'] },
   { id: 'pro', name: 'الاحترافية', month: 149, year: 1490, popular: true, feats: ['حجوزات بلا حد', '3 موظفين', 'صفحتك بدون شعار مولو', 'العروض ورموز الخصم وبطاقة الولاء', 'التقييمات والمحادثة مع العملاء', 'التقارير وملصق QR'] },
   { id: 'biz', name: 'الأعمال', month: 299, year: 2990, feats: ['كل مزايا الاحترافية', '15 موظفاً', 'حملات لإرجاع العملاء المنقطعين', 'نسبة كل موظف من دخله', 'أولوية في الدعم وإعداد الحساب معك'] },
 ];
