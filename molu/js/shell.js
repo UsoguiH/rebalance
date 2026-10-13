@@ -145,6 +145,8 @@ export function secSwitch(host, current, onChange) {
     setSection(b.dataset.k); document.body.dataset.section = b.dataset.k;
     onChange(b.dataset.k);
   });
+  // set it from outside without the click path (home's chooser does this inside a view transition)
+  return { set(k) { host.querySelectorAll('[data-k]').forEach((x) => x.setAttribute('aria-pressed', x.dataset.k === k)); place(false); setSection(k); document.body.dataset.section = k; } };
 }
 // fast content swap: 90ms out, re-render, 200ms in (no page snapshot)
 export function swap(el, render) {

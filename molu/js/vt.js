@@ -8,7 +8,7 @@
 // 2) The move: gate (from the start screen) · push (one level deeper: home → salon) · pop (back up) · tab (between the
 //    bar's pages). CSS in molu.css draws each. The salon card's picture grows into the salon cover, and back.
 (function () {
-  var DEPTH = { 'index.html': 0, '': 0, 'explore.html': 1, 'favorites.html': 1, 'account.html': 1, 'appointments.html': 1, 'categories.html': 1, 'offers.html': 1, 'salon.html': 2, 'business.html': 2, 'dashboard.html': 2, 'join.html': 3 };
+  var DEPTH = { 'index.html': 1, '': 1, 'explore.html': 1, 'favorites.html': 1, 'account.html': 1, 'appointments.html': 1, 'categories.html': 1, 'offers.html': 1, 'salon.html': 2, 'business.html': 2, 'dashboard.html': 2, 'join.html': 3 };
   var file = function (u) { try { return new URL(u, location.href).pathname.split('/').pop(); } catch (e) { return ''; } };
   var depth = function (u) { var f = file(u); return f in DEPTH ? DEPTH[f] : 1; };
   var ss = { get: function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} } };

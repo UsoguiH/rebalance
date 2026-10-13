@@ -20,22 +20,17 @@ for (const page of PAGES) {
   const entry = Object.keys(outs).find((f) => outs[f].entryPoint === `js/${page}.js`);
   const deps = outs[entry].imports.filter((i) => i.kind === 'import-statement').map((i) => i.path);
   const tags = [entry, ...deps].map((f) => `<link rel="modulepreload" href="${f}">`).join('\n');
-  const html = `${root}${page}.html`;
-  let h = readFileSync(html, 'utf8');
-  h = h.replace(/<!-- build:js -->[\s\S]*?<!-- \/build:js -->/, `<!-- build:js -->\n${tags}\n<script type="module" src="${entry}" blocking="render"></script>\n<!-- /build:js -->`);
-  writeFileSync(html, h);
-}
-
-// the start screen warms the home page's files while you look at it
-{
-  const e = Object.keys(outs).find((f) => outs[f].entryPoint === 'js/explore.js');
-  const warm = [e, ...outs[e].imports.filter((i) => i.kind === 'import-statement').map((i) => i.path), 'css/app.min.css'];
-  const g = `${root}index.html`;
-  writeFileSync(g, readFileSync(g, 'utf8').replace(/var WARM = \[.*?\]; \/\/ build:warm/, `var WARM = ${JSON.stringify(warm).replace(/"/g, "'").replace(/,/g, ', ')}; // build:warm`));
+  // index.html is home too (with the two sides at its top), so it loads the same bundle as explore.html
+  for (const name of page === 'explore' ? ['explore', 'index'] : [page]) {
+    const html = `${root}${name}.html`;
+    let h = readFileSync(html, 'utf8');
+    h = h.replace(/<!-- build:js -->[\s\S]*?<!-- \/build:js -->/, `<!-- build:js -->\n${tags}\n<script type="module" src="${entry}" blocking="render"></script>\n<!-- /build:js -->`);
+    writeFileSync(html, h);
+  }
 }
 
 // the four stylesheets of the inner pages → one file (kept in css/ so its ../fonts/ urls still resolve)
-writeFileSync(`${root}css/.app.entry.css`, ['fonts', 'springs', 'm3', 'molu'].map((n) => `@import "./${n}.css";`).join('\n'));
+writeFileSync(`${root}css/.app.entry.css`, ['fonts', 'springs', 'm3', 'molu', 'chooser'].map((n) => `@import "./${n}.css";`).join('\n'));
 await esbuild.build({
   absWorkingDir: root, entryPoints: ['css/.app.entry.css'], outfile: 'css/app.min.css',
   bundle: true, minify: true, external: ['*.woff2'], legalComments: 'none', charset: 'utf8',

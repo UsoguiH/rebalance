@@ -1,0 +1,78 @@
+/* The start, at the top of home: Uber Eats simple — a headline with a live green dot, two grey tiles side by side
+   (حواء left, آدم right: together the whole illustration, cut out of its cream), each with its name and a black
+   button. Pressing a tile plays its little 2D scene; choosing shrinks the picture into the section switch at the top
+   left (same-document view transition "gate-face", js/explore.js) while home settles in under it. */
+.chooser { padding: 6px 0 18px; }
+.chooser h1 { margin: 0; font-size: 2rem; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; color: #000; }
+.chooser > p { display: flex; align-items: center; gap: 8px; margin: 6px 0 18px; font-size: .95rem; color: #5E5E5E; }
+.chooser > p i { width: 8px; height: 8px; border-radius: 50%; background: #06C167; box-shadow: 0 0 0 4px rgba(6, 193, 103, .16); flex: none; }
+/* in the picture's own order: حواء on the left, آدم on the right */
+.ch-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; direction: ltr; }
+.ch-go { direction: rtl; display: flex; flex-direction: column; border: 0; border-radius: 22px; background: #F1F1F1; padding: 6px 0 12px; overflow: hidden; text-align: start; color: #000; font: inherit; cursor: pointer;
+  transition: transform .18s cubic-bezier(.22, 1, .36, 1), background-color .2s; animation: ch-rise .5s cubic-bezier(.22, 1, .36, 1) both; }
+.ch-go.adam { animation-delay: .06s; }
+.ch-go:active { transform: scale(.97); background: #EAEAEA; }
+.ch-scene { position: relative; display: block; width: 100%; aspect-ratio: 624 / 930; container-type: inline-size; }
+.ch-go.adam .ch-scene { aspect-ratio: 628 / 930; }
+.ch-scene img { display: block; width: 100%; height: 100%; -webkit-user-drag: none; }
+.ch-txt { display: grid; margin: 6px 16px 12px; line-height: 1.3; }
+.ch-txt b { font-size: 1.35rem; font-weight: 700; }
+.ch-txt small { font-size: .85rem; color: #5E5E5E; }
+/* black capsule, no border: a word and a thin chevron */
+.ch-btn { margin: 0 12px; display: flex; align-items: center; justify-content: center; gap: 6px; height: 48px; border-radius: 24px; background: #000; color: #fff; font-weight: 600; font-size: 1rem; }
+.ch-btn svg { flex: none; opacity: .75; transition: transform .2s, opacity .2s; }
+.ch-go:active .ch-btn svg, .chooser[data-go] .ch-btn svg { transform: translateX(-4px); opacity: 1; }
+@media (hover: hover) { .ch-go:hover { background: #EBEBEB; } .ch-go:hover .ch-btn svg { transform: translateX(-4px); opacity: 1; } }
+@keyframes ch-rise { from { opacity: 0; transform: translateY(14px); } }
+/* the logo, at the start of home's top bar: tap it to choose again */
+.brand-mark { flex: none; display: grid; place-items: center; width: 40px; height: 40px; }
+.brand-svg { width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 4px 12px -6px rgba(90, 42, 51, .45); }
+/* choosing: the old screen fades quickly, the new one rises in under the moving picture */
+html[data-vt="choose"]::view-transition-old(root) { animation: .22s ease-in both ch-out; }
+html[data-vt="choose"]::view-transition-new(root) { animation: .45s .08s cubic-bezier(.22, 1, .36, 1) both ch-in; }
+@keyframes ch-out { to { opacity: 0; } }
+@keyframes ch-in { from { opacity: 0; transform: translateY(24px); } }
+
+/* pressing a tile plays its little 2D scene (coordinates are percentages of each scene, so it stays aligned):
+   حواء: the lamp switches on, warm air streams from the dryer, hearts float up, sparkles twinkle in her hair.
+   آدم: the lamp switches on, the barber pole spins, the scissors snip, cut hair falls, a shine on the fresh cut. */
+.chooser .fx { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s; }
+.chooser[data-hot="eve"] .fx-eve, .chooser[data-hot="adam"] .fx-adam { opacity: 1; }
+.chooser .fx i, .fx .pole-box, .fx .air, .fx .snip { position: absolute; left: var(--x); top: var(--y); display: block; }
+.chooser .fx svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.chooser .fx .glow { width: var(--w); height: var(--h); background: radial-gradient(ellipse 70% 100% at 50% 0, rgba(255, 246, 214, .95), rgba(255, 240, 200, .35) 45%, rgba(255, 240, 200, 0) 80%); clip-path: polygon(32% 0, 68% 0, 100% 100%, 0 100%); opacity: 0; mix-blend-mode: screen; }
+.chooser .fx .air { left: 23.6%; top: 27.75%; width: 21.87%; height: auto; aspect-ratio: 100 / 70; }
+.chooser .fx .air path { fill: none; stroke: #fff; stroke-width: 4.2; filter: drop-shadow(0 0 1.5px rgba(200, 60, 100, .5)); stroke-linecap: round; stroke-dasharray: 24 76; stroke-dashoffset: 100; opacity: .95; }
+.chooser .fx .hrt { width: 6.8cqw; fill: #E2557B; opacity: 0; }
+.chooser .fx .hrt:nth-of-type(2n) { fill: #F48FAA; }
+.chooser .fx .spk { width: 7.6cqw; fill: #fff; opacity: 0; filter: drop-shadow(0 0 1.2cqw rgba(226, 85, 123, .7)); }
+.chooser .fx .spk.w { filter: drop-shadow(0 0 1.2cqw rgba(255, 220, 140, .9)); }
+.chooser .fx .pole-box { left: 87.42%; top: 19.14%; width: 7.66%; height: 18.28%; }
+.chooser .fx .snip { width: 9.2cqw; height: 9.2cqw; translate: -50% -50%; }
+.chooser .fx .snip i { left: 50%; top: 50%; width: 100%; height: 1.1cqw; border-radius: 2cqw; background: #1A1A1A; transform-origin: 0 50%; opacity: 0; }
+.chooser .fx .snip i:nth-child(1) { rotate: 160deg; } .fx .snip i:nth-child(2) { rotate: 200deg; } .fx .snip i:nth-child(3) { rotate: 240deg; }
+.chooser .fx .cut { width: 3.8cqw; height: 1cqw; border-radius: 0.6cqw; background: #3A2A22; box-shadow: 0 0 0 0.24cqw rgba(255, 255, 255, .5); rotate: var(--r); opacity: 0; }
+
+.chooser[data-hot="eve"] .fx-eve .glow, .chooser[data-hot="adam"] .fx-adam .glow { animation: ch-lamp-on .7s ease-out forwards; }
+.chooser[data-hot="eve"] .fx .air path { animation: ch-blow .75s linear infinite; }
+.chooser[data-hot="eve"] .fx .air path:nth-child(2) { animation-delay: .25s; }
+.chooser[data-hot="eve"] .fx .air path:nth-child(3) { animation-delay: .5s; }
+.chooser[data-hot="eve"] .fx .air path:nth-child(4) { animation-delay: .12s; } .chooser[data-hot="eve"] .fx .air path:nth-child(5) { animation-delay: .38s; }
+.chooser[data-hot="eve"] .fx .hrt { animation: ch-float-up 1.5s var(--d) ease-out infinite; }
+.chooser[data-hot="eve"] .fx-eve .spk, .chooser[data-hot="adam"] .fx-adam .spk { animation: ch-twinkle 1.2s var(--d) ease-in-out infinite; }
+.chooser[data-hot="adam"] .fx .spin { animation: ch-pole-spin .8s linear infinite; }
+.chooser[data-hot="adam"] .fx .snip i { animation: ch-snip .5s ease-out infinite; }
+.chooser[data-hot="adam"] .fx .snip i:nth-child(2) { animation-delay: .04s; } .chooser[data-hot="adam"] .fx .snip i:nth-child(3) { animation-delay: .08s; }
+.chooser[data-hot="adam"] .fx .cut { animation: ch-fall 1.3s var(--d) cubic-bezier(.4, 0, .7, 1) infinite; }
+/* the chosen name gives a little bounce */
+
+@keyframes ch-lamp-on { 0% { opacity: 0; } 18% { opacity: .9; } 28% { opacity: .25; } 42% { opacity: 1; } 100% { opacity: .85; } }
+@keyframes ch-blow { to { stroke-dashoffset: 0; } }
+@keyframes ch-float-up { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 20% { opacity: 1; transform: translate(-1.2cqw, -4cqw) scale(var(--s)); } 60% { transform: translate(1.6cqw, -12cqw) scale(var(--s)); } 100% { opacity: 0; transform: translate(-0.8cqw, -20cqw) scale(calc(var(--s) * .8)); } }
+@keyframes ch-twinkle { 0%, 100% { opacity: 0; transform: scale(0) rotate(0); } 45% { opacity: 1; transform: scale(var(--s)) rotate(90deg); } 70% { opacity: .9; transform: scale(calc(var(--s) * .7)) rotate(130deg); } }
+@keyframes ch-pole-spin { to { transform: translateY(-110px); } }
+@keyframes ch-snip { 0% { opacity: 0; scale: .2 1; translate: 0 0; } 30% { opacity: 1; } 100% { opacity: 0; scale: 1 1; translate: 0 0; } }
+@keyframes ch-fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-2.4cqw, 12cqw) rotate(220deg); } }
+@media (prefers-reduced-motion: reduce) { .ch-go { animation: none; } .chooser .fx { display: none; } }
+/* the map pill waits until a side is chosen */
+body:has(#chooser) .map-fab { display: none; }
