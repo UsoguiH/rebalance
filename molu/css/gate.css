@@ -41,12 +41,7 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 
 /* the whole illustration, no frame, nothing cropped */
 .pic { position: relative; width: 100%; aspect-ratio: 1252 / 930; container-type: inline-size; }
-.halves { display: grid; grid-template-columns: 624fr 628fr; direction: ltr; width: 100%; height: 100%; }
-/* the picture is drawn as its two scenes side by side; they meet in the empty gap between them, so no seam shows.
-   The chosen one becomes the avatar in home's top bar (a shared view transition, named in molu.css: gate-face). */
 .pic img { display: block; width: 100%; height: 100%; animation: develop .9s .1s var(--ease) both; }
-.pic .half.adam { animation-delay: .16s; }
-.poster[data-go="eve"] .half.eve, .poster[data-go="adam"] .half.adam { view-transition-name: gate-face; }
 .side { position: absolute; top: 0; bottom: 0; width: 50%; }
 .side.eve { left: 0; } .side.adam { right: 0; }
 .side i { position: absolute; inset: 0; background: var(--paper); opacity: 0; transition: opacity .35s var(--ease); pointer-events: none; }
@@ -69,12 +64,6 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 .biz { align-self: center; margin-top: 2px; padding: 6px 12px; border-radius: 14px; font: 500 .8rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; animation: fade .5s .6s var(--ease) both; }
 .biz b { color: #2D2D2D; font-weight: 700; text-decoration: underline; text-decoration-color: #D9CDB9; text-underline-offset: 4px; }
 .biz:active { background: rgba(70, 45, 20, .06); }
-.near { align-self: center; display: inline-flex; align-items: center; gap: 10px; margin-top: 10px; padding: 6px 14px 6px 8px; border-radius: 24px; background: #fff;
-  box-shadow: 0 10px 24px -14px rgba(70, 45, 20, .45), inset 0 0 0 1px rgba(70, 45, 20, .06); font: 500 .84rem 'IBM Plex Sans Arabic', sans-serif; color: #6E6457; animation: rise .5s .5s var(--ease) both; }
-.near b { color: #2D2D2D; font-weight: 700; }
-.near .faces { display: flex; direction: ltr; }
-.near .faces img { width: 30px; height: 30px; padding: 3px; border-radius: 50%; background: #FBF4EA; box-shadow: 0 0 0 2px #fff; object-fit: contain; }
-.near .faces img + img { margin-left: -9px; }
 .line { margin: 8px 0 0; text-align: center; font: 600 .86rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; animation: fade .5s .5s var(--ease) both; }
 
 /* press a side → its own little 2D scene plays over the picture (coordinates are image percentages, so it stays aligned):
@@ -128,4 +117,4 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes fade { from { opacity: 0; } }
 .ms { display: block; flex: none; }
-@media (prefers-reduced-motion: reduce) { .top, .name, .pic img, .go, .line, .biz, .near { animation: none; } .fx { display: none; } }
+@media (prefers-reduced-motion: reduce) { .top, .name, .pic img, .go, .line, .biz { animation: none; } .fx { display: none; } }

@@ -35,7 +35,7 @@
     for (var i = 0; i < list.length; i++) { var r = list[i].getBoundingClientRect(); if (r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth) return list[i]; }
     return null;
   }
-  function clearNames() { document.querySelectorAll('[style*="view-transition-name"]').forEach(function (el) { if (el.style.viewTransitionName === COVER || el.style.viewTransitionName === 'gate-face') el.style.viewTransitionName = ''; }); }
+  function clearNames() { document.querySelectorAll('[style*="view-transition-name"]').forEach(function (el) { if (el.style.viewTransitionName === COVER) el.style.viewTransitionName = ''; }); }
   function moveType(from, to) {
     var a = depth(from), b = depth(to);
     return a === 0 ? 'gate' : b > a ? 'push' : b < a ? 'pop' : 'tab';
@@ -166,8 +166,6 @@
     var type = ss.get('molu_gate') ? 'gate' : moveType(from, location.href);
     if (type === 'tab' && act && act.navigationType === 'traverse' && depth(location.href) === 2) type = 'pop';
     ss.set('molu_gate', null);
-    // from the start screen: the half of the picture you chose shrinks into this section's avatar in the top bar
-    if (type === 'gate') { var face = document.querySelector('#sec [aria-pressed="true"] .face'); if (face) face.style.viewTransitionName = 'gate-face'; }
     try { vt.types.add(type); } catch (err) { document.documentElement.dataset.vt = type; vt.finished.then(function () { delete document.documentElement.dataset.vt; }); }
     nameArrival(from);
     vt.finished.finally(clearNames);
