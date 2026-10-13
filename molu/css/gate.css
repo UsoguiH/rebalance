@@ -1,7 +1,8 @@
-/* Gate — a poster built around the whole illustration (trimmed only of its empty cream margins, so it draws ~5% larger). The page is the illustration's own cream (#F9F6E2), so the
-   picture has no frame: it sits edge to edge, complete, nothing cropped. Each name stands above its own scene, each
-   button below it. Static: no app CSS/JS. Motion: the picture develops from blur, names float down, buttons rise;
-   touching one side softly dims the other; entering: the poster eases back while the feed rises in (see css/molu.css, type "gate"). */
+/* Start screen — one app screen in the language of the big ones: a greeting and the neighbourhood (Uber Eats / Jahez),
+   a search pill and two category tabs with faces (Airbnb), one big listing card whose picture is the chosen side's whole
+   scene (never cropped), its numbers and a black button, then a row of service shortcuts (Uber Eats). The two scenes
+   cross-fade in place (no slides); each plays its little 2D show by itself, and again on touch. Static: no app CSS/JS.
+   Going in: the scene becomes the avatar in home's top bar (view transition "gate-face", see css/molu.css). */
 /* MoLu wordmark faces (only this screen shows the logo) */
 @font-face { font-family: 'MoLu Mo'; src: url(../fonts/playfair-display-700-latin.woff2) format('woff2'); font-weight: 700; font-display: block; }
 @font-face { font-family: 'MoLu Lu'; src: url(../fonts/great-vibes-latin.woff2) format('woff2'); font-display: block; }
@@ -31,101 +32,147 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 .logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #3A1C24; }
 .logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #B0485C; margin-inline-start: -.12em; transform: translateY(.12em); }
 
-/* two columns that line up with the two scenes: left = حواء, right = آدم (as in the picture) */
-.names, .btns { display: grid; grid-template-columns: 1fr 1fr; direction: ltr; padding: 0 12px; }
-.name { display: grid; justify-items: center; direction: rtl; padding-top: 6px; transition: opacity .35s var(--ease); animation: drop .55s var(--ease) both; }
-.name.adam { animation-delay: .08s; }
-.name b { font: 700 clamp(3.2rem, 17vw, 5.6rem)/1 'Aref Ruqaa', serif; padding-bottom: .2em; margin-bottom: -.22em; }
-.name.eve b { color: var(--eve); } .name.adam b { color: var(--adam); }
-.name small { font: 700 .82rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; }
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s; }
+:root { --ease: cubic-bezier(.22, 1, .36, 1); --paper: #F9F6E2; --ink: #141414; --muted: #776D60; --line: rgba(70, 45, 20, .09); --eve: #A3355A; --adam: #24475F; }
+/* no tap square (Android/iOS highlight) and no focus ring from taps — keyboard focus still shows */
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+html, body { margin: 0; background: var(--paper); }
+body { color: var(--ink); font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+h1, h2, h3, p { margin: 0; }
 
-/* the whole illustration, no frame, nothing cropped */
-.pic { position: relative; width: 100%; aspect-ratio: 1252 / 930; container-type: inline-size; }
-.halves { display: grid; grid-template-columns: 624fr 628fr; direction: ltr; width: 100%; height: 100%; }
-/* the picture is drawn as its two scenes side by side; they meet in the empty gap between them, so no seam shows.
-   The chosen one becomes the avatar in home's top bar (a shared view transition, named in molu.css: gate-face). */
-.pic img { display: block; width: 100%; height: 100%; animation: develop .9s .1s var(--ease) both; }
-.pic .half.adam { animation-delay: .16s; }
-.poster[data-go="eve"] .half.eve, .poster[data-go="adam"] .half.adam { view-transition-name: gate-face; }
-.side { position: absolute; top: 0; bottom: 0; width: 50%; }
-.side.eve { left: 0; } .side.adam { right: 0; }
-.side i { position: absolute; inset: 0; background: var(--paper); opacity: 0; transition: opacity .35s var(--ease); pointer-events: none; }
-/* touching one side softly fades the other */
-.poster[data-hot="eve"] .side.adam i, .poster[data-hot="adam"] .side.eve i { opacity: .55; }
-.poster[data-hot="eve"] .name.adam, .poster[data-hot="adam"] .name.eve,
-.poster[data-hot="eve"] .go.adam, .poster[data-hot="adam"] .go.eve { opacity: .35; }
+.app { max-width: 520px; margin: 0 auto; padding: max(8px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
+/* one wording per side: .e for حواء, .a for آدم */
+.app[data-sec="eve"] .a, .app[data-sec="adam"] .e { display: none; }
+.top { display: flex; justify-content: center; padding-top: 2px; animation: fade .5s var(--ease) both; }
 
-.btns { gap: 12px; padding-top: 6px; }
-/* simple flat capsules: black, no shadow, no border — a word and a thin chevron */
-.go { justify-self: center; width: min(100%, 164px); height: 50px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 25px;
-  background: #111; color: #fff; direction: rtl; font: 600 1.05rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif;
-  transition: transform .18s var(--ease), opacity .35s var(--ease), background-color .18s; animation: rise .5s .35s var(--ease) both; }
-.go.adam { animation-delay: .42s; }
+/* greeting + neighbourhood, and the owners' door (Airbnb's "host your home") */
+.hello { display: flex; align-items: center; justify-content: space-between; gap: 12px; animation: rise .5s .04s var(--ease) both; }
+.hello h1 { font: 800 1.6rem/1.25 'IBM Plex Sans Arabic', sans-serif; letter-spacing: -.01em; }
+.loc { display: flex; align-items: center; gap: 4px; margin-top: 2px; font: 600 .9rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); }
+.loc svg:first-child { color: var(--eve); transition: color .3s; }
+.app[data-sec="adam"] .loc svg:first-child { color: var(--adam); }
+.loc .dd { opacity: .6; }
+.biz { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 19px; background: #fff;
+  font: 700 .84rem 'IBM Plex Sans Arabic', sans-serif; box-shadow: inset 0 0 0 1px var(--line), 0 6px 16px -12px rgba(70, 45, 20, .5); transition: transform .18s var(--ease); }
+.biz:active { transform: scale(.95); }
+
+/* Airbnb's search pill */
+.find { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 12px 0 10px; padding-inline-start: 20px; border-radius: 32px; background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 10px 28px -10px rgba(70, 45, 20, .32); transition: transform .18s var(--ease); animation: rise .5s .08s var(--ease) both; }
+.find:active { transform: scale(.98); }
+.find .mag { flex: none; }
+.find > span:not(.filt) { flex: 1; display: grid; line-height: 1.35; }
+.find b { font: 700 .98rem 'IBM Plex Sans Arabic', sans-serif; }
+.find small { font: 500 .8rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); }
+.filt { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+
+/* Airbnb's category tabs: a face, the name, an underline that grows under the chosen one */
+.tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); animation: rise .5s .12s var(--ease) both; }
+.tab { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 0 12px; opacity: .5; transition: opacity .3s var(--ease); }
+.tab[aria-selected="true"] { opacity: 1; }
+.tab::after { content: ""; position: absolute; inset: auto 18% -1px; height: 3px; border-radius: 2px; background: var(--ink); transform: scaleX(0); transition: transform .35s var(--ease); }
+.tab[aria-selected="true"]::after { transform: none; }
+.av { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: #fff; box-shadow: 0 0 0 2px #fff, 0 4px 10px -6px rgba(70, 45, 20, .5); transition: transform .35s var(--ease), filter .3s; }
+.av img { width: 100%; height: 100%; object-fit: cover; object-position: 58% 16%; transform: scale(2.1); transform-origin: 58% 16%; }
+.tab:not([aria-selected="true"]) .av { filter: grayscale(.7); }
+.tab:active .av { transform: scale(.9); }
+.tt { display: grid; text-align: start; line-height: 1; }
+.tt b { font: 700 1.9rem/1.15 'Aref Ruqaa', serif; }
+.tab.eve b { color: var(--eve); } .tab.adam b { color: var(--adam); }
+.tt small { font: 600 .74rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); margin-top: 1px; }
+
+/* the listing card: the whole scene on its own cream, the numbers, one black button */
+.card { background: #fff; border-radius: 28px; padding: 10px 10px 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 18px 40px -22px rgba(70, 45, 20, .45); animation: rise .55s .16s var(--ease) both; }
+.stage { position: relative; height: clamp(270px, 40dvh, 440px); border-radius: 20px; background: var(--paper); overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.scene { position: absolute; top: 4%; bottom: 3%; left: 50%; aspect-ratio: 624 / 930; translate: -50% 0; container-type: inline-size;
+  opacity: 0; scale: .96; filter: blur(8px); transition: opacity .38s var(--ease), scale .5s var(--ease), filter .38s var(--ease); pointer-events: none; }
+.scene.adam { aspect-ratio: 628 / 930; }
+.app[data-sec="eve"] .scene.eve, .app[data-sec="adam"] .scene.adam { opacity: 1; scale: 1; filter: none; }
+.scene img { display: block; width: 100%; height: 100%; -webkit-user-drag: none; }
+.app:not(.swap) .scene img { animation: develop .8s .2s var(--ease) both; }
+.app[data-go="eve"] .scene.eve img, .app[data-go="adam"] .scene.adam img { view-transition-name: gate-face; }
+.badge { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 15px; background: #fff;
+  font: 700 .78rem 'IBM Plex Sans Arabic', sans-serif; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .3); }
+.badge i { width: 7px; height: 7px; border-radius: 50%; background: #1DB954; box-shadow: 0 0 0 3px rgba(29, 185, 84, .2); animation: beat 1.6s ease-in-out infinite; }
+.dots { position: absolute; bottom: 12px; left: 50%; translate: -50% 0; display: flex; gap: 5px; padding: 5px 7px; border-radius: 10px; background: rgba(20, 20, 20, .28); }
+.dots i { width: 6px; height: 6px; border-radius: 3px; background: #fff; opacity: .55; transition: width .3s var(--ease), opacity .3s; }
+.app[data-sec="eve"] .dots .eve, .app[data-sec="adam"] .dots .adam { width: 16px; opacity: 1; }
+.info { padding: 12px 6px 10px; display: grid; gap: 3px; }
+.app.swap .info, .app.swap .row, .app.swap .cats h3 { animation: rise .4s var(--ease) both; }
+.r1 { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.info h2 { font: 800 1.15rem 'IBM Plex Sans Arabic', sans-serif; }
+.rate { display: inline-flex; align-items: center; gap: 4px; font: 700 .95rem 'IBM Plex Sans Arabic', sans-serif; }
+.info p { font: 500 .9rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); }
+.info p b { color: var(--ink); font-weight: 700; }
+/* simple flat capsule: black, no border — a word and a thin chevron */
+.go { display: flex; align-items: center; justify-content: center; gap: 6px; height: 54px; border-radius: 27px; background: #111; color: #fff;
+  font: 600 1.08rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif; transition: transform .18s var(--ease), background-color .18s; }
+.app[data-sec="eve"] .go.adam, .app[data-sec="adam"] .go.eve { display: none; }
 .go svg { flex: none; opacity: .7; transition: transform .2s var(--ease), opacity .2s; }
-.go:active { transform: scale(.96); background: #2a2a2a; }
-.go:active svg { transform: translateX(-3px); opacity: 1; }
-@media (hover: hover) { .go:hover svg { transform: translateX(-3px); opacity: 1; } }
-.go:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
-.biz { align-self: center; margin-top: 2px; padding: 6px 12px; border-radius: 14px; font: 500 .8rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; animation: fade .5s .6s var(--ease) both; }
-.biz b { color: #2D2D2D; font-weight: 700; text-decoration: underline; text-decoration-color: #D9CDB9; text-underline-offset: 4px; }
-.biz:active { background: rgba(70, 45, 20, .06); }
-.near { align-self: center; display: inline-flex; align-items: center; gap: 10px; margin-top: 10px; padding: 6px 14px 6px 8px; border-radius: 24px; background: #fff;
-  box-shadow: 0 10px 24px -14px rgba(70, 45, 20, .45), inset 0 0 0 1px rgba(70, 45, 20, .06); font: 500 .84rem 'IBM Plex Sans Arabic', sans-serif; color: #6E6457; animation: rise .5s .5s var(--ease) both; }
-.near b { color: #2D2D2D; font-weight: 700; }
-.near .faces { display: flex; direction: ltr; }
-.near .faces img { width: 30px; height: 30px; padding: 3px; border-radius: 50%; background: #FBF4EA; box-shadow: 0 0 0 2px #fff; object-fit: contain; }
-.near .faces img + img { margin-left: -9px; }
-.line { margin: 8px 0 0; text-align: center; font: 600 .86rem 'IBM Plex Sans Arabic', sans-serif; color: #8A7F70; animation: fade .5s .5s var(--ease) both; }
+.go:active { transform: scale(.97); background: #2a2a2a; }
+.go:active svg, .app[data-go] .go svg { transform: translateX(-4px); opacity: 1; }
+@media (hover: hover) { .go:hover svg { transform: translateX(-4px); opacity: 1; } .find:hover, .biz:hover { box-shadow: inset 0 0 0 1px var(--line), 0 12px 30px -10px rgba(70, 45, 20, .45); } }
 
-/* press a side → its own little 2D scene plays over the picture (coordinates are image percentages, so it stays aligned):
+/* Uber Eats' shortcut row */
+.cats { animation: rise .5s .24s var(--ease) both; }
+.cats h3 { font: 800 1.08rem 'IBM Plex Sans Arabic', sans-serif; margin: 4px 0 10px; }
+.row { display: flex; gap: 6px; margin: 0 -16px; padding: 2px 16px 6px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
+.row::-webkit-scrollbar { display: none; }
+.sc { flex: none; width: 74px; display: grid; justify-items: center; gap: 6px; scroll-snap-align: start; font: 600 .78rem/1.2 'IBM Plex Sans Arabic', sans-serif; text-align: center; }
+.tile { width: 66px; height: 66px; border-radius: 22px; display: grid; place-items: center; background: #fff; box-shadow: inset 0 0 0 1px var(--line); transition: transform .18s var(--ease); }
+.tile img { width: 52px; height: 52px; object-fit: contain; }
+.sc:active .tile { transform: scale(.9); }
+.app.swap .sc { animation: rise .4s calc(var(--i) * 30ms) var(--ease) both; }
+
+/* the scene's little 2D show (coordinates are percentages of each scene, so it stays aligned at any size):
    حواء: the lamp switches on, warm air streams from the dryer, hearts float up, sparkles twinkle in her hair.
    آدم: the lamp switches on, the barber pole spins, the scissors snip, cut hair falls, a shine on the fresh cut. */
-.fx { position: absolute; inset: 0; pointer-events: none; }
-.fx-eve, .fx-adam { position: absolute; inset: 0; opacity: 0; transition: opacity .2s; }
-.poster[data-hot="eve"] .fx-eve, .poster[data-hot="adam"] .fx-adam { opacity: 1; }
+.fx { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s; }
+.app[data-play="eve"] .fx-eve, .app[data-play="adam"] .fx-adam { opacity: 1; }
 .fx i, .fx .pole-box, .fx .air, .fx .snip { position: absolute; left: var(--x); top: var(--y); display: block; }
 .fx svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .fx .glow { width: var(--w); height: var(--h); background: radial-gradient(ellipse 70% 100% at 50% 0, rgba(255, 246, 214, .95), rgba(255, 240, 200, .35) 45%, rgba(255, 240, 200, 0) 80%); clip-path: polygon(32% 0, 68% 0, 100% 100%, 0 100%); opacity: 0; mix-blend-mode: screen; }
-.fx .air { left: 11.76%; top: 27.75%; width: 10.9%; height: auto; aspect-ratio: 100 / 70; }
+.fx .air { left: 23.6%; top: 27.75%; width: 21.87%; height: auto; aspect-ratio: 100 / 70; }
 .fx .air path { fill: none; stroke: #fff; stroke-width: 4.2; filter: drop-shadow(0 0 1.5px rgba(200, 60, 100, .5)); stroke-linecap: round; stroke-dasharray: 24 76; stroke-dashoffset: 100; opacity: .95; }
-.fx .hrt { width: 3.4cqw; fill: #E2557B; opacity: 0; }
+.fx .hrt { width: 6.8cqw; fill: #E2557B; opacity: 0; }
 .fx .hrt:nth-of-type(2n) { fill: #F48FAA; }
-.fx .spk { width: 3.8cqw; fill: #fff; opacity: 0; filter: drop-shadow(0 0 .6cqw rgba(226, 85, 123, .7)); }
-.fx .spk.w { filter: drop-shadow(0 0 .6cqw rgba(255, 220, 140, .9)); }
-.fx .pole-box { left: 93.69%; top: 19.14%; width: 3.84%; height: 18.28%; }
-.fx .snip { width: 4.6cqw; height: 4.6cqw; translate: -50% -50%; }
-.fx .snip i { left: 50%; top: 50%; width: 100%; height: .55cqw; border-radius: 1cqw; background: #1A1A1A; transform-origin: 0 50%; opacity: 0; }
+.fx .spk { width: 7.6cqw; fill: #fff; opacity: 0; filter: drop-shadow(0 0 1.2cqw rgba(226, 85, 123, .7)); }
+.fx .spk.w { filter: drop-shadow(0 0 1.2cqw rgba(255, 220, 140, .9)); }
+.fx .pole-box { left: 87.42%; top: 19.14%; width: 7.66%; height: 18.28%; }
+.fx .snip { width: 9.2cqw; height: 9.2cqw; translate: -50% -50%; }
+.fx .snip i { left: 50%; top: 50%; width: 100%; height: 1.1cqw; border-radius: 2cqw; background: #1A1A1A; transform-origin: 0 50%; opacity: 0; }
 .fx .snip i:nth-child(1) { rotate: 160deg; } .fx .snip i:nth-child(2) { rotate: 200deg; } .fx .snip i:nth-child(3) { rotate: 240deg; }
-.fx .cut { width: 1.9cqw; height: .5cqw; border-radius: .3cqw; background: #3A2A22; box-shadow: 0 0 0 .12cqw rgba(255, 255, 255, .5); rotate: var(--r); opacity: 0; }
+.fx .cut { width: 3.8cqw; height: 1cqw; border-radius: 0.6cqw; background: #3A2A22; box-shadow: 0 0 0 0.24cqw rgba(255, 255, 255, .5); rotate: var(--r); opacity: 0; }
 
-.poster[data-hot="eve"] .fx-eve .glow, .poster[data-hot="adam"] .fx-adam .glow { animation: lamp-on .7s ease-out forwards; }
-.poster[data-hot="eve"] .fx .air path { animation: blow .75s linear infinite; }
-.poster[data-hot="eve"] .fx .air path:nth-child(2) { animation-delay: .25s; }
-.poster[data-hot="eve"] .fx .air path:nth-child(3) { animation-delay: .5s; }
-.poster[data-hot="eve"] .fx .air path:nth-child(4) { animation-delay: .12s; } .poster[data-hot="eve"] .fx .air path:nth-child(5) { animation-delay: .38s; }
-.poster[data-hot="eve"] .fx .hrt { animation: float-up 1.5s var(--d) ease-out infinite; }
-.poster[data-hot="eve"] .fx-eve .spk, .poster[data-hot="adam"] .fx-adam .spk { animation: twinkle 1.2s var(--d) ease-in-out infinite; }
-.poster[data-hot="adam"] .fx .spin { animation: pole-spin .8s linear infinite; }
-.poster[data-hot="adam"] .fx .snip i { animation: snip .5s ease-out infinite; }
-.poster[data-hot="adam"] .fx .snip i:nth-child(2) { animation-delay: .04s; } .poster[data-hot="adam"] .fx .snip i:nth-child(3) { animation-delay: .08s; }
-.poster[data-hot="adam"] .fx .cut { animation: fall 1.3s var(--d) cubic-bezier(.4, 0, .7, 1) infinite; }
+.app[data-play="eve"] .fx-eve .glow, .app[data-play="adam"] .fx-adam .glow { animation: lamp-on .7s ease-out forwards; }
+.app[data-play="eve"] .fx .air path { animation: blow .75s linear infinite; }
+.app[data-play="eve"] .fx .air path:nth-child(2) { animation-delay: .25s; }
+.app[data-play="eve"] .fx .air path:nth-child(3) { animation-delay: .5s; }
+.app[data-play="eve"] .fx .air path:nth-child(4) { animation-delay: .12s; } .app[data-play="eve"] .fx .air path:nth-child(5) { animation-delay: .38s; }
+.app[data-play="eve"] .fx .hrt { animation: float-up 1.5s var(--d) ease-out infinite; }
+.app[data-play="eve"] .fx-eve .spk, .app[data-play="adam"] .fx-adam .spk { animation: twinkle 1.2s var(--d) ease-in-out infinite; }
+.app[data-play="adam"] .fx .spin { animation: pole-spin .8s linear infinite; }
+.app[data-play="adam"] .fx .snip i { animation: snip .5s ease-out infinite; }
+.app[data-play="adam"] .fx .snip i:nth-child(2) { animation-delay: .04s; } .app[data-play="adam"] .fx .snip i:nth-child(3) { animation-delay: .08s; }
+.app[data-play="adam"] .fx .cut { animation: fall 1.3s var(--d) cubic-bezier(.4, 0, .7, 1) infinite; }
 /* the chosen name gives a little bounce */
-.poster[data-hot="eve"] .name.eve b, .poster[data-hot="adam"] .name.adam b { animation: name-pop .7s var(--ease); }
-.name b { display: inline-block; }
-.poster[data-go] .go[data-k] svg { animation: nudge .5s ease-in-out infinite alternate; }
 
 @keyframes lamp-on { 0% { opacity: 0; } 18% { opacity: .9; } 28% { opacity: .25; } 42% { opacity: 1; } 100% { opacity: .85; } }
 @keyframes blow { to { stroke-dashoffset: 0; } }
-@keyframes float-up { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 20% { opacity: 1; transform: translate(-.6cqw, -2cqw) scale(var(--s)); } 60% { transform: translate(.8cqw, -6cqw) scale(var(--s)); } 100% { opacity: 0; transform: translate(-.4cqw, -10cqw) scale(calc(var(--s) * .8)); } }
+@keyframes float-up { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 20% { opacity: 1; transform: translate(-1.2cqw, -4cqw) scale(var(--s)); } 60% { transform: translate(1.6cqw, -12cqw) scale(var(--s)); } 100% { opacity: 0; transform: translate(-0.8cqw, -20cqw) scale(calc(var(--s) * .8)); } }
 @keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(0) rotate(0); } 45% { opacity: 1; transform: scale(var(--s)) rotate(90deg); } 70% { opacity: .9; transform: scale(calc(var(--s) * .7)) rotate(130deg); } }
 @keyframes pole-spin { to { transform: translateY(-110px); } }
 @keyframes snip { 0% { opacity: 0; scale: .2 1; translate: 0 0; } 30% { opacity: 1; } 100% { opacity: 0; scale: 1 1; translate: 0 0; } }
-@keyframes fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-1.2cqw, 6cqw) rotate(220deg); } }
+@keyframes fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-2.4cqw, 12cqw) rotate(220deg); } }
 @keyframes name-pop { 0% { transform: none; } 30% { transform: scale(1.12) rotate(-3deg); } 60% { transform: scale(.97) rotate(1deg); } 100% { transform: none; } }
 @keyframes nudge { to { transform: translateX(-5px); } }
 @keyframes develop { from { opacity: 0; filter: blur(12px); transform: scale(.97); } }
-@keyframes drop { from { opacity: 0; transform: translateY(-12px); } }
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes fade { from { opacity: 0; } }
-.ms { display: block; flex: none; }
-@media (prefers-reduced-motion: reduce) { .top, .name, .pic img, .go, .line, .biz, .near { animation: none; } .fx { display: none; } }
+@keyframes beat { 50% { box-shadow: 0 0 0 6px rgba(29, 185, 84, 0); } }
+@media (prefers-reduced-motion: reduce) { .top, .hello, .find, .tabs, .card, .cats, .scene img, .info, .row, .sc, .cats h3, .badge i { animation: none !important; } .scene { transition: none; } .fx { display: none; } }

@@ -87,6 +87,8 @@ export default function mount() {
   let qT;
   $('#q').addEventListener('input', (e) => { state.q = e.target.value; $('#sbox').classList.toggle('has', !!state.q); clearTimeout(qT); qT = setTimeout(() => { feed(); }, 120); });
   $('#clear').addEventListener('click', () => { state.q = ''; $('#q').value = ''; $('#sbox').classList.remove('has'); feed(); $('#q').focus(); });
+  // from the start screen's search pill: land with the keyboard up (then drop the flag so back/refresh don't re-open it)
+  if (params.get('find') === '1') { params.delete('find'); history.replaceState(history.state, '', `?${params}`); requestAnimationFrame(() => $('#q').focus({ preventScroll: true })); }
   $('#cats').addEventListener('click', (e) => {
     const b = e.target.closest('[data-sc]'); if (!b) return;
     const id = b.dataset.sc, was = b.getAttribute('aria-pressed') === 'true';
