@@ -78,53 +78,8 @@ export default function mount() {
   header(); feed(true);
   bindFavs(document);
 
-  // ---------- the start (index.html only): the two sides, big, at the top of home ----------
-  // shown when the app is opened (once per visit) or from the logo; choosing plays the side's little scene, then its
-  // picture shrinks into the switch at the top left while home settles in for that side (same-document view transition)
-  const ch = $('#chooser');
-  if (ch) {
-    let show = true;
-    try { show = params.get('choose') === '1' || !sessionStorage.getItem('molu_chosen'); } catch {}
-    if (!show) ch.remove();
-    else {
-      const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      let since = 0;
-      const press = (k) => { if (ch.dataset.go) return; if (ch.dataset.hot !== k) since = Date.now(); ch.dataset.hot = k; };
-      const choose = (k) => {
-        try { sessionStorage.setItem('molu_chosen', '1'); } catch {}
-        const update = () => {
-          ch.remove();
-          if (k !== section) { sw.set(k); section = k; state.q = ''; state.cat = ''; state.home = false; state.offer = false; }
-          history.replaceState(null, '', `?s=${section}`);
-          render(false); scrollTo(0, 0);
-          const face = $(`#sec [data-k="${k}"] .face`);
-          if (face && move) face.style.viewTransitionName = 'gate-face';
-        };
-        const move = !calm && document.startViewTransition;
-        if (!move) { update(); blurIn($('main.wrap'), { y: 18 }); return; }
-        $(`.ch-go[data-k="${k}"] img`, ch).style.viewTransitionName = 'gate-face';
-        document.documentElement.dataset.vt = 'choose';
-        document.startViewTransition(update).finished.finally(() => {
-          delete document.documentElement.dataset.vt;
-          $$('#sec .face').forEach((f) => (f.style.viewTransitionName = ''));
-        });
-      };
-      $$('[data-k]', ch).forEach((b) => {
-        const k = b.dataset.k;
-        b.addEventListener('pointerdown', () => press(k));
-        b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') press(k); });
-        ['pointerleave', 'pointercancel'].forEach((ev) => b.addEventListener(ev, () => { if (!ch.dataset.go) delete ch.dataset.hot; }));
-        b.addEventListener('click', () => {
-          if (ch.dataset.go) return;
-          press(k); ch.dataset.hot = k; ch.dataset.go = k;
-          setTimeout(() => choose(k), calm ? 0 : Math.max(120, 340 - (Date.now() - since)));
-        });
-      });
-    }
-  }
-
   // ---------- interactions ----------
-  const sw = secSwitch($('#sec'), section, (k) => {
+  secSwitch($('#sec'), section, (k) => {
     section = k; state.cat = ''; state.home = false; state.offer = false;
     history.replaceState(null, '', `?s=${section}`);
     swap($('main.wrap'), () => render(false));
@@ -132,8 +87,6 @@ export default function mount() {
   let qT;
   $('#q').addEventListener('input', (e) => { state.q = e.target.value; $('#sbox').classList.toggle('has', !!state.q); clearTimeout(qT); qT = setTimeout(() => { feed(); }, 120); });
   $('#clear').addEventListener('click', () => { state.q = ''; $('#q').value = ''; $('#sbox').classList.remove('has'); feed(); $('#q').focus(); });
-  // from the start screen's search pill: land with the keyboard up (then drop the flag so back/refresh don't re-open it)
-  if (params.get('find') === '1') { params.delete('find'); history.replaceState(history.state, '', `?${params}`); requestAnimationFrame(() => $('#q').focus({ preventScroll: true })); }
   $('#cats').addEventListener('click', (e) => {
     const b = e.target.closest('[data-sc]'); if (!b) return;
     const id = b.dataset.sc, was = b.getAttribute('aria-pressed') === 'true';
