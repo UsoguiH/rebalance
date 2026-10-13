@@ -39,11 +39,17 @@ html[data-vt="pop"]::view-transition-new(root) { animation: .34s var(--vt-spring
 ::view-transition-old(cover-bar) { animation: .12s ease-out both vt-fade-out; }
 /* from the start screen: the poster eases back and fades while the feed rises in */
 html:active-view-transition-type(gate)::view-transition-old(root) { animation: .26s cubic-bezier(.4, 0, 1, 1) both vt-gate-out; }
-html:active-view-transition-type(gate)::view-transition-new(root) { animation: .42s .06s var(--ease-out) both vt-gate-in; }
+html:active-view-transition-type(gate)::view-transition-new(root) { animation: .5s .12s var(--ease-out) both vt-gate-in; }
 html[data-vt="gate"]::view-transition-old(root) { animation: .26s cubic-bezier(.4, 0, 1, 1) both vt-gate-out; }
-html[data-vt="gate"]::view-transition-new(root) { animation: .42s .06s var(--ease-out) both vt-gate-in; }
+html[data-vt="gate"]::view-transition-new(root) { animation: .5s .12s var(--ease-out) both vt-gate-in; }
 @keyframes vt-gate-out { to { opacity: 0; transform: scale(.96); } }
 @keyframes vt-gate-in { from { opacity: 0; transform: translateY(18px); } }
+/* start screen → home: the chosen scene shrinks into the section avatar of the top bar while the feed rises */
+::view-transition-group(gate-face) { animation-duration: .62s; animation-timing-function: cubic-bezier(.2, .85, .2, 1); z-index: 3; }
+::view-transition-old(gate-face), ::view-transition-new(gate-face) { height: 100%; object-fit: cover; animation-duration: .62s; }
+::view-transition-old(gate-face) { animation-name: vt-face-out; } ::view-transition-new(gate-face) { animation-name: vt-face-in; }
+@keyframes vt-face-out { 0%, 55% { opacity: 1; } to { opacity: 0; } }
+@keyframes vt-face-in { 0%, 45% { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
 
 :root {
