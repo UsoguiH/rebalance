@@ -109,7 +109,7 @@ export default function mount() {
           $$('#sec .face').forEach((f) => (f.style.viewTransitionName = ''));
         });
       };
-      $$('.ch-go', ch).forEach((b) => {
+      $$('[data-k]', ch).forEach((b) => {
         const k = b.dataset.k;
         b.addEventListener('pointerdown', () => press(k));
         b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') press(k); });

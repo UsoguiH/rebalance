@@ -1,29 +1,30 @@
-/* The start, at the top of home: Uber Eats simple — a headline with a live green dot, two grey tiles side by side
-   (حواء left, آدم right: together the whole illustration, cut out of its cream), each with its name and a black
-   button. Pressing a tile plays its little 2D scene; choosing shrinks the picture into the section switch at the top
-   left (same-document view transition "gate-face", js/explore.js) while home settles in under it. */
-.chooser { padding: 6px 0 18px; }
-.chooser h1 { margin: 0; font-size: 2rem; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; color: #000; }
-.chooser > p { display: flex; align-items: center; gap: 8px; margin: 6px 0 18px; font-size: .95rem; color: #5E5E5E; }
-.chooser > p i { width: 8px; height: 8px; border-radius: 50%; background: #06C167; box-shadow: 0 0 0 4px rgba(6, 193, 103, .16); flex: none; }
-/* in the picture's own order: حواء on the left, آدم on the right */
-.ch-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; direction: ltr; }
-.ch-go { direction: rtl; display: flex; flex-direction: column; border: 0; border-radius: 22px; background: #F1F1F1; padding: 6px 0 12px; overflow: hidden; text-align: start; color: #000; font: inherit; cursor: pointer;
-  transition: transform .18s cubic-bezier(.22, 1, .36, 1), background-color .2s; animation: ch-rise .5s cubic-bezier(.22, 1, .36, 1) both; }
-.ch-go.adam { animation-delay: .06s; }
-.ch-go:active { transform: scale(.97); background: #EAEAEA; }
-.ch-scene { position: relative; display: block; width: 100%; aspect-ratio: 624 / 930; container-type: inline-size; }
-.ch-go.adam .ch-scene { aspect-ratio: 628 / 930; }
-.ch-scene img { display: block; width: 100%; height: 100%; -webkit-user-drag: none; }
-.ch-txt { display: grid; margin: 6px 16px 12px; line-height: 1.3; }
-.ch-txt b { font-size: 1.35rem; font-weight: 700; }
-.ch-txt small { font-size: .85rem; color: #5E5E5E; }
-/* black capsule, no border: a word and a thin chevron */
-.ch-btn { margin: 0 12px; display: flex; align-items: center; justify-content: center; gap: 6px; height: 48px; border-radius: 24px; background: #000; color: #fff; font-weight: 600; font-size: 1rem; }
-.ch-btn svg { flex: none; opacity: .75; transition: transform .2s, opacity .2s; }
-.ch-go:active .ch-btn svg, .chooser[data-go] .ch-btn svg { transform: translateX(-4px); opacity: 1; }
-@media (hover: hover) { .ch-go:hover { background: #EBEBEB; } .ch-go:hover .ch-btn svg { transform: translateX(-4px); opacity: 1; } }
-@keyframes ch-rise { from { opacity: 0; transform: translateY(14px); } }
+/* The start, on home under the search and the services: only the illustration (cut out of its cream, so it sits on
+   the page), حواء left and آدم right, a black «تفضّلي / تفضّل» under each. Pressing a side plays its little 2D scene;
+   choosing shrinks its picture into the section switch at the top left (same-document view transition "gate-face",
+   js/explore.js) while home settles in for that side. */
+.chooser { padding: 8px 0 22px; }
+/* the whole illustration, edge to edge, nothing around it: its two scenes side by side (they meet in the empty gap
+   between them), in the picture's own order — حواء left, آدم right */
+.ch-pic { display: grid; grid-template-columns: 624fr 628fr; direction: ltr; margin: 0 -16px; }
+.ch-go { position: relative; display: block; border: 0; padding: 0; background: none; cursor: pointer; aspect-ratio: 624 / 930; container-type: inline-size;
+  transition: opacity .35s cubic-bezier(.22, 1, .36, 1); animation: ch-develop .8s cubic-bezier(.22, 1, .36, 1) both; }
+.ch-go.adam { aspect-ratio: 628 / 930; animation-delay: .06s; }
+.ch-go img { display: block; width: 100%; height: 100%; -webkit-user-drag: none; }
+/* touching one side softly fades the other */
+.chooser[data-hot="eve"] .ch-go.adam, .chooser[data-hot="adam"] .ch-go.eve,
+.chooser[data-hot="eve"] .ch-btn.adam, .chooser[data-hot="adam"] .ch-btn.eve { opacity: .4; }
+/* under each side its button: black capsule, no border — a word and a thin chevron */
+.ch-btns { display: grid; grid-template-columns: 1fr 1fr; direction: ltr; gap: 12px; margin-top: 8px; }
+.ch-btn { justify-self: center; width: min(100%, 164px); height: 50px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 25px;
+  background: #111; color: #fff; direction: rtl; font: 600 1.05rem var(--md-font, 'IBM Plex Sans Arabic'), -apple-system, system-ui, sans-serif; cursor: pointer;
+  transition: transform .18s cubic-bezier(.22, 1, .36, 1), opacity .35s, background-color .18s; animation: ch-rise .5s .25s cubic-bezier(.22, 1, .36, 1) both; }
+.ch-btn.adam { animation-delay: .31s; }
+.ch-btn svg { flex: none; opacity: .7; transition: transform .2s, opacity .2s; }
+.ch-btn:active { transform: scale(.96); background: #2a2a2a; }
+.ch-btn:active svg, .chooser[data-go] .ch-btn svg { transform: translateX(-4px); opacity: 1; }
+@media (hover: hover) { .ch-btn:hover svg { transform: translateX(-4px); opacity: 1; } }
+@keyframes ch-rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes ch-develop { from { opacity: 0; filter: blur(10px); transform: scale(.97); } }
 /* the logo, at the start of home's top bar: tap it to choose again */
 .brand-mark { flex: none; display: grid; place-items: center; width: 40px; height: 40px; }
 .brand-svg { width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 4px 12px -6px rgba(90, 42, 51, .45); }
@@ -73,6 +74,6 @@ html[data-vt="choose"]::view-transition-new(root) { animation: .45s .08s cubic-b
 @keyframes ch-pole-spin { to { transform: translateY(-110px); } }
 @keyframes ch-snip { 0% { opacity: 0; scale: .2 1; translate: 0 0; } 30% { opacity: 1; } 100% { opacity: 0; scale: 1 1; translate: 0 0; } }
 @keyframes ch-fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-2.4cqw, 12cqw) rotate(220deg); } }
-@media (prefers-reduced-motion: reduce) { .ch-go { animation: none; } .chooser .fx { display: none; } }
+@media (prefers-reduced-motion: reduce) { .ch-go, .ch-btn { animation: none; } .chooser .fx { display: none; } }
 /* the map pill waits until a side is chosen */
 body:has(#chooser) .map-fab { display: none; }
