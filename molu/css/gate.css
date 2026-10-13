@@ -1,8 +1,7 @@
-/* Start screen — one app screen in the language of the big ones: a greeting and the neighbourhood (Uber Eats / Jahez),
-   a search pill and two category tabs with faces (Airbnb), one big listing card whose picture is the chosen side's whole
-   scene (never cropped), its numbers and a black button, then a row of service shortcuts (Uber Eats). The two scenes
-   cross-fade in place (no slides); each plays its little 2D show by itself, and again on touch. Static: no app CSS/JS.
-   Going in: the scene becomes the avatar in home's top bar (view transition "gate-face", see css/molu.css). */
+/* Start screen — Uber Eats simple: white page, black type, one green accent. A headline, two grey tiles side by side
+   (حواء | آدم, together they make the whole illustration, cut out of its cream so it sits on the tile), each with its
+   name and a black button, and the owners' link. Pressing a tile plays its little 2D scene, then we go in: the scene
+   becomes the avatar in home's top bar (view transition "gate-face", see css/molu.css). Static: no app CSS/JS. */
 /* MoLu wordmark faces (only this screen shows the logo) */
 @font-face { font-family: 'MoLu Mo'; src: url(../fonts/playfair-display-700-latin.woff2) format('woff2'); font-weight: 700; font-display: block; }
 @font-face { font-family: 'MoLu Lu'; src: url(../fonts/great-vibes-latin.woff2) format('woff2'); font-display: block; }
@@ -10,18 +9,19 @@
 @font-face { font-family: 'MoLu Nastaliq'; src: url(../fonts/gulzar-logo-2.woff2) format('woff2'); font-display: block; }
 @view-transition { navigation: auto; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s; }
-:root { --ease: cubic-bezier(.22, 1, .36, 1); --paper: #F9F6E2; --eve: #A3355A; --adam: #24475F; }
+:root { --ease: cubic-bezier(.22, 1, .36, 1); --ink: #000; --muted: #5E5E5E; --tile: #F3F3F3; --green: #06C167; }
 /* no tap square (Android/iOS highlight) and no focus ring from taps — keyboard focus still shows */
-*, *::before, *::after { -webkit-tap-highlight-color: transparent; }
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 :focus:not(:focus-visible) { outline: none; }
-* { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--paper); }
-body { color: #2D2D2D; font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
-a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+html, body { margin: 0; min-height: 100%; background: #fff; }
+body { color: var(--ink); font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+h1, p { margin: 0; }
 
-.poster { min-height: 100dvh; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 6px;
-  padding: max(10px, env(safe-area-inset-top)) 0 max(14px, env(safe-area-inset-bottom)); }
-.top { display: flex; justify-content: center; animation: fade .5s var(--ease) both; }
+.app { min-height: 100dvh; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 22px;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom)); }
+.top { display: flex; justify-content: center; animation: fade .4s var(--ease) both; }
 .molu-logo { display: inline-flex; align-items: center; gap: 7px; }
 .logo-mark { width: 32px; height: 32px; border-radius: 9px; flex: none; box-shadow: 0 4px 12px -6px rgba(90, 42, 51, .45); }
 .logo-latin { display: inline-flex; align-items: baseline; line-height: 1; }
@@ -32,108 +32,41 @@ a { color: inherit; text-decoration: none; -webkit-tap-highlight-color: transpar
 .logo-ar .mo { font-family: 'MoLu Naskh', 'Amiri', serif; font-weight: 700; color: #3A1C24; }
 .logo-ar .lu { display: inline-block; font-family: 'MoLu Nastaliq', 'Gulzar', serif; font-size: 1.35em; color: #B0485C; margin-inline-start: -.12em; transform: translateY(.12em); }
 
-@view-transition { navigation: auto; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .15s; }
-:root { --ease: cubic-bezier(.22, 1, .36, 1); --paper: #F9F6E2; --ink: #141414; --muted: #776D60; --line: rgba(70, 45, 20, .09); --eve: #A3355A; --adam: #24475F; }
-/* no tap square (Android/iOS highlight) and no focus ring from taps — keyboard focus still shows */
-*, *::before, *::after { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-:focus:not(:focus-visible) { outline: none; }
-:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-html, body { margin: 0; background: var(--paper); }
-body { color: var(--ink); font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-a { color: inherit; text-decoration: none; }
-button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-h1, h2, h3, p { margin: 0; }
+.head { animation: rise .45s .04s var(--ease) both; }
+.head h1 { font: 700 2rem/1.2 'IBM Plex Sans Arabic', sans-serif; letter-spacing: -.01em; }
+.head p { display: flex; align-items: center; gap: 8px; margin-top: 6px; font: 500 .95rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); }
+.head p i { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(6, 193, 103, .16); }
 
-.app { max-width: 520px; margin: 0 auto; padding: max(8px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; }
-/* one wording per side: .e for حواء, .a for آدم */
-.app[data-sec="eve"] .a, .app[data-sec="adam"] .e { display: none; }
-.top { display: flex; justify-content: center; padding-top: 2px; animation: fade .5s var(--ease) both; }
-
-/* greeting + neighbourhood, and the owners' door (Airbnb's "host your home") */
-.hello { display: flex; align-items: center; justify-content: space-between; gap: 12px; animation: rise .5s .04s var(--ease) both; }
-.hello h1 { font: 800 1.6rem/1.25 'IBM Plex Sans Arabic', sans-serif; letter-spacing: -.01em; }
-.loc { display: flex; align-items: center; gap: 4px; margin-top: 2px; font: 600 .9rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); }
-.loc svg:first-child { color: var(--eve); transition: color .3s; }
-.app[data-sec="adam"] .loc svg:first-child { color: var(--adam); }
-.loc .dd { opacity: .6; }
-.biz { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border-radius: 19px; background: #fff;
-  font: 700 .84rem 'IBM Plex Sans Arabic', sans-serif; box-shadow: inset 0 0 0 1px var(--line), 0 6px 16px -12px rgba(70, 45, 20, .5); transition: transform .18s var(--ease); }
-.biz:active { transform: scale(.95); }
-
-/* Airbnb's search pill */
-.find { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 12px 0 10px; padding-inline-start: 20px; border-radius: 32px; background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 10px 28px -10px rgba(70, 45, 20, .32); transition: transform .18s var(--ease); animation: rise .5s .08s var(--ease) both; }
-.find:active { transform: scale(.98); }
-.find .mag { flex: none; }
-.find > span:not(.filt) { flex: 1; display: grid; line-height: 1.35; }
-.find b { font: 700 .98rem 'IBM Plex Sans Arabic', sans-serif; }
-.find small { font: 500 .8rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); }
-.filt { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
-
-/* Airbnb's category tabs: a face, the name, an underline that grows under the chosen one */
-.tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); animation: rise .5s .12s var(--ease) both; }
-.tab { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 0 12px; opacity: .5; transition: opacity .3s var(--ease); }
-.tab[aria-selected="true"] { opacity: 1; }
-.tab::after { content: ""; position: absolute; inset: auto 18% -1px; height: 3px; border-radius: 2px; background: var(--ink); transform: scaleX(0); transition: transform .35s var(--ease); }
-.tab[aria-selected="true"]::after { transform: none; }
-.av { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: #fff; box-shadow: 0 0 0 2px #fff, 0 4px 10px -6px rgba(70, 45, 20, .5); transition: transform .35s var(--ease), filter .3s; }
-.av img { width: 100%; height: 100%; object-fit: cover; object-position: 58% 16%; transform: scale(2.1); transform-origin: 58% 16%; }
-.tab:not([aria-selected="true"]) .av { filter: grayscale(.7); }
-.tab:active .av { transform: scale(.9); }
-.tt { display: grid; text-align: start; line-height: 1; }
-.tt b { font: 700 1.9rem/1.15 'Aref Ruqaa', serif; }
-.tab.eve b { color: var(--eve); } .tab.adam b { color: var(--adam); }
-.tt small { font: 600 .74rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); margin-top: 1px; }
-
-/* the listing card: the whole scene on its own cream, the numbers, one black button */
-.card { background: #fff; border-radius: 28px; padding: 10px 10px 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, .05), 0 18px 40px -22px rgba(70, 45, 20, .45); animation: rise .55s .16s var(--ease) both; }
-.stage { position: relative; height: clamp(270px, 40dvh, 440px); border-radius: 20px; background: var(--paper); overflow: hidden; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
-.scene { position: absolute; top: 4%; bottom: 3%; left: 50%; aspect-ratio: 624 / 930; translate: -50% 0; container-type: inline-size;
-  opacity: 0; scale: .96; filter: blur(8px); transition: opacity .38s var(--ease), scale .5s var(--ease), filter .38s var(--ease); pointer-events: none; }
-.scene.adam { aspect-ratio: 628 / 930; }
-.app[data-sec="eve"] .scene.eve, .app[data-sec="adam"] .scene.adam { opacity: 1; scale: 1; filter: none; }
+/* two grey tiles, side by side, like Uber's service tiles */
+/* in the picture's own order: حواء on the left, آدم on the right */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; direction: ltr; }
+.go { direction: rtl; display: flex; flex-direction: column; border-radius: 20px; background: var(--tile); padding: 14px 12px 12px; overflow: hidden;
+  transition: transform .18s var(--ease), background-color .2s; animation: rise .5s .1s var(--ease) both; }
+.go.adam { animation-delay: .16s; }
+.go:active { transform: scale(.97); background: #EBEBEB; }
+.scene { position: relative; display: block; width: 100%; aspect-ratio: 624 / 930; container-type: inline-size; }
+.go.adam .scene { aspect-ratio: 628 / 930; }
 .scene img { display: block; width: 100%; height: 100%; -webkit-user-drag: none; }
-.app:not(.swap) .scene img { animation: develop .8s .2s var(--ease) both; }
-.app[data-go="eve"] .scene.eve img, .app[data-go="adam"] .scene.adam img { view-transition-name: gate-face; }
-.badge { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 15px; background: #fff;
-  font: 700 .78rem 'IBM Plex Sans Arabic', sans-serif; box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .3); }
-.badge i { width: 7px; height: 7px; border-radius: 50%; background: #1DB954; box-shadow: 0 0 0 3px rgba(29, 185, 84, .2); animation: beat 1.6s ease-in-out infinite; }
-.dots { position: absolute; bottom: 12px; left: 50%; translate: -50% 0; display: flex; gap: 5px; padding: 5px 7px; border-radius: 10px; background: rgba(20, 20, 20, .28); }
-.dots i { width: 6px; height: 6px; border-radius: 3px; background: #fff; opacity: .55; transition: width .3s var(--ease), opacity .3s; }
-.app[data-sec="eve"] .dots .eve, .app[data-sec="adam"] .dots .adam { width: 16px; opacity: 1; }
-.info { padding: 12px 6px 10px; display: grid; gap: 3px; }
-.app.swap .info, .app.swap .row, .app.swap .cats h3 { animation: rise .4s var(--ease) both; }
-.r1 { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.info h2 { font: 800 1.15rem 'IBM Plex Sans Arabic', sans-serif; }
-.rate { display: inline-flex; align-items: center; gap: 4px; font: 700 .95rem 'IBM Plex Sans Arabic', sans-serif; }
-.info p { font: 500 .9rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); }
-.info p b { color: var(--ink); font-weight: 700; }
-/* simple flat capsule: black, no border — a word and a thin chevron */
-.go { display: flex; align-items: center; justify-content: center; gap: 6px; height: 54px; border-radius: 27px; background: #111; color: #fff;
-  font: 600 1.08rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif; transition: transform .18s var(--ease), background-color .18s; }
-.app[data-sec="eve"] .go.adam, .app[data-sec="adam"] .go.eve { display: none; }
-.go svg { flex: none; opacity: .7; transition: transform .2s var(--ease), opacity .2s; }
-.go:active { transform: scale(.97); background: #2a2a2a; }
-.go:active svg, .app[data-go] .go svg { transform: translateX(-4px); opacity: 1; }
-@media (hover: hover) { .go:hover svg { transform: translateX(-4px); opacity: 1; } .find:hover, .biz:hover { box-shadow: inset 0 0 0 1px var(--line), 0 12px 30px -10px rgba(70, 45, 20, .45); } }
+.app[data-go="eve"] .go.eve img, .app[data-go="adam"] .go.adam img { view-transition-name: gate-face; }
+.txt { display: grid; margin: 10px 4px 12px; line-height: 1.3; }
+.txt b { font: 700 1.35rem 'IBM Plex Sans Arabic', sans-serif; }
+.txt small { font: 500 .85rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); }
+/* black capsule, no border: a word and a thin chevron */
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 48px; border-radius: 24px; background: #000; color: #fff;
+  font: 600 1rem 'IBM Plex Sans Arabic', -apple-system, system-ui, sans-serif; }
+.btn svg { flex: none; opacity: .75; transition: transform .2s var(--ease), opacity .2s; }
+.go:active .btn svg, .app[data-go] .go .btn svg { transform: translateX(-4px); opacity: 1; }
+@media (hover: hover) { .go:hover { background: #EDEDED; } .go:hover .btn svg { transform: translateX(-4px); opacity: 1; } }
 
-/* Uber Eats' shortcut row */
-.cats { animation: rise .5s .24s var(--ease) both; }
-.cats h3 { font: 800 1.08rem 'IBM Plex Sans Arabic', sans-serif; margin: 4px 0 10px; }
-.row { display: flex; gap: 6px; margin: 0 -16px; padding: 2px 16px 6px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
-.row::-webkit-scrollbar { display: none; }
-.sc { flex: none; width: 74px; display: grid; justify-items: center; gap: 6px; scroll-snap-align: start; font: 600 .78rem/1.2 'IBM Plex Sans Arabic', sans-serif; text-align: center; }
-.tile { width: 66px; height: 66px; border-radius: 22px; display: grid; place-items: center; background: #fff; box-shadow: inset 0 0 0 1px var(--line); transition: transform .18s var(--ease); }
-.tile img { width: 52px; height: 52px; object-fit: contain; }
-.sc:active .tile { transform: scale(.9); }
-.app.swap .sc { animation: rise .4s calc(var(--i) * 30ms) var(--ease) both; }
+.biz { align-self: center; padding: 8px 12px; border-radius: 12px; font: 500 .9rem 'IBM Plex Sans Arabic', sans-serif; color: var(--muted); animation: fade .45s .3s var(--ease) both; }
+.biz b { color: var(--ink); font-weight: 700; }
+.biz:active { background: var(--tile); }
 
-/* the scene's little 2D show (coordinates are percentages of each scene, so it stays aligned at any size):
+/* pressing a tile plays its little 2D scene (coordinates are percentages of each scene, so it stays aligned):
    حواء: the lamp switches on, warm air streams from the dryer, hearts float up, sparkles twinkle in her hair.
    آدم: the lamp switches on, the barber pole spins, the scissors snip, cut hair falls, a shine on the fresh cut. */
 .fx { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .2s; }
-.app[data-play="eve"] .fx-eve, .app[data-play="adam"] .fx-adam { opacity: 1; }
+.app[data-hot="eve"] .fx-eve, .app[data-hot="adam"] .fx-adam { opacity: 1; }
 .fx i, .fx .pole-box, .fx .air, .fx .snip { position: absolute; left: var(--x); top: var(--y); display: block; }
 .fx svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .fx .glow { width: var(--w); height: var(--h); background: radial-gradient(ellipse 70% 100% at 50% 0, rgba(255, 246, 214, .95), rgba(255, 240, 200, .35) 45%, rgba(255, 240, 200, 0) 80%); clip-path: polygon(32% 0, 68% 0, 100% 100%, 0 100%); opacity: 0; mix-blend-mode: screen; }
@@ -149,17 +82,17 @@ h1, h2, h3, p { margin: 0; }
 .fx .snip i:nth-child(1) { rotate: 160deg; } .fx .snip i:nth-child(2) { rotate: 200deg; } .fx .snip i:nth-child(3) { rotate: 240deg; }
 .fx .cut { width: 3.8cqw; height: 1cqw; border-radius: 0.6cqw; background: #3A2A22; box-shadow: 0 0 0 0.24cqw rgba(255, 255, 255, .5); rotate: var(--r); opacity: 0; }
 
-.app[data-play="eve"] .fx-eve .glow, .app[data-play="adam"] .fx-adam .glow { animation: lamp-on .7s ease-out forwards; }
-.app[data-play="eve"] .fx .air path { animation: blow .75s linear infinite; }
-.app[data-play="eve"] .fx .air path:nth-child(2) { animation-delay: .25s; }
-.app[data-play="eve"] .fx .air path:nth-child(3) { animation-delay: .5s; }
-.app[data-play="eve"] .fx .air path:nth-child(4) { animation-delay: .12s; } .app[data-play="eve"] .fx .air path:nth-child(5) { animation-delay: .38s; }
-.app[data-play="eve"] .fx .hrt { animation: float-up 1.5s var(--d) ease-out infinite; }
-.app[data-play="eve"] .fx-eve .spk, .app[data-play="adam"] .fx-adam .spk { animation: twinkle 1.2s var(--d) ease-in-out infinite; }
-.app[data-play="adam"] .fx .spin { animation: pole-spin .8s linear infinite; }
-.app[data-play="adam"] .fx .snip i { animation: snip .5s ease-out infinite; }
-.app[data-play="adam"] .fx .snip i:nth-child(2) { animation-delay: .04s; } .app[data-play="adam"] .fx .snip i:nth-child(3) { animation-delay: .08s; }
-.app[data-play="adam"] .fx .cut { animation: fall 1.3s var(--d) cubic-bezier(.4, 0, .7, 1) infinite; }
+.app[data-hot="eve"] .fx-eve .glow, .app[data-hot="adam"] .fx-adam .glow { animation: lamp-on .7s ease-out forwards; }
+.app[data-hot="eve"] .fx .air path { animation: blow .75s linear infinite; }
+.app[data-hot="eve"] .fx .air path:nth-child(2) { animation-delay: .25s; }
+.app[data-hot="eve"] .fx .air path:nth-child(3) { animation-delay: .5s; }
+.app[data-hot="eve"] .fx .air path:nth-child(4) { animation-delay: .12s; } .app[data-hot="eve"] .fx .air path:nth-child(5) { animation-delay: .38s; }
+.app[data-hot="eve"] .fx .hrt { animation: float-up 1.5s var(--d) ease-out infinite; }
+.app[data-hot="eve"] .fx-eve .spk, .app[data-hot="adam"] .fx-adam .spk { animation: twinkle 1.2s var(--d) ease-in-out infinite; }
+.app[data-hot="adam"] .fx .spin { animation: pole-spin .8s linear infinite; }
+.app[data-hot="adam"] .fx .snip i { animation: snip .5s ease-out infinite; }
+.app[data-hot="adam"] .fx .snip i:nth-child(2) { animation-delay: .04s; } .app[data-hot="adam"] .fx .snip i:nth-child(3) { animation-delay: .08s; }
+.app[data-hot="adam"] .fx .cut { animation: fall 1.3s var(--d) cubic-bezier(.4, 0, .7, 1) infinite; }
 /* the chosen name gives a little bounce */
 
 @keyframes lamp-on { 0% { opacity: 0; } 18% { opacity: .9; } 28% { opacity: .25; } 42% { opacity: 1; } 100% { opacity: .85; } }
@@ -171,8 +104,6 @@ h1, h2, h3, p { margin: 0; }
 @keyframes fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-2.4cqw, 12cqw) rotate(220deg); } }
 @keyframes name-pop { 0% { transform: none; } 30% { transform: scale(1.12) rotate(-3deg); } 60% { transform: scale(.97) rotate(1deg); } 100% { transform: none; } }
 @keyframes nudge { to { transform: translateX(-5px); } }
-@keyframes develop { from { opacity: 0; filter: blur(12px); transform: scale(.97); } }
-@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
 @keyframes fade { from { opacity: 0; } }
-@keyframes beat { 50% { box-shadow: 0 0 0 6px rgba(29, 185, 84, 0); } }
-@media (prefers-reduced-motion: reduce) { .top, .hello, .find, .tabs, .card, .cats, .scene img, .info, .row, .sc, .cats h3, .badge i { animation: none !important; } .scene { transition: none; } .fx { display: none; } }
+@media (prefers-reduced-motion: reduce) { .top, .head, .go, .biz { animation: none; } .fx { display: none; } }

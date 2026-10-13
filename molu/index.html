@@ -3,137 +3,69 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F9F6E2">
+<meta name="theme-color" content="#FFFFFF">
 <title>مولو — حواء وآدم</title>
 <meta name="description" content="احجز في أقرب صالون نسائي أو حلاق رجالي بدقيقة واحدة.">
-<link rel="preload" href="img/half-eve-380.webp" as="image" fetchpriority="high">
-<link rel="preload" href="fonts/ArefRuqaa-700-arabic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="img/cut-eve-380.webp" as="image" fetchpriority="high">
+<link rel="preload" href="img/cut-adam-380.webp" as="image" fetchpriority="high">
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/gate.css">
 <link rel="prefetch" href="explore.html">
 </head>
 <body>
-<main class="app" id="gate" data-sec="eve">
-<script>try { if (JSON.parse(localStorage.getItem('molu_section')) === 'adam') document.getElementById('gate').dataset.sec = 'adam'; } catch (_) {}</script>
+<main class="app" id="gate">
   <header class="top"><a class="molu-logo" href="index.html" aria-label="MoLu مولو"><svg class="logo-mark" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf7"/><stop offset="1" stop-color="#f3e4de"/></linearGradient><filter id="sh" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="1.8" stdDeviation="1.8" flood-color="#5a2a33" flood-opacity=".28"/></filter></defs><rect width="100" height="100" rx="22" fill="url(#b)"/><g transform="translate(7 6.14) scale(0.86)" filter="url(#sh)"><path d="M50 30 L37 29 L24 11 L19 36 L11 50 L14 64 L30 78 L44 91 L50 94 Z" fill="#352f2c"/><path d="M26 17 L22 34 L33 30 Z" fill="#5e534c"/><path d="M50 30 L63 28 L80 4 L85 38 L95 50 L90 62 L72 76 L56 90 L50 94 Z" fill="#bd4b61"/><path d="M79 11 L82 34 L68 29 Z" fill="#7d2537"/><path d="M50 30 L37 29 L44 46 L50 44 Z" fill="#fff" opacity=".09"/><path d="M50 30 L63 28 L56 46 L50 44 Z" fill="#fff" opacity=".13"/><path d="M19 36 L11 50 L14 64 L28 58 Z" fill="#000" opacity=".16"/><path d="M85 38 L95 50 L90 62 L74 60 Z" fill="#000" opacity=".14"/><path d="M24 11 L19 36 L30 30 Z" fill="#000" opacity=".12"/><path d="M80 4 L85 38 L72 30 Z" fill="#000" opacity=".1"/><path d="M14 64 L30 78 L44 91 L50 94 L50 70 L40 64 L28 58 Z" fill="#d2bf9f"/><path d="M95 50 L90 62 L72 76 L56 90 L50 94 L50 70 L60 64 L74 60 Z" fill="#fff"/><path d="M50 70 L40 64 L44 91 L50 94 Z" fill="#000" opacity=".07"/><path d="M50 70 L60 64 L56 90 L50 94 Z" fill="#000" opacity=".05"/><path d="M30 44 Q37 44.5 44 49 Q36.5 51.5 30 44 Z" fill="#a8957f"/><path d="M68 49 Q62 44 56 48 Q62 52 68 49 Z" fill="#171412"/><path d="M44 84 Q50 81 56 84 L50 93 Z" fill="#171412"/></g></svg><span class="logo-latin" dir="ltr"><span class="mo">Mo</span><span class="lu">Lu</span></span><span class="logo-sep"></span><span class="logo-ar"><span class="mo">مو</span><span class="lu">لو</span></span></a></header>
 
-  <div class="hello">
-    <div>
-      <h1 id="hi">أهلاً فيك</h1>
-      <p class="loc"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z" fill="currentColor"/><circle cx="12" cy="10" r="2.6" fill="#F9F6E2"/></svg>الصحافة، الرياض<svg class="dd" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></p>
-    </div>
-    <a class="biz" href="business.html"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 10v10h16V10M3 10l2-6h14l2 6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>سجّل محلّك</a>
+  <div class="head">
+    <h1>احجز موعدك بدقيقة</h1>
+    <p><i></i>١٣ صالون وحلاق مفتوح الحين قريب منك</p>
   </div>
 
-  <a class="find" id="find" href="explore.html?s=eve&amp;find=1" data-k="sec">
-    <svg class="mag" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-    <span><b>وين ودّك تروح؟</b><small>صالون · حلاق · خدمة · أي وقت</small></span>
-    <span class="filt" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
-  </a>
-
-  <nav class="tabs" role="tablist" aria-label="القسم">
-    <button class="tab eve" type="button" role="tab" data-t="eve" aria-controls="card"><span class="av"><img src="img/eve-560.webp" alt="" width="44" height="44" decoding="async"></span><span class="tt"><b>حواء</b><small>للسيدات</small></span></button>
-    <button class="tab adam" type="button" role="tab" data-t="adam" aria-controls="card"><span class="av"><img src="img/adam-560.webp" alt="" width="44" height="44" decoding="async"></span><span class="tt"><b>آدم</b><small>للرجال</small></span></button>
-  </nav>
-
-  <article class="card" id="card">
-    <div class="stage" id="stage">
-      <div class="scene eve">
-        <img src="img/half-eve-380.webp" srcset="img/half-eve-380.webp 380w, img/half-eve.webp 624w" sizes="(min-width: 600px) 300px, 62vw" width="624" height="930" alt="صالون نسائي: مصففة تجفف شعر عميلة" decoding="async" fetchpriority="high">
-        <div class="fx fx-eve" aria-hidden="true">
-        <i class="glow" style="--x:15.39%;--y:24.91%;--w:30.48%;--h:28.36%"></i>
+  <div class="pair">
+    <a class="go eve" href="explore.html?s=eve" data-k="eve" aria-label="تفضّلي إلى قسم حواء — صالونات ومراكز التجميل للسيدات">
+      <span class="scene"><img src="img/cut-eve-380.webp" srcset="img/cut-eve-380.webp 380w, img/cut-eve.webp 624w" sizes="(min-width: 520px) 240px, 46vw" width="624" height="930" alt="صالون نسائي: مصففة تجفف شعر عميلة" decoding="async" fetchpriority="high"><span class="fx fx-eve" aria-hidden="true"><i class="glow" style="--x:15.39%;--y:24.91%;--w:30.48%;--h:28.36%"></i>
         <svg class="air" viewBox="0 0 100 70"><path pathLength="100" d="M100 28C86 20 76 36 62 28S38 18 22 30 6 34 0 40"/><path pathLength="100" d="M100 38C88 34 78 48 64 42S42 36 28 48 10 52 2 58"/><path pathLength="100" d="M98 20C86 10 74 24 60 16S40 8 26 16"/><path pathLength="100" d="M100 33C90 28 80 40 68 35S46 30 34 38"/><path pathLength="100" d="M99 44C90 46 82 56 70 54S52 52 42 62"/></svg>
         <i class="hrt" style="--x:47.35%;--y:36.52%;--d:0s;--s:1"><svg viewBox="0 0 20 18"><path d="M10 18S0 11.5 0 5.4A5.2 5.2 0 0 1 10 3a5.2 5.2 0 0 1 10 2.4C20 11.5 10 18 10 18Z"/></svg></i><i class="hrt" style="--x:55.76%;--y:41.67%;--d:0.25s;--s:0.75"><svg viewBox="0 0 20 18"><path d="M10 18S0 11.5 0 5.4A5.2 5.2 0 0 1 10 3a5.2 5.2 0 0 1 10 2.4C20 11.5 10 18 10 18Z"/></svg></i><i class="hrt" style="--x:41.03%;--y:44.25%;--d:0.5s;--s:0.85"><svg viewBox="0 0 20 18"><path d="M10 18S0 11.5 0 5.4A5.2 5.2 0 0 1 10 3a5.2 5.2 0 0 1 10 2.4C20 11.5 10 18 10 18Z"/></svg></i><i class="hrt" style="--x:50.50%;--y:33.94%;--d:0.75s;--s:0.6"><svg viewBox="0 0 20 18"><path d="M10 18S0 11.5 0 5.4A5.2 5.2 0 0 1 10 3a5.2 5.2 0 0 1 10 2.4C20 11.5 10 18 10 18Z"/></svg></i><i class="hrt" style="--x:35.77%;--y:39.09%;--d:1s;--s:0.9"><svg viewBox="0 0 20 18"><path d="M10 18S0 11.5 0 5.4A5.2 5.2 0 0 1 10 3a5.2 5.2 0 0 1 10 2.4C20 11.5 10 18 10 18Z"/></svg></i><i class="hrt" style="--x:59.95%;--y:37.81%;--d:1.25s;--s:0.7"><svg viewBox="0 0 20 18"><path d="M10 18S0 11.5 0 5.4A5.2 5.2 0 0 1 10 3a5.2 5.2 0 0 1 10 2.4C20 11.5 10 18 10 18Z"/></svg></i>
-        <i class="spk" style="--x:32.84%;--y:40.38%;--d:0s;--s:1"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk" style="--x:27.37%;--y:50.7%;--d:0.3s;--s:0.7"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk" style="--x:56.80%;--y:37.16%;--d:0.55s;--s:0.85"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk" style="--x:38.94%;--y:30.71%;--d:0.8s;--s:0.6"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk" style="--x:22.11%;--y:45.54%;--d:1.1s;--s:0.55"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i>
-        </div>
-      </div>
-      <div class="scene adam">
-        <img src="img/half-adam-380.webp" srcset="img/half-adam-380.webp 380w, img/half-adam.webp 628w" sizes="(min-width: 600px) 300px, 62vw" width="628" height="930" alt="محل حلاقة: حلاق يقص شعر زبون" decoding="async">
-        <div class="fx fx-adam" aria-hidden="true">
-        <i class="glow" style="--x:58.19%;--y:24.91%;--w:28.41%;--h:25.78%"></i>
+        <i class="spk" style="--x:32.84%;--y:40.38%;--d:0s;--s:1"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk" style="--x:27.37%;--y:50.7%;--d:0.3s;--s:0.7"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk" style="--x:56.80%;--y:37.16%;--d:0.55s;--s:0.85"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk" style="--x:38.94%;--y:30.71%;--d:0.8s;--s:0.6"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk" style="--x:22.11%;--y:45.54%;--d:1.1s;--s:0.55"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i></span></span>
+      <span class="txt"><b>حواء</b><small>صالونات للسيدات</small></span>
+      <span class="btn"><span>تفضّلي</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+    <a class="go adam" href="explore.html?s=adam" data-k="adam" aria-label="تفضّل إلى قسم آدم — حلاقين ومراكز العناية للرجال">
+      <span class="scene"><img src="img/cut-adam-380.webp" srcset="img/cut-adam-380.webp 380w, img/cut-adam.webp 628w" sizes="(min-width: 520px) 240px, 46vw" width="628" height="930" alt="محل حلاقة: حلاق يقص شعر زبون" decoding="async" fetchpriority="high"><span class="fx fx-adam" aria-hidden="true"><i class="glow" style="--x:58.19%;--y:24.91%;--w:28.41%;--h:25.78%"></i>
         <span class="pole-box"><svg class="fx-pole" viewBox="0 0 48 170" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="pc"><rect width="48" height="170" rx="9"/></clipPath></defs><g clip-path="url(#pc)"><rect width="48" height="170" fill="#F8F1DB"/><g class="spin"><path d="M0 -220L48 -252V-225L0 -193Z" fill="#F64536"/><path d="M0 -165L48 -197V-170L0 -138Z" fill="#0D529E"/><path d="M0 -110L48 -142V-115L0 -83Z" fill="#F64536"/><path d="M0 -55L48 -87V-60L0 -28Z" fill="#0D529E"/><path d="M0 0L48 -32V-5L0 27Z" fill="#F64536"/><path d="M0 55L48 23V50L0 82Z" fill="#0D529E"/><path d="M0 110L48 78V105L0 137Z" fill="#F64536"/><path d="M0 165L48 133V160L0 192Z" fill="#0D529E"/><path d="M0 220L48 188V215L0 247Z" fill="#F64536"/><path d="M0 275L48 243V270L0 302Z" fill="#0D529E"/><path d="M0 330L48 298V325L0 357Z" fill="#F64536"/><path d="M0 385L48 353V380L0 412Z" fill="#0D529E"/></g><rect x="6" y="0" width="7" height="170" fill="#fff" opacity=".35"/></g></svg></span>
         <span class="snip" style="--x:46.07%;--y:38.06%"><i></i><i></i><i></i></span>
         <i class="cut" style="--x:49.00%;--y:39.09%;--d:0s;--r:40deg"></i><i class="cut" style="--x:53.19%;--y:38.45%;--d:0.18s;--r:-30deg"></i><i class="cut" style="--x:57.77%;--y:39.61%;--d:0.36s;--r:70deg"></i><i class="cut" style="--x:51.10%;--y:40.9%;--d:0.54s;--r:-60deg"></i><i class="cut" style="--x:56.10%;--y:37.81%;--d:0.72s;--r:20deg"></i><i class="cut" style="--x:60.71%;--y:40.13%;--d:0.9s;--r:-45deg"></i><i class="cut" style="--x:47.75%;--y:41.67%;--d:1.08s;--r:55deg"></i><i class="cut" style="--x:64.05%;--y:40.64%;--d:1.26s;--r:-20deg"></i>
-        <i class="spk w" style="--x:69.06%;--y:48.76%;--d:0.2s;--s:0.8"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk w" style="--x:49.84%;--y:50.7%;--d:0.6s;--s:0.6"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk w" style="--x:73.03%;--y:39.74%;--d:1s;--s:0.55"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i>
-        </div>
-      </div>
-      <span class="badge"><i></i>مفتوح الحين</span>
-      <span class="dots" aria-hidden="true"><i class="eve"></i><i class="adam"></i></span>
-    </div>
-    <div class="info" id="info">
-      <div class="r1"><h2><span class="e">صالونات حواء</span><span class="a">حلاقين آدم</span></h2><span class="rate"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><path d="m10 1.5 2.6 5.6 6.1.7-4.5 4.2 1.2 6L10 15l-5.4 3 1.2-6L1.3 7.8l6.1-.7Z" fill="currentColor"/></svg><span class="e">٤٫٦</span><span class="a">٤٫٥</span></span></div>
-      <p><span class="e">٨ صالونات قريبة منك · أقربها ١٫٤ كم</span><span class="a">٥ حلاقين قريبين منك · أقربهم ١٫٥ كم</span></p>
-      <p><b><span class="e">من ٤٠ ر.س</span><span class="a">من ٣٠ ر.س</span></b> · <span class="e">احجزي بدقيقة</span><span class="a">احجز بدقيقة</span></p>
-    </div>
-    <a class="go eve" href="explore.html?s=eve" data-k="eve" aria-label="تفضّلي إلى قسم حواء — صالونات ومراكز التجميل للسيدات"><span>تفضّلي</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-    <a class="go adam" href="explore.html?s=adam" data-k="adam" aria-label="تفضّل إلى قسم آدم — حلاقين ومراكز العناية للرجال"><span>تفضّل</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-  </article>
+        <i class="spk w" style="--x:69.06%;--y:48.76%;--d:0.2s;--s:0.8"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk w" style="--x:49.84%;--y:50.7%;--d:0.6s;--s:0.6"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i><i class="spk w" style="--x:73.03%;--y:39.74%;--d:1s;--s:0.55"><svg viewBox="0 0 20 20"><path d="M10 0C11 6 14 9 20 10 14 11 11 14 10 20 9 14 6 11 0 10 6 9 9 6 10 0Z"/></svg></i></span></span>
+      <span class="txt"><b>آدم</b><small>حلاقين للرجال</small></span>
+      <span class="btn"><span>تفضّل</span><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+  </div>
 
-  <section class="cats" aria-label="الخدمات">
-    <h3><span class="e">وش تبين اليوم؟</span><span class="a">وش تبي اليوم؟</span></h3>
-    <div class="row e">
-      <a class="sc" href="explore.html?s=eve&offer=1" data-k="eve" style="--i:0"><span class="tile"><img src="img/icons/offer.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>عروض</a>
-      <a class="sc" href="explore.html?s=eve&home=1" data-k="eve" style="--i:1"><span class="tile"><img src="img/icons/home.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>في البيت</a>
-      <a class="sc" href="explore.html?s=eve&cat=hair" data-k="eve" style="--i:2"><span class="tile"><img src="img/icons/eve-hair.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>الشعر</a>
-      <a class="sc" href="explore.html?s=eve&cat=nails" data-k="eve" style="--i:3"><span class="tile"><img src="img/icons/eve-nails.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>الأظافر</a>
-      <a class="sc" href="explore.html?s=eve&cat=makeup" data-k="eve" style="--i:4"><span class="tile"><img src="img/icons/eve-makeup.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>المكياج</a>
-      <a class="sc" href="explore.html?s=eve&cat=brows" data-k="eve" style="--i:5"><span class="tile"><img src="img/icons/eve-brows.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>حواجب ورموش</a>
-      <a class="sc" href="explore.html?s=eve&cat=skin" data-k="eve" style="--i:6"><span class="tile"><img src="img/icons/eve-skin.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>البشرة</a>
-      <a class="sc" href="explore.html?s=eve&cat=massage" data-k="eve" style="--i:7"><span class="tile"><img src="img/icons/eve-massage.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>المساج</a>
-      <a class="sc" href="explore.html?s=eve&cat=henna" data-k="eve" style="--i:8"><span class="tile"><img src="img/icons/eve-henna.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>الحناء</a>
-    </div>
-    <div class="row a">
-      <a class="sc" href="explore.html?s=adam&offer=1" data-k="adam" style="--i:0"><span class="tile"><img src="img/icons/offer.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>عروض</a>
-      <a class="sc" href="explore.html?s=adam&home=1" data-k="adam" style="--i:1"><span class="tile"><img src="img/icons/home.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>في البيت</a>
-      <a class="sc" href="explore.html?s=adam&cat=cut" data-k="adam" style="--i:2"><span class="tile"><img src="img/icons/adam-cut.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>الحلاقة</a>
-      <a class="sc" href="explore.html?s=adam&cat=beard" data-k="adam" style="--i:3"><span class="tile"><img src="img/icons/adam-beard.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>اللحية</a>
-      <a class="sc" href="explore.html?s=adam&cat=color" data-k="adam" style="--i:4"><span class="tile"><img src="img/icons/adam-color.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>الصبغة</a>
-      <a class="sc" href="explore.html?s=adam&cat=care" data-k="adam" style="--i:5"><span class="tile"><img src="img/icons/adam-care.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>العناية</a>
-      <a class="sc" href="explore.html?s=adam&cat=massage" data-k="adam" style="--i:6"><span class="tile"><img src="img/icons/adam-massage.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>المساج</a>
-      <a class="sc" href="explore.html?s=adam&cat=groom" data-k="adam" style="--i:7"><span class="tile"><img src="img/icons/adam-groom.webp" alt="" width="56" height="56" loading="lazy" decoding="async"></span>تجهيز عريس</a>
-    </div>
-  </section>
+  <a class="biz" href="business.html">صاحب صالون أو محل حلاقة؟ <b>سجّل محلّك</b></a>
 </main>
 <script>
 // tiny on purpose: no framework, no app modules — the first screen paints immediately
 (function () {
-  var gate = document.getElementById('gate'), stage = document.getElementById('stage'), calm = matchMedia('(prefers-reduced-motion: reduce)').matches, playT, since = 0;
-  var h = new Date().getHours();
-  document.getElementById('hi').textContent = h >= 4 && h < 12 ? 'صباح الخير' : h < 17 && h >= 12 ? 'يومك سعيد' : 'مساء الخير';
-  // the scene plays by itself for a moment (lamp on, dryer air and hearts / pole spins and hair falls), and again on touch
-  var play = function (k, ms) { if (calm) return; clearTimeout(playT); delete gate.dataset.play; void gate.offsetWidth; gate.dataset.play = k; since = Date.now(); if (ms) playT = setTimeout(function () { if (!gate.dataset.go) delete gate.dataset.play; }, ms); };
-  var set = function (k, first) {
-    gate.dataset.sec = k;
-    document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.t === k); t.tabIndex = t.dataset.t === k ? 0 : -1; });
-    document.getElementById('find').href = 'explore.html?s=' + k + '&find=1';
-    try { localStorage.setItem('molu_section', JSON.stringify(k)); } catch (_) {}
-    if (!first) { gate.classList.remove('swap'); void gate.offsetWidth; gate.classList.add('swap'); }
-    play(k, 2600);
-  };
-  set(gate.dataset.sec, true);
-  document.querySelectorAll('.tab').forEach(function (t) {
-    t.addEventListener('click', function () { if (gate.dataset.sec !== t.dataset.t) set(t.dataset.t); else play(t.dataset.t, 2600); });
-    t.addEventListener('keydown', function (e) { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { var o = gate.dataset.sec === 'eve' ? 'adam' : 'eve'; set(o); document.querySelector('.tab.' + o).focus(); } });
-  });
-  // swipe the picture (or tap it) to see the other side
-  var x0 = null;
-  stage.addEventListener('pointerdown', function (e) { x0 = e.clientX; play(gate.dataset.sec); });
-  stage.addEventListener('pointerup', function (e) { if (x0 === null) return; var dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 36) set(gate.dataset.sec === 'eve' ? 'adam' : 'eve'); else play(gate.dataset.sec, 2600); });
-  stage.addEventListener('pointercancel', function () { x0 = null; });
-  // going in: the chosen scene finishes its little show, then becomes the avatar in home's top bar (view transition "gate-face")
-  document.querySelectorAll('a[data-k]').forEach(function (a) {
+  var gate = document.getElementById('gate'), calm = matchMedia('(prefers-reduced-motion: reduce)').matches, since = 0;
+  document.querySelectorAll('.go').forEach(function (a) {
+    var k = a.dataset.k;
+    var press = function () { if (gate.dataset.go) return; if (gate.dataset.hot !== k) since = Date.now(); gate.dataset.hot = k; };
+    a.addEventListener('pointerdown', press);
+    a.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') press(); });
+    a.addEventListener('pointerleave', function () { if (!gate.dataset.go) delete gate.dataset.hot; });
+    a.addEventListener('pointercancel', function () { if (!gate.dataset.go) delete gate.dataset.hot; });
+    // the chosen side plays its little scene (air and hearts for حواء; the pole spins and hair falls for آدم), then we go in
     a.addEventListener('click', function (e) {
-      var k = a.dataset.k === 'sec' ? gate.dataset.sec : a.dataset.k;
       try { localStorage.setItem('molu_section', JSON.stringify(k)); sessionStorage.setItem('molu_gate', '1'); } catch (_) {}
-      if (calm || !a.classList.contains('go')) return;
+      if (calm) return;
       e.preventDefault();
       if (gate.dataset.go) return;
-      if (gate.dataset.play !== k) play(k);
-      gate.dataset.go = k;
-      setTimeout(function () { location.href = a.href; }, Math.max(120, 360 - (Date.now() - since)));
+      if (gate.dataset.hot !== k) since = Date.now();
+      gate.dataset.hot = k; gate.dataset.go = k;
+      setTimeout(function () { location.href = a.href; }, Math.max(120, 340 - (Date.now() - since)));
     });
   });
-  addEventListener('pageshow', function (e) { if (e.persisted) { delete gate.dataset.go; delete gate.dataset.play; } });
+  addEventListener('pageshow', function (e) { if (e.persisted) { delete gate.dataset.go; delete gate.dataset.hot; } });
   var WARM = ['js/dist/explore.js', 'js/dist/shared-DNZLK26X.js', 'js/dist/shared-TLAORWBW.js', 'css/app.min.css']; // build:warm
   var warm = function () { WARM.forEach(function (h) {
     var l = document.createElement('link'); l.rel = /\.js$/.test(h) ? 'modulepreload' : 'preload'; if (!/\.js$/.test(h)) l.as = 'style'; l.href = h; document.head.appendChild(l); }); };
