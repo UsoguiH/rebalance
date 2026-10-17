@@ -11,14 +11,12 @@ const dots = [...document.querySelectorAll('.dot')];
 const nextBtn = document.getElementById('next');
 const skipBtn = document.getElementById('skip');
 let slide = 0;
-let slideChangedAt = 0;
 const listeners = [];
 
 function go(n) {
   n = Math.max(0, Math.min(SLIDES - 1, n));
   if (n === slide) return;
   slide = n;
-  slideChangedAt = performance.now();
   copies.forEach((c, i) => c.classList.toggle('is-active', i === n));
   dots.forEach((d, i) => {
     d.classList.toggle('is-active', i === n);
@@ -45,6 +43,8 @@ window.addEventListener('pointerup', (e) => {
   dragX = null;
   if (Math.abs(dx) > 40) go(slide + (dx < 0 ? 1 : -1));
 });
+// The first slide's copy is already on screen at load; animate only later changes.
+requestAnimationFrame(() => requestAnimationFrame(() => screenEl.classList.remove('is-loading')));
 // Allow deep links like #2 for the third slide.
 const hashSlide = parseInt(location.hash.slice(1), 10);
 
@@ -119,8 +119,8 @@ const CAM_BASE = new THREE.Vector3(0, 0.55, 10.5);
 const lookTarget = new THREE.Vector3(0, -0.35, 0);
 
 // Lighting: cool sky from above, warm pink/peach bounce from the gradient below.
-scene.add(new THREE.HemisphereLight(0x8fa2ff, 0xf29ac0, 0.55));
-const key = new THREE.DirectionalLight(0xfff1ee, 1.2);
+scene.add(new THREE.HemisphereLight(0x8fa2ff, 0xf29ac0, 0.4));
+const key = new THREE.DirectionalLight(0xfff1ee, 0.9);
 key.position.set(-3, 5, 6);
 scene.add(key);
 const rim = new THREE.DirectionalLight(0xff8fd8, 1.6);
@@ -172,8 +172,8 @@ function canvasTexture(w, h, draw) {
 
 const mat = {
   shell: (color, sheen = 0xb6a8ff, irid = 1) => new THREE.MeshPhysicalMaterial({
-    color, metalness: 0.62, roughness: 0.24, clearcoat: 1, clearcoatRoughness: 0.1,
-    iridescence: irid, iridescenceIOR: 1.6, iridescenceThicknessRange: [260, 820],
+    color, metalness: 0.8, roughness: 0.26, clearcoat: 1, clearcoatRoughness: 0.08,
+    iridescence: irid, iridescenceIOR: 1.6, iridescenceThicknessRange: [300, 800],
     sheen: 0.35, sheenColor: new THREE.Color(sheen), envMapIntensity: 1.05,
   }),
   plastic: (color, rough = 0.38) => new THREE.MeshPhysicalMaterial({
@@ -257,15 +257,15 @@ function planarUV(geo, w, h) {
 // ---------------------------------------------------------------------------
 // Suitcase
 // ---------------------------------------------------------------------------
-const W = 1.34, H = 1.58, D = 0.92, R = 0.2;
+const W = 1.3, H = 1.62, D = 0.86, R = 0.24;
 
-function makeSuitcase({ body = 0x6c70e2, sheen = 0x8fd8ff, accent = 0xb9c612, trim = 0xd8c39d, wheel = 0xd9b39a, hero = false, lining = 0xb3a6ea, irid = 1 } = {}) {
+function makeSuitcase({ body = 0x8c9cff, sheen = 0x8fd8ff, accent = 0xb4c40c, trim = 0xd8c39d, wheel = 0xe7b49c, hero = false, lining = 0xaab6f2, irid = 1 } = {}) {
   const root = new THREE.Group();
   const shellMat = mat.shell(body, sheen, irid);
   if (irid < 1) { shellMat.metalness = 0.25; shellMat.roughness = 0.3; }
   const accentMat = mat.plastic(accent, 0.32);
   const trimMat = mat.metal(trim, 0.3);
-  const wheelMat = mat.plastic(wheel, 0.3);
+  const wheelMat = mat.metal(wheel, 0.32);
   const half = D / 2;
 
   // Back shell: sits behind the seam (z < 0)
@@ -291,45 +291,61 @@ function makeSuitcase({ body = 0x6c70e2, sheen = 0x8fd8ff, accent = 0xb9c612, tr
   seamLid.position.z = -half / 2 + 0.012;
   lid.add(seamLid);
 
-  // Front face details on the lid
+  // Front face details on the lid: a raised pillow panel split by two deep vertical
+  // grooves, a pill-shaped emboss at the top, a slot at the bottom and the glass badge.
   const fz = half / 2; // lid front face (lid local)
-  const panel = new THREE.Mesh(rbox(W * 0.8, H * 0.82, 0.08, 0.12), shellMat);
-  panel.position.set(0, -0.02, fz);
-  lid.add(panel);
+  const panelH = H * 0.8;
+  const centreW = W * 0.5;
+  const groove = 0.06;
+  const sideW = (W - 0.2 - centreW) / 2 - groove;
+  const centre = new THREE.Mesh(rbox(centreW, panelH, 0.12, 0.055), shellMat);
+  centre.position.set(0, 0, fz + 0.02);
+  lid.add(centre);
   for (const sx of [-1, 1]) {
-    const rib = new THREE.Mesh(rbox(0.075, H * 0.5, 0.06, 0.035), shellMat);
-    rib.position.set(sx * W * 0.27, -0.05, fz + 0.05);
-    lid.add(rib);
+    const strip = new THREE.Mesh(rbox(sideW, panelH * 0.94, 0.12, 0.05), shellMat);
+    strip.position.set(sx * (centreW / 2 + groove + sideW / 2), 0, fz + 0.02);
+    lid.add(strip);
   }
-  const slot = new THREE.Mesh(frameGeometry(0.42, 0.2, 0.09, 0.045, 0.05), shellMat);
-  slot.position.set(-0.03, H * 0.29, fz + 0.05);
-  lid.add(slot);
-  const lowSlot = new THREE.Mesh(rbox(0.36, 0.05, 0.05, 0.024), trimMat);
-  lowSlot.position.set(-0.03, -H * 0.35, fz + 0.05);
+  const darkMat = shellMat.clone();
+  darkMat.color = new THREE.Color(body).multiplyScalar(0.55);
+  const grooveFill = new THREE.Mesh(rbox(W - 0.2, panelH * 0.9, 0.04, 0.02), darkMat);
+  grooveFill.position.set(0, 0, fz + 0.005);
+  lid.add(grooveFill);
+  const emboss = new THREE.Mesh(frameGeometry(0.36, 0.17, 0.085, 0.05, 0.06), shellMat);
+  emboss.position.set(0, H * 0.3, fz + 0.1);
+  lid.add(emboss);
+  const embossIn = new THREE.Mesh(rbox(0.27, 0.08, 0.02, 0.04), darkMat);
+  embossIn.position.set(0, H * 0.3, fz + 0.08);
+  lid.add(embossIn);
+  const lowSlot = new THREE.Mesh(rbox(0.3, 0.055, 0.03, 0.027), darkMat);
+  lowSlot.position.set(0, -H * 0.33, fz + 0.075);
   lid.add(lowSlot);
+  const lowLip = new THREE.Mesh(frameGeometry(0.34, 0.09, 0.045, 0.022, 0.03), shellMat);
+  lowLip.position.set(0, -H * 0.33, fz + 0.09);
+  lid.add(lowLip);
 
-  // Badge
-  const badgeRim = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 48), trimMat);
+  // Glass badge: a dark oval with a glowing globe, in a thin metal rim
+  const badgeRim = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05, 48), trimMat);
   badgeRim.rotation.x = Math.PI / 2;
-  badgeRim.scale.set(1, 1, 1.25);
-  badgeRim.position.set(0.08, -0.12, fz + 0.06);
+  badgeRim.scale.set(1, 1, 1.38);
+  badgeRim.position.set(0, -0.06, fz + 0.09);
   lid.add(badgeRim);
-  const badge = new THREE.Mesh(new THREE.CircleGeometry(0.175, 48), new THREE.MeshPhysicalMaterial({
-    map: badgeTex, emissiveMap: badgeTex, emissive: 0xffffff, emissiveIntensity: 0.55,
-    roughness: 0.15, clearcoat: 1, metalness: 0.1,
+  const badge = new THREE.Mesh(new THREE.CircleGeometry(0.135, 48), new THREE.MeshPhysicalMaterial({
+    map: badgeTex, emissiveMap: badgeTex, emissive: 0xffffff, emissiveIntensity: 0.6,
+    roughness: 0.08, clearcoat: 1, metalness: 0.1,
   }));
-  badge.scale.set(1, 1.25, 1);
-  badge.position.set(0.08, -0.12, fz + 0.088);
+  badge.scale.set(1, 1.38, 1);
+  badge.position.set(0, -0.06, fz + 0.117);
   lid.add(badge);
 
-  // Corner bumpers on both shells
-  const capGeo = rbox(0.32, 0.32, half + 0.05, 0.13, 4);
+  // Corner bumpers: chunky lime caps that wrap each corner, front and side
+  const capGeo = rbox(0.36, 0.36, half + 0.12, 0.15, 5);
   for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
     const cb = new THREE.Mesh(capGeo, accentMat);
-    cb.position.set(sx * (W / 2 - 0.09), sy * (H / 2 - 0.09), -half / 2 - 0.02);
+    cb.position.set(sx * (W / 2 - 0.12), sy * (H / 2 - 0.12), -half / 2 - 0.06);
     root.add(cb);
     const cl = new THREE.Mesh(capGeo, accentMat);
-    cl.position.set(sx * (W / 2 - 0.09), sy * (H / 2 - 0.09), 0.02);
+    cl.position.set(sx * (W / 2 - 0.12), sy * (H / 2 - 0.12), 0.06);
     lid.add(cl);
   }
 
@@ -338,16 +354,16 @@ function makeSuitcase({ body = 0x6c70e2, sheen = 0x8fd8ff, accent = 0xb9c612, tr
   handle.position.set(0, H / 2, -half * 0.55);
   for (const sx of [-1, 1]) {
     const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.62, 16), trimMat);
-    tube.position.set(sx * 0.3, 0.31, 0);
+    tube.position.set(sx * 0.27, 0.31, 0);
     handle.add(tube);
     const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 16), accentMat);
-    sleeve.position.set(sx * 0.3, 0.58, 0);
+    sleeve.position.set(sx * 0.27, 0.58, 0);
     handle.add(sleeve);
   }
-  const grip = new THREE.Mesh(rbox(0.78, 0.13, 0.15, 0.06), accentMat);
+  const grip = new THREE.Mesh(rbox(0.7, 0.13, 0.15, 0.06), accentMat);
   grip.position.y = 0.68;
   handle.add(grip);
-  const base = new THREE.Mesh(rbox(0.86, 0.06, 0.2, 0.03), accentMat);
+  const base = new THREE.Mesh(rbox(0.74, 0.06, 0.2, 0.03), accentMat);
   base.position.y = 0.01;
   handle.add(base);
   root.add(handle);
@@ -360,17 +376,17 @@ function makeSuitcase({ body = 0x6c70e2, sheen = 0x8fd8ff, accent = 0xb9c612, tr
   // Spinner wheels
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     const wg = new THREE.Group();
-    wg.position.set(sx * (W / 2 - 0.16), -H / 2 - 0.02, sz * half * 0.62);
+    wg.position.set(sx * (W / 2 - 0.15), -H / 2 - 0.06, sz * half * 0.62);
     const house = new THREE.Mesh(rbox(0.2, 0.14, 0.2, 0.06), accentMat);
     wg.add(house);
-    for (const ox of [-0.055, 0.055]) {
-      const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.05, 24), wheelMat);
+    for (const ox of [-0.06, 0.06]) {
+      const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 28), wheelMat);
       wh.rotation.z = Math.PI / 2;
-      wh.position.set(ox, -0.12, 0);
+      wh.position.set(ox, -0.13, 0);
       wg.add(wh);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.056, 16), trimMat);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.066, 16), accentMat);
       hub.rotation.z = Math.PI / 2;
-      hub.position.set(ox, -0.12, 0);
+      hub.position.set(ox, -0.13, 0);
       wg.add(hub);
     }
     root.add(wg);
@@ -382,7 +398,8 @@ function makeSuitcase({ body = 0x6c70e2, sheen = 0x8fd8ff, accent = 0xb9c612, tr
   const inner = new THREE.Mesh(innerGeo, new THREE.MeshStandardMaterial({ map: cavityTex, roughness: 0.75 }));
   inner.position.z = 0.004;
   root.add(inner);
-  const linerMat = mat.shell(lining, 0xd8c8ff);
+  const linerMat = mat.shell(lining, 0xbff0ff, 0.6);
+  linerMat.metalness = 0.45;
   const liner = new THREE.Mesh(new THREE.ShapeGeometry(roundedRectShape(W - 0.12, H - 0.12, R * 0.7), 8), linerMat);
   liner.rotation.y = Math.PI;
   liner.position.z = -half / 2 - 0.004;
@@ -579,93 +596,111 @@ function makeItems() {
 }
 
 // ---------------------------------------------------------------------------
-// Helical text ribbon ("TRAVEL LIKE NEVER BEFORE", "LET'S GET READY!")
+// Helical text ribbons ("TRAVEL LIKE NEVER BEFORE", "LET'S GET READY!")
 // ---------------------------------------------------------------------------
+// The lettering is printed on the inside of a ribbon wound into a helix around the
+// suitcase, as in the original: the back passes read normally (seen from inside),
+// the front pass crosses in front of the case mirrored, and the case hides what is
+// behind it. Each word is placed at an angle (radians, 0 = straight behind the case,
+// increasing clockwise seen from above), so the layout matches the reference frames.
 const textRibbons = [];
+const maxTex = Math.min(8192, renderer.capabilities.maxTextureSize || 4096);
 
-function drawRibbonText(ctx, w, h, text) {
+function drawRibbonText(rb) {
+  const { ctx, canvas: c, words, from, to, radius, height } = rb;
+  const w = c.width, h = c.height;
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#f6e4e8';
-  ctx.textBaseline = 'middle';
-  ctx.textAlign = 'left';
-  ctx.font = `400 ${Math.round(h * 0.84)}px "Archivo Black", "Arial Black", Impact, sans-serif`;
-  // One repeat of the phrase plus a word gap fills the canvas exactly.
-  const phrase = text + ' ';
-  const natural = ctx.measureText(phrase).width;
-  ctx.save();
-  ctx.scale(w / natural, 1);
-  ctx.fillText(phrase, 0, h * 0.54);
-  ctx.restore();
+  const grd = ctx.createLinearGradient(0, h * 0.12, 0, h * 0.92);
+  grd.addColorStop(0, '#fbeef2');
+  grd.addColorStop(1, '#f1d9e2');
+  ctx.fillStyle = grd;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
+  ctx.font = `400 ${Math.round(h * 0.98)}px "Archivo Black", "Arial Black", Impact, sans-serif`;
+  // Canvas pixels are not square once mapped onto the ribbon; squash x to compensate.
+  const len = (to - from) * radius;
+  const sx = (w / len) / (h / height);
+  for (const [word, angle] of words) {
+    const x = ((angle - from) / (to - from)) * w;
+    ctx.save();
+    ctx.translate(x, h * 0.86);
+    ctx.scale(sx, 1);
+    ctx.fillText(word, 0, 0);
+    ctx.restore();
+  }
 }
 
-// A cylindrical ribbon wound into a helix around the suitcase. The text repeats every
-// `repeat` turns; the visible ribbon is `turns` long. Front passes read normally, the
-// back pass is seen from inside (mirrored) and ghosts faintly through the suitcase.
-function makeRibbon(text, { radius = 1.3, height = 0.5, turns = 1.2, repeat = 1.25, pitch = 2.4, start = -1.1, segments = 320 } = {}) {
+function makeRibbon(words, { radius = 1.1, height = 0.46, pitch = 2.3, from = -1, to = 7.3, segments = 360 } = {}) {
   const c = document.createElement('canvas');
-  const loopLen = 2 * Math.PI * radius;
-  c.height = 256;
-  c.width = Math.min(8192, Math.round((256 * repeat * loopLen) / height));
+  c.height = 512;
+  c.width = Math.min(maxTex, Math.round((512 * (to - from) * radius) / height));
   const ctx = c.getContext('2d');
-  drawRibbonText(ctx, c.width, c.height, text);
+  const rb = { ctx, canvas: c, words, from, to, radius, height, pitch };
+  drawRibbonText(rb);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.anisotropy = 8;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  const pos = [], uv = [], col = [], idx = [];
-  for (let i = 0; i <= segments; i++) {
+  const n = segments + 1;
+  const pos = new Float32Array(n * 2 * 3);
+  const uv = new Float32Array(n * 2 * 2);
+  const idx = [];
+  for (let i = 0; i < n; i++) {
     const f = i / segments;
-    const th = start + f * turns * Math.PI * 2;
-    const yc = pitch * turns * (0.5 - f);
-    const x = Math.sin(th) * radius, z = Math.cos(th) * radius;
-    pos.push(x, yc - height / 2, z, x, yc + height / 2, z);
-    const u = (f * turns) / repeat;
-    uv.push(u, 0, u, 1);
-    const endFade = Math.min(clamp01(f / 0.025), clamp01((1 - f) / 0.035));
-    col.push(1, 1, 1, endFade, 1, 1, 1, endFade);
+    uv.set([f, 0, f, 1], i * 4);
     if (i < segments) {
       const k = i * 2;
       idx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
     }
   }
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   geo.setIndex(idx);
   const material = new THREE.MeshBasicMaterial({
-    map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false, vertexColors: true, toneMapped: false,
+    map: tex, side: THREE.DoubleSide, alphaTest: 0.5, alphaToCoverage: true, transparent: false, toneMapped: false,
   });
   const mesh = new THREE.Mesh(geo, material);
-  mesh.renderOrder = 3;
-  const ghostMat = material.clone();
-  ghostMat.depthTest = false;
-  const ghost = new THREE.Mesh(geo, ghostMat);
-  ghost.renderOrder = 2;
   const group = new THREE.Group();
-  group.add(ghost, mesh);
-  const ribbon = { group, mesh, ghost, tex, ctx, canvas: c, text, repeat };
-  ribbon.setOpacity = (o) => {
-    material.opacity = o;
-    ghostMat.opacity = o * 0.45;
-  };
-  textRibbons.push(ribbon);
-  return ribbon;
-}
+  group.add(mesh);
+  Object.assign(rb, { group, mesh, tex, geo, material, segments, last: '' });
 
-// Snappy marquee: hold, then whip the phrase one full repeat along the helix.
-function ribbonOffset(t, hold = 1.5, spin = 1.15) {
-  const cycle = hold + spin;
-  const n = Math.floor(t / cycle);
-  const k = clamp01((t - n * cycle - hold) / spin);
-  return n + easeInOut(k);
+  // spread: 0 = squashed into one ring, 1 = full helix. anchor: which end stays put.
+  rb.shape = (spread, anchor = 'top') => {
+    const key = spread.toFixed(4) + anchor;
+    if (key === rb.last) return;
+    rb.last = key;
+    // The drop per turn is eased so the ribbon runs nearly level across the back and
+    // falls steeply down the sides and across the front, as in the original.
+    const drop = (phi) => (pitch * (phi - 0.75 * Math.sin(phi))) / (Math.PI * 2);
+    const y0 = drop(from), y1 = drop(to), span = y1 - y0;
+    const p = geo.attributes.position.array;
+    for (let i = 0; i < n; i++) {
+      const f = i / segments;
+      const phi = from + f * (to - from);
+      const x = Math.sin(phi) * radius, z = -Math.cos(phi) * radius;
+      const g = (drop(phi) - y0) / span;
+      const yc = anchor === 'top' ? span / 2 - span * g * spread : -span / 2 + span * (1 - g) * spread;
+      p.set([x, yc - height / 2, z, x, yc + height / 2, z], i * 6);
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.computeBoundingSphere();
+  };
+  rb.setOpacity = (o) => {
+    material.opacity = o;
+    material.transparent = o < 0.999;
+    material.alphaTest = o < 0.999 ? 0.02 : 0.5;
+    material.needsUpdate = true;
+  };
+  rb.shape(1);
+  textRibbons.push(rb);
+  return rb;
 }
 
 // Redraw ribbons once the display font is ready.
 document.fonts?.load('400 120px "Archivo Black"').then(() => {
   textRibbons.forEach((r) => {
-    drawRibbonText(r.ctx, r.canvas.width, r.canvas.height, r.text);
+    drawRibbonText(r);
     r.tex.needsUpdate = true;
   });
 }).catch(() => {});
@@ -800,59 +835,130 @@ heroRig.add(hero.root);
 world.add(heroRig);
 const { items, list: itemList } = makeItems();
 hero.back.add(items);
-items.position.z = 0.215; // just in front of the back shell's open face
-items.scale.setScalar(1.22);
+items.position.z = D / 4 + 0.005; // just in front of the back shell's open face
+items.scale.setScalar(1.2);
 
-const ring1 = makeRibbon('TRAVEL LIKE NEVER BEFORE', { radius: 1.05, height: 0.44, turns: 1.2, repeat: 1.25, pitch: 2.25, start: -1.05 });
+const ring1 = makeRibbon([['TRAVEL', 0], ['LIKE', 1.8], ['NEVER', 3.75], ['BEFORE', Math.PI * 2]],
+  { radius: 1.2, height: 0.54, pitch: 2.75, from: -1.1, to: Math.PI * 2 + 1.1 });
 world.add(ring1.group);
-const ring2 = makeRibbon("LET'S GET      READY!", { radius: 1.75, height: 0.86, turns: 1.3, repeat: 1.36, pitch: 2.5, start: -1.5 });
+// Slide 3's ribbon is two coordinated strands so each word lands where it does in the
+// reference: LET'S across the top left, READY! down the lower left, GET down the right.
+const ring2 = makeRibbon([["LET'S", 0], ['READY!', 5.0]],
+  { radius: 1.9, height: 0.72, pitch: 3.4, from: -1.15, to: 6.6 });
 world.add(ring2.group);
+const ring2b = makeRibbon([['GET', 1.4]], { radius: 1.9, height: 0.72, pitch: 3.4, from: 0.2, to: 2.6 });
+world.add(ring2b.group);
 
 const carousel = makeCarousel();
 const BELT_Y = -0.5 - (H / 2 + 0.22) * 0.92;
 world.add(carousel.group);
 
+// The carousel is drawn first as a backdrop; the hero case and ribbons are drawn over
+// it with fresh depth, so the lettering passes in front of the belt and other luggage
+// (as in the original) while still wrapping behind the hero case.
+const FRONT = 1;
+const toFront = (o) => o.traverse((c) => c.layers.set(FRONT));
+toFront(heroRig);
+toFront(ring1.group);
+toFront(ring2.group);
+toFront(ring2b.group);
+scene.traverse((c) => { if (c.isLight) c.layers.enableAll(); });
+renderer.autoClear = false;
+function render() {
+  renderer.clear();
+  camera.layers.set(0);
+  renderer.render(scene, camera);
+  renderer.clearDepth();
+  camera.layers.set(FRONT);
+  renderer.render(scene, camera);
+}
+
 // ---------------------------------------------------------------------------
-// Slide poses: every value eases toward its target with its own speed/delay
+// Choreography: timed tweens per channel, timed against the reference recording
 // ---------------------------------------------------------------------------
 const POSES = [
-  { x: 0, y: -0.82, z: 0, ry: -0.36, rx: 0.12, rz: -0.06, s: 1.08, lid: 0, items: 0, r1: 1, r2: 0, belt: 0, camY: 0.55 },
-  { x: 0.12, y: -0.92, z: 0, ry: -Math.PI * 2 - 0.55, rx: 0.3, rz: 0.04, s: 1.1, lid: 1, items: 1, r1: 0, r2: 0, belt: 0, camY: 0.55 },
-  { x: 0.3, y: -0.5, z: 0.75, ry: -Math.PI * 2 - 0.58, rx: 0, rz: 0, s: 0.92, lid: 0, items: 0, r1: 0, r2: 1, belt: 1, camY: 4.2 },
+  { x: 0, y: -0.8, z: 0, ry: -0.15, rx: 0.1, rz: -0.05, s: 1.02, lid: 0, items: 0, belt: 0, camY: 0.55 },
+  { x: 0.38, y: -0.9, z: 0, ry: -Math.PI * 2 - 0.3, rx: 0.24, rz: 0.04, s: 1.12, lid: 1, items: 1, belt: 0, camY: 0.55 },
+  { x: 0.3, y: -0.5, z: 0.75, ry: -Math.PI * 4 - 0.58, rx: 0, rz: 0, s: 0.92, lid: 0, items: 0, belt: 0, camY: 4.2 },
 ];
-// [delay seconds, speed] per channel when entering each slide
-const TIMING = {
-  default: [0, 4.2],
-  ry: [0.05, 3.2],
-  lid: [0.45, 3.4],
-  items: [0.62, 3.2],
-  r1: [0, 3.2],
-  r2: [0.35, 2.6],
-  belt: [0.05, 2.8],
-  camY: [0.05, 2.8],
+POSES[2].belt = 1;
+
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+const linear = (t) => t;
+// [delay, duration, easing] per channel, keyed by the slide being entered (forward moves).
+const PLANS = {
+  1: {
+    ry: [0.05, 0.8, easeInOut], x: [0.1, 0.8, easeInOut], y: [0.1, 0.8, easeInOut], s: [0.1, 0.8, easeInOut],
+    rx: [0.15, 0.7, easeInOut], rz: [0.15, 0.7, easeInOut], lid: [0.3, 0.7, easeOut], items: [0.42, 0.6, linear],
+  },
+  2: {
+    x: [0.1, 0.6, easeOut], y: [0.1, 0.6, easeOut], z: [0.1, 0.6, easeOut], s: [0.1, 0.6, easeOut],
+    rx: [0.1, 0.6, easeOut], rz: [0.1, 0.6, easeOut], belt: [0.1, 0.62, easeOut], camY: [0.1, 0.62, easeOut],
+    items: [0.68, 0.25, linear], lid: [0.72, 0.3, easeInOut], ry: [0.66, 0.5, easeInOut],
+  },
 };
-const CLOSE_TIMING = { lid: [0.25, 4.2], items: [0, 5.5] };
+const BACK_PLAN = [0, 0.75, easeInOut];
 
-const cur = { ...POSES[0] };
-let targets = { ...POSES[0] };
-let pending = [];
+const state = { ...POSES[0] };
+let tweens = {};
+let simT = 0;
 
-function setSlideTargets(n, instant = false) {
+// Ribbon modes: 'intro' (uncoils from a ring at the top, loops), 'exit' (spins and
+// collapses to the bottom), 'hidden'.
+const ribbons = {
+  r1: { rb: ring1, mode: 'intro', t0: 0, loop: true },
+  r2: { rb: ring2, mode: 'hidden', t0: 0, loop: false },
+};
+const INTRO = 0.8, LOOP = 2.6, EXIT = 0.6;
+
+function setRibbon(key, mode, delay = 0) {
+  const r = ribbons[key];
+  if (r.mode === mode || (mode === 'exit' && r.mode === 'hidden')) return;
+  r.mode = mode;
+  r.t0 = simT + delay;
+}
+
+function enterSlide(n, prev, instant = false) {
   const pose = POSES[n];
-  pending = [];
-  const now = performance.now() / 1000;
+  const forward = n > prev && PLANS[n];
+  tweens = {};
   for (const k of Object.keys(pose)) {
-    let [delay, speed] = TIMING[k] || TIMING.default;
-    if ((k === 'lid' || k === 'items') && pose[k] < cur[k] && CLOSE_TIMING[k]) [delay, speed] = CLOSE_TIMING[k];
-    if (instant) { cur[k] = pose[k]; targets[k] = pose[k]; continue; }
-    pending.push({ k, v: pose[k], at: now + delay, speed });
+    if (instant) { state[k] = pose[k]; continue; }
+    let from = state[k];
+    if (!forward && k === 'ry') {
+      // Going back: take the short way round instead of unwinding whole turns.
+      const d = from - pose[k];
+      from = pose[k] + (d - Math.round(d / (Math.PI * 2)) * Math.PI * 2);
+    }
+    const [delay, dur, ease] = (forward && PLANS[n][k]) || BACK_PLAN;
+    tweens[k] = { from, to: pose[k], start: simT + delay, dur, ease };
+  }
+  setRibbon('r1', n === 0 ? 'intro' : 'exit', n === 0 && !instant ? 0.3 : 0);
+  setRibbon('r2', n === 2 ? 'intro' : 'exit', n === 2 && !instant ? 0.35 : 0);
+  if (instant) {
+    ribbons.r1.t0 = ribbons.r2.t0 = simT - 10;
+    if (n !== 0) ribbons.r1.mode = 'hidden';
+    if (n !== 2) ribbons.r2.mode = 'hidden';
   }
 }
-const speeds = {};
-listeners.push((n) => setSlideTargets(n));
+let prevSlide = 0;
+listeners.push((n) => { enterSlide(n, prevSlide); prevSlide = n; });
 
-// Ring spin bursts when a ring exits or enters
-let r1Spin = 0, r2Spin = 0;
+// Returns { spread, anchor, spin, opacity } for a ribbon at the current time.
+function ribbonPose(key) {
+  const r = ribbons[key];
+  let t = simT - r.t0;
+  if (r.mode === 'hidden') return null;
+  if (r.mode === 'exit') {
+    if (t >= EXIT) { r.mode = 'hidden'; return null; }
+    const e = clamp01(t / EXIT);
+    return { spread: 1 - easeInOut(e), anchor: 'bottom', spin: -e * e * 3.2, opacity: 1 - clamp01((e - 0.45) / 0.55), loopT: 99 };
+  }
+  if (t < 0) return null;
+  if (r.loop) t %= LOOP;
+  const u = easeOut(clamp01(t / INTRO));
+  return { spread: u, anchor: 'top', spin: (1 - u) * Math.PI, opacity: clamp01(t / 0.08), loopT: t };
+}
 
 function layout() {
   const rect = canvas.getBoundingClientRect();
@@ -871,7 +977,8 @@ layout();
 
 if (hashSlide > 0) {
   go(hashSlide);
-  setSlideTargets(hashSlide, true);
+  enterSlide(hashSlide, 0, true);
+  prevSlide = hashSlide;
 }
 
 // ---------------------------------------------------------------------------
@@ -879,70 +986,79 @@ if (hashSlide > 0) {
 // ---------------------------------------------------------------------------
 const clock = new THREE.Clock();
 const tmpV = new THREE.Vector3();
-let elapsed = 0;
 
-function damp(a, b, lambda, dt) { return a + (b - a) * (1 - Math.exp(-lambda * dt)); }
+function update(dt) {
+  simT += dt;
+  for (const k of Object.keys(tweens)) {
+    const tw = tweens[k];
+    const t = (simT - tw.start) / tw.dur;
+    if (t < 0) continue;
+    state[k] = tw.from + (tw.to - tw.from) * tw.ease(clamp01(t));
+    if (t >= 1) delete tweens[k];
+  }
 
-function tick() {
-  const dt = Math.min(clock.getDelta(), 0.05);
-  elapsed += dt;
-  const now = performance.now() / 1000;
+  const p1 = ribbonPose('r1');
+  const p2 = ribbonPose('r2');
 
-  pending = pending.filter((p) => {
-    if (now >= p.at) { targets[p.k] = p.v; speeds[p.k] = p.speed; return false; }
-    return true;
-  });
-  for (const k of Object.keys(cur)) cur[k] = damp(cur[k], targets[k], speeds[k] || TIMING.default[1], dt);
-
-  // Hero suitcase: gentle float plus idle sway
-  const bob = Math.sin(elapsed * 1.6) * 0.045;
-  const sway = Math.sin(elapsed * 0.7) * 0.12 * (1 - cur.belt * 0.7);
-  heroRig.position.set(cur.x, cur.y + bob * (1 - cur.belt), cur.z);
-  heroRig.rotation.set(cur.rx + Math.sin(elapsed * 0.9) * 0.025, cur.ry + sway, cur.rz + Math.sin(elapsed * 0.8 + 1) * 0.02);
-  heroRig.scale.setScalar(cur.s);
-  hero.hinge.rotation.y = -easeInOut(clamp01(cur.lid)) * 1.55;
+  // Hero suitcase: a slow turn during the slide-1 loop, plus a gentle float
+  const loopTurn = slide === 0 && p1 ? -0.38 * easeOut(clamp01(p1.loopT / 1.6)) : 0;
+  if (slide !== 0 && heroRig.userData.loopTurn) {
+    // Fold the turn into the tween start so leaving slide 1 does not jump.
+    state.ry += heroRig.userData.loopTurn;
+    if (tweens.ry) tweens.ry.from += heroRig.userData.loopTurn;
+  }
+  heroRig.userData.loopTurn = loopTurn;
+  const bob = Math.sin(simT * 1.6) * 0.03 * (1 - state.belt);
+  heroRig.position.set(state.x, state.y + bob, state.z);
+  heroRig.rotation.set(state.rx, state.ry + loopTurn, state.rz);
+  heroRig.scale.setScalar(state.s);
+  hero.hinge.rotation.y = -clamp01(state.lid) * 1.66;
 
   // Items pop in with a stagger and float
   itemList.forEach((it) => {
     const d = it.userData;
-    const p = clamp01((cur.items - d.delay * 0.6) / (1 - d.delay * 0.6));
+    const p = clamp01((state.items - d.delay * 0.6) / (1 - d.delay * 0.6));
     const e = p <= 0 ? 0 : 1 - Math.pow(1 - p, 3) * Math.cos(p * Math.PI * 0.5);
     it.scale.setScalar(Math.max(0.0001, e));
     it.visible = p > 0.001;
-    const fl = d.float * 0.04;
-    it.position.set(
-      d.base.x,
-      d.base.y + Math.sin(elapsed * 1.4 + d.delay * 9) * fl + (1 - e) * -0.2,
-      d.base.z + d.float * 0.06 * e,
-    );
-    it.rotation.set(d.rot.x + Math.sin(elapsed * 0.9 + d.delay * 7) * 0.04 * d.float, d.rot.y, d.rot.z + Math.cos(elapsed * 1.1 + d.delay * 5) * 0.05 * d.float);
+    const fl = d.float * 0.035;
+    it.position.set(d.base.x, d.base.y + Math.sin(simT * 1.4 + d.delay * 9) * fl + (1 - e) * -0.2, d.base.z + d.float * 0.06 * e);
+    it.rotation.set(d.rot.x + Math.sin(simT * 0.9 + d.delay * 7) * 0.04 * d.float, d.rot.y, d.rot.z + Math.cos(simT * 1.1 + d.delay * 5) * 0.05 * d.float);
   });
 
-  // Ring 1: scrolls along its helix; on exit it spins away and sinks
-  const r1 = cur.r1;
-  r1Spin += dt * (1 - r1) * 0.6;
-  ring1.tex.offset.x = ribbonOffset(elapsed) + r1Spin;
-  ring1.group.visible = r1 > 0.01;
-  ring1.setOpacity(clamp01(r1 * 1.15));
-  ring1.group.position.set(cur.x + 0.08, cur.y + 0.32 - (1 - r1) * 1.6 + bob * 0.6, 0);
-  ring1.group.rotation.set(-0.04, 0.15 + (1 - r1) * 2.4, 0.2);
-  ring1.group.scale.setScalar(0.9 + r1 * 0.1);
+  // Ribbon 1 wraps the floating case on slide 1
+  ring1.group.visible = !!p1;
+  if (p1) {
+    ring1.shape(p1.spread, p1.anchor);
+    ring1.mesh.rotation.y = p1.spin;
+    ring1.setOpacity(p1.opacity);
+    ring1.group.position.set(state.x + 0.02, state.y + 0.12 + bob, state.z);
+    ring1.group.rotation.set(-0.12, 0.3, 0.06);
+  }
 
-  // Ring 2: sweeps in around the suitcase on the belt
-  const r2 = cur.r2;
-  r2Spin += dt * (1 - r2) * 0.6;
-  ring2.tex.offset.x = ribbonOffset(elapsed + 0.7, 1.8, 1.2) + r2Spin;
-  ring2.group.visible = r2 > 0.01;
-  ring2.setOpacity(clamp01(r2 * 1.2));
-  ring2.group.position.set(cur.x - 0.3, cur.y + 0.5, cur.z);
-  ring2.group.rotation.set(-0.6, 0.8 + (1 - r2) * 1.8, 0.9, 'ZXY');
-  ring2.group.scale.setScalar(0.85 + r2 * 0.15);
+  // Ribbon 2 wraps the case on the carousel
+  ring2.group.visible = !!p2;
+  if (p2) {
+    ring2.shape(p2.spread, p2.anchor);
+    ring2.mesh.rotation.y = p2.spin;
+    ring2.setOpacity(p2.opacity);
+    ring2.group.position.set(POSES[2].x - 0.3, POSES[2].y + 0.2, POSES[2].z);
+    ring2.group.rotation.set(-0.2, -0.3, 0.68, 'ZXY');
+  }
+  ring2b.group.visible = !!p2;
+  if (p2) {
+    ring2b.shape(p2.spread, p2.anchor);
+    ring2b.mesh.rotation.y = p2.spin;
+    ring2b.setOpacity(p2.opacity);
+    ring2b.group.position.set(POSES[2].x + 0.3, POSES[2].y + 0.5, POSES[2].z);
+    ring2b.group.rotation.set(-0.1, 0.9, 1.4, 'ZXY');
+  }
 
   // Carousel slides in from the right and the belt runs
-  const b = cur.belt;
+  const b = state.belt;
   carousel.group.visible = b > 0.01;
   carousel.group.position.set((1 - b) * 7.5, BELT_Y, -(1 - b) * 1.5);
-  const beltT = elapsed * 0.012;
+  const beltT = simT * 0.012;
   const N = carousel.slats.length;
   carousel.slats.forEach((s, i) => {
     const t = ((i / N + beltT) % 1 + 1) % 1;
@@ -951,21 +1067,31 @@ function tick() {
     s.rotation.set(0, Math.atan2(tmpV.x, tmpV.z), 0);
   });
   carousel.others.forEach((o, i) => {
-    // Riding the belt: a slow creep with a little jostle
     const base = o.root.userData.base;
-    o.root.position.set(base.x, base.y + Math.abs(Math.sin(elapsed * 2.2 + i * 1.7)) * 0.01, base.z + Math.sin(elapsed * 0.35 + i) * 0.04);
+    o.root.position.set(base.x, base.y + Math.abs(Math.sin(simT * 2.2 + i * 1.7)) * 0.01, base.z + Math.sin(simT * 0.35 + i) * 0.04);
   });
 
   // Camera: rises on the last slide to look down onto the carousel
   const dist = camera.userData.dist || CAM_BASE.z;
-  camera.position.set(CAM_BASE.x, cur.camY, dist);
-  lookTarget.set(0, -0.35 - (cur.camY - CAM_BASE.y) * 0.08, 0);
+  camera.position.set(CAM_BASE.x, state.camY, dist);
+  lookTarget.set(0, -0.35 - (state.camY - CAM_BASE.y) * 0.08, 0);
   camera.lookAt(lookTarget);
+}
 
-  renderer.render(scene, camera);
+let frozen = false;
+function tick() {
+  const dt = Math.min(clock.getDelta(), 0.1);
+  if (!frozen) update(dt);
+  render();
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
 
-// Expose slide control for debugging and screenshots
-window.__traveme = { go };
+// Debug/screenshot hooks: jump slides, or freeze and step the timeline by hand.
+window.__traveme = {
+  go,
+  step(seconds) {
+    frozen = true;
+    for (let t = 0; t < seconds; t += 1 / 60) update(Math.min(1 / 60, seconds - t));
+  },
+};

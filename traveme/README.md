@@ -4,9 +4,9 @@ A clone of the three-slide onboarding for the "Traveme" travel app, rebuilt from
 recording. Everything is drawn live with Three.js: the iridescent suitcase, the helical
 kinetic-type ribbons, the packed items and the luggage carousel. There are no image assets.
 
-1. **Welcome to Traveme!** The closed suitcase floats inside a "TRAVEL LIKE NEVER BEFORE" ribbon that whips one full turn every few seconds.
-2. **Pack The Possibility.** The case spins round, the lid swings open and the packed items pop out.
-3. **Let's get ready!** The case lands on a baggage carousel with other luggage, wrapped in "LET'S GET READY!". The next button becomes a pink **Get started** pill.
+1. **Welcome to Traveme!** The closed suitcase floats inside a "TRAVEL LIKE NEVER BEFORE" ribbon. The ribbon starts as a tight ring at the top, uncoils down around the case, holds, and then the loop restarts. The lettering is printed on the inside of the ribbon, so it reads normally across the back and mirrored where it passes in front.
+2. **Pack The Possibility.** The ribbon spins and collapses away, the case spins a full turn, the lid swings open and the packed items pop out. Titles blur out together and come back line by line.
+3. **Let's get ready!** The carousel slides in, the open case rides onto it, the lid shuts as the case turns, and "LET'S GET READY!" uncoils around it. The next button becomes a pink **Get started** pill.
 
 Use Next, Skip, swipe, or the arrow keys. Add `#1` or `#2` to the URL to open on slide 2 or 3.
 Phones get the full screen. On wider screens the app sits in a phone frame with a status bar.
