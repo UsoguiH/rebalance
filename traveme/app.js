@@ -607,7 +607,7 @@ function makeItems() {
 
 // Signed distance field atlas (after Mapbox's TinySDF)
 const SDF_FONT_PX = 112, SDF_PAD = 14, SDF_RADIUS = 14, SDF_CUTOFF = 0.25;
-const DISPLAY_FONT = '"Archivo Black", "Arial Black", Impact, sans-serif';
+const DISPLAY_FONT = 'Inter, "SF Pro Display", -apple-system, "Helvetica Neue", Arial, sans-serif';
 
 function edt1d(grid, offset, stride, length, f, v, z) {
   v[0] = 0; z[0] = -1e20; z[1] = 1e20; f[0] = grid[offset];
@@ -636,7 +636,7 @@ function edt(grid, w, h) {
 function buildGlyphAtlas(chars) {
   const c = document.createElement('canvas');
   const g = c.getContext('2d', { willReadFrequently: true });
-  const font = `400 ${SDF_FONT_PX}px ${DISPLAY_FONT}`;
+  const font = `900 ${SDF_FONT_PX}px ${DISPLAY_FONT}`;
   g.font = font;
   const cellH = Math.ceil(SDF_FONT_PX * 1.05) + SDF_PAD * 2;
   const baseline = SDF_PAD + Math.round(SDF_FONT_PX * 0.86);
@@ -695,19 +695,19 @@ function buildGlyphAtlas(chars) {
 
 const glyphMaterialShader = {
   vertexShader: `
-    varying vec2 vUv; varying float vV;
-    attribute float glyphV;
+    varying vec2 vUv; varying float vV; varying float vA;
+    attribute float glyphV; attribute float glyphA;
     void main() {
-      vUv = uv; vV = glyphV;
+      vUv = uv; vV = glyphV; vA = glyphA;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }`,
   fragmentShader: `
     uniform sampler2D map; uniform vec3 colorTop; uniform vec3 colorBottom; uniform float opacity;
-    varying vec2 vUv; varying float vV;
+    varying vec2 vUv; varying float vV; varying float vA;
     void main() {
       float d = texture2D(map, vUv).r;
       float w = max(fwidth(d), 0.002) * 0.7;
-      float a = smoothstep(${(1 - SDF_CUTOFF).toFixed(3)} - w, ${(1 - SDF_CUTOFF).toFixed(3)} + w, d) * opacity;
+      float a = smoothstep(${(1 - SDF_CUTOFF).toFixed(3)} - w, ${(1 - SDF_CUTOFF).toFixed(3)} + w, d) * opacity * vA;
       if (a < 0.004) discard;
       gl_FragColor = vec4(mix(colorBottom, colorTop, vV), a);
     }`,
@@ -734,7 +734,8 @@ function makeRibbon(words, { radius = 1.1, height = 0.46, pitch = 2.3, from = -1
   mesh.frustumCulled = false;
   group.add(mesh);
   const rb = { group, mesh, material, words, radius, height, pitch, from, to, quads: [], last: '' };
-  // Animated by GSAP: spread (0 = squashed ring, 1 = full helix), spin, opacity, anchor
+  // Animated by GSAP: spread (0 = wound into one ring, 1 = full helix), the anchored
+  // end, spin about the helix axis, and opacity.
   rb.params = { spread: 1, spin: 0, opacity: 0, anchor: 'top' };
 
   rb.layout = (atlas) => {
@@ -776,34 +777,42 @@ function makeRibbon(words, { radius = 1.1, height = 0.46, pitch = 2.3, from = -1
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts * 3), 3));
     geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     geo.setAttribute('glyphV', new THREE.BufferAttribute(gv, 1));
+    geo.setAttribute('glyphA', new THREE.BufferAttribute(new Float32Array(verts), 1));
     geo.setIndex(idx);
     mesh.geometry.dispose();
     mesh.geometry = geo;
     rb.cols = COLS;
     rb.last = '';
+    rb.first = rb.quads[0].s0;
+    rb.lastS = rb.quads[nq - 1].s1;
   };
 
   // The drop per turn is eased so the ribbon runs nearly level across the back and falls
   // steeply down the sides and across the front, as in the original.
   const drop = (phi) => (pitch * (phi - 0.75 * Math.sin(phi))) / (Math.PI * 2);
   const y0 = drop(from), span = drop(to) - y0;
+  // spread: 0 = wound tight into one ring at the anchored end, 1 = full helix
   rb.shape = (spread, anchor) => {
-    const key = spread.toFixed(4) + anchor;
+    const key = spread.toFixed(5) + anchor;
     if (key === rb.last || !rb.quads.length) return;
     rb.last = key;
     const p = mesh.geometry.attributes.position.array;
+    const a = mesh.geometry.attributes.glyphA.array;
     rb.quads.forEach((q, qi) => {
       for (let j = 0; j <= rb.cols; j++) {
         const s = q.s0 + (q.s1 - q.s0) * (j / rb.cols);
         const phi = from + s / radius;
         const x = Math.sin(phi) * radius, z = -Math.cos(phi) * radius;
         const g = (drop(phi) - y0) / span;
-        const yc = anchor === 'top' ? span / 2 - span * g * spread : -span / 2 + span * (1 - g) * spread;
+        // While wound up, the ring sits a little below the top coil, around the case's top.
+        const yc = anchor === 'top' ? span / 2 - span * g * spread - (1 - spread) * 0.35 : -span / 2 + span * (1 - g) * spread;
         const vi = (qi * (rb.cols + 1) + j) * 2;
         p.set([x, yc + q.y0, z, x, yc + q.y1, z], vi * 3);
+        a[vi] = a[vi + 1] = 1;
       }
     });
     mesh.geometry.attributes.position.needsUpdate = true;
+    mesh.geometry.attributes.glyphA.needsUpdate = true;
   };
 
   rb.apply = () => {
@@ -821,7 +830,7 @@ function makeRibbon(words, { radius = 1.1, height = 0.46, pitch = 2.3, from = -1
 // Build the glyph atlas once the display face is ready (or after a short wait).
 const fontReady = Promise.race([
   document.fonts
-    ? Promise.all([document.fonts.load(`400 100px ${DISPLAY_FONT}`), document.fonts.load('800 35px Manrope'), document.fonts.load('500 12px Manrope')])
+    ? Promise.all([document.fonts.load(`900 100px ${DISPLAY_FONT}`), document.fonts.load('700 35px Inter'), document.fonts.load('500 12px Inter')])
       .then(() => document.fonts.ready)
     : Promise.resolve(),
   new Promise((r) => setTimeout(r, 2500)),
@@ -1015,47 +1024,46 @@ const POSES = [
 const state = { ...POSES[0], loopTurn: 0 };
 
 // --- Ribbon timelines -------------------------------------------------------
-// Enter: the lettering starts squashed into a ring at the top and uncoils down around
-// the case while spinning into place. On slide 1 it then breathes: every few seconds it
-// coils back up and unwinds again (the original's looping clip), with the case turning.
-function ribbonIntro(rbs, { delay = 0, loop = false, turn = false } = {}) {
+// Enter (matched to the reference frames): the ribbon starts wound into a single ring
+// at its top, where the overlapping words read as a jumble, then stretches down into
+// the helix like a spring while turning about its axis, so the words rotate into place
+// ("EL LIKE" -> "AVEL LIKE" -> "TRAVEL"). About 0.7s. Slide 1's original is a 2s
+// looping clip, so it cuts back to the wound ring and unwinds again, with the case
+// easing round a little and snapping back.
+const LOOP = 2.0;
+function ribbonIntro(rbs, { delay = 0, loop = false, turn = false, duration = 0.75 } = {}) {
   const ps = rbs.map((rb) => rb.params);
+  rbs.forEach((rb) => { rb.loop?.kill(); rb.loop = null; });
   gsap.killTweensOf(ps);
   if (turn) gsap.killTweensOf(state, 'loopTurn');
-  const tl = gsap.timeline({ delay });
-  tl.set(ps, { anchor: 'top', spread: 0, spin: Math.PI * 0.9, opacity: 0 })
-    .to(ps, { opacity: 1, duration: 0.18, ease: 'power1.out' }, 0)
-    .to(ps, { spread: 1, duration: 1.0, ease: 'power3.out' }, 0)
-    .to(ps, { spin: 0, duration: 1.1, ease: 'power3.out' }, 0);
-  if (turn) tl.fromTo(state, { loopTurn: 0 }, { loopTurn: -0.38, duration: 1.6, ease: 'power2.out' }, 0);
+  const cycle = (d = 0) => {
+    const tl = gsap.timeline({ delay: d });
+    tl.set(ps, { anchor: 'top', spread: 0, spin: Math.PI, opacity: 1 })
+      .to(ps, { spread: 1, duration, ease: 'power2.inOut' }, 0)
+      .to(ps, { spin: 0, duration: duration * 1.05, ease: 'power2.out' }, 0);
+    if (turn) tl.fromTo(state, { loopTurn: 0 }, { loopTurn: -0.38, duration: 1.7, ease: 'power2.out' }, 0);
+    return tl;
+  };
+  cycle(delay);
   if (loop && !reduceMotion) {
-    tl.add(() => {
-      const breathe = gsap.timeline({ repeat: -1, repeatDelay: 2.4, delay: 2.4 });
-      breathe
-        .to(ps, { spread: 0, spin: -Math.PI * 0.9, duration: 0.55, ease: 'power2.in' })
-        .set(ps, { spin: Math.PI * 0.9 })
-        .to(ps, { spread: 1, spin: 0, duration: 1.0, ease: 'power3.out' });
-      if (turn) {
-        breathe.to(state, { loopTurn: 0, duration: 0.55, ease: 'power2.in' }, 0)
-          .to(state, { loopTurn: -0.38, duration: 1.6, ease: 'power2.out' }, 0.55);
-      }
-      rbs.forEach((rb) => { rb.loop = breathe; });
-    });
+    const looper = gsap.timeline({ delay: delay + LOOP, repeat: -1, repeatDelay: LOOP - 0.08 });
+    looper.to(ps, { opacity: 0, duration: 0.08, ease: 'none' }).add(() => { cycle(); });
+    rbs.forEach((rb) => { rb.loop = looper; });
   }
-  return tl;
 }
 
-// Exit: spin hard and collapse onto the bottom coil while fading.
+// Exit: spin hard and wind down onto the bottom coil while fading.
 function ribbonExit(rbs) {
-  const ps = rbs.map((rb) => rb.params).filter((p) => p.opacity > 0.002);
   rbs.forEach((rb) => { rb.loop?.kill(); rb.loop = null; });
-  gsap.killTweensOf(rbs.map((rb) => rb.params));
-  if (!ps.length) return;
-  gsap.set(ps, { anchor: 'bottom' });
+  const ps = rbs.map((rb) => rb.params);
+  gsap.killTweensOf(ps);
+  const live = ps.filter((p) => p.opacity > 0.002);
+  if (!live.length) return;
+  gsap.set(live, { anchor: 'bottom' });
   gsap.timeline()
-    .to(ps, { spin: '-=3.4', duration: 0.6, ease: 'power2.in' }, 0)
-    .to(ps, { spread: 0, duration: 0.6, ease: 'power2.inOut' }, 0)
-    .to(ps, { opacity: 0, duration: 0.3, ease: 'power1.in' }, 0.28);
+    .to(live, { spin: '-=3.4', duration: 0.55, ease: 'power2.in' }, 0)
+    .to(live, { spread: 0, duration: 0.55, ease: 'power2.inOut' }, 0)
+    .to(live, { opacity: 0, duration: 0.25, ease: 'power1.in' }, 0.3);
 }
 
 // --- Copy (SplitText) -------------------------------------------------------
@@ -1141,9 +1149,9 @@ function enterSlide(n, prev, instant = false) {
     to(Object.keys(pose), 0, 0.8, 'power3.inOut');
   }
 
-  if (n === 0) ribbonIntro([ring1], { delay: 0.35, loop: true, turn: true });
+  if (n === 0) ribbonIntro([ring1], { delay: 0.3, loop: true, turn: true });
   else ribbonExit([ring1]);
-  if (n === 2) ribbonIntro([ring2, ring2b], { delay: 0.35 });
+  if (n === 2) ribbonIntro([ring2, ring2b], { delay: 0.55, duration: 0.65 });
   else ribbonExit([ring2, ring2b]);
 
   if (copyReady) {

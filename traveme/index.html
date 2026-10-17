@@ -7,7 +7,7 @@
 <title>Traveme Onboarding</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Manrope:wght@500;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..900&display=swap">
 <style>
   :root {
     --cream: #f6e6e1;
@@ -26,7 +26,7 @@
   html, body { height: 100%; margin: 0; }
   body {
     background: var(--stage);
-    font-family: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family: Inter, "SF Pro Text", -apple-system, system-ui, "Segoe UI", sans-serif;
     color: var(--cream);
     overflow: hidden;
     display: flex; align-items: center; justify-content: center;
@@ -60,7 +60,7 @@
     .status {
       position: absolute; z-index: 4; top: 0; left: 0; right: 0; height: 54px;
       align-items: center; justify-content: space-between; padding: 4px 30px 0 40px;
-      font: 600 15px/1 -apple-system, "SF Pro Text", "Manrope", sans-serif; color: #fff; letter-spacing: -0.01em;
+      font: 600 15px/1 -apple-system, "SF Pro Text", Inter, -apple-system, sans-serif; color: #fff; letter-spacing: -0.01em;
     }
     .status .left { display: flex; align-items: center; gap: 5px; }
     .status .right { display: flex; align-items: center; gap: 6px; }
@@ -76,7 +76,7 @@
   .skip {
     position: absolute; z-index: 3; top: calc(env(safe-area-inset-top, 0px) + 54px); right: 22px;
     background: none; border: 0; padding: 8px 4px; margin: 0;
-    font: 600 12.5px/1 "Manrope", sans-serif; color: var(--cream-dim); letter-spacing: 0.01em;
+    font: 600 12.5px/1 Inter, -apple-system, sans-serif; color: var(--cream-dim); letter-spacing: 0.01em;
     cursor: pointer; transition: opacity 0.4s ease;
   }
   .skip[hidden] { display: block; opacity: 0; pointer-events: none; }
@@ -86,12 +86,12 @@
   }
   .slide-copy { position: absolute; left: 0; right: 0; top: 0; padding: 0 28px; }
   .slide-copy h1 {
-    margin: 0; font: 800 35px/0.98 "Manrope", sans-serif; letter-spacing: -0.035em;
+    margin: 0; font: 700 41px/1.0 Inter, -apple-system, sans-serif; letter-spacing: -0.025em;
     color: var(--cream); text-wrap: balance;
   }
   .slide-copy p {
     margin: 14px auto 0; max-width: 262px;
-    font: 500 11.5px/1.45 "Manrope", sans-serif; color: var(--cream-dim); letter-spacing: 0.005em;
+    font: 500 11.5px/1.45 Inter, -apple-system, sans-serif; color: var(--cream-dim); letter-spacing: 0.005em;
   }
   /* GSAP (SplitText) animates the copy; until it takes over, show only the active slide's. */
   .slide-copy .ln { display: block; }
@@ -114,7 +114,7 @@
     position: relative; height: 40px; min-width: 104px; padding: 0 22px; border: 0; border-radius: 20px;
     background: var(--pill); color: var(--ink); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
-    font: 600 13px/1 "Manrope", sans-serif; letter-spacing: -0.005em; white-space: nowrap; overflow: hidden;
+    font: 600 13px/1 Inter, -apple-system, sans-serif; letter-spacing: -0.005em; white-space: nowrap; overflow: hidden;
     box-shadow: 0 6px 18px rgba(120, 40, 80, 0.12);
     transition: background 0.5s ease, min-width 0.55s cubic-bezier(.2,.8,.2,1), transform 0.15s ease;
   }
@@ -129,7 +129,7 @@
   .no-webgl .fallback { display: grid; }
   .fallback {
     display: none; position: absolute; inset: 0; z-index: 1; place-items: center;
-    font: 800 60px/1 "Archivo Black", sans-serif; color: rgba(246, 230, 225, 0.25);
+    font: 900 60px/1 Inter, sans-serif; color: rgba(246, 230, 225, 0.25);
   }
 </style>
 </head>
