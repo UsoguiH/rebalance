@@ -43,8 +43,6 @@ window.addEventListener('pointerup', (e) => {
   dragX = null;
   if (Math.abs(dx) > 40) go(slide + (dx < 0 ? 1 : -1));
 });
-// The first slide's copy is already on screen at load; animate only later changes.
-requestAnimationFrame(() => requestAnimationFrame(() => screenEl.classList.remove('is-loading')));
 // Allow deep links like #2 for the third slide.
 const hashSlide = parseInt(location.hash.slice(1), 10);
 
@@ -183,7 +181,6 @@ const mat = {
   matte: (color, rough = 0.85) => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0 }),
 };
 
-function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 function clamp01(t) { return Math.max(0, Math.min(1, t)); }
 
 // ---------------------------------------------------------------------------
@@ -602,108 +599,239 @@ function makeItems() {
 // suitcase, as in the original: the back passes read normally (seen from inside),
 // the front pass crosses in front of the case mirrored, and the case hides what is
 // behind it. Each word is placed at an angle (radians, 0 = straight behind the case,
-// increasing clockwise seen from above), so the layout matches the reference frames.
-const textRibbons = [];
-const maxTex = Math.min(8192, renderer.capabilities.maxTextureSize || 4096);
+// increasing clockwise seen from above).
+//
+// Letters are signed-distance-field glyphs: one bent quad per letter, sampled from a
+// small SDF atlas and antialiased in the shader, so edges stay sharp and smooth at any
+// size, angle or screen density.
 
-function drawRibbonText(rb) {
-  const { ctx, canvas: c, words, from, to, radius, height } = rb;
-  const w = c.width, h = c.height;
-  ctx.clearRect(0, 0, w, h);
-  const grd = ctx.createLinearGradient(0, h * 0.12, 0, h * 0.92);
-  grd.addColorStop(0, '#fbeef2');
-  grd.addColorStop(1, '#f1d9e2');
-  ctx.fillStyle = grd;
-  ctx.textBaseline = 'alphabetic';
-  ctx.textAlign = 'center';
-  ctx.font = `400 ${Math.round(h * 0.98)}px "Archivo Black", "Arial Black", Impact, sans-serif`;
-  // Canvas pixels are not square once mapped onto the ribbon; squash x to compensate.
-  const len = (to - from) * radius;
-  const sx = (w / len) / (h / height);
-  for (const [word, angle] of words) {
-    const x = ((angle - from) / (to - from)) * w;
-    ctx.save();
-    ctx.translate(x, h * 0.86);
-    ctx.scale(sx, 1);
-    ctx.fillText(word, 0, 0);
-    ctx.restore();
+// Signed distance field atlas (after Mapbox's TinySDF)
+const SDF_FONT_PX = 112, SDF_PAD = 14, SDF_RADIUS = 14, SDF_CUTOFF = 0.25;
+const DISPLAY_FONT = '"Archivo Black", "Arial Black", Impact, sans-serif';
+
+function edt1d(grid, offset, stride, length, f, v, z) {
+  v[0] = 0; z[0] = -1e20; z[1] = 1e20; f[0] = grid[offset];
+  for (let q = 1, k = 0, s = 0; q < length; q++) {
+    f[q] = grid[offset + q * stride];
+    const q2 = q * q;
+    do {
+      const r = v[k];
+      s = (f[q] - f[r] + q2 - r * r) / (q - r) / 2;
+    } while (s <= z[k] && --k > -1);
+    k++; v[k] = q; z[k] = s; z[k + 1] = 1e20;
+  }
+  for (let q = 0, k = 0; q < length; q++) {
+    while (z[k + 1] < q) k++;
+    const r = v[k], qr = q - r;
+    grid[offset + q * stride] = f[r] + qr * qr;
   }
 }
+function edt(grid, w, h) {
+  const n = Math.max(w, h);
+  const f = new Float64Array(n), v = new Uint16Array(n), z = new Float64Array(n + 1);
+  for (let x = 0; x < w; x++) edt1d(grid, x, w, h, f, v, z);
+  for (let y = 0; y < h; y++) edt1d(grid, y * w, 1, w, f, v, z);
+}
 
-function makeRibbon(words, { radius = 1.1, height = 0.46, pitch = 2.3, from = -1, to = 7.3, segments = 360 } = {}) {
+function buildGlyphAtlas(chars) {
   const c = document.createElement('canvas');
-  c.height = 512;
-  c.width = Math.min(maxTex, Math.round((512 * (to - from) * radius) / height));
-  const ctx = c.getContext('2d');
-  const rb = { ctx, canvas: c, words, from, to, radius, height, pitch };
-  drawRibbonText(rb);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-  const n = segments + 1;
-  const pos = new Float32Array(n * 2 * 3);
-  const uv = new Float32Array(n * 2 * 2);
-  const idx = [];
-  for (let i = 0; i < n; i++) {
-    const f = i / segments;
-    uv.set([f, 0, f, 1], i * 4);
-    if (i < segments) {
-      const k = i * 2;
-      idx.push(k, k + 2, k + 1, k + 1, k + 2, k + 3);
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const font = `400 ${SDF_FONT_PX}px ${DISPLAY_FONT}`;
+  g.font = font;
+  const cellH = Math.ceil(SDF_FONT_PX * 1.05) + SDF_PAD * 2;
+  const baseline = SDF_PAD + Math.round(SDF_FONT_PX * 0.86);
+  const metrics = {};
+  const atlasW = 1024;
+  let x = 0, y = 0;
+  for (const ch of chars) {
+    const adv = g.measureText(ch).width;
+    const w = Math.ceil(adv) + SDF_PAD * 2;
+    if (x + w > atlasW) { x = 0; y += cellH; }
+    metrics[ch] = { x, y, w, h: cellH, adv };
+    x += w;
+  }
+  const atlasH = y + cellH;
+  c.width = atlasW; c.height = atlasH;
+  const out = g.createImageData(atlasW, atlasH);
+  for (const ch of chars) {
+    const m = metrics[ch];
+    // Rasterise the glyph alone, then turn its coverage into distances.
+    const gc = document.createElement('canvas');
+    gc.width = m.w; gc.height = m.h;
+    const gg = gc.getContext('2d', { willReadFrequently: true });
+    gg.font = font;
+    gg.fillStyle = '#000';
+    gg.textBaseline = 'alphabetic';
+    gg.fillText(ch, SDF_PAD, baseline);
+    const alpha = gg.getImageData(0, 0, m.w, m.h).data;
+    const len = m.w * m.h;
+    const outer = new Float64Array(len), inner = new Float64Array(len);
+    for (let i = 0; i < len; i++) {
+      const a = alpha[i * 4 + 3] / 255;
+      if (a === 1) { outer[i] = 0; inner[i] = 1e20; }
+      else if (a === 0) { outer[i] = 1e20; inner[i] = 0; }
+      else { const d = Math.max(0, 0.5 - a); outer[i] = d * d; const e = Math.max(0, a - 0.5); inner[i] = e * e; }
+    }
+    edt(outer, m.w, m.h);
+    edt(inner, m.w, m.h);
+    for (let py = 0; py < m.h; py++) for (let px = 0; px < m.w; px++) {
+      const i = py * m.w + px;
+      const d = Math.sqrt(outer[i]) - Math.sqrt(inner[i]);
+      const val = Math.round(255 - 255 * (d / SDF_RADIUS + SDF_CUTOFF));
+      const o = ((m.y + py) * atlasW + m.x + px) * 4;
+      const cv = Math.max(0, Math.min(255, val));
+      out.data[o] = out.data[o + 1] = out.data[o + 2] = cv;
+      out.data[o + 3] = 255;
     }
   }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  geo.setIndex(idx);
-  const material = new THREE.MeshBasicMaterial({
-    map: tex, side: THREE.DoubleSide, alphaTest: 0.5, alphaToCoverage: true, transparent: false, toneMapped: false,
-  });
-  const mesh = new THREE.Mesh(geo, material);
-  const group = new THREE.Group();
-  group.add(mesh);
-  Object.assign(rb, { group, mesh, tex, geo, material, segments, last: '' });
+  g.putImageData(out, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.NoColorSpace;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return { tex, metrics, atlasW, atlasH, baseline, cellH };
+}
 
-  // spread: 0 = squashed into one ring, 1 = full helix. anchor: which end stays put.
-  rb.shape = (spread, anchor = 'top') => {
-    const key = spread.toFixed(4) + anchor;
-    if (key === rb.last) return;
-    rb.last = key;
-    // The drop per turn is eased so the ribbon runs nearly level across the back and
-    // falls steeply down the sides and across the front, as in the original.
-    const drop = (phi) => (pitch * (phi - 0.75 * Math.sin(phi))) / (Math.PI * 2);
-    const y0 = drop(from), y1 = drop(to), span = y1 - y0;
-    const p = geo.attributes.position.array;
-    for (let i = 0; i < n; i++) {
-      const f = i / segments;
-      const phi = from + f * (to - from);
-      const x = Math.sin(phi) * radius, z = -Math.cos(phi) * radius;
-      const g = (drop(phi) - y0) / span;
-      const yc = anchor === 'top' ? span / 2 - span * g * spread : -span / 2 + span * (1 - g) * spread;
-      p.set([x, yc - height / 2, z, x, yc + height / 2, z], i * 6);
+const glyphMaterialShader = {
+  vertexShader: `
+    varying vec2 vUv; varying float vV;
+    attribute float glyphV;
+    void main() {
+      vUv = uv; vV = glyphV;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: `
+    uniform sampler2D map; uniform vec3 colorTop; uniform vec3 colorBottom; uniform float opacity;
+    varying vec2 vUv; varying float vV;
+    void main() {
+      float d = texture2D(map, vUv).r;
+      float w = max(fwidth(d), 0.002) * 0.7;
+      float a = smoothstep(${(1 - SDF_CUTOFF).toFixed(3)} - w, ${(1 - SDF_CUTOFF).toFixed(3)} + w, d) * opacity;
+      if (a < 0.004) discard;
+      gl_FragColor = vec4(mix(colorBottom, colorTop, vV), a);
+    }`,
+};
+
+const textRibbons = [];
+
+// spec: words [[text, angle]], radius, height (cap band), pitch per turn, from/to angles
+function makeRibbon(words, { radius = 1.1, height = 0.46, pitch = 2.3, from = -1, to = 7.3 } = {}) {
+  const group = new THREE.Group();
+  const material = new THREE.ShaderMaterial({
+    ...glyphMaterialShader,
+    uniforms: {
+      map: { value: null },
+      colorTop: { value: new THREE.Color(0xfdf3f6) },
+      colorBottom: { value: new THREE.Color(0xf3dbe4) },
+      opacity: { value: 1 },
+    },
+    side: THREE.DoubleSide, transparent: true, depthWrite: false,
+  });
+  material.extensions = { derivatives: true };
+  const mesh = new THREE.Mesh(new THREE.BufferGeometry(), material);
+  mesh.renderOrder = 5;
+  mesh.frustumCulled = false;
+  group.add(mesh);
+  const rb = { group, mesh, material, words, radius, height, pitch, from, to, quads: [], last: '' };
+  // Animated by GSAP: spread (0 = squashed ring, 1 = full helix), spin, opacity, anchor
+  rb.params = { spread: 1, spin: 0, opacity: 0, anchor: 'top' };
+
+  rb.layout = (atlas) => {
+    material.uniforms.map.value = atlas.tex;
+    const em = height * 1.38;                  // world size of one em (caps fill the band)
+    const k = em / SDF_FONT_PX;               // world units per atlas pixel
+    const baseY = -height * 0.5;              // baseline sits at the bottom of the cap band
+    const COLS = 6;
+    rb.quads = [];
+    for (const [word, angle] of words) {
+      const chars = [...word];
+      const total = chars.reduce((s, ch) => s + atlas.metrics[ch].adv * k, 0);
+      let s = (angle - from) * radius - total / 2;
+      for (const ch of chars) {
+        const m = atlas.metrics[ch];
+        rb.quads.push({
+          s0: s - SDF_PAD * k, s1: s - SDF_PAD * k + m.w * k,
+          y0: baseY - (m.h - atlas.baseline) * k, y1: baseY + atlas.baseline * k,
+          u0: m.x / atlas.atlasW, u1: (m.x + m.w) / atlas.atlasW,
+          v0: 1 - (m.y + m.h) / atlas.atlasH, v1: 1 - m.y / atlas.atlasH,
+        });
+        s += m.adv * k;
+      }
     }
-    geo.attributes.position.needsUpdate = true;
-    geo.computeBoundingSphere();
+    const nq = rb.quads.length;
+    const verts = nq * (COLS + 1) * 2;
+    const geo = new THREE.BufferGeometry();
+    const uv = new Float32Array(verts * 2), gv = new Float32Array(verts), idx = [];
+    rb.quads.forEach((q, qi) => {
+      for (let j = 0; j <= COLS; j++) {
+        const t = j / COLS;
+        const vi = (qi * (COLS + 1) + j) * 2;
+        const u = q.u0 + (q.u1 - q.u0) * t;
+        uv.set([u, q.v0, u, q.v1], vi * 2);
+        gv[vi] = 0; gv[vi + 1] = 1;
+        if (j < COLS) idx.push(vi, vi + 2, vi + 1, vi + 1, vi + 2, vi + 3);
+      }
+    });
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts * 3), 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.setAttribute('glyphV', new THREE.BufferAttribute(gv, 1));
+    geo.setIndex(idx);
+    mesh.geometry.dispose();
+    mesh.geometry = geo;
+    rb.cols = COLS;
+    rb.last = '';
   };
-  rb.setOpacity = (o) => {
-    material.opacity = o;
-    material.transparent = o < 0.999;
-    material.alphaTest = o < 0.999 ? 0.02 : 0.5;
-    material.needsUpdate = true;
+
+  // The drop per turn is eased so the ribbon runs nearly level across the back and falls
+  // steeply down the sides and across the front, as in the original.
+  const drop = (phi) => (pitch * (phi - 0.75 * Math.sin(phi))) / (Math.PI * 2);
+  const y0 = drop(from), span = drop(to) - y0;
+  rb.shape = (spread, anchor) => {
+    const key = spread.toFixed(4) + anchor;
+    if (key === rb.last || !rb.quads.length) return;
+    rb.last = key;
+    const p = mesh.geometry.attributes.position.array;
+    rb.quads.forEach((q, qi) => {
+      for (let j = 0; j <= rb.cols; j++) {
+        const s = q.s0 + (q.s1 - q.s0) * (j / rb.cols);
+        const phi = from + s / radius;
+        const x = Math.sin(phi) * radius, z = -Math.cos(phi) * radius;
+        const g = (drop(phi) - y0) / span;
+        const yc = anchor === 'top' ? span / 2 - span * g * spread : -span / 2 + span * (1 - g) * spread;
+        const vi = (qi * (rb.cols + 1) + j) * 2;
+        p.set([x, yc + q.y0, z, x, yc + q.y1, z], vi * 3);
+      }
+    });
+    mesh.geometry.attributes.position.needsUpdate = true;
   };
-  rb.shape(1);
+
+  rb.apply = () => {
+    const { spread, spin, opacity, anchor } = rb.params;
+    group.visible = opacity > 0.002 && rb.quads.length > 0;
+    if (!group.visible) return;
+    rb.shape(spread, anchor);
+    mesh.rotation.y = spin;
+    material.uniforms.opacity.value = opacity;
+  };
   textRibbons.push(rb);
   return rb;
 }
 
-// Redraw ribbons once the display font is ready.
-document.fonts?.load('400 120px "Archivo Black"').then(() => {
-  textRibbons.forEach((r) => {
-    drawRibbonText(r);
-    r.tex.needsUpdate = true;
-  });
-}).catch(() => {});
+// Build the glyph atlas once the display face is ready (or after a short wait).
+const fontReady = Promise.race([
+  document.fonts
+    ? Promise.all([document.fonts.load(`400 100px ${DISPLAY_FONT}`), document.fonts.load('800 35px Manrope'), document.fonts.load('500 12px Manrope')])
+      .then(() => document.fonts.ready)
+    : Promise.resolve(),
+  new Promise((r) => setTimeout(r, 2500)),
+]).catch(() => {});
+const ribbonsReady = fontReady.then(() => {
+  const chars = new Set();
+  textRibbons.forEach((rb) => rb.words.forEach(([w]) => [...w].forEach((ch) => chars.add(ch))));
+  const atlas = buildGlyphAtlas([...chars]);
+  textRibbons.forEach((rb) => rb.layout(atlas));
+});
 
 // ---------------------------------------------------------------------------
 // Luggage carousel for slide 3
@@ -839,14 +967,14 @@ items.position.z = D / 4 + 0.005; // just in front of the back shell's open face
 items.scale.setScalar(1.2);
 
 const ring1 = makeRibbon([['TRAVEL', 0], ['LIKE', 1.8], ['NEVER', 3.75], ['BEFORE', Math.PI * 2]],
-  { radius: 1.2, height: 0.54, pitch: 2.75, from: -1.1, to: Math.PI * 2 + 1.1 });
+  { radius: 1.2, height: 0.42, pitch: 2.75, from: -1.1, to: Math.PI * 2 + 1.1 });
 world.add(ring1.group);
 // Slide 3's ribbon is two coordinated strands so each word lands where it does in the
 // reference: LET'S across the top left, READY! down the lower left, GET down the right.
 const ring2 = makeRibbon([["LET'S", 0], ['READY!', 5.0]],
-  { radius: 1.9, height: 0.72, pitch: 3.4, from: -1.15, to: 6.6 });
+  { radius: 1.9, height: 0.56, pitch: 3.4, from: -1.15, to: 6.6 });
 world.add(ring2.group);
-const ring2b = makeRibbon([['GET', 1.4]], { radius: 1.9, height: 0.72, pitch: 3.4, from: 0.2, to: 2.6 });
+const ring2b = makeRibbon([['GET', 1.4]], { radius: 1.9, height: 0.56, pitch: 3.4, from: 0.2, to: 2.6 });
 world.add(ring2b.group);
 
 const carousel = makeCarousel();
@@ -874,91 +1002,157 @@ function render() {
 }
 
 // ---------------------------------------------------------------------------
-// Choreography: timed tweens per channel, timed against the reference recording
+// Choreography (GSAP), timed against the reference recording
 // ---------------------------------------------------------------------------
+const { gsap } = window;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const POSES = [
   { x: 0, y: -0.8, z: 0, ry: -0.15, rx: 0.1, rz: -0.05, s: 1.02, lid: 0, items: 0, belt: 0, camY: 0.55 },
   { x: 0.38, y: -0.9, z: 0, ry: -Math.PI * 2 - 0.3, rx: 0.24, rz: 0.04, s: 1.12, lid: 1, items: 1, belt: 0, camY: 0.55 },
-  { x: 0.3, y: -0.5, z: 0.75, ry: -Math.PI * 4 - 0.58, rx: 0, rz: 0, s: 0.92, lid: 0, items: 0, belt: 0, camY: 4.2 },
+  { x: 0.3, y: -0.5, z: 0.75, ry: -Math.PI * 4 - 0.58, rx: 0, rz: 0, s: 0.92, lid: 0, items: 0, belt: 1, camY: 4.2 },
 ];
-POSES[2].belt = 1;
+const state = { ...POSES[0], loopTurn: 0 };
 
-const easeOut = (t) => 1 - Math.pow(1 - t, 3);
-const linear = (t) => t;
-// [delay, duration, easing] per channel, keyed by the slide being entered (forward moves).
-const PLANS = {
-  1: {
-    ry: [0.05, 0.8, easeInOut], x: [0.1, 0.8, easeInOut], y: [0.1, 0.8, easeInOut], s: [0.1, 0.8, easeInOut],
-    rx: [0.15, 0.7, easeInOut], rz: [0.15, 0.7, easeInOut], lid: [0.3, 0.7, easeOut], items: [0.42, 0.6, linear],
-  },
-  2: {
-    x: [0.1, 0.6, easeOut], y: [0.1, 0.6, easeOut], z: [0.1, 0.6, easeOut], s: [0.1, 0.6, easeOut],
-    rx: [0.1, 0.6, easeOut], rz: [0.1, 0.6, easeOut], belt: [0.1, 0.62, easeOut], camY: [0.1, 0.62, easeOut],
-    items: [0.68, 0.25, linear], lid: [0.72, 0.3, easeInOut], ry: [0.66, 0.5, easeInOut],
-  },
-};
-const BACK_PLAN = [0, 0.75, easeInOut];
-
-const state = { ...POSES[0] };
-let tweens = {};
-let simT = 0;
-
-// Ribbon modes: 'intro' (uncoils from a ring at the top, loops), 'exit' (spins and
-// collapses to the bottom), 'hidden'.
-const ribbons = {
-  r1: { rb: ring1, mode: 'intro', t0: 0, loop: true },
-  r2: { rb: ring2, mode: 'hidden', t0: 0, loop: false },
-};
-const INTRO = 0.8, LOOP = 2.6, EXIT = 0.6;
-
-function setRibbon(key, mode, delay = 0) {
-  const r = ribbons[key];
-  if (r.mode === mode || (mode === 'exit' && r.mode === 'hidden')) return;
-  r.mode = mode;
-  r.t0 = simT + delay;
+// --- Ribbon timelines -------------------------------------------------------
+// Enter: the lettering starts squashed into a ring at the top and uncoils down around
+// the case while spinning into place. On slide 1 it then breathes: every few seconds it
+// coils back up and unwinds again (the original's looping clip), with the case turning.
+function ribbonIntro(rbs, { delay = 0, loop = false, turn = false } = {}) {
+  const ps = rbs.map((rb) => rb.params);
+  gsap.killTweensOf(ps);
+  if (turn) gsap.killTweensOf(state, 'loopTurn');
+  const tl = gsap.timeline({ delay });
+  tl.set(ps, { anchor: 'top', spread: 0, spin: Math.PI * 0.9, opacity: 0 })
+    .to(ps, { opacity: 1, duration: 0.18, ease: 'power1.out' }, 0)
+    .to(ps, { spread: 1, duration: 1.0, ease: 'power3.out' }, 0)
+    .to(ps, { spin: 0, duration: 1.1, ease: 'power3.out' }, 0);
+  if (turn) tl.fromTo(state, { loopTurn: 0 }, { loopTurn: -0.38, duration: 1.6, ease: 'power2.out' }, 0);
+  if (loop && !reduceMotion) {
+    tl.add(() => {
+      const breathe = gsap.timeline({ repeat: -1, repeatDelay: 2.4, delay: 2.4 });
+      breathe
+        .to(ps, { spread: 0, spin: -Math.PI * 0.9, duration: 0.55, ease: 'power2.in' })
+        .set(ps, { spin: Math.PI * 0.9 })
+        .to(ps, { spread: 1, spin: 0, duration: 1.0, ease: 'power3.out' });
+      if (turn) {
+        breathe.to(state, { loopTurn: 0, duration: 0.55, ease: 'power2.in' }, 0)
+          .to(state, { loopTurn: -0.38, duration: 1.6, ease: 'power2.out' }, 0.55);
+      }
+      rbs.forEach((rb) => { rb.loop = breathe; });
+    });
+  }
+  return tl;
 }
 
+// Exit: spin hard and collapse onto the bottom coil while fading.
+function ribbonExit(rbs) {
+  const ps = rbs.map((rb) => rb.params).filter((p) => p.opacity > 0.002);
+  rbs.forEach((rb) => { rb.loop?.kill(); rb.loop = null; });
+  gsap.killTweensOf(rbs.map((rb) => rb.params));
+  if (!ps.length) return;
+  gsap.set(ps, { anchor: 'bottom' });
+  gsap.timeline()
+    .to(ps, { spin: '-=3.4', duration: 0.6, ease: 'power2.in' }, 0)
+    .to(ps, { spread: 0, duration: 0.6, ease: 'power2.inOut' }, 0)
+    .to(ps, { opacity: 0, duration: 0.3, ease: 'power1.in' }, 0.28);
+}
+
+// --- Copy (SplitText) -------------------------------------------------------
+// Titles leave together in a quick blur, then come back line by line, letter by letter.
+const copySplits = copies.map((section) => {
+  const lines = [...section.querySelectorAll('.ln')];
+  const p = section.querySelector('p');
+  return { section, lines, p, chars: [] };
+});
+let copyReady = false;
+function splitCopy() {
+  if (!window.SplitText) return;
+  gsap.registerPlugin(window.SplitText);
+  copySplits.forEach((c) => {
+    c.chars = c.lines.map((ln) => new window.SplitText(ln, { type: 'chars', charsClass: 'ch' }).chars);
+  });
+  copyReady = true;
+  screenEl.classList.add('gsap-copy');
+}
+function copyOut(i) {
+  const c = copySplits[i];
+  if (!c) return;
+  const targets = [...c.chars.flat(), ...(c.p ? [c.p] : [])];
+  if (!targets.length) return;
+  gsap.killTweensOf(targets);
+  gsap.to(targets, { autoAlpha: 0, filter: 'blur(10px)', y: -4, duration: 0.18, ease: 'power1.in', stagger: 0.004 });
+}
+function copyIn(i, delay = 0.3) {
+  const c = copySplits[i];
+  if (!c) return;
+  c.chars.forEach((chars, li) => {
+    if (!chars.length) return;
+    gsap.killTweensOf(chars);
+    gsap.fromTo(chars, { autoAlpha: 0, filter: 'blur(12px)', y: 10 },
+      { autoAlpha: 1, filter: 'blur(0px)', y: 0, duration: 0.55, ease: 'power3.out', stagger: 0.022, delay: delay + li * 0.14 });
+  });
+  if (c.p) {
+    gsap.killTweensOf(c.p);
+    gsap.fromTo(c.p, { autoAlpha: 0, filter: 'blur(8px)', y: 6 },
+      { autoAlpha: 1, filter: 'blur(0px)', y: 0, duration: 0.5, ease: 'power2.out', delay: delay + 0.3 });
+  }
+}
+
+// --- Slide changes ------------------------------------------------------------
+let sceneTl = null;
 function enterSlide(n, prev, instant = false) {
   const pose = POSES[n];
-  const forward = n > prev && PLANS[n];
-  tweens = {};
-  for (const k of Object.keys(pose)) {
-    if (instant) { state[k] = pose[k]; continue; }
-    let from = state[k];
-    if (!forward && k === 'ry') {
-      // Going back: take the short way round instead of unwinding whole turns.
-      const d = from - pose[k];
-      from = pose[k] + (d - Math.round(d / (Math.PI * 2)) * Math.PI * 2);
-    }
-    const [delay, dur, ease] = (forward && PLANS[n][k]) || BACK_PLAN;
-    tweens[k] = { from, to: pose[k], start: simT + delay, dur, ease };
-  }
-  setRibbon('r1', n === 0 ? 'intro' : 'exit', n === 0 && !instant ? 0.3 : 0);
-  setRibbon('r2', n === 2 ? 'intro' : 'exit', n === 2 && !instant ? 0.35 : 0);
+  sceneTl?.kill();
   if (instant) {
-    ribbons.r1.t0 = ribbons.r2.t0 = simT - 10;
-    if (n !== 0) ribbons.r1.mode = 'hidden';
-    if (n !== 2) ribbons.r2.mode = 'hidden';
+    Object.assign(state, pose);
+    return;
+  }
+  const tl = gsap.timeline();
+  sceneTl = tl;
+  const to = (keys, at, duration, ease) => {
+    const vars = { duration, ease };
+    keys.forEach((k) => { vars[k] = pose[k]; });
+    tl.to(state, vars, at);
+  };
+  if (n === 1 && prev === 0) {
+    // Spin a full turn, swing the lid open, pop the packed items
+    state.ry += state.loopTurn;
+    gsap.killTweensOf(state, 'loopTurn');
+    state.loopTurn = 0;
+    to(['ry'], 0.05, 0.85, 'power3.inOut');
+    to(['x', 'y', 's'], 0.1, 0.85, 'power3.inOut');
+    to(['rx', 'rz'], 0.15, 0.7, 'power2.inOut');
+    to(['lid'], 0.3, 0.75, 'back.out(1.2)');
+    to(['items'], 0.42, 0.65, 'none');
+  } else if (n === 2 && prev === 1) {
+    // Carousel slides in, the open case rides onto it, the lid shuts as it turns
+    to(['x', 'y', 'z', 's', 'rx', 'rz'], 0.1, 0.65, 'power3.out');
+    to(['belt', 'camY'], 0.1, 0.7, 'power3.out');
+    to(['items'], 0.66, 0.25, 'power1.in');
+    to(['lid'], 0.72, 0.35, 'power2.inOut');
+    to(['ry'], 0.66, 0.55, 'power2.inOut');
+  } else {
+    // Any other move: take the short way round and ease everything together
+    const d = state.ry + state.loopTurn - pose.ry;
+    state.ry = pose.ry + (d - Math.round(d / (Math.PI * 2)) * Math.PI * 2);
+    gsap.killTweensOf(state, 'loopTurn');
+    state.loopTurn = 0;
+    to(Object.keys(pose), 0, 0.8, 'power3.inOut');
+  }
+
+  if (n === 0) ribbonIntro([ring1], { delay: 0.35, loop: true, turn: true });
+  else ribbonExit([ring1]);
+  if (n === 2) ribbonIntro([ring2, ring2b], { delay: 0.35 });
+  else ribbonExit([ring2, ring2b]);
+
+  if (copyReady) {
+    copyOut(prev);
+    copyIn(n);
   }
 }
 let prevSlide = 0;
 listeners.push((n) => { enterSlide(n, prevSlide); prevSlide = n; });
-
-// Returns { spread, anchor, spin, opacity } for a ribbon at the current time.
-function ribbonPose(key) {
-  const r = ribbons[key];
-  let t = simT - r.t0;
-  if (r.mode === 'hidden') return null;
-  if (r.mode === 'exit') {
-    if (t >= EXIT) { r.mode = 'hidden'; return null; }
-    const e = clamp01(t / EXIT);
-    return { spread: 1 - easeInOut(e), anchor: 'bottom', spin: -e * e * 3.2, opacity: 1 - clamp01((e - 0.45) / 0.55), loopT: 99 };
-  }
-  if (t < 0) return null;
-  if (r.loop) t %= LOOP;
-  const u = easeOut(clamp01(t / INTRO));
-  return { spread: u, anchor: 'top', spin: (1 - u) * Math.PI, opacity: clamp01(t / 0.08), loopT: t };
-}
 
 function layout() {
   const rect = canvas.getBoundingClientRect();
@@ -981,38 +1175,31 @@ if (hashSlide > 0) {
   prevSlide = hashSlide;
 }
 
+// First appearance: split the copy once fonts are in, then start the slide's ribbon.
+Promise.all([fontReady, ribbonsReady]).then(() => {
+  splitCopy();
+  copySplits.forEach((c, i) => {
+    const targets = [...c.chars.flat(), ...(c.p ? [c.p] : [])];
+    if (i !== slide && targets.length) gsap.set(targets, { autoAlpha: 0 });
+  });
+  if (slide === 0) ribbonIntro([ring1], { delay: 0.15, loop: true, turn: true });
+  if (slide === 2) ribbonIntro([ring2, ring2b], { delay: 0.15 });
+});
+
 // ---------------------------------------------------------------------------
 // Frame loop
 // ---------------------------------------------------------------------------
-const clock = new THREE.Clock();
 const tmpV = new THREE.Vector3();
+let simT = 0;
 
-function update(dt) {
-  simT += dt;
-  for (const k of Object.keys(tweens)) {
-    const tw = tweens[k];
-    const t = (simT - tw.start) / tw.dur;
-    if (t < 0) continue;
-    state[k] = tw.from + (tw.to - tw.from) * tw.ease(clamp01(t));
-    if (t >= 1) delete tweens[k];
-  }
+function update() {
+  simT = gsap.ticker.time;
 
-  const p1 = ribbonPose('r1');
-  const p2 = ribbonPose('r2');
-
-  // Hero suitcase: a slow turn during the slide-1 loop, plus a gentle float
-  const loopTurn = slide === 0 && p1 ? -0.38 * easeOut(clamp01(p1.loopT / 1.6)) : 0;
-  if (slide !== 0 && heroRig.userData.loopTurn) {
-    // Fold the turn into the tween start so leaving slide 1 does not jump.
-    state.ry += heroRig.userData.loopTurn;
-    if (tweens.ry) tweens.ry.from += heroRig.userData.loopTurn;
-  }
-  heroRig.userData.loopTurn = loopTurn;
   const bob = Math.sin(simT * 1.6) * 0.03 * (1 - state.belt);
   heroRig.position.set(state.x, state.y + bob, state.z);
-  heroRig.rotation.set(state.rx, state.ry + loopTurn, state.rz);
+  heroRig.rotation.set(state.rx, state.ry + state.loopTurn, state.rz);
   heroRig.scale.setScalar(state.s);
-  hero.hinge.rotation.y = -clamp01(state.lid) * 1.66;
+  hero.hinge.rotation.y = -Math.max(0, state.lid) * 1.66;
 
   // Items pop in with a stagger and float
   itemList.forEach((it) => {
@@ -1027,32 +1214,17 @@ function update(dt) {
   });
 
   // Ribbon 1 wraps the floating case on slide 1
-  ring1.group.visible = !!p1;
-  if (p1) {
-    ring1.shape(p1.spread, p1.anchor);
-    ring1.mesh.rotation.y = p1.spin;
-    ring1.setOpacity(p1.opacity);
-    ring1.group.position.set(state.x + 0.02, state.y + 0.12 + bob, state.z);
-    ring1.group.rotation.set(-0.12, 0.3, 0.06);
-  }
+  ring1.group.position.set(state.x + 0.02, state.y + 0.12 + bob, state.z);
+  ring1.group.rotation.set(-0.12, 0.3, 0.06);
+  ring1.apply();
 
   // Ribbon 2 wraps the case on the carousel
-  ring2.group.visible = !!p2;
-  if (p2) {
-    ring2.shape(p2.spread, p2.anchor);
-    ring2.mesh.rotation.y = p2.spin;
-    ring2.setOpacity(p2.opacity);
-    ring2.group.position.set(POSES[2].x - 0.3, POSES[2].y + 0.2, POSES[2].z);
-    ring2.group.rotation.set(-0.2, -0.3, 0.68, 'ZXY');
-  }
-  ring2b.group.visible = !!p2;
-  if (p2) {
-    ring2b.shape(p2.spread, p2.anchor);
-    ring2b.mesh.rotation.y = p2.spin;
-    ring2b.setOpacity(p2.opacity);
-    ring2b.group.position.set(POSES[2].x + 0.3, POSES[2].y + 0.5, POSES[2].z);
-    ring2b.group.rotation.set(-0.1, 0.9, 1.4, 'ZXY');
-  }
+  ring2.group.position.set(POSES[2].x - 0.3, POSES[2].y + 0.2, POSES[2].z);
+  ring2.group.rotation.set(-0.2, -0.3, 0.68, 'ZXY');
+  ring2.apply();
+  ring2b.group.position.set(POSES[2].x + 0.3, POSES[2].y + 0.5, POSES[2].z);
+  ring2b.group.rotation.set(-0.1, 0.9, 1.4, 'ZXY');
+  ring2b.apply();
 
   // Carousel slides in from the right and the belt runs
   const b = state.belt;
@@ -1076,22 +1248,11 @@ function update(dt) {
   camera.position.set(CAM_BASE.x, state.camY, dist);
   lookTarget.set(0, -0.35 - (state.camY - CAM_BASE.y) * 0.08, 0);
   camera.lookAt(lookTarget);
-}
 
-let frozen = false;
-function tick() {
-  const dt = Math.min(clock.getDelta(), 0.1);
-  if (!frozen) update(dt);
   render();
-  requestAnimationFrame(tick);
 }
-requestAnimationFrame(tick);
+// GSAP's ticker drives both the tweens and the render, so they stay in lockstep.
+gsap.ticker.add(update);
 
-// Debug/screenshot hooks: jump slides, or freeze and step the timeline by hand.
-window.__traveme = {
-  go,
-  step(seconds) {
-    frozen = true;
-    for (let t = 0; t < seconds; t += 1 / 60) update(Math.min(1 / 60, seconds - t));
-  },
-};
+// Debug/screenshot hook
+window.__traveme = { go };
