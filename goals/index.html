@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Goals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="hero-bg" aria-hidden="true"><i id="heroBgA"></i><i id="heroBgB"></i></div>
+
+    <header class="topbar">
+      <button class="avatar press" id="moreTop" aria-label="Settings">G</button>
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+        <input id="search" type="search" placeholder="Search goals" autocomplete="off">
+      </label>
+      <button class="icon-btn press" id="insightsBtn" aria-label="Insights">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19v-6M12 19V6M18 19v-9"/></svg>
+      </button>
+      <button class="icon-btn press" id="newTop" aria-label="New goal">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>
+      </button>
+    </header>
+
+    <section class="hero" aria-label="Goals carousel">
+      <div class="carousel" id="carousel"></div>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </section>
+
+    <nav class="actions" aria-label="Actions">
+      <button class="action press" id="actAdd"><span><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></span>Add money</button>
+      <button class="action press" id="actWithdraw"><span><svg viewBox="0 0 24 24"><path d="M12 5v13M6.5 12.5 12 18l5.5-5.5"/></svg></span>Withdraw</button>
+      <button class="action press" id="actNew"><span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></svg></span>New goal</button>
+      <button class="action press" id="actMore"><span><svg viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="17.5" cy="12" r="1.2"/></svg></span>More</button>
+    </nav>
+
+    <main class="content" id="content"></main>
+  </div>
+
+  <div class="glow" id="glow" aria-hidden="true"></div>
+
+  <section class="insights" id="insights" role="dialog" aria-modal="true" aria-label="Insights" hidden>
+    <header class="insights-bar">
+      <button class="icon-btn ghost press" id="insightsClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+      </button>
+      <span>Insights</span>
+      <span class="orb" aria-hidden="true"></span>
+    </header>
+    <div class="chat" id="chat" aria-live="polite"></div>
+    <div class="prompts" id="prompts"></div>
+    <div class="fog" aria-hidden="true"></div>
+  </section>
+
+  <div class="scrim" id="scrim" hidden></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden>
+    <div class="grabber" id="grabber"></div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

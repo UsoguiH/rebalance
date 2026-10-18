@@ -1,5 +1,9 @@
 # Wick & the Lost Reels
 
+> **Also in this repo:** [`goals/`](goals/) is a small goal-tracking app styled after the Revolut
+> mobile app (open `goals/index.html`). The design and motion study behind it is in
+> [`DESIGN.md`](DESIGN.md), with reference captures in [`design/revolut-app/`](design/revolut-app/).
+
 A 1930s rubber-hose cartoon game for the browser. It uses the classic cel-animation
 look (boiling ink lines, pie-cut eyes, white gloves, film grain, iris wipes, a
 film-leader countdown) with a Moonlighter-style loop: **run a curio shop by day,
