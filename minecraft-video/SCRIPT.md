@@ -22,3 +22,46 @@ Steve didn't win because he was stronger. <break time="0.5s" /> He won because h
 
 So... <break time="0.5s" /> how many torches did you place today?
 ```
+
+## Emotional version (Eleven v3, audio tags)
+
+Use the **Eleven v3** model for this one. It reads the [tags] as acting directions and
+does not speak them. v3 ignores `<break>` tags, so pauses come from "...", "—" and line breaks.
+
+```
+[whispers] Okay... every Minecraft world has a rule nobody tells you.
+[pause] Don't stay out after dark.
+[nervous] Because someone... is always watching.
+
+[cheerful] Day one! Steve punches his first tree, builds this tiny little wooden house — [chuckles] honestly, kind of ugly — and puts ONE torch by the door.
+[content sigh] Life was simple.
+
+[serious] But on the third night... things started to change.
+[curious] The trees... lost their leaves.
+[uneasy] Tunnels showed up that Steve never dug.
+[whispers] And at the edge of the fog...
+[gasps] two. white. eyes.
+
+[slowly, quietly] Herobrine.
+[ominous] The ghost in the code.
+No sound. No shadow. [whispers] Just... watching.
+
+[panicked, fast] So Steve ran! He blocked the door — he dug straight down — he hid in the dark —
+[breathless] but every time he turned around...
+[terrified whisper] Herobrine was closer.
+
+[long pause] [sighs] And then... Steve stopped running.
+[determined] He mined iron.
+He crafted a sword.
+[building excitement] And he lit up every corner of his world... one torch... at a time.
+
+[confident] So when Herobrine came back — the night was FULL of light.
+[amazed] And for the first time ever...
+[whispers, smiling] Herobrine took a step back.
+
+[warm, thoughtful] See — Steve didn't win because he was stronger.
+He won because he was ready.
+[softly] Darkness only wins where you stop placing torches.
+
+[playful] So... [laughs softly] how many torches did YOU place today?
+```
