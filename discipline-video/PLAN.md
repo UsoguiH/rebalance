@@ -18,7 +18,7 @@ through the video, and in the climax they turn into a staircase.
 | Format | 1080×1920 vertical, 30 fps (TikTok / Reels / Shorts) |
 | Build | Code-driven (Node canvas → ffmpeg), so every stroke is synced to the voice. See `README.md` |
 | Voice | ElevenLabs, one take (`audio/voice.mp3`) |
-| Music | "Reign" by Kevin MacLeod (CC BY 4.0); its big section lands on "staircase" |
+| Sound | No music: voice plus a writing sound generated from the pen's motion |
 
 ## 2. Art direction: "ink on paper"
 

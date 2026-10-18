@@ -1,10 +1,12 @@
 """Mixes the soundtrack for "The Line" and muxes it with the rendered video.
 
-Voice (with breathing gaps between scenes) + "Reign" by Kevin MacLeod (its big
-section lands on "staircase") + pencil scratches driven by the pen in the render,
-paper whooshes on scene changes and a thud for the PROOF stamp.
+No music: the narration, a quiet room tone, and a writing sound synthesised from
+the pen's real motion in the film (out/pen.json, 240 Hz), so every scratch,
+letter tap and lift lines up with the ink on screen.
 
-    python3 src/mix.py        needs out/video.mp4 and out/ink.json from render.js
+    node src/render.js            # out/video.mp4
+    node src/render.js --pen-data # out/pen.json
+    python3 src/mix.py            # out/the-line.mp4
 """
 
 import json
@@ -18,9 +20,10 @@ ROOT = Path(__file__).resolve().parent.parent
 SR = 48000
 LEAD, GAP = 0.8, 0.6
 CUTS = [9.0, 22.2, 32.75, 47.95, 60.6, 78.95, 91.05]
-MUSIC = ROOT / 'audio/music/Reign.mp3'
-MUSIC_DROP = 111.25  # seconds into "Reign" where the full section hits
 TARGET_LUFS = -14.0
+NFFT, HOP = 1024, 256
+
+rng = np.random.default_rng(7)
 
 
 def decode(path, channels):
@@ -33,6 +36,10 @@ def db(x):
     return 10 ** (x / 20)
 
 
+def rms(x):
+    return float(np.sqrt(np.mean(x ** 2))) + 1e-12
+
+
 def bandpass(x, lo, hi):
     spec = np.fft.rfft(x)
     f = np.fft.rfftfreq(len(x), 1 / SR)
@@ -40,25 +47,128 @@ def bandpass(x, lo, hi):
     return np.fft.irfft(spec, len(x))
 
 
-def smooth(env, attack, release, sr):
+def follow(env, attack, release, rate):
+    """Attack/release envelope follower over a (low-rate) control signal."""
     out = np.empty_like(env)
-    a, r, v = np.exp(-1 / (attack * sr)), np.exp(-1 / (release * sr)), 0.0
-    for i, e in enumerate(env):  # runs on a decimated envelope, so a Python loop is fine
+    a, r, v = np.exp(-1 / (attack * rate)), np.exp(-1 / (release * rate)), 0.0
+    for i, e in enumerate(env):
         v = a * v + (1 - a) * e if e > v else r * v + (1 - r) * e
         out[i] = v
     return out
 
 
-def envelope(x, hop=240, attack=0.03, release=0.4):
-    frames = np.sqrt(np.mean(x[: len(x) // hop * hop].reshape(-1, hop) ** 2, axis=1))
-    sm = smooth(frames, attack, release, SR / hop)
-    return np.interp(np.arange(len(x)) / hop, np.arange(len(sm)), sm)
+def lg(f, fc, width):
+    """A log-frequency bump: 1 at fc, falling off over `width` octaves."""
+    return np.exp(-0.5 * (np.log2(np.maximum(f, 1) / fc) / width) ** 2)
+
+
+def shaped_noise(H):
+    """Noise whose spectrum follows H (frames x bins), via overlap-added random STFT frames."""
+    F, B = H.shape
+    spec = (rng.standard_normal((F, B)) + 1j * rng.standard_normal((F, B))).astype(np.complex64) * H
+    win = np.hanning(NFFT).astype(np.float32)
+    frames = np.fft.irfft(spec, NFFT, axis=1).astype(np.float32) * win
+    k = NFFT // HOP
+    chunks = np.zeros((F + k, HOP), np.float32)
+    for j in range(k):
+        chunks[j: j + F] += frames[:, j * HOP: (j + 1) * HOP]
+    return chunks.reshape(-1)
+
+
+def pen_motion(pen):
+    """Per-sample pen state at the pen.json rate: speed, stroke direction, kind, new-stroke flags."""
+    r = np.array(pen['rows'], np.float64)
+    rate = pen['rate']
+    down = r[:, 0] > 0
+    dx, dy = np.diff(r[:, 1], prepend=r[0, 1]), np.diff(r[:, 2], prepend=r[0, 2])
+    step = np.hypot(dx, dy)
+    cont = down & np.roll(down, 1) & (r[:, 4] == np.roll(r[:, 4], 1)) & (step <= 20)
+    cont[0] = False
+    speed = np.where(cont, step * rate, 0.0)
+    vy = np.where(cont, np.abs(dy) * rate, 0.0)
+    direction = np.where(cont, dy / np.maximum(step, 1e-6), 0.0)  # +1 downstroke, -1 upstroke
+    onset = down & ~cont
+    # Every element gets its own slightly different pen/paper character.
+    char = np.where(down, 0.88 + 0.24 * ((r[:, 4] * 0.6180339) % 1.0), 1.0)
+    return rate, down, speed, vy, direction, r[:, 3], onset, char
+
+
+def writing_sound(pen, n):
+    rate, down, speed, vy, direction, kind, onset, char = pen_motion(pen)
+    tk = np.arange(len(down)) / rate
+    marker = kind == 2
+
+    # Loudness follows the stroke. Handwriting pulses with every up- and downstroke and
+    # goes quiet at the turns; drawn lines swell with the pen's speed; lifts are silent.
+    e_text = 0.12 + 0.88 * np.clip(vy / 950, 0, 1.2) ** 1.4
+    e_line = np.clip(speed / 1100, 0, 1.2) ** 1.1
+    e = np.where(speed > 0, np.where(kind > 0, e_text, e_line), 0.0)
+    e = follow(e, 0.006, 0.025, rate)
+    m = follow(marker.astype(float), 0.02, 0.02, rate)
+    dirn = follow(direction, 0.01, 0.01, rate)
+
+    # Time-varying spectrum, frame by frame.
+    F = n // HOP + 1
+    tf = np.arange(F) * HOP / SR
+    E, M, D = (np.interp(tf, tk, x) for x in (e, m, dirn))
+    C, V = np.interp(tf, tk, char), np.interp(tf, tk, np.clip(speed / 1200, 0, 1.5))
+    f = np.fft.rfftfreq(NFFT, 1 / SR)[None, :]
+    fc = (2100 * (0.85 + 0.3 * V) * (1 + 0.14 * D) * C)[:, None]
+    pencil = lg(f, fc, 0.95) + 0.4 * lg(f, fc * 2.6, 0.55) + 0.35 * lg(f, 780 * C[:, None], 0.7)
+    sq = (2350 * (1 + 0.06 * D) * C)[:, None]
+    felt = lg(f, 1600 * C[:, None], 1.0) + 0.3 * lg(f, 4600, 0.7) + 0.45 * (np.minimum(V, 1)[:, None] ** 2) * lg(f, sq, 0.03)
+    H = E[:, None] * ((1 - M[:, None]) * pencil + M[:, None] * 0.8 * felt) / (1 + (f / 9000) ** 4)
+    friction = shaped_noise(H.astype(np.float32))[:n]
+
+    # Stick-slip flutter: real pens skip in tiny jerks, not a steady hiss.
+    flutter = bandpass(rng.standard_normal(n), 18, 70)
+    friction *= 0.72 + 0.28 * flutter / (np.abs(flutter).max() + 1e-9)
+
+    # Paper tooth: sparse little crackles, denser when the pen moves fast.
+    ts = np.arange(n) / SR
+    es = np.interp(ts, tk, e)
+    ms = np.interp(ts, tk, m)
+    lam = (2600 * (1 - ms) + 500 * ms) * es / SR
+    hits = np.nonzero(rng.random(n) < lam)[0]
+    crackle = np.zeros(n + 96, np.float32)
+    kernel = (rng.standard_normal(96) * np.exp(-np.arange(96) / 14)).astype(np.float32)
+    kernel = bandpass(np.pad(kernel, (0, 928)), 1500, 7000)[:96].astype(np.float32)
+    amps = rng.lognormal(0, 0.35, len(hits)).astype(np.float32) * es[hits].astype(np.float32)
+    np.add.at(crackle, hits[:, None] + np.arange(96)[None, :], amps[:, None] * kernel[None, :])
+    crackle = crackle[:n]
+
+    # Body: the paper and table underneath, felt more than heard.
+    body = bandpass(rng.standard_normal(n), 90, 380) * np.interp(ts, tk, follow(e, 0.008, 0.08, rate))
+
+    # Pen touching down at the start of each stroke and letter.
+    taps = np.zeros(n + 2400, np.float32)
+    k = np.arange(2400) / SR
+    tick = bandpass(np.pad(rng.standard_normal(240) * np.exp(-np.arange(240) / 40), (0, 2160)), 900, 6000)
+    knock = np.sin(2 * np.pi * 170 * k) * np.exp(-k * 140)
+    tap = (tick / np.abs(tick).max() + 0.5 * knock).astype(np.float32)
+    for i in np.nonzero(onset)[0]:
+        o = int(tk[i] * SR)
+        if o < n:
+            taps[o: o + len(tap)] += tap * rng.uniform(0.4, 1.0) * (0.6 if marker[i] else 1.0)
+    taps = taps[:n]
+
+    on = es > 0.3
+    friction *= db(-26) / rms(friction[on])
+    crackle *= db(-30) / rms(crackle[on])
+    c = 3 * db(-30)
+    crackle = c * np.tanh(crackle / c)
+    body *= db(-38) / rms(body[on])
+    taps *= db(-27)
+    # Soft-limit the bus so no single crackle or squeak jumps out.
+    T = db(-11)
+    return T * np.tanh((friction + crackle + body + taps) / T)
 
 
 def main():
-    ink = json.loads((ROOT / 'out/ink.json').read_text())
-    duration, fps = ink['duration'], ink['fps']
+    pen = json.loads((ROOT / 'out/pen.json').read_text())
+    duration = pen['duration']
     n = int(duration * SR)
+    t = np.arange(n) / SR
     vt = lambda tv: LEAD + tv + GAP * sum(c <= tv for c in CUTS)
 
     # Voice, with a short pause added at each scene change.
@@ -69,56 +179,43 @@ def main():
         seg = voice_src[int(a * SR): int(b * SR)]
         o = int(vt(a) * SR)
         voice[o: o + len(seg)] += seg[: n - o]
-    speech_rms = np.sqrt(np.mean(voice_src[np.abs(voice_src) > 0.01] ** 2))
-    voice *= db(-17) / speech_rms
+    voice *= db(-17) / rms(voice_src[np.abs(voice_src) > 0.01])
 
-    # Music, offset so its big section hits on "staircase".
-    drop = next(e['t'] for e in ink['sfx'] if e['type'] == 'drop')
-    music_src = decode(MUSIC, 2)
-    start = int((MUSIC_DROP - drop) * SR)
-    music = np.zeros((n, 2), np.float32)
-    chunk = music_src[start: start + n]
-    music[: len(chunk)] = chunk
-    t = np.arange(n) / SR
-    gain_db = np.interp(t, [0, drop - 0.35, drop - 0.05, duration], [15, 15, 3, 3])
-    venv = envelope(voice)
-    duck = np.clip(venv / db(-24), 0, 1)
-    gain_db -= duck * np.where(t < drop, 4, 10)
-    gain = db(gain_db) * np.clip(t / 1.2, 0, 1) * np.clip((duration - t) / 2.8, 0, 1)
-    music *= gain[:, None]
+    # The pen sits a little under the voice and comes forward in the pauses.
+    hop = 240
+    venv = np.sqrt(np.mean(voice[: n // hop * hop].reshape(-1, hop) ** 2, axis=1))
+    venv = follow(venv, 0.03, 0.35, SR / hop)
+    duck = np.interp(np.arange(n) / hop, np.arange(len(venv)), np.clip(venv / db(-26), 0, 1))
+    pen_audio = writing_sound(pen, n) * db(-4 * duck)
 
-    # Pencil scratch, following the pen in the render.
-    frames = np.array(ink['frames'], np.float32)
-    ft = (ink['from'] + np.arange(len(frames))) / fps
-    amp = frames[:, 0] * np.clip(frames[:, 1] / 22, 0.3, 1.0) * np.where(frames[:, 2] > 0, 1.0, 0.8)
-    amp_s = np.interp(t, ft, amp)
-    amp_s = envelope(amp_s, hop=48, attack=0.006, release=0.05) * 1.4
-    rng = np.random.default_rng(3)
-    noise = rng.standard_normal(n).astype(np.float32)
-    scratch = bandpass(noise, 1800, 7500)
-    grain = bandpass(rng.standard_normal(n), 8, 45)
-    grain = 0.55 + 0.45 * grain / (np.abs(grain).max() + 1e-9)
-    scratch = scratch / np.sqrt(np.mean(scratch ** 2)) * amp_s * grain * db(-34)
-
-    # Paper whooshes and the stamp thud.
+    # Paper whooshes on scene changes, the stamp, and the stairs clicking into place.
     sfx = np.zeros(n, np.float32)
-    swish = bandpass(rng.standard_normal(n), 250, 2200)
-    swish /= np.sqrt(np.mean(swish ** 2))
-    for e in ink['sfx']:
+    swish = bandpass(rng.standard_normal(n), 300, 3200)
+    swish /= rms(swish)
+    for e in pen['sfx']:
+        i0 = int(e['t'] * SR)
         if e['type'] == 'whoosh':
-            i0, i1 = int(e['t'] * SR), int((e['t'] + e['d']) * SR)
+            i1 = int((e['t'] + e['d']) * SR)
             if i1 > i0:
-                bell = np.sin(np.linspace(0, np.pi, i1 - i0)) ** 2
-                sfx[i0:i1] += swish[i0:i1] * bell * db(-36)
+                sfx[i0:i1] += swish[i0:i1] * np.sin(np.linspace(0, np.pi, i1 - i0)) ** 3 * db(-40)
         elif e['type'] == 'stamp':
-            i0 = int(e['t'] * SR)
             k = np.arange(int(0.35 * SR)) / SR
             thud = np.sin(2 * np.pi * (62 + 40 * np.exp(-k * 30)) * k) * np.exp(-k * 11) * db(-10)
             click = rng.standard_normal(len(k)) * np.exp(-k * 160) * db(-18)
             sfx[i0: i0 + len(k)] += (thud + click)[: n - i0]
+        elif e['type'] == 'tap':
+            k = np.arange(int(0.08 * SR)) / SR
+            knock = (np.sin(2 * np.pi * 520 * k) + 0.5 * np.sin(2 * np.pi * 1310 * k)) * np.exp(-k * 70)
+            knock += rng.standard_normal(len(k)) * np.exp(-k * 400) * 0.4
+            sfx[i0: i0 + len(k)] += (knock * db(-24))[: n - i0]
 
-    mono = voice + scratch + sfx
-    mix = music + mono[:, None]
+    # A quiet room so the pauses never drop to digital silence.
+    room = bandpass(rng.standard_normal(n), 60, 2500)
+    room *= db(-58) / rms(room)
+
+    mono = voice + pen_audio + sfx + room
+    mono *= np.clip(t / 0.3, 0, 1) * np.clip((duration - t) / 1.3, 0, 1)
+    mix = np.repeat(mono[:, None], 2, axis=1)
     peak = np.abs(mix).max()
     if peak > 0.98:
         mix *= 0.98 / peak

@@ -19,7 +19,7 @@ export function buildFilm({ fonts, P, vt, voiceEnd, cuts }) {
     const add = (el) => { el.scene = s.idx; el.group = s.group; els.push(el); s.els.push(el); return el; };
     s.p = (ph) => P(ph, from);
     s.ink = (strokes, t0, t1, o) => add(new Strokes(G.place(strokes, cx, cy), t0, t1, o));
-    s.text = (font, str, x, y, size, t0, t1, o) => add(new Text(fonts[font], str, cx + x, cy + y, size, t0, t1, o));
+    s.text = (font, str, x, y, size, t0, t1, o) => add(new Text(fonts[font], str, cx + x, cy + y, size, t0, t1, { sound: font === 'marker' ? 'marker' : 'pencil', ...o }));
     s.custom = (t0, t1, bb, draw, o = {}) => add(new Custom(t0, t1, [bb[0] + cx, bb[1] + cy, bb[2] + cx, bb[3] + cy], (ctx, t, env, el) => {
       ctx.save(); ctx.translate(cx, cy); draw(ctx, t, env, el); ctx.restore();
     }, { ...o, tip: o.tip && ((t) => { const p = o.tip(t); return p && [p[0] + cx, p[1] + cy]; }) }));
@@ -239,7 +239,7 @@ export function buildFilm({ fonts, P, vt, voiceEnd, cuts }) {
       const x = stairs.x0 + k * stairs.tw, y = stairs.y0 - k * stairs.rh;
       steps.push([[x, y], [x, y - stairs.rh]], [[x, y - stairs.rh], [x + stairs.tw, y - stairs.rh]]);
     }
-    markEls.forEach((el) => { el.fade = [morph0, morph0 + 0.01]; });
+    markEls.forEach((el, i) => { el.fade = [morph0, morph0 + 0.01]; sfx.push({ type: 'tap', t: morph0 + i * 0.07 + 0.3 }); });
     s.custom(morph0, morph0 + 0.01, [-520, -200, 520, 650], (ctx, t, env) => {
       steps.forEach((seg, i) => {
         const m = marks[i];

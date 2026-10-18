@@ -8,9 +8,9 @@ journal page joined by a single line, and in the climax the tally marks become a
 
 ```sh
 npm install
-./fetch-music.sh          # "Reign" by Kevin MacLeod (CC BY 4.0)
-node src/render.js        # -> out/video.mp4 (silent) + out/ink.json (pen activity for the sound)
-python3 src/mix.py        # -> out/the-line.mp4 (voice + music + pencil sounds, -14 LUFS)
+node src/render.js              # -> out/video.mp4 (silent)
+node src/render.js --pen-data   # -> out/pen.json (pen motion at 240 Hz, for the writing sound)
+python3 src/mix.py              # -> out/the-line.mp4 (voice + writing sounds, -14 LUFS)
 ```
 
 Preview frames without rendering everything: `node src/render.js --still 12,48.5,90`.
@@ -26,13 +26,19 @@ Preview frames without rendering everything: `node src/render.js --still 12,48.5
 | `src/geom.js` | hand-drawn shapes: stick figures, clocks, seats, mirror, stairs… |
 | `src/camera.js` | auto-framing camera and the transcript → video-time mapping |
 | `src/render.js` | paper, grain, pen, mood effects; streams frames into ffmpeg |
-| `src/mix.py` | soundtrack mix and final mux |
+| `src/mix.py` | soundtrack: voice plus a writing sound synthesised from the pen's motion |
 
 A 0.6 s breath is added at each scene change (`CUTS` in `render.js` and `mix.py`), so
 the timings in `words.json` are mapped to video time in `makeTimeline`.
 
-## Music credit (required in the post description)
+## Sound
 
-"Reign" Kevin MacLeod (incompetech.com)
-Licensed under Creative Commons: By Attribution 4.0 License
-http://creativecommons.org/licenses/by/4.0/
+There is no music. The writing sound is generated from the pen's motion, so it always
+matches the picture:
+- **Friction noise:** shaped to a pencil-on-paper spectrum, with a softer felt-tip
+  sound and a slight squeak for the marker lettering.
+- **Rhythm:** handwriting pulses with every up- and downstroke, and drawn lines swell
+  with the pen's speed.
+- **Detail:** paper-tooth crackle, a low body from the table, and a small tap whenever
+  the pen touches down.
+- **Mix:** the pen dips 4 dB under the voice and comes forward in the pauses.

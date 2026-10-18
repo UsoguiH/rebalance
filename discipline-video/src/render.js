@@ -203,8 +203,26 @@ function drawFrame(t, frame, smoothPen = true) {
   return { down, speed, kind: active ? (active.glyphs ? 'text' : 'line') : null };
 }
 
+// Where the pen tip is at time t (world coords) and what it is drawing with.
+function penAt(t) {
+  let active = null;
+  for (const el of film.els) if (el.active(t) && (!active || el.t0 >= active.t0) && el.tip(t)) active = el;
+  if (!active) return null;
+  return { tip: active.tip(t), sound: active.sound, text: !!active.glyphs, id: film.els.indexOf(active) };
+}
+
 // ── Main ────────────────────────────────────────────────────────────────────
-if (args.still) {
+if ('pen-data' in args) {
+  // Pen motion at 240 Hz for the writing sound in mix.py: [down, x, y, kind, element],
+  // kind 0 = line drawing, 1 = handwriting, 2 = marker lettering.
+  const rate = 240, rows = [];
+  for (let k = 0; k < film.duration * rate; k++) {
+    const p = penAt(k / rate);
+    rows.push(p ? [1, Math.round(p.tip[0] * 10) / 10, Math.round(p.tip[1] * 10) / 10, p.sound === 'marker' ? 2 : p.text ? 1 : 0, p.id] : [0, 0, 0, 0, -1]);
+  }
+  fs.writeFileSync(`${root}out/pen.json`, JSON.stringify({ rate, rows, sfx: film.sfx, duration: film.duration }));
+  console.log('pen data written');
+} else if (args.still) {
   for (const s of args.still.split(',').sort((a, b) => a - b)) {
     const t = parseFloat(s);
     drawFrame(t, Math.round(t * FPS), false);
