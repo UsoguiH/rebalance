@@ -20,5 +20,7 @@ The ribbon words are signed-distance-field images, one per word so Arabic letter
 the helix winds the other way so the words read right to left. GSAP drives all the motion. SplitText
 animates the titles by letter in English and by word in Arabic.
 
-Run it from any static server, for example `npx http-server molu -p 8080`. Add `#1` or `#2` to the URL
+`molu-onboarding.html` is a single self-contained file with Three.js, GSAP, the app code and the fonts
+inlined. It opens directly with no server and no internet connection. To edit, change `index.html` and
+`app.js`, which load their libraries from a CDN. Run them from any static server, for example `npx http-server molu -p 8080`. Add `#1` or `#2` to the URL
 to open on slide 2 or 3.
