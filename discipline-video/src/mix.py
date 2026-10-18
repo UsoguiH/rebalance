@@ -7,6 +7,7 @@ letter tap and lift lines up with the ink on screen.
     node src/render.js            # out/video.mp4
     node src/render.js --pen-data # out/pen.json
     python3 src/mix.py            # out/the-line.mp4
+    python3 src/mix.py --look 2   # out/look_2.mp4, from src/lookanim.js output
 """
 
 import json
@@ -93,10 +94,12 @@ def pen_motion(pen):
     return rate, down, speed, vy, direction, r[:, 3], onset, char
 
 
-def writing_sound(pen, n):
+def writing_sound(pen, n, style=None):
+    """style: None (from each element), 'pencil', 'marker' or 'chalk'."""
     rate, down, speed, vy, direction, kind, onset, char = pen_motion(pen)
     tk = np.arange(len(down)) / rate
-    marker = kind == 2
+    marker = kind == 2 if style is None else np.full(len(kind), style == 'marker')
+    chalk = style == 'chalk'
 
     # Loudness follows the stroke. Handwriting pulses with every up- and downstroke and
     # goes quiet at the turns; drawn lines swell with the pen's speed; lifts are silent.
@@ -113,7 +116,7 @@ def writing_sound(pen, n):
     E, M, D = (np.interp(tf, tk, x) for x in (e, m, dirn))
     C, V = np.interp(tf, tk, char), np.interp(tf, tk, np.clip(speed / 1200, 0, 1.5))
     f = np.fft.rfftfreq(NFFT, 1 / SR)[None, :]
-    fc = (2100 * (0.85 + 0.3 * V) * (1 + 0.14 * D) * C)[:, None]
+    fc = ((1500 if chalk else 2100) * (0.85 + 0.3 * V) * (1 + 0.14 * D) * C)[:, None]
     pencil = lg(f, fc, 0.95) + 0.4 * lg(f, fc * 2.6, 0.55) + 0.35 * lg(f, 780 * C[:, None], 0.7)
     sq = (2350 * (1 + 0.06 * D) * C)[:, None]
     felt = lg(f, 1600 * C[:, None], 1.0) + 0.3 * lg(f, 4600, 0.7) + 0.45 * (np.minimum(V, 1)[:, None] ** 2) * lg(f, sq, 0.03)
@@ -128,7 +131,7 @@ def writing_sound(pen, n):
     ts = np.arange(n) / SR
     es = np.interp(ts, tk, e)
     ms = np.interp(ts, tk, m)
-    lam = (2600 * (1 - ms) + 500 * ms) * es / SR
+    lam = (2600 * (1 - ms) + 500 * ms) * (2.4 if chalk else 1) * es / SR
     hits = np.nonzero(rng.random(n) < lam)[0]
     crackle = np.zeros(n + 96, np.float32)
     kernel = (rng.standard_normal(96) * np.exp(-np.arange(96) / 14)).astype(np.float32)
@@ -154,7 +157,7 @@ def writing_sound(pen, n):
 
     on = es > 0.3
     friction *= db(-26) / rms(friction[on])
-    crackle *= db(-30) / rms(crackle[on])
+    crackle *= db(-27 if chalk else -30) / rms(crackle[on])
     c = 3 * db(-30)
     crackle = c * np.tanh(crackle / c)
     body *= db(-38) / rms(body[on])
@@ -164,8 +167,11 @@ def writing_sound(pen, n):
     return T * np.tanh((friction + crackle + body + taps) / T)
 
 
-def main():
-    pen = json.loads((ROOT / 'out/pen.json').read_text())
+def main(look=None):
+    pen_file, video, final = 'out/pen.json', 'out/video.mp4', 'out/the-line.mp4'
+    if look:
+        pen_file, video, final = f'out/look_pen_{look}.json', f'out/look_anim_{look}.mp4', f'out/look_{look}.mp4'
+    pen = json.loads((ROOT / pen_file).read_text())
     duration = pen['duration']
     n = int(duration * SR)
     t = np.arange(n) / SR
@@ -178,7 +184,8 @@ def main():
     for a, b in zip(bounds, bounds[1:]):
         seg = voice_src[int(a * SR): int(b * SR)]
         o = int(vt(a) * SR)
-        voice[o: o + len(seg)] += seg[: n - o]
+        if o < n:
+            voice[o: o + len(seg)] += seg[: n - o]
     voice *= db(-17) / rms(voice_src[np.abs(voice_src) > 0.01])
 
     # The pen sits a little under the voice and comes forward in the pauses.
@@ -186,7 +193,7 @@ def main():
     venv = np.sqrt(np.mean(voice[: n // hop * hop].reshape(-1, hop) ** 2, axis=1))
     venv = follow(venv, 0.03, 0.35, SR / hop)
     duck = np.interp(np.arange(n) / hop, np.arange(len(venv)), np.clip(venv / db(-26), 0, 1))
-    pen_audio = writing_sound(pen, n) * db(-4 * duck)
+    pen_audio = writing_sound(pen, n, pen.get('style')) * db(-4 * duck)
 
     # Paper whooshes on scene changes, the stamp, and the stairs clicking into place.
     sfx = np.zeros(n, np.float32)
@@ -228,12 +235,13 @@ def main():
     lufs = float(re.findall(r'I:\s+(-?[\d.]+) LUFS', r.stderr)[-1])
     gain = TARGET_LUFS - lufs
     print(f'mix loudness {lufs:.1f} LUFS -> applying {gain:+.1f} dB')
-    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(ROOT / 'out/video.mp4'), '-i', str(wav),
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(ROOT / video), '-i', str(wav),
                     '-af', f'volume={gain:.2f}dB,alimiter=limit=0.89:level=false',
                     '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest',
-                    '-movflags', '+faststart', str(ROOT / 'out/the-line.mp4')], check=True)
-    print('wrote', ROOT / 'out/the-line.mp4')
+                    '-movflags', '+faststart', str(ROOT / final)], check=True)
+    print('wrote', ROOT / final)
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    main(sys.argv[sys.argv.index('--look') + 1] if '--look' in sys.argv else None)

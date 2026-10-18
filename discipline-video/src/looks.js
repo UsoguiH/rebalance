@@ -10,10 +10,10 @@ import * as G from './geom.js';
 import { Strokes, Text } from './ink.js';
 import { noise2, rng } from './util.js';
 
-const W = 1080, H = 1920;
+export const W = 1080, H = 1920;
 const root = new URL('..', import.meta.url).pathname;
 
-function loadFont(file) {
+export function loadFont(file) {
   const b = fs.readFileSync(`${root}node_modules/@fontsource/${file}`);
   return opentype.parse(b.buffer.slice(b.byteOffset, b.byteOffset + b.length));
 }
@@ -50,7 +50,7 @@ function lighting(ctx, strength = 0.16) {
   ctx.fillRect(0, 0, W, H);
 }
 
-const SURFACES = {
+export const SURFACES = {
   notebook(ctx) {
     ctx.drawImage(paper([250, 250, 245], { seed: 2 }), 0, 0);
     ctx.strokeStyle = 'rgba(90,140,200,0.45)';
@@ -111,7 +111,7 @@ const SURFACES = {
 };
 
 // Speckle mask that eats into the ink where the paper's tooth stops the tool.
-function grainMask(amount, scale, seed) {
+export function grainMask(amount, scale, seed) {
   const r = rng(seed);
   return pixels((x, y) => {
     const n = noise2(x * scale, y * scale) * 0.6 + r() * 0.4;
@@ -140,7 +140,7 @@ function cylFill(ctx, x0, len, w0, w1, colors, hex = false) {
   ctx.fill();
 }
 
-const TOOLS = {
+export const TOOLS = {
   ballpoint: {
     angle: 0.9, sections: [
       [0, 14, 3, 7, ['#777', '#bbb', '#fff']], [14, 42, 7, 26, ['#6d7278', '#b9bec4', '#ffffff']],
@@ -179,21 +179,23 @@ function toolSilhouette(ctx, tool) {
   if (tool.nib) { ctx.moveTo(0, 0); ctx.lineTo(80, -17); ctx.lineTo(80, 17); ctx.closePath(); }
 }
 
-function drawTool(ctx, tool, tip) {
+// lift: 0 = tip on the paper, 1 = raised between words (the shadow drifts away from the tip).
+export function drawTool(ctx, tool, tip, lift = 0, tilt = 0) {
   ctx.save();
   ctx.translate(tip[0], tip[1]);
-  ctx.rotate(tool.angle);
-  ctx.scale(tool.chalk ? 1.5 : 1.65, tool.chalk ? 1.5 : 1.65);
+  ctx.rotate(tool.angle + tilt);
+  const k = (tool.chalk ? 1.5 : 1.65) * (1 + 0.05 * lift);
+  ctx.scale(k, k);
   // Cast shadow: touches the paper at the tip and falls away as the pen rises.
   ctx.save();
   ctx.transform(1.0, 0.16, 0, 1, 0, 0);
-  ctx.translate(26, 22);
-  ctx.filter = 'blur(14px)';
-  ctx.fillStyle = 'rgba(25,18,10,0.30)';
+  ctx.translate(26 + lift * 26, 22 + lift * 22);
+  ctx.filter = `blur(${14 + lift * 6}px)`;
+  ctx.fillStyle = `rgba(25,18,10,${0.3 - lift * 0.06})`;
   toolSilhouette(ctx, tool);
   ctx.fill();
   ctx.restore();
-  ctx.save(); ctx.filter = 'blur(4px)'; ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(4, 3, 9, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.filter = 'blur(4px)'; ctx.fillStyle = `rgba(0,0,0,${0.35 * (1 - lift)})`; ctx.beginPath(); ctx.ellipse(4, 3, 9, 5, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
 
   if (tool.chalk) {
     const r = rng(12);
@@ -240,16 +242,16 @@ function drawTool(ctx, tool, tip) {
 }
 
 // ── The five looks ──────────────────────────────────────────────────────────
-const LOOKS = [
-  { name: 'Notebook · blue ballpoint', surface: 'notebook', tool: TOOLS.ballpoint, font: 'nothing-you-could-do/files/nothing-you-could-do-latin-400-normal.woff', size: 92,
+export const LOOKS = [
+  { name: 'Notebook · blue ballpoint', sound: 'pencil', surface: 'notebook', tool: TOOLS.ballpoint, font: 'nothing-you-could-do/files/nothing-you-could-do-latin-400-normal.woff', size: 92,
     ink: '#1f3d93', soft: 'rgba(31,61,147,0.75)', accent: '#c4302b', w: 4.2, blend: 'multiply', grain: [0.18, 0.9] },
-  { name: 'Journal · fountain pen', surface: 'journal', tool: TOOLS.fountain, font: 'homemade-apple/files/homemade-apple-latin-400-normal.woff', size: 68,
+  { name: 'Journal · fountain pen', sound: 'pencil', surface: 'journal', tool: TOOLS.fountain, font: 'homemade-apple/files/homemade-apple-latin-400-normal.woff', size: 68,
     ink: '#16161f', soft: 'rgba(22,22,31,0.7)', accent: '#8b1e2d', w: 4.6, blend: 'multiply', grain: [0.06, 0.9], bleed: 1.4 },
-  { name: 'Sketchbook · graphite pencil', surface: 'sketchbook', tool: TOOLS.pencil, font: 'shadows-into-light/files/shadows-into-light-latin-400-normal.woff', size: 100,
+  { name: 'Sketchbook · graphite pencil', sound: 'pencil', surface: 'sketchbook', tool: TOOLS.pencil, font: 'shadows-into-light/files/shadows-into-light-latin-400-normal.woff', size: 100,
     ink: '#3f3f42', soft: 'rgba(63,63,66,0.65)', accent: '#b8352a', w: 4.4, blend: 'multiply', grain: [0.5, 0.45], alpha: 0.9 },
-  { name: 'Whiteboard · marker', surface: 'whiteboard', tool: TOOLS.marker, font: 'kalam/files/kalam-latin-700-normal.woff', size: 92,
+  { name: 'Whiteboard · marker', sound: 'marker', surface: 'whiteboard', tool: TOOLS.marker, font: 'kalam/files/kalam-latin-700-normal.woff', size: 92,
     ink: '#141414', soft: 'rgba(20,20,20,0.6)', accent: '#d42a2a', w: 10, blend: 'source-over', grain: [0.08, 0.2], alpha: 0.94 },
-  { name: 'Chalkboard · chalk', surface: 'chalkboard', tool: TOOLS.chalk, font: 'gloria-hallelujah/files/gloria-hallelujah-latin-400-normal.woff', size: 84,
+  { name: 'Chalkboard · chalk', sound: 'chalk', surface: 'chalkboard', tool: TOOLS.chalk, font: 'gloria-hallelujah/files/gloria-hallelujah-latin-400-normal.woff', size: 84,
     ink: '#f1efe6', soft: 'rgba(241,239,230,0.7)', accent: '#f2c14e', w: 8, blend: 'source-over', grain: [0.55, 0.5], alpha: 0.92 },
 ];
 
@@ -292,6 +294,7 @@ function renderLook(look, i) {
   return canvas;
 }
 
+if (process.argv[1] === new URL(import.meta.url).pathname) {
 fs.mkdirSync(`${root}out`, { recursive: true });
 const frames = LOOKS.map(renderLook);
 
@@ -307,3 +310,4 @@ frames.forEach((f, i) => {
 });
 fs.writeFileSync(`${root}out/looks_sheet.png`, sheet.toBuffer('image/png'));
 console.log('looks written');
+}
