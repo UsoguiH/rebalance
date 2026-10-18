@@ -14,10 +14,11 @@ through the video, and in the climax they turn into a staircase.
 
 | | |
 |---|---|
-| Length | about 2:45 to 3:00 (full); about 50s (Shorts cut) |
-| Format | 1920×1080, 30 fps (main). 1080×1920 vertical for the Shorts cut |
-| Build | Code-driven (Remotion / React → MP4), so every stroke is synced to the voice |
-| Voice | ElevenLabs, one file per scene (see §5) |
+| Length | 1:47 |
+| Format | 1080×1920 vertical, 30 fps (TikTok / Reels / Shorts) |
+| Build | Code-driven (Node canvas → ffmpeg), so every stroke is synced to the voice. See `README.md` |
+| Voice | ElevenLabs, one take (`audio/voice.mp3`) |
+| Music | "Reign" by Kevin MacLeod (CC BY 4.0); its big section lands on "staircase" |
 
 ## 2. Art direction: "ink on paper"
 
