@@ -10,7 +10,7 @@ import fs from 'fs';
 import { makeTimeline } from './camera.js';
 import * as G from './geom.js';
 import { Strokes, Text } from './ink.js';
-import { drawTool, grainMask, H, loadFont, LOOKS, SURFACES, W } from './looks.js';
+import { drawTool, grainMaskImage, H, loadFont, LOOKS, SURFACES, W } from './looks.js';
 import { clamp, ease, inv } from './util.js';
 
 const FPS = 30, DURATION = 11;
@@ -44,7 +44,7 @@ async function renderClip(n) {
   const els = sceneOne(look, font);
   const surface = createCanvas(W, H);
   SURFACES[look.surface](surface.getContext('2d'));
-  const mask = grainMask(look.grain[0], look.grain[1], 30 + n - 1);
+  const mask = await grainMaskImage(look.grain[0], look.grain[1], 30 + n - 1);
   const page = createCanvas(W, H), pc = page.getContext('2d');
   const ink = createCanvas(W, H), ic = ink.getContext('2d');
   const out = createCanvas(W, H), oc = out.getContext('2d');
@@ -97,7 +97,7 @@ async function renderClip(n) {
     oc.scale(z, z);
     oc.translate(-W / 2, -H / 2 - 40);
     oc.drawImage(page, 0, 0);
-    const buf = Buffer.from(oc.getImageData(0, 0, W, H).data.buffer);
+    const buf = Buffer.from(out.data());
     if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
   }
   ff.stdin.end();

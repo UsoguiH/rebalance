@@ -3,7 +3,7 @@
 //
 //   node src/looks.js     -> out/look_1.png … out/look_5.png and out/looks_sheet.png
 
-import { createCanvas, Path2D } from '@napi-rs/canvas';
+import { createCanvas, loadImage, Path2D } from '@napi-rs/canvas';
 import fs from 'fs';
 import opentype from 'opentype.js';
 import * as G from './geom.js';
@@ -117,6 +117,12 @@ export function grainMask(amount, scale, seed) {
     const n = noise2(x * scale, y * scale) * 0.6 + r() * 0.4;
     return [0, 0, 0, Math.max(0, Math.min(255, (n - (1 - amount)) * 255 / amount))];
   });
+}
+
+// The same mask as an Image: @napi-rs/canvas leaks a full frame of native memory every
+// time a *canvas* is drawn with 'destination-out', but not when an Image is.
+export async function grainMaskImage(amount, scale, seed) {
+  return loadImage(await grainMask(amount, scale, seed).encode('png'));
 }
 
 // ── Realistic writing tools ─────────────────────────────────────────────────

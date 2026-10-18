@@ -240,7 +240,7 @@ if ('pen-data' in args) {
   for (let f = f0; f < f1; f++) {
     const info = drawFrame(f / FPS, f);
     log.push([info.down ? 1 : 0, Math.round(info.speed * 10) / 10, info.kind === 'text' ? 1 : 0]);
-    const buf = Buffer.from(ctx.getImageData(0, 0, W, H).data.buffer);
+    const buf = Buffer.from(canvas.data());
     if (!ff.stdin.write(buf)) await new Promise((r) => ff.stdin.once('drain', r));
     if (f % 150 === 0) console.log(`frame ${f}/${f1} (${((Date.now() - t0) / 1000).toFixed(0)}s)`);
   }
