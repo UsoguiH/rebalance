@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Traveme Onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky-0: #0018e6;
+    --sky-1: #001ced;
+    --sky-2: #0b4aef;
+    --sky-3: #4a6cec;
+    --sky-4: #8a8ee6;
+    --sky-5: #c596e0;
+    --sky-6: #f892c3;
+    --sky-7: #fca372;
+    --sky-8: #fbb262;
+    --ink: #17123a;
+    --cta-pink: #f58ad5;
+    --stage: #07060d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--stage); overflow: hidden; }
+  body { display: grid; place-items: center; font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
+
+  /* The phone is laid out at iPhone 15 Pro size (393 x 852) and scaled to fit. */
+  .stage { position: relative; width: 100vw; height: 100vh; height: 100dvh; display: grid; place-items: center; }
+  .device {
+    position: absolute; left: 50%; top: 50%;
+    width: 417px; height: 876px; margin: -438px 0 0 -208.5px;
+    border-radius: 68px; padding: 12px;
+    background: linear-gradient(145deg, #2a2a33, #0d0d12 40%, #24242c);
+    box-shadow: 0 0 0 2px #3a3a44, 0 40px 90px rgba(0,0,0,.55);
+    transform-origin: 50% 50%;
+  }
+  .device.bare { padding: 0; background: none; box-shadow: none; border-radius: 0; width: 393px; height: 852px; margin: -426px 0 0 -196.5px; }
+  .screen {
+    position: relative; width: 393px; height: 852px; overflow: hidden; border-radius: 56px;
+    background: linear-gradient(180deg,
+      var(--sky-0) 0%, var(--sky-1) 26%, var(--sky-2) 36%, var(--sky-3) 49%,
+      var(--sky-4) 59%, var(--sky-5) 70%, var(--sky-6) 79%, var(--sky-7) 89%, var(--sky-8) 100%);
+    color: #fff; user-select: none; -webkit-user-select: none;
+  }
+  .device.bare .screen { border-radius: 0; }
+  #gl { position: absolute; inset: 0; width: 393px; height: 852px; display: block; }
+
+  /* iOS chrome */
+  .island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #000; z-index: 6; }
+  .status { position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 5; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 46px; font: 600 16px/1 -apple-system, "SF Pro Text", "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -.2px; }
+  .status .time { display: flex; align-items: center; gap: 5px; }
+  .status .right { display: flex; align-items: center; gap: 6px; }
+  .skip { position: absolute; top: 66px; right: 26px; z-index: 5; background: none; border: 0; color: rgba(255,255,255,.82); font: 500 12px/1 "Plus Jakarta Sans", sans-serif; cursor: pointer; padding: 6px; }
+
+  /* Copy */
+  .copy { position: absolute; left: 0; right: 0; top: 104px; z-index: 4; text-align: center; pointer-events: none; }
+  .copy h1 { font: 800 33px/1.02 "Plus Jakarta Sans", sans-serif; letter-spacing: -.9px; }
+  .copy h1 span, .copy p { display: block; will-change: filter, opacity, transform; }
+  .copy p { margin: 15px auto 0; max-width: 262px; font: 500 10.5px/1.6 "Plus Jakarta Sans", sans-serif; color: rgba(255,255,255,.78); letter-spacing: -.05px; }
+
+  /* Bottom bar */
+  .bottom { position: absolute; left: 30px; right: 22px; bottom: 54px; height: 46px; z-index: 5; display: flex; align-items: center; justify-content: space-between; }
+  .dots { position: relative; width: 52px; height: 5px; }
+  .dots i { position: absolute; top: 0; height: 5px; border-radius: 3px; background: #fff; }
+  .cta {
+    position: relative; height: 44px; width: 92px; border: 0; border-radius: 22px; cursor: pointer; overflow: hidden;
+    background: rgba(255, 244, 240, .86); color: var(--ink);
+    box-shadow: 0 6px 18px rgba(120, 40, 90, .18);
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    font: 600 15px/1 "Plus Jakarta Sans", sans-serif; letter-spacing: -.2px;
+  }
+  .cta .label { white-space: nowrap; overflow: hidden; display: inline-block; }
+  .cta svg { flex: none; }
+  .home { position: absolute; bottom: 8px; left: 50%; width: 136px; height: 5px; margin-left: -68px; border-radius: 3px; background: rgba(255,255,255,.0); z-index: 5; }
+
+  .hint { position: fixed; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12px/1.4 "Plus Jakarta Sans", sans-serif; color: rgba(255,255,255,.38); pointer-events: none; }
+  @media (max-width: 520px) { .hint { display: none; } }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div class="stage">
+  <div class="device" id="device">
+    <div class="screen" id="screen">
+      <canvas id="gl"></canvas>
+      <div class="island"></div>
+      <div class="status">
+        <span class="time">18:20
+          <svg width="12" height="13" viewBox="0 0 12 13" fill="#fff"><path d="M6 0.6c-.5 0-.9.4-.9.9v.4C3.3 2.3 2 3.9 2 5.8v2.6L.9 9.7c-.4.4-.1 1 .4 1h9.4c.5 0 .8-.6.4-1L10 8.4V5.8c0-1.9-1.3-3.5-3.1-3.9v-.4c0-.5-.4-.9-.9-.9zM4.5 11.4a1.5 1.5 0 0 0 3 0z"/></svg>
+        </span>
+        <span class="right">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="#fff"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1" opacity=".35"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".35"/></svg>
+          <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="#fff" stroke-opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.4" fill="#fff"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" fill="#fff" fill-opacity=".45"/></svg>
+        </span>
+      </div>
+      <button class="skip" id="skip" type="button">Skip</button>
+
+      <div class="copy" id="copy0">
+        <h1><span>Welcome to</span><span>Traveme!</span></h1>
+        <p>Plan smarter, discover better, and make every trip worth remembering.</p>
+      </div>
+      <div class="copy" id="copy1">
+        <h1><span>Pack The</span><span>Possibility</span></h1>
+        <p>From places to stay to things to do, keep every part of your journey organized in one place.</p>
+      </div>
+
+      <div class="bottom">
+        <div class="dots" id="dots"><i></i><i></i><i></i></div>
+        <button class="cta" id="cta" type="button" aria-label="Next">
+          <span class="label" id="ctaLabel">Get started</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg>
+        </button>
+      </div>
+      <div class="home"></div>
+    </div>
+  </div>
+</div>
+<div class="hint">Tap the arrow to advance · Skip jumps to the end · it also plays on its own</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+const W = 393, H = 852;
+const params = new URLSearchParams(location.search);
+
+/* ---------- fit the phone to the viewport ---------- */
+const device = document.getElementById('device');
+function fit() {
+  const vw = innerWidth, vh = innerHeight;
+  const bare = vw <= 520;
+  device.classList.toggle('bare', bare);
+  const dw = bare ? W : 417, dh = bare ? H : 876;
+  const pad = bare ? 0 : 48;
+  const s = bare ? Math.min(vw / dw, vh / dh) : Math.min((vw - pad) / dw, (vh - pad) / dh, 1.25);
+  device.style.transform = `scale(${s})`;
+  return s;
+}
+let fitScale = fit();
+
+/* ---------- easing ---------- */
+const clamp01 = x => Math.min(1, Math.max(0, x));
+const seg = (t, a, b) => clamp01((t - a) / (b - a));
+const lerp = (a, b, t) => a + (b - a) * t;
+const eInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const eOut = t => 1 - Math.pow(1 - t, 3);
+const eOut4 = t => 1 - Math.pow(1 - t, 4);
+const eIn = t => t * t * t;
+const eIn2 = t => t * t;
+const eOutBack = t => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+
+/* ---------- renderer / scene ---------- */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: params.has('t') });
+renderer.setClearColor(0x000000, 0);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+function sizeRenderer() {
+  renderer.setPixelRatio(Math.min(3, (window.devicePixelRatio || 1) * fitScale));
+  renderer.setSize(W, H, false);
+}
+sizeRenderer();
+addEventListener('resize', () => { fitScale = fit(); sizeRenderer(); });
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, W / H, 0.1, 100);
+camera.position.set(0, 0, 15.5);
+camera.lookAt(0, 0, 0);
+
+/* Environment: the same sky the screen sits on, plus two soft boxes for highlights. */
+function buildEnvironment() {
+  const env = new THREE.Scene();
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(20, 64, 32),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      uniforms: {},
+      vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `varying vec3 vDir;
+        vec3 ramp(float y){
+          vec3 c0 = vec3(0.02,0.10,1.00);   // deep blue
+          vec3 c1 = vec3(0.32,0.45,1.00);
+          vec3 c2 = vec3(0.70,0.60,0.98);   // lavender
+          vec3 c3 = vec3(1.00,0.55,0.80);   // pink
+          vec3 c4 = vec3(1.00,0.72,0.42);   // peach
+          vec3 c5 = vec3(0.30,0.22,0.50);
+          if (y > 0.45) return mix(c1, c0, (y-0.45)/0.55);
+          if (y > 0.10) return mix(c2, c1, (y-0.10)/0.35);
+          if (y > -0.15) return mix(c3, c2, (y+0.15)/0.25);
+          if (y > -0.45) return mix(c4, c3, (y+0.45)/0.30);
+          return mix(c5, c4, (y+1.0)/0.55);
+        }
+        void main(){ gl_FragColor = vec4(ramp(vDir.y), 1.0); }`
+    })
+  );
+  env.add(sky);
+  const box = (w, h, color, intensity, pos) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(intensity), side: THREE.DoubleSide }));
+    m.position.copy(pos); m.lookAt(0, 0, 0); env.add(m);
+  };
+  box(10, 6, '#ffffff', 2.4, new THREE.Vector3(-8, 9, 8));
+  box(5, 10, '#ffd0f0', 1.6, new THREE.Vector3(10, 1, 4));
+  box(6, 4, '#a8ffef', 1.2, new THREE.Vector3(-10, -2, 2));
+  box(8, 3, '#ffffff', 1.0, new THREE.Vector3(0, 4, 12));
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const rt = pmrem.fromScene(env, 0.03);
+  pmrem.dispose();
+  return rt.texture;
+}
+scene.environment = buildEnvironment();
+
+scene.add(new THREE.HemisphereLight(0xc9d2ff, 0xffb48a, 0.55));
+const key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(-4, 6, 7);
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xffb0e6, 1.1);
+rim.position.set(6, 1, -2);
+scene.add(rim);
+
+/* ---------- materials ---------- */
+const M = {
+  holo: new THREE.MeshPhysicalMaterial({
+    color: '#7e7ff7', metalness: 0.82, roughness: 0.22,
+    iridescence: 1, iridescenceIOR: 1.8, iridescenceThicknessRange: [180, 620],
+    clearcoat: 1, clearcoatRoughness: 0.12, envMapIntensity: 1.35
+  }),
+  holoLining: new THREE.MeshPhysicalMaterial({
+    color: '#9aa8f2', metalness: 0.6, roughness: 0.24,
+    iridescence: 1, iridescenceIOR: 1.5, iridescenceThicknessRange: [300, 700],
+    clearcoat: .6, envMapIntensity: 1.2
+  }),
+  lime: new THREE.MeshPhysicalMaterial({ color: '#cfdc24', roughness: 0.32, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.2, sheen: .4, sheenColor: new THREE.Color('#fbffb0') }),
+  cream: new THREE.MeshPhysicalMaterial({ color: '#f2d6cc', roughness: 0.28, metalness: 0.55, clearcoat: 1, envMapIntensity: 1.2 }),
+  chrome: new THREE.MeshPhysicalMaterial({ color: '#e7d7ef', roughness: 0.18, metalness: 0.9, envMapIntensity: 1.4 }),
+  interior: new THREE.MeshPhysicalMaterial({ color: '#232c86', roughness: 0.75, metalness: 0.0, sheen: 1, sheenColor: new THREE.Color('#5a68ff'), sheenRoughness: .6 }),
+  dark: new THREE.MeshStandardMaterial({ color: '#141532', roughness: .45, metalness: .3 }),
+};
+
+const plastic = c => new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.3, metalness: 0.08, clearcoat: 1, clearcoatRoughness: 0.15, envMapIntensity: 1.1 });
+const matte = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8, metalness: 0, envMapIntensity: 0.7 });
+
+const rbox = (w, h, d, r, mat, seg = 4) => new THREE.Mesh(new RoundedBoxGeometry(w, h, d, seg, Math.min(r, w / 2 - 1e-3, h / 2 - 1e-3, d / 2 - 1e-3)), mat);
+
+/* Globe emblem as a canvas texture */
+function globeTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+  grd.addColorStop(0, '#22346a'); grd.addColorStop(1, '#0a0f2c');
+  g.fillStyle = grd; g.beginPath(); g.arc(128, 128, 128, 0, Math.PI * 2); g.fill();
+  g.save(); g.beginPath(); g.arc(128, 128, 70, 0, Math.PI * 2); g.clip();
+  const sea = g.createRadialGradient(110, 105, 5, 128, 128, 80);
+  sea.addColorStop(0, '#b8fff1'); sea.addColorStop(1, '#2bb3a6');
+  g.fillStyle = sea; g.fillRect(0, 0, 256, 256);
+  g.fillStyle = '#0d3b52';
+  const blob = (pts) => { g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); };
+  blob([[70, 80], [110, 70], [120, 95], [100, 120], [92, 150], [76, 130], [66, 104]]);
+  blob([[135, 72], [178, 82], [190, 112], [168, 120], [150, 104], [138, 96]]);
+  blob([[140, 130], [170, 128], [178, 160], [160, 190], [142, 170]]);
+  g.restore();
+  g.strokeStyle = 'rgba(160,255,240,.55)'; g.lineWidth = 3;
+  g.beginPath(); g.arc(128, 128, 76, 0, Math.PI * 2); g.stroke();
+  g.shadowColor = '#7fffe6'; g.shadowBlur = 18; g.stroke();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const GLOBE = globeTexture();
+
+/* A rounded-rectangle frame (outer size w x h, border b) extruded by depth d. */
+function roundedRectShape(w, h, r) {
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+function frameGeometry(w, h, r, b, d) {
+  const outer = roundedRectShape(w, h, r);
+  outer.holes.push(roundedRectShape(w - 2 * b, h - 2 * b, Math.max(0.02, r - b)));
+  return new THREE.ExtrudeGeometry(outer, { depth: d, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 2, curveSegments: 10 });
+}
+
+/* ---------- suitcase ---------- */
+// Dimensions in world units. The case is split into a back shell (base) and a
+// front shell (lid) hinged on its left edge, so it can open like in slide two.
+const SW = 1.62, SH = 2.18, SD = 1.0;
+function buildSuitcase({ shell = M.holo, accent = M.lime, lining = M.holoLining, emblem = true, items = false } = {}) {
+  const root = new THREE.Group();
+  const base = new THREE.Group(); root.add(base);
+
+  const baseShell = rbox(SW, SH, SD / 2, 0.2, shell, 6);
+  baseShell.position.z = -SD / 4; base.add(baseShell);
+  const inside = rbox(SW - 0.16, SH - 0.16, 0.06, 0.12, M.interior);
+  inside.position.z = -0.02; base.add(inside);
+
+  // seam / zipper band
+  const seam = new THREE.Mesh(frameGeometry(SW + 0.03, SH + 0.03, 0.2, 0.07, 0.05), M.chrome);
+  seam.position.z = -0.035; base.add(seam);
+
+  // back corner caps
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+    const cap = rbox(0.42, 0.36, 0.34, 0.15, accent);
+    cap.position.set(sx * (SW / 2 - 0.15), sy * (SH / 2 - 0.13), -SD / 2 + 0.13);
+    base.add(cap);
+  }
+  // telescopic handle
+  for (const sx of [-1, 1]) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.62, 16), M.cream);
+    pole.position.set(sx * 0.36, SH / 2 + 0.26, -SD / 2 + 0.17); base.add(pole);
+  }
+  const grip = rbox(0.9, 0.16, 0.2, 0.07, accent);
+  grip.position.set(0, SH / 2 + 0.6, -SD / 2 + 0.17); base.add(grip);
+  // side handle
+  const side = rbox(0.1, 0.62, 0.17, 0.05, accent);
+  side.position.set(SW / 2 + 0.04, 0.18, -SD / 4); base.add(side);
+  // wheels
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const w = new THREE.Group();
+    const housing = rbox(0.2, 0.12, 0.2, 0.05, accent);
+    housing.position.y = 0.02; w.add(housing);
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.1, 24), M.cream);
+    wheel.rotation.z = Math.PI / 2; wheel.position.y = -0.1; w.add(wheel);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.11, 16), plastic('#c9a487'));
+    hub.rotation.z = Math.PI / 2; hub.position.y = -0.1; w.add(hub);
+    w.position.set(sx * (SW / 2 - 0.2), -SH / 2 - 0.06, sz > 0 ? -0.12 : -SD / 2 + 0.17);
+    base.add(w);
+  }
+
+  // lid
+  const hinge = new THREE.Group(); hinge.position.set(-SW / 2, 0, 0); root.add(hinge);
+  const lid = new THREE.Group(); lid.position.set(SW / 2, 0, 0); hinge.add(lid);
+  const lidShell = rbox(SW, SH, SD / 2, 0.2, shell, 6);
+  lidShell.position.z = SD / 4; lid.add(lidShell);
+  const liner = rbox(SW - 0.16, SH - 0.16, 0.05, 0.12, lining);
+  liner.position.z = 0.015; lid.add(liner);
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+    const cap = rbox(0.42, 0.36, 0.34, 0.15, accent);
+    cap.position.set(sx * (SW / 2 - 0.15), sy * (SH / 2 - 0.13), SD / 2 - 0.13);
+    lid.add(cap);
+  }
+  const fz = SD / 2;
+  for (const sx of [-1, 1]) {
+    const rib = rbox(0.17, SH * 0.6, 0.12, 0.08, shell);
+    rib.position.set(sx * 0.47, -0.04, fz); lid.add(rib);
+  }
+  const badge = rbox(0.5, 0.24, 0.1, 0.11, shell);
+  badge.position.set(0, SH / 2 - 0.46, fz + 0.01); lid.add(badge);
+  const badgeIn = rbox(0.34, 0.1, 0.06, 0.05, M.chrome);
+  badgeIn.position.set(0, SH / 2 - 0.46, fz + 0.05); lid.add(badgeIn);
+  const slot = rbox(0.4, 0.07, 0.06, 0.03, M.chrome);
+  slot.position.set(0, -SH / 2 + 0.46, fz + 0.01); lid.add(slot);
+  if (emblem) {
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(0.3, 48), new THREE.MeshBasicMaterial({ map: GLOBE, toneMapped: false }));
+    disc.position.set(-0.02, 0.02, fz + 0.012); lid.add(disc);
+    const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.035, 12, 48), M.chrome);
+    bezel.position.copy(disc.position); lid.add(bezel);
+  } else {
+    const plate = rbox(0.5, 0.5, 0.06, 0.2, shell);
+    plate.position.set(0, 0.02, fz); lid.add(plate);
+  }
+
+  const packed = new THREE.Group(); base.add(packed);
+  if (items) buildItems(packed);
+
+  return { root, base, hinge, lid, packed };
+}
+
+/* The packed contents for slide two. */
+function buildItems(g) {
+  const add = (mesh, x, y, z, rx = 0, ry = 0, rz = 0, delay = 0) => {
+    const holder = new THREE.Group();
+    holder.position.set(x, y, z); holder.rotation.set(rx, ry, rz);
+    holder.add(mesh); holder.userData = { home: holder.position.clone(), delay };
+    g.add(holder); return holder;
+  };
+  // folded clothes stack
+  const stack = new THREE.Group();
+  ['#b9a8ee', '#f08fb8', '#dca4dd', '#a9b5f5'].forEach((c, i) => {
+    const f = rbox(0.78, 0.15, 0.5, 0.06, matte(c)); f.position.y = i * 0.15; stack.add(f);
+  });
+  const tee = rbox(0.64, 0.12, 0.42, 0.05, matte('#f6f2ff')); tee.position.y = 0.62; stack.add(tee);
+  add(stack, -0.25, -0.98, 0.22, 0.3, 0, 0.02, 0.05);
+  // clear toiletry pouch
+  const pouch = rbox(0.5, 0.4, 0.3, 0.08, new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: .08, transmission: .85, thickness: .3, ior: 1.3, clearcoat: 1 }));
+  const zip = rbox(0.5, 0.04, 0.05, 0.02, M.chrome); zip.position.set(0, 0.2, 0.02); pouch.add(zip);
+  add(pouch, 0.34, -0.66, 0.24, 0.15, -0.3, 0.05, 0.1);
+  // folded shirt with a collar
+  const shirt = new THREE.Group();
+  shirt.add(rbox(0.66, 0.1, 0.5, 0.05, matte('#f3f0fb')));
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.025, 8, 20, Math.PI), matte('#e3def6'));
+  collar.rotation.x = -Math.PI / 2; collar.position.set(0, 0.06, -0.12); shirt.add(collar);
+  add(shirt, -0.2, -0.14, 0.34, 0.9, 0.1, 0.12, 0.12);
+  // headphones
+  const hp = new THREE.Group();
+  const band = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.04, 12, 32, Math.PI), plastic('#9cc3f2')); hp.add(band);
+  for (const sx of [-1, 1]) {
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.09, 24), plastic('#7fa9e6'));
+    cup.rotation.z = Math.PI / 2; cup.position.set(sx * 0.22, -0.02, 0); hp.add(cup);
+  }
+  add(hp, 0.28, -0.18, 0.38, 0.9, 0.2, -0.3, 0.15);
+  // sunglasses
+  const sg = new THREE.Group();
+  for (const sx of [-1, 1]) {
+    const rimG = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.017, 8, 24), plastic('#5b2a1f')); rimG.position.x = sx * 0.1; sg.add(rimG);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.08, 24), new THREE.MeshPhysicalMaterial({ color: '#3a1d1a', roughness: .1, metalness: .3, transparent: true, opacity: .85 }));
+    lens.position.x = sx * 0.1; sg.add(lens);
+  }
+  add(sg, -0.3, 0.02, 0.55, -0.5, 0.3, 0.3, 0.2);
+  // camera
+  const cam = new THREE.Group();
+  cam.add(rbox(0.42, 0.27, 0.2, 0.05, plastic('#ead8cc')));
+  const top = rbox(0.42, 0.08, 0.2, 0.03, plastic('#2a2430')); top.position.y = 0.1; cam.add(top);
+  const lensC = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.11, 0.14, 24), plastic('#2a2430'));
+  lensC.rotation.x = Math.PI / 2; lensC.position.z = 0.15; cam.add(lensC);
+  const glass = new THREE.Mesh(new THREE.CircleGeometry(0.07, 24), plastic('#6b8cff')); glass.position.z = 0.225; cam.add(glass);
+  add(cam, 0.27, 0.26, 0.42, 0.15, -0.35, 0.12, 0.25);
+  // passport
+  const pp = rbox(0.34, 0.46, 0.05, 0.03, plastic('#8e2f27'));
+  const crest = new THREE.Mesh(new THREE.CircleGeometry(0.07, 24), new THREE.MeshStandardMaterial({ color: '#e8c27a', metalness: .8, roughness: .3 }));
+  crest.position.set(0, 0.02, 0.03); pp.add(crest);
+  add(pp, -0.3, 0.34, 0.46, 0.1, 0.2, 0.22, 0.3);
+  // open guide book
+  const book = new THREE.Group();
+  for (const sx of [-1, 1]) {
+    const page = rbox(0.3, 0.42, 0.03, 0.01, matte('#f4e7d6'));
+    page.position.x = sx * 0.15; page.rotation.y = -sx * 0.35; book.add(page);
+  }
+  const cover = rbox(0.62, 0.44, 0.02, 0.01, plastic('#d9b48f')); cover.position.z = -0.06; book.add(cover);
+  add(book, 0.3, 0.74, 0.55, -0.25, 0.1, -0.3, 0.35);
+  // tickets
+  const tk = rbox(0.42, 0.18, 0.02, 0.01, matte('#f6ece4'));
+  add(tk, 0.5, 0.92, 0.45, 0, -0.2, 0.6, 0.4);
+  // floating travel adapter
+  const ad = new THREE.Group();
+  ad.add(rbox(0.24, 0.24, 0.24, 0.05, M.lime));
+  for (const sx of [-1, 1]) { const pin = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.03), M.chrome); pin.position.set(sx * 0.05, 0.16, 0); ad.add(pin); }
+  add(ad, -0.3, 1.15, 0.78, 0.4, 0.6, 0.2, 0.45);
+  for (const h of g.children) h.children[0].scale.multiplyScalar(1.3);
+  book.scale.multiplyScalar(0.7);
+}
+
+/* ---------- the hero suitcase ---------- */
+const hero = buildSuitcase({ items: true });
+scene.add(hero.root);
+
+/* ---------- slide three: baggage carousel, scanner and the other bags ----------
+   The belt is a U in its local XZ plane: a front arm along z = +r, a half-circle
+   bend around the origin at x < 0, and a back arm along z = -r that runs into the
+   scanner. beltAt(d) walks the centre line, d = 0 at the start of the front arm. */
+const BELT = { r: 1.6, width: 1.7, front: 6.5, back: 6.5, heroAt: 0 };
+BELT.heroAt = BELT.front + Math.PI * BELT.r + 1.3;   // on the left-hand arm, just past the bend
+const belt = new THREE.Group();
+scene.add(belt);
+function beltAt(d) {
+  const { r, front, back } = BELT, bend = Math.PI * r;
+  if (d <= front) return { p: new THREE.Vector3(front - d, 0, r), t: new THREE.Vector3(-1, 0, 0) };
+  if (d <= front + bend) {
+    const th = (d - front) / r;
+    return { p: new THREE.Vector3(-r * Math.sin(th), 0, r * Math.cos(th)), t: new THREE.Vector3(-Math.cos(th), 0, -Math.sin(th)) };
+  }
+  const x = Math.min(back, d - front - bend);
+  return { p: new THREE.Vector3(x, 0, -r), t: new THREE.Vector3(1, 0, 0) };
+}
+const BELT_LEN = BELT.front + Math.PI * BELT.r + BELT.back;
+const beltPose = (d, lift = 0) => { const { p, t } = beltAt(d); p.y = lift; return { p, yaw: Math.atan2(-t.z, t.x) }; };
+(function buildBelt() {
+  const { width } = BELT;
+  const slatMat = new THREE.MeshStandardMaterial({ color: '#25222f', roughness: .5, metalness: .4 });
+  const n = Math.round(BELT_LEN / 0.2);
+  for (let i = 0; i < n; i++) {
+    const { p, t } = beltAt((i + 0.5) / n * BELT_LEN);
+    const sl = rbox(width, 0.06, 0.17, 0.02, slatMat, 2);
+    sl.position.copy(p); sl.rotation.y = Math.atan2(t.x, t.z); belt.add(sl);
+  }
+  const railMat = new THREE.MeshPhysicalMaterial({ color: '#c9b3c4', metalness: .85, roughness: .22, clearcoat: 1, envMapIntensity: 1.3 });
+  const skirtMat = new THREE.MeshPhysicalMaterial({ color: '#b9a3b8', metalness: .75, roughness: .3, clearcoat: .6, side: THREE.DoubleSide });
+  for (const side of [-1, 1]) {
+    const pts = [];
+    for (let i = 0; i <= 240; i++) {
+      const { p, t } = beltAt(i / 240 * BELT_LEN);
+      const lat = new THREE.Vector3(-t.z, 0, t.x).multiplyScalar(side * (width / 2 + 0.1));
+      pts.push(p.add(lat));
+    }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const rail = new THREE.Mesh(new THREE.TubeGeometry(curve, 400, 0.12, 12, false), railMat);
+    rail.position.y = 0.03; belt.add(rail);
+    // skirt: a vertical strip hanging below the rail
+    const pos = [], idx = [];
+    pts.forEach((q, i) => { pos.push(q.x, 0, q.z, q.x, -0.75, q.z); if (i) { const a = (i - 1) * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+    belt.add(new THREE.Mesh(g, skirtMat));
+  }
+  // X-ray tunnel straddling the back arm
+  const sc = new THREE.Group();
+  const shellMat = new THREE.MeshPhysicalMaterial({ color: '#e9cbc8', metalness: .5, roughness: .28, clearcoat: 1, envMapIntensity: 1.2 });
+  sc.add(rbox(2.2, 1.8, 1.5, 0.3, shellMat));
+  const mouth = rbox(1.85, 1.3, 1.56, 0.18, new THREE.MeshStandardMaterial({ color: '#1b1220', roughness: .9 }));
+  mouth.position.y = -0.2; sc.add(mouth);
+  for (let i = 0; i < 10; i++) {
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.165, 1.2, 0.02), new THREE.MeshStandardMaterial({ color: i % 2 ? '#4a3036' : '#3b2730', roughness: .6 }));
+    strip.position.set(-0.83 + i * 0.184, -0.22, 0.79); sc.add(strip);
+  }
+  const bar = rbox(1.2, 0.09, 0.04, 0.03, new THREE.MeshBasicMaterial({ color: '#9fe8ff' }));
+  bar.position.set(-0.1, 0.66, 0.76); sc.add(bar);
+  const lamp = new THREE.Mesh(new THREE.CircleGeometry(0.075, 16), new THREE.MeshBasicMaterial({ color: '#ff9a3c' }));
+  lamp.position.set(0.8, 0.66, 0.76); sc.add(lamp);
+  sc.position.set(3.5, 0.86, BELT.r);
+  sc.rotation.y = -Math.PI / 2;   // mouth faces back down the belt
+  belt.add(sc);
+  // the other bags riding the carousel; d counts back from the near end of the front arm
+  const bag = (color, d, standing, extraYaw, sc) => {
+    const sh = plastic(color);
+    const b = buildSuitcase({ shell: sh, lining: sh, accent: plastic(color), emblem: false });
+    const lift = standing ? (SH / 2 + 0.22) * sc : (SD / 2 + 0.1) * sc;
+    const { p, yaw } = beltPose(d, lift);
+    b.root.scale.setScalar(sc); b.root.position.copy(p);
+    if (standing) b.root.rotation.set(0, yaw + extraYaw, 0);
+    else b.root.rotation.set(-Math.PI / 2, 0, yaw + extraYaw, 'YXZ');
+    belt.add(b.root); return b;
+  };
+  bag('#ff6a1a', BELT.heroAt + 1.4, true, 0.5, 0.8);                 // orange, standing just behind the hero
+  bag('#f8c544', BELT.heroAt + 2.9, false, 0.2, 0.92);                // yellow, lying further back
+  const teal = bag('#7dd8d0', 0, false, Math.PI / 2, 0.88);           // teal, waiting in the middle of the loop
+  teal.root.position.set(3.6, (SD / 2 + 0.1) * 0.88, 0);
+  bag('#a6e6dc', BELT.front + Math.PI * BELT.r * 0.35, true, 1.2, 0.62); // mint, rounding the bend
+})();
+
+/* ---------- helix text ribbons ---------- */
+const FONT = '"Archivo"';
+function textCanvas(text, px, stretch, gapAt = -1, gapPx = 0) {
+  const c = document.createElement('canvas');
+  const g = c.getContext('2d');
+  const setFont = () => { g.font = `900 ${px}px ${FONT}`; g.fontStretch = stretch; };
+  setFont();
+  const pad = 8;
+  const shift = i => (gapAt >= 0 && i >= gapAt ? gapPx : 0);
+  const w = Math.ceil(g.measureText(text).width + shift(text.length)) + pad * 2;
+  const h = Math.ceil(px * 1.12);
+  c.width = w; c.height = h;
+  setFont();
+  g.textBaseline = 'alphabetic';
+  g.fillStyle = '#ffffff';
+  const base = Math.round(px * 0.93);
+  if (gapAt >= 0) {
+    g.fillText(text.slice(0, gapAt), pad, base);
+    g.fillText(text.slice(gapAt), pad + g.measureText(text.slice(0, gapAt)).width + gapPx, base);
+  } else g.fillText(text, pad, base);
+  const centers = [...text].map((ch, i) => pad + g.measureText(text.slice(0, i)).width + g.measureText(ch).width / 2 + shift(i));
+  return { canvas: c, centers };
+}
+
+/* Text printed on a ribbon that follows a 3D path. `sample(d)` returns the point,
+   unit tangent and outward normal at distance d (world units) along the path from
+   the anchor character's centre. The ribbon extends past both ends of the text so
+   sliding the texture along it gives the screw-in / screw-out motion. */
+class RibbonText {
+  constructor({ text, u2w, anchorChar, sample, extraBefore, extraAfter, depthTest = true, color = '#f8ecf6', trails = 6, canvas: cnv, centers, alphaAt = null }) {
+    const hWorld = cnv.height * u2w;
+    this.L = cnv.width * u2w;
+    const sA = centers[anchorChar] * u2w;
+    const s0 = -extraBefore, s1 = this.L + extraAfter;
+    const segs = Math.ceil((s1 - s0) / 0.03);
+    const pos = [], uv = [], idx = [], col = [];
+    const up = new THREE.Vector3();
+    for (let i = 0; i <= segs; i++) {
+      const s = lerp(s0, s1, i / segs);
+      const { p, t, n } = sample(s - sA);
+      up.crossVectors(n, t).normalize();
+      const a = alphaAt ? alphaAt(p) : 1;   // lets a stretch of ribbon fade out where it passes behind the case
+      for (const sgn of [-1, 1]) {
+        pos.push(p.x + up.x * sgn * hWorld / 2, p.y + up.y * sgn * hWorld / 2, p.z + up.z * sgn * hWorld / 2);
+        uv.push(s / this.L, sgn > 0 ? 1 : 0);
+        col.push(1, 1, 1, a);
+      }
+      if (i < segs) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
+    geo.setIndex(idx);
+    this.group = new THREE.Group();   // tilt of the axis
+    this.spin = new THREE.Group();    // yaw about the axis
+    this.group.add(this.spin);
+    const base = new THREE.CanvasTexture(cnv);
+    base.colorSpace = THREE.SRGBColorSpace;
+    base.wrapS = base.wrapT = THREE.ClampToEdgeWrapping;
+    base.anisotropy = 8;
+    this.copies = [];
+    for (let i = 0; i < trails; i++) {
+      const tex = base.clone(); tex.needsUpdate = true;
+      const mat = new THREE.MeshBasicMaterial({ map: tex, color, vertexColors: true, transparent: true, side: THREE.DoubleSide, depthWrite: false, depthTest, toneMapped: false });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.renderOrder = 10 + i;
+      this.spin.add(mesh);
+      this.copies.push(mesh);
+    }
+    this.offset = 0; this.opacity = 1; this.lastOffset = null;
+  }
+  // offset: how far (world units along the path) the text has slid forward from its rest place
+  update(offset, opacity, dt) {
+    const v = this.lastOffset === null || dt <= 0 ? 0 : (offset - this.lastOffset) / dt;
+    this.lastOffset = offset;
+    const blur = Math.min(Math.abs(v) * 0.009, 0.2) * Math.sign(v);
+    const K = this.copies.length;
+    const active = Math.abs(blur) > 0.02 ? K : 1;
+    const a = active === 1 ? opacity : 1 - Math.pow(1 - 0.94 * opacity, 1 / active);
+    this.copies.forEach((m, i) => {
+      m.visible = i < active && opacity > 0.002;
+      const o = offset - (active === 1 ? 0 : blur * i / (K - 1));
+      m.material.map.offset.x = -o / this.L;
+      m.material.opacity = a;
+    });
+  }
+}
+
+// The ribbons are drawn into canvases, so the display face has to be ready first.
+await Promise.race([document.fonts.load(`900 220px ${FONT}`), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
+
+const CAP_EM = 0.72;   // cap height of the display face, in ems
+
+/* Helix: `anchor` = [charA, charB, angle]. The radius is solved so char B lands
+   `angle` radians further round than char A; char A sits at the front, height 0. */
+function helixText({ text, pitch, cap, anchor, stretch = 'normal', ...rest }) {
+  const px = 220;
+  const { canvas, centers } = textCanvas(text, px, stretch);
+  const u2w = cap / CAP_EM / px;
+  const [ia, ib, ang] = anchor;
+  const k = pitch / (Math.PI * 2);
+  const perRad = (centers[ib] - centers[ia]) * u2w / ang;
+  const R = Math.sqrt(Math.max(0.09, perRad * perRad - k * k));
+  const sample = d => {
+    const th = d / perRad;
+    return {
+      p: new THREE.Vector3(R * Math.sin(th), -k * th, R * Math.cos(th)),
+      t: new THREE.Vector3(R * Math.cos(th), -k, -R * Math.sin(th)).normalize(),
+      n: new THREE.Vector3(Math.sin(th), 0, Math.cos(th)),
+    };
+  };
+  const r = new RibbonText({ text, u2w, anchorChar: ia, sample, canvas, centers, ...rest });
+  r.radius = R;
+  return r;
+}
+
+/* Free path through `points` (world space). Text is sized so that char A's centre
+   lands on points[pa] and char B's centre on points[pb]. Normals lean outward from
+   `center` (the thing the text wraps around) and toward the camera. */
+function pathText({ text, points, pa, pb, ca, cb, rejoin = null, center, lean = 0.6, stretch = 'normal', ...rest }) {
+  const px = 220;
+  let { canvas, centers } = textCanvas(text, px, stretch);
+  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+  const N = 3000, pts = curve.getSpacedPoints(N), total = curve.getLength();
+  const arcOf = q => { let bi = 0, bd = Infinity; pts.forEach((v, i) => { const d = v.distanceToSquared(q); if (d < bd) { bd = d; bi = i; } }); return bi / N * total; };
+  const arcA = arcOf(points[pa]), arcB = arcOf(points[pb]);
+  const u2w = (arcB - arcA) / (centers[cb] - centers[ca]);
+  if (rejoin) {
+    // [point, char]: open a gap before `char` so its centre lands on points[point]
+    const [pr, cr] = rejoin;
+    const gap = (arcOf(points[pr]) - arcA) / u2w - (centers[cr] - centers[ca]);
+    ({ canvas, centers } = textCanvas(text, px, stretch, cr, Math.max(0, gap)));
+  }
+  const fwd = new THREE.Vector3(0, 0, 1);
+  const sample = d => {
+    let a = arcA + d, over = 0;
+    if (a < 0) { over = a; a = 0; } else if (a > total) { over = a - total; a = total; }
+    const u = a / total;
+    const t = curve.getTangentAt(u).normalize();
+    const p = curve.getPointAt(u).addScaledVector(t, over);
+    const radial = new THREE.Vector3(p.x - center.x, 0, p.z - center.z).normalize();
+    const n = radial.multiplyScalar(lean).addScaledVector(fwd, 1 - lean).normalize();
+    // keep the normal perpendicular to the tangent
+    n.addScaledVector(t, -n.dot(t)).normalize();
+    return { p, t, n };
+  };
+  const r = new RibbonText({ text, u2w, anchorChar: ca, sample, canvas, centers, ...rest });
+  r.cap = u2w * px * CAP_EM;
+  return r;
+}
+
+// TRAVEL sits on the front, LIKE NE runs across the back, NEVER drops down the
+// left silhouette and BEFORE comes round to the front one turn lower.
+const ring1 = helixText({ text: 'TRAVEL LIKE NEVER BEFORE', pitch: 2.95, cap: 0.45, anchor: [2, 20, Math.PI * 2], extraBefore: 16, extraAfter: 16, depthTest: false, stretch: 'expanded' });
+ring1.group.position.set(0.12, 0.98, 0);
+ring1.group.rotation.set(0.0, 0, 0.1);
+scene.add(ring1.group);
+
+// Slide three's line is traced from the reference: LET'S climbs across the top,
+// GE drops down the right of the case, T passes behind it, READY falls down the
+// left and the ! swings back up at the bottom.
+const PX = 852 / (2 * 15.5 * Math.tan(THREE.MathUtils.degToRad(15)));   // px per world unit at z = 0
+const scr = (x, y, z) => new THREE.Vector3((x - 196.5) / PX * (15.5 - z) / 15.5, (426 - y) / PX * (15.5 - z) / 15.5, z);
+const R3_POINTS = [
+  scr(-260, 330, 1.0), scr(-120, 260, 1.3),
+  scr(55, 182, 1.4), scr(145, 118, 1.5), scr(262, 86, 1.3), scr(328, 118, 0.8),
+  scr(346, 190, 0.4), scr(350, 245, 0.1), scr(318, 290, -0.5), scr(232, 318, -0.7),
+  scr(150, 348, 0.3), scr(122, 398, 1.1), scr(172, 488, 1.25), scr(222, 582, 1.3),
+  scr(282, 646, 1.3), scr(352, 610, 1.3), scr(402, 530, 1.2), scr(470, 430, 1.0), scr(560, 330, 0.8),
+];
+const ring3 = pathText({ text: "LET\u2019S GET READY!", points: R3_POINTS, pa: 2, pb: 4, ca: 0, cb: 4, rejoin: [11, 10], center: scr(250, 400, 0), lean: 0.12, extraBefore: 18, extraAfter: 18, depthTest: false, stretch: 'semi-condensed',
+  alphaAt: p => clamp01((p.z + 0.25) / 0.35) });
+scene.add(ring3.group);
+
+/* ---------- DOM ---------- */
+const copies = [document.getElementById('copy0'), document.getElementById('copy1')];
+const dots = [...document.querySelectorAll('#dots i')];
+const cta = document.getElementById('cta');
+const ctaLabel = document.getElementById('ctaLabel');
+function setBlurIn(el, t, rise = 7, maxBlur = 10) {
+  // t: 0 hidden, 1 fully visible
+  el.style.opacity = t.toFixed(3);
+  el.style.filter = t >= 1 ? 'none' : `blur(${((1 - t) * maxBlur).toFixed(2)}px)`;
+  el.style.transform = `translateY(${((1 - t) * rise).toFixed(2)}px)`;
+}
+function copyState(i, line1, line2, para) {
+  const [a, b] = copies[i].querySelectorAll('h1 span');
+  setBlurIn(a, line1); setBlurIn(b, line2); setBlurIn(copies[i].querySelector('p'), para, 5, 6);
+}
+function setDots(pos) {
+  // pos is the (fractional) active index; active pill is 22px, idle dots 5px, gap 4px
+  let x = 0;
+  dots.forEach((d, i) => {
+    const w = 5 + 17 * Math.max(0, 1 - Math.abs(pos - i));
+    d.style.left = x + 'px'; d.style.width = w + 'px';
+    d.style.opacity = (0.45 + 0.55 * Math.max(0, 1 - Math.abs(pos - i))).toFixed(3);
+    x += w + 4;
+  });
+}
+function setCta(m) {
+  // m: 0 = round arrow chip, 1 = pink "Get started" pill
+  cta.style.width = lerp(92, 150, eInOut(m)) + 'px';
+  const c0 = [255, 244, 240, .86], c1 = [245, 138, 213, 1];
+  const c = c0.map((v, i) => lerp(v, c1[i], m));
+  cta.style.background = `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${c[3].toFixed(3)})`;
+  ctaLabel.style.maxWidth = lerp(0, 90, eInOut(m)) + 'px';
+  ctaLabel.style.opacity = seg(m, .35, 1).toFixed(3);
+  ctaLabel.style.filter = m >= 1 ? 'none' : `blur(${((1 - seg(m, .3, 1)) * 4).toFixed(2)}px)`;
+  cta.style.gap = lerp(0, 7, m) + 'px';
+  cta.setAttribute('aria-label', m > .5 ? 'Get started' : 'Next');
+}
+
+/* ---------- poses ---------- */
+const POSE = [
+  { x: 0.02, y: -0.45, z: 0, rx: 0.16, ry: -0.5, rz: 0.1, s: 1.15 },         // slide 1: closed, floating
+  { x: 0.3, y: -0.38, z: 0, rx: 0.16, ry: -0.3, rz: 0.03, s: 1.18 },         // slide 2: open
+  { x: 0.53, y: 0.22, z: 0.2, rx: 0.3, ry: -0.42, rz: 0.0, s: 0.92 },        // slide 3: on the belt
+];
+const LID_OPEN = -1.32;
+
+// Place the carousel so the hero's wheels rest on the belt (BELT.heroAt) in the slide-3 pose.
+const BELT_ROT = new THREE.Euler(0.45, 2.4, 0.0);
+const BELT_HOME = (() => {
+  const p = POSE[2];
+  const foot = new THREE.Vector3(0, -SH / 2 - 0.2, -SD / 4)
+    .multiplyScalar(p.s).applyEuler(new THREE.Euler(p.rx, p.ry, p.rz)).add(new THREE.Vector3(p.x, p.y, p.z));
+  const local = beltPose(BELT.heroAt, 0.04).p.applyEuler(BELT_ROT);
+  return foot.sub(local);
+})();
+
+function poseLerp(a, b, t) { const o = {}; for (const k in a) o[k] = lerp(a[k], b[k], t); return o; }
+
+/* ---------- timeline ----------
+   phases: intro (into slide 0), t01, t12. Times are seconds into the phase.  */
+const DUR = { intro: 1.25, t01: 1.05, t12: 1.45, outro: 0.55 };
+let phase = 'intro', phaseT = 0, slide = 0;
+const queue = [];
+
+function go(next) {
+  if (phase !== 'idle') { queue.push(next); return; }
+  if (next === 'next') {
+    if (slide === 0) start('t01');
+    else if (slide === 1) start('t12');
+    else start('outro');
+  } else if (next === 'skip') {
+    if (slide === 0) { start('t01'); queue.push('next'); }
+    else if (slide === 1) start('t12');
+  }
+}
+function start(p) { phase = p; phaseT = 0; idleT = 0; }
+let idleT = 0;
+
+cta.addEventListener('click', () => { auto = false; go('next'); });
+document.getElementById('skip').addEventListener('click', () => { auto = false; go('skip'); });
+let auto = params.get('auto') !== '0';
+// Autoplay hold times match the reel: ~0.4 s after the intro settles, then each slide holds ~0.75 s.
+const HOLD = [0.42, 0.6, 2.6];
+
+function frame(phase, t, time) {
+  // returns everything we need to draw this instant
+  const st = {
+    pose: POSE[0], lid: 0, items: 1, belt: 0,
+    r1: { off: 0, op: 1 }, r3: { off: -999, op: 0 },
+    copy0: [1, 1, 1], copy1: [0, 0, 0], dots: 0, cta: 0, fade: 1
+  };
+  const bobY = Math.sin(time * 1.7) * 0.035, bobR = Math.sin(time * 1.1) * 0.025;
+  if (phase === 'intro') {
+    const k = eOut(seg(t, 0, 0.95));
+    st.r1 = { off: lerp(-10.5, 0, k), op: eOut(seg(t, 0, 0.15)) };
+    st.pose = { ...POSE[0], ry: POSE[0].ry + (1 - eOut(seg(t, 0, 0.9))) * 0.25 };
+    st.copy0 = [eOut(seg(t, 0, 0.22)), eOut(seg(t, 0.04, 0.26)), eOut(seg(t, 0.08, 0.3))];
+    st.fade = eOut(seg(t, 0, 0.15));
+  } else if (phase === 'idle') {
+    st.pose = POSE[slide];
+    if (slide >= 1) { st.lid = slide === 1 ? 1 : 0; st.r1 = { off: 99, op: 0 }; st.copy0 = [0, 0, 0]; }
+    if (slide === 1) { st.copy1 = [1, 1, 1]; st.dots = 1; }
+    if (slide === 2) { st.belt = 1; st.r3 = { off: 0, op: 1 }; st.dots = 2; st.cta = 1; }
+  } else if (phase === 't01') {
+    const out = 1 - eOut(seg(t, 0, 0.16));
+    st.copy0 = [out, out, out];
+    st.r1 = { off: lerp(0, 10, eInOut(seg(t, 0, 0.5))), op: 1 - eInOut(seg(t, 0.22, 0.5)) };
+    const lk = eInOut(seg(t, 0.08, 0.8));
+    st.lid = lk;
+    const mv = eInOut(seg(t, 0.1, 0.9));
+    st.pose = poseLerp(POSE[0], POSE[1], mv);
+    st.pose.ry += Math.sin(seg(t, 0.05, 0.75) * Math.PI) * 0.08;
+    st.items = eOut(seg(t, 0.3, 0.95));
+    st.copy1 = [eOut(seg(t, 0.26, 0.62)), eOut(seg(t, 0.38, 0.74)), eOut(seg(t, 0.56, 0.95))];
+    st.dots = eInOut(seg(t, 0.02, 0.4));
+  } else if (phase === 't12') {
+    const out = 1 - eOut(seg(t, 0, 0.14));
+    st.copy1 = [out, out, out];
+    st.r1 = { off: 99, op: 0 }; st.copy0 = [0, 0, 0];
+    st.cta = eInOut(seg(t, 0.06, 0.24));
+    st.dots = 1 + eInOut(seg(t, 0.02, 0.38));
+    st.belt = eOut(seg(t, 0.1, 0.7));
+    const mv = eInOut(seg(t, 0.25, 1.0));
+    st.pose = poseLerp(POSE[1], POSE[2], mv);
+    st.lid = 1 - eInOut(seg(t, 0.62, 0.98));
+    st.pose.ry += Math.sin(seg(t, 0.62, 1.1) * Math.PI) * -0.25;
+    st.r3 = { off: lerp(-11, 0, eOut(seg(t, 0.36, 1.15))), op: eOut(seg(t, 0.36, 0.48)) };
+  } else if (phase === 'outro') {
+    st.pose = POSE[2]; st.belt = 1; st.dots = 2 * (1 - eInOut(seg(t, 0.1, 0.55))); st.cta = 1 - eInOut(seg(t, 0.1, 0.4));
+    st.r3 = { off: lerp(0, 12, eIn2(seg(t, 0, 0.45))), op: 1 - seg(t, 0.15, 0.45) };
+    st.fade = 1 - eInOut(seg(t, 0.1, 0.55));
+  }
+  st.pose = { ...st.pose, y: st.pose.y + bobY, ry: st.pose.ry + bobR };
+  return st;
+}
+
+function apply(st, dt) {
+  const p = st.pose;
+  hero.root.position.set(p.x, p.y, p.z);
+  hero.root.rotation.set(p.rx, p.ry, p.rz);
+  hero.root.scale.setScalar(p.s);
+  hero.hinge.rotation.y = LID_OPEN * st.lid;
+  hero.packed.visible = st.lid > 0.02;
+  hero.packed.children.forEach(h => {
+    const d = h.userData.delay;
+    const k = eOutBack(seg(st.items, d * 0.8, d * 0.8 + 0.6));
+    h.position.set(h.userData.home.x, h.userData.home.y - (1 - k) * 0.25, h.userData.home.z * k);
+    h.scale.setScalar(lerp(0.75, 1, k));
+  });
+
+  const b = st.belt;
+  belt.visible = b > 0.001;
+  belt.position.set(BELT_HOME.x + (1 - b) * 6.5, BELT_HOME.y - (1 - b) * 1.2, BELT_HOME.z);
+  belt.rotation.set(BELT_ROT.x, BELT_ROT.y + (1 - b) * 0.2, BELT_ROT.z);
+
+  ring1.update(st.r1.off, st.r1.op * st.fade, dt);
+  ring3.update(st.r3.off, st.r3.op, dt);
+
+  copyState(0, ...st.copy0.map(v => v * (phase === 'intro' ? 1 : 1)));
+  copyState(1, ...st.copy1);
+  setDots(st.dots);
+  setCta(st.cta);
+  canvas.style.opacity = st.fade.toFixed(3);
+  const copy0 = copies[0];
+  copy0.style.visibility = Math.max(...st.copy0) > 0.001 ? 'visible' : 'hidden';
+  copies[1].style.visibility = Math.max(...st.copy1) > 0.001 ? 'visible' : 'hidden';
+}
+
+/* ---------- loop ---------- */
+let last = performance.now(), clock = 0;
+function tick(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  clock += dt; phaseT += dt;
+  if (phase !== 'idle' && phaseT >= DUR[phase]) {
+    if (phase === 'intro') slide = 0;
+    if (phase === 't01') slide = 1;
+    if (phase === 't12') slide = 2;
+    if (phase === 'outro') { slide = 0; start('intro'); }
+    else start('idle');
+    if (queue.length) go(queue.shift());
+  }
+  if (phase === 'idle') {
+    idleT += dt;
+    if (auto && idleT > HOLD[slide]) go('next');
+  }
+  apply(frame(phase, phaseT, clock), dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+/* Deterministic stills for testing: ?t=<seconds> renders the autoplay timeline at that time. */
+function timelineAt(T) {
+  const seq = [['intro', DUR.intro], ['idle0', HOLD[0]], ['t01', DUR.t01], ['idle1', HOLD[1]], ['t12', DUR.t12], ['idle2', 99]];
+  let acc = 0;
+  for (const [p, d] of seq) {
+    if (T < acc + d) {
+      if (p.startsWith('idle')) { slide = +p[4]; return ['idle', T - acc]; }
+      slide = p === 'intro' ? 0 : p === 't01' ? 0 : 1;
+      return [p, T - acc];
+    }
+    acc += d;
+  }
+}
+
+{
+  if (params.has('t')) {
+    const T = parseFloat(params.get('t'));
+    const step = 1 / 60;
+    for (let x = Math.max(0, T - 0.2); x <= T + 1e-6; x += step) {
+      const [p, pt] = timelineAt(x); phase = p; phaseT = pt;
+      apply(frame(p, pt, x), step);
+    }
+    renderer.render(scene, camera);
+    document.body.dataset.ready = '1';
+    console.log('radii', ring1.radius.toFixed(3), ring3.cap.toFixed(3));
+  } else {
+    requestAnimationFrame(t => { last = t; requestAnimationFrame(tick); });
+  }
+}
+</script>
+</body>
+</html>
