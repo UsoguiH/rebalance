@@ -1,0 +1,16 @@
+{
+  "note": "Measured from the original One Button film. Its narration was isolated by subtracting the music bed (audio/music/original-bed.mp3), which sits in the original mix at unity gain. Times are piece seconds (the original recording's clip starts 0.288 s in). Loudness is EBU R128 integrated, in stereo terms (the original's mono track reads 3 dB lower).",
+  "mix_lufs": -16.7,
+  "music_gain_db": 0,
+  "voice_lufs": -16.7,
+  "lines": [
+    { "line": 1, "from": 0.41, "to": 2.75, "lufs": -15.9, "said": "intro line" },
+    { "line": 2, "from": 7.47, "to": 12.55, "lufs": -17.7, "said": "But... what if ...?" },
+    { "line": 3, "from": 12.85, "to": 14.69, "lufs": -15.4, "said": "No more ..." },
+    { "line": 4, "from": 15.33, "to": 16.89, "lufs": -14.4, "said": "no more ..." },
+    { "line": 5, "from": 17.23, "to": 18.47, "lufs": -14.8, "said": "... once, and ..." },
+    { "line": 6, "from": 18.89, "to": 22.57, "lufs": -17.3, "said": "three features, then the payoff" },
+    { "line": 7, "from": 23.01, "to": 24.77, "lufs": -17.9, "said": "tagline" },
+    { "line": 8, "from": 25.73, "to": 26.33, "lufs": -19.6, "said": "the name, a soft sign-off" }
+  ]
+}

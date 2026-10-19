@@ -65,14 +65,23 @@ beat for beat: the same silences (none over the montage), the same pauses, and
 the same rise and fall. It is tagged for Eleven v3 (`[curious]`, `[softly]`, …).
 The voice was recorded as one ElevenLabs take (`jira/audio/take.mp3`).
 
-`tools/mix.js` builds each soundtrack from the piece's `audio/mix.json`:
+Both soundtracks are mixed at the original film's own levels
+(`audio/original-levels.json`, measured from the original):
 
-- **Voice** (Jira only): each phrase is cut from the take at its pauses and placed
-  on its beat (`segments`: where it sits in the take, and when it starts in the piece).
-- **Music:** timed to an anchor (`track` seconds plays at `at`), faded, gently
-  ducked under the voice, with an optional low-passed `dip`.
-- **Master:** stems are measured (EBU R128) and gained to their targets, then
-  mastered to -14 LUFS with a -1 dBTP limiter.
+- **Music:** the bed plays at its own level (`gain_db: 0`), which is the level it has in the
+  original mix. It gets no extra ducking, because the original's moves under the
+  narration are already in the bed.
+- **Voice:** each phrase is cut from the take at its pauses and placed on its beat
+  (`segments`: where it sits in the take, which script `line` it belongs to, and when
+  it starts in the piece). It is gained to the original narration's loudness
+  (-16.7 LUFS), then each line is matched to the same line of the original (`levels`).
+  The voice sits about 12 LU over the music, as in the original.
+- **Master:** no loudness normalisation, so the mix lands where the original does:
+  -16.7 LUFS in stereo (the original's mono track reads -19.7). A -1 dBTP limiter is
+  there only as a safety. One Button has no narration, so it plays at the music's
+  level alone (about -28.7 LUFS).
+
+`tools/mix.js` builds each soundtrack from the piece's `audio/mix.json`:
 
 ```sh
 node motion/tools/mix.js --piece motion          # One Button: music only -> audio/soundtrack.mp3
@@ -127,4 +136,5 @@ collage photos) are painted procedurally as stand-ins.
 | `tools/render.js` | Headless frame renderer and MP4 export (with optional soundtrack) |
 | `tools/icons.js` | Regenerates `js/icons.js` from Simple Icons |
 | `tools/voice.js` | Voices a script with ElevenLabs and mixes it to the timeline |
-| `tools/mix.js` | Builds the soundtrack: cuts and places the voice, back-times and ducks the music, masters |
+| `tools/mix.js` | Builds the soundtrack: cuts and places the voice, levels it to the original, lays the music under it |
+| `audio/original-levels.json` | The original film's levels: music gain, narration loudness, and loudness per line |

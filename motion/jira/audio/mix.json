@@ -4,22 +4,24 @@
     "take": "take.mp3",
     "note": "One ElevenLabs take (voice: Hope, Eleven v3), cut at its pauses. from/to bound the speech in the take; at is when that speech starts in the piece, on the original's beats.",
     "segments": [
-      { "text": "Your team's work is everywhere.", "from": 0.1, "to": 2.33, "at": 0.41 },
-      { "text": "But", "from": 2.68, "to": 3.08, "at": 7.47 },
-      { "text": "what if one board could actually save your sprint?", "from": 3.8, "to": 6.93, "at": 8.71 },
-      { "text": "No more chasing updates,", "from": 7.25, "to": 8.7, "at": 12.85 },
-      { "text": "no more pointless meetings.", "from": 8.83, "to": 10.7, "at": 15.15 },
-      { "text": "Plan once", "from": 11.02, "to": 11.83, "at": 17.15 },
-      { "text": "and ship.", "from": 12.02, "to": 12.72, "at": 18.04 },
-      { "text": "Boards,", "from": 13.07, "to": 13.67, "at": 18.85 },
-      { "text": "timelines,", "from": 13.86, "to": 14.57, "at": 19.55 },
-      { "text": "automation reports.", "from": 14.7, "to": 16.26, "at": 20.32 },
-      { "text": "Pure focus.", "from": 16.62, "to": 17.77, "at": 22.0 },
-      { "text": "Your whole team", "from": 18.16, "to": 19.07, "at": 23.25 },
-      { "text": "in one place.", "from": 19.34, "to": 20.33, "at": 24.3 },
-      { "text": "Jira.", "from": 20.79, "to": 21.24, "at": 25.73 }
+      { "line": 1, "text": "Your team's work is everywhere.", "from": 0.1, "to": 2.33, "at": 0.41 },
+      { "line": 2, "text": "But", "from": 2.68, "to": 3.08, "at": 7.47 },
+      { "line": 2, "text": "what if one board could actually save your sprint?", "from": 3.8, "to": 6.93, "at": 8.71 },
+      { "line": 3, "text": "No more chasing updates,", "from": 7.25, "to": 8.7, "at": 12.85 },
+      { "line": 4, "text": "no more pointless meetings.", "from": 8.83, "to": 10.7, "at": 15.15 },
+      { "line": 5, "text": "Plan once", "from": 11.02, "to": 11.83, "at": 17.15 },
+      { "line": 5, "text": "and ship.", "from": 12.02, "to": 12.72, "at": 18.04 },
+      { "line": 6, "text": "Boards,", "from": 13.07, "to": 13.67, "at": 18.85 },
+      { "line": 6, "text": "timelines,", "from": 13.86, "to": 14.57, "at": 19.55 },
+      { "line": 6, "text": "automation reports.", "from": 14.7, "to": 16.26, "at": 20.32 },
+      { "line": 6, "text": "Pure focus.", "from": 16.62, "to": 17.77, "at": 22.0 },
+      { "line": 7, "text": "Your whole team", "from": 18.16, "to": 19.07, "at": 23.25 },
+      { "line": 7, "text": "in one place.", "from": 19.34, "to": 20.33, "at": 24.3 },
+      { "line": 8, "text": "Jira.", "from": 20.79, "to": 21.24, "at": 25.73 }
     ],
-    "lufs": -16
+    "lufs": -16.7,
+    "levels": "../../audio/original-levels.json",
+    "level_note": "The original narration's loudness, measured from the original mix minus the bed. It puts the voice about 12 LU over the music, as in the original; levels then matches each line to the same line of the original narration."
   },
   "music": {
     "file": "../../audio/music/original-bed.mp3",
@@ -28,8 +30,11 @@
     "anchor": { "track": 0.288, "at": 0 },
     "fade_in": 0.02,
     "fade_out": [26.3, 26.6],
-    "lufs": -21,
-    "duck": { "threshold": 0.05, "ratio": 2.5, "attack_ms": 25, "release_ms": 450 }
+    "gain_db": 0,
+    "level_note": "Played at the bed's own level, which is the level it has in the original film (it sits in the original mix at unity, within 0.5 dB). No extra ducking: the original's moves under the narration are already in the bed."
   },
-  "master": { "lufs": -14, "true_peak": -1 }
+  "master": {
+    "true_peak": -1,
+    "note": "No loudness normalisation, so the mix lands where the original does (-16.7 LUFS in stereo; the original's mono track reads -19.7). The limiter is only a safety."
+  }
 }

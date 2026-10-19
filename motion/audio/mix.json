@@ -7,8 +7,11 @@
     "anchor": { "track": 0.288, "at": 0 },
     "fade_in": 0.02,
     "fade_out": [26.3, 26.6],
-    "lufs": -16,
-    "duck": { "threshold": 0.05, "ratio": 2.5, "attack_ms": 25, "release_ms": 450 }
+    "gain_db": 0,
+    "level_note": "Played at the bed's own level, which is the level it has in the original film (it sits in the original mix at unity, within 0.5 dB). No extra ducking: the original's moves under the narration are already in the bed."
   },
-  "master": { "lufs": -14, "true_peak": -1 }
+  "master": {
+    "true_peak": -1,
+    "note": "No loudness normalisation, so the mix lands where the original does (-16.7 LUFS in stereo; the original's mono track reads -19.7). The limiter is only a safety."
+  }
 }

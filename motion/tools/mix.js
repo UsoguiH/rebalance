@@ -5,8 +5,11 @@
 //   node motion/tools/mix.js --piece motion          (One Button: music only)
 // Reads <piece>/audio/mix.json; writes <piece>/audio/soundtrack.mp3, plus vo.mp3
 // when the piece has a voice.
-// Stems are measured (EBU R128) and gained to their targets, so swapping the take
-// or the track keeps the balance. Needs ffmpeg on the PATH.
+// The voice is measured (EBU R128) and gained to its target loudness, and can be
+// levelled line by line to a reference (levels: the original narration). The music is
+// either played at a fixed gain (gain_db: 0 keeps the original bed at the level it
+// has in the original film) or gained to a target (lufs). Ducking and master
+// loudness normalisation are optional. Needs ffmpeg on the PATH.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -40,26 +43,45 @@ const loudness = (file, ss = 0, t = 0) => {
 const PRE = 0.04;
 const POST = 0.12;
 const segs = cfg.voice ? cfg.voice.segments : [];
-const parts = segs.map((s, i) => {
-  const from = Math.max(0, s.from - PRE);
-  const dur = s.to + POST - from;
-  return (
-    `[0:a]atrim=start=${from}:end=${from + dur},asetpts=PTS-STARTPTS,` +
-    `afade=t=in:d=0.015,afade=t=out:st=${(dur - 0.06).toFixed(3)}:d=0.06,` +
-    `adelay=delays=${ms(s.at - (s.from - from))}:all=1[v${i}]`
-  );
-});
-const voWav = path.join(tmp, 'vo-level.wav');
-let voGain = 0;
-if (cfg.voice) {
-  const voRaw = path.join(tmp, 'vo.wav');
+const place = (gains) =>
+  segs.map((s, i) => {
+    const from = Math.max(0, s.from - PRE);
+    const dur = s.to + POST - from;
+    return (
+      `[0:a]atrim=start=${from}:end=${from + dur},asetpts=PTS-STARTPTS,volume=${gains[i].toFixed(2)}dB,` +
+      `afade=t=in:d=0.015,afade=t=out:st=${(dur - 0.06).toFixed(3)}:d=0.06,` +
+      `adelay=delays=${ms(s.at - (s.from - from))}:all=1[v${i}]`
+    );
+  });
+const voice = (gains, file) =>
   ffmpeg([
     '-i', path.join(dir, cfg.voice.take),
-    '-filter_complex', `${parts.join(';')};${segs.map((_, i) => `[v${i}]`).join('')}amix=inputs=${segs.length}:normalize=0,apad=whole_dur=${D},aformat=channel_layouts=stereo[vo]`,
-    '-map', '[vo]', '-ar', '44100', '-t', String(D), voRaw,
+    '-filter_complex', `${place(gains).join(';')};${segs.map((_, i) => `[v${i}]`).join('')}amix=inputs=${segs.length}:normalize=0,apad=whole_dur=${D},aformat=channel_layouts=stereo[vo]`,
+    '-map', '[vo]', '-ar', '44100', '-t', String(D), file,
   ]);
+const voWav = path.join(tmp, 'vo-level.wav');
+let voGain = 0;
+const lineGains = [];
+if (cfg.voice) {
+  const voRaw = path.join(tmp, 'vo.wav');
+  voice(segs.map(() => 0), voRaw);
   voGain = cfg.voice.lufs - loudness(voRaw);
-  ffmpeg(['-i', voRaw, '-af', `volume=${voGain.toFixed(2)}dB`, voWav]);
+  const gains = segs.map(() => voGain);
+  // levels: match each script line to the loudness of the same line in a reference
+  // (the original narration), within 6 dB of the overall gain
+  if (cfg.voice.levels) {
+    const ref = JSON.parse(fs.readFileSync(path.join(dir, cfg.voice.levels), 'utf8'));
+    for (const L of ref.lines) {
+      const idx = segs.map((s, i) => (s.line === L.line ? i : -1)).filter((i) => i >= 0);
+      if (!idx.length) continue;
+      const a = Math.min(...idx.map((i) => segs[i].at)) - PRE;
+      const z = Math.max(...idx.map((i) => segs[i].at + segs[i].to - segs[i].from)) + POST;
+      const g = Math.max(voGain - 6, Math.min(voGain + 6, L.lufs - loudness(voRaw, a, z - a)));
+      for (const i of idx) gains[i] = g;
+      lineGains.push(`${L.line}:${(g - voGain >= 0 ? '+' : '') + (g - voGain).toFixed(1)}`);
+    }
+  }
+  voice(gains, voWav);
   ffmpeg(['-i', voWav, '-b:a', '192k', path.join(dir, 'vo.mp3')]);
 } else {
   // silence stands in for the voice, so the graph below stays the same
@@ -70,7 +92,7 @@ if (cfg.voice) {
 const m = cfg.music;
 const musicFile = path.join(dir, m.file);
 const off = m.anchor.track - m.anchor.at;
-const muGain = m.lufs - loudness(musicFile, off, D);
+const muGain = m.gain_db !== undefined ? m.gain_db : m.lufs - loudness(musicFile, off, D);
 const [f0, f1] = m.fade_out;
 const k = m.duck;
 const head = `[1:a]atrim=start=${off}:end=${off + D},asetpts=PTS-STARTPTS,aformat=channel_layouts=stereo,volume=${muGain.toFixed(2)}dB`;
@@ -85,22 +107,24 @@ if (m.dip) {
     `[mc]atrim=start=${d1}:end=${D},asetpts=PTS-STARTPTS[m3];` +
     `[m1][m2][m3]concat=n=3:v=0:a=1,${tail}`;
 } else music = `${head},${tail}`;
-const graph =
-  `${music};` +
-  `[0:a]asplit=2[voice][key];` +
-  `[mus][key]sidechaincompress=threshold=${k.threshold}:ratio=${k.ratio}:attack=${k.attack_ms}:release=${k.release_ms}[duck];` +
-  `[duck][voice]amix=inputs=2:normalize=0:duration=longest[out]`;
+const graph = k
+  ? `${music};` +
+    `[0:a]asplit=2[voice][key];` +
+    `[mus][key]sidechaincompress=threshold=${k.threshold}:ratio=${k.ratio}:attack=${k.attack_ms}:release=${k.release_ms}[duck];` +
+    `[duck][voice]amix=inputs=2:normalize=0:duration=longest[out]`
+  : `${music};[mus][0:a]amix=inputs=2:normalize=0:duration=longest[out]`;
 const mixRaw = path.join(tmp, 'mix.wav');
 ffmpeg(['-i', voWav, '-i', musicFile, '-filter_complex', graph, '-map', '[out]', '-ar', '44100', '-t', String(D), mixRaw]);
 
-// ---- master: gain to the target loudness, then a true-peak limiter
-const gain = cfg.master.lufs - loudness(mixRaw);
+// ---- master: gain to the target loudness (if set), then a true-peak limiter
+const gain = cfg.master.lufs !== undefined ? cfg.master.lufs - loudness(mixRaw) : 0;
 const ceiling = Math.pow(10, cfg.master.true_peak / 20).toFixed(3);
 ffmpeg([
   '-i', mixRaw,
   '-af', `volume=${gain.toFixed(2)}dB,alimiter=limit=${ceiling}:attack=2:release=60:level=disabled`,
   '-ar', '44100', '-b:a', '192k', '-t', String(D), path.join(dir, 'soundtrack.mp3'),
 ]);
+const out = loudness(path.join(dir, 'soundtrack.mp3'));
 fs.rmSync(tmp, { recursive: true, force: true });
-console.log(`${cfg.voice ? `voice ${voGain.toFixed(1)} dB, ` : ''}music ${muGain.toFixed(1)} dB, master ${gain.toFixed(1)} dB`);
+console.log(`${cfg.voice ? `voice ${voGain.toFixed(1)} dB${lineGains.length ? ` (lines ${lineGains.join(' ')})` : ''}, ` : ''}music ${muGain.toFixed(1)} dB, master ${gain.toFixed(1)} dB -> ${out.toFixed(1)} LUFS`);
 console.log('wrote', path.join(dir, 'soundtrack.mp3'));
