@@ -47,13 +47,28 @@
   // exponential ease (rate 3/s) from ~130px to the right.
   const IN = { size: 67, base: 585, weight: 500, color: '#eef3f3' };
   const INTRO_WORDS = [
-    { s: 'We\u2019ve', t0: 0.33, x: 420, a: 146 },
-    { s: 'all', t0: 0.62, x: 622, a: 136 },
-    { s: 'pressed', t0: 0.93, x: 705, a: 124 },
-    { s: 'this', t0: 1.2, x: 967, a: 116 },
-    { s: 'before', t0: 1.93, x: 1333, a: 36 },
+    { s: 'We\u2019ve', t0: 0.33, a: 146 },
+    { s: 'all', t0: 0.62, a: 136 },
+    { s: 'pressed', t0: 0.93, a: 124 },
+    { s: 'this', t0: 1.2, a: 116 },
+    { s: 'before', t0: 1.93, a: 36 },
   ];
   const PILL = { x: 1093, y: 526, w: 227, h: 81, text: 55, t0: 1.7 };
+  // words sit a space apart, packed out from the pill (which the zoom targets),
+  // so the line stays even in any weight
+  let introLaid = false;
+  const layoutIntro = (c) => {
+    if (introLaid) return;
+    const space = M.measure(c, ' ', IN.size, IN.weight);
+    let x = PILL.x - space * 1.1;
+    for (let i = 3; i >= 0; i--) {
+      x -= M.measure(c, INTRO_WORDS[i].s, IN.size, IN.weight);
+      INTRO_WORDS[i].x = x;
+      x -= space;
+    }
+    INTRO_WORDS[4].x = PILL.x + PILL.w + space * 0.7;
+    introLaid = true;
+  };
   const settle = (t, t0, x, a) => x + a * Math.exp(-3 * (t - t0));
 
   // zoom camera: where the pill centre lands on screen, and the zoom factor
@@ -66,6 +81,7 @@
   const whip = (t) => M.key(t, [[3.24, 0], [3.345, -260, 'inCubic']]);
 
   const introLine = (c, t, hover, press) => {
+    layoutIntro(c);
     for (const w of INTRO_WORDS) {
       const p = M.clamp((t - w.t0) / 0.28, 0, 1);
       if (p <= 0) continue;

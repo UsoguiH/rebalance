@@ -1,12 +1,13 @@
 # Motion pieces
 
 Canvas motion pieces drawn entirely in code: type, UI, cursor, transitions and
-backdrops. Brand logos come from Simple Icons. There is no build step.
+backdrops. Brand logos come from Simple Icons. There is no build step. Both pieces are set
+in a light cut of Inter (`M.weight` maps every weight one step lighter).
 
 | Piece | Page | Render |
 |---|---|---|
 | **One Button**: a frame-by-frame recreation of a 26-second promo | `index.html` | `renders/one-button.mp4`, plus `renders/side-by-side.mp4` (original on top) |
-| **Jira**: a 26.6-second promo in the same visual language, with an ElevenLabs voiceover and licensed music | `jira/index.html` | `renders/jira.mp4` |
+| **Jira**: a 26.6-second promo in the same visual language, with an ElevenLabs voiceover | `jira/index.html` | `renders/jira.mp4` |
 
 ## Play
 
@@ -30,7 +31,7 @@ allow sound after a click, so press Play.
 ## Render to video
 
 ```sh
-node motion/tools/render.js --mp4 out.mp4                                  # One Button
+node motion/tools/render.js --audio motion/audio/soundtrack.mp3 --mp4 out.mp4   # One Button
 node motion/tools/render.js --page jira/index.html --audio motion/jira/audio/soundtrack.mp3 --mp4 jira.mp4
 node motion/tools/render.js --out frames --from 8 --to 10                  # a range, as PNGs
 node motion/tools/render.js --out frames --times 1.9,3.2                   # single frames
@@ -53,25 +54,29 @@ trademarks of their owners. Some brands asked Simple Icons to remove their logos
 
 ## Soundtrack (voiceover and music)
 
+Both pieces play the original video's own music bed, with the voice removed
+(`audio/music/original-bed.mp3`, supplied by the project owner). It lines up with the
+original recording, whose clip starts 0.288 s in, so both pieces play it from there.
+Its hits, quiet pockets and fade into the logo already sit on the original's cuts,
+and the Jira cut is built on those same scene boundaries.
+
 The Jira script lives in `jira/voice/script.json`. It mirrors the original's narration
 beat for beat: the same silences (none over the montage), the same pauses, and
 the same rise and fall. It is tagged for Eleven v3 (`[curious]`, `[softly]`, …).
+The voice was recorded as one ElevenLabs take (`jira/audio/take.mp3`).
 
-The voice was recorded as one ElevenLabs take (`jira/audio/take.mp3`). `tools/mix.js`
-builds the soundtrack from it, following `jira/audio/mix.json`:
+`tools/mix.js` builds each soundtrack from the piece's `audio/mix.json`:
 
-- **Voice:** each phrase is cut from the take at its pauses and placed on its beat
-  (`segments`: where it sits in the take, and when it starts in the piece).
-- **Music:** "The Corporate Upbeat" by Soundrider/Dope (CC BY 3.0, see
-  `jira/audio/CREDITS.md`). It is back-timed so the track's own stop ending lands as
-  "Jira." is spoken, low-passed under "But…", opened up on the Jira reveal, and
-  ducked under the voice.
-- **Master:** both stems are measured (EBU R128) and gained to their targets, then
+- **Voice** (Jira only): each phrase is cut from the take at its pauses and placed
+  on its beat (`segments`: where it sits in the take, and when it starts in the piece).
+- **Music:** timed to an anchor (`track` seconds plays at `at`), faded, gently
+  ducked under the voice, with an optional low-passed `dip`.
+- **Master:** stems are measured (EBU R128) and gained to their targets, then
   mastered to -14 LUFS with a -1 dBTP limiter.
 
 ```sh
-node motion/tools/mix.js --piece motion/jira     # writes jira/audio/vo.mp3 and soundtrack.mp3
-node motion/tools/render.js --page jira/index.html --audio motion/jira/audio/soundtrack.mp3 --mp4 jira.mp4
+node motion/tools/mix.js --piece motion          # One Button: music only -> audio/soundtrack.mp3
+node motion/tools/mix.js --piece motion/jira     # Jira: voice + music   -> jira/audio/soundtrack.mp3
 ```
 
 To re-voice the script through the API instead, run
@@ -110,7 +115,8 @@ collage photos) are painted procedurally as stand-ins.
 | `js/scenes-a.js` | One Button: meadow intro, the "Button" whip-zoom and click, the button montage |
 | `js/scenes-b.js` | One Button: "But…", the typed caret line, "Life saver" and its restyles, "No more endless…" |
 | `js/scenes-c.js` | One Button: "unnecessary costs" arch, "Pay once", Video/Voice, Image/Motion/Creation, end card |
-| `js/main.js` | One Button: master timeline and letterbox curve |
+| `js/main.js` | One Button: master timeline, letterbox curve, weight map, soundtrack |
+| `audio/mix.json` | One Button soundtrack: music timing and levels |
 | `jira/js/art.js` | Jira: sky plate, app tiles, the Jira tile, the board UI kit, clutter props |
 | `jira/js/scenes-a.js` | Jira: "Your team's work is everywhere", the clutter montage, "But…" into "what if one board" |
 | `jira/js/scenes-b.js` | Jira: "Meet Jira" and the live board, "No more chasing updates", the "No more pointless meetings" arch |

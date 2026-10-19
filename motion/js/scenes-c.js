@@ -445,7 +445,10 @@
     const iw = M.key(t, [[23.15, 3], [23.48, 10, 'inQuad'], [23.6, 52, 'inQuad'], [23.87, 154, 'linear'], [24.2, 262, 'outCubic']]);
     const ih = M.key(t, [[23.08, 0], [23.25, 270, 'outCubic'], [23.6, 242, 'inOutQuad'], [24.2, 260, 'outQuad']]);
     const end = M.ease.inOutCubic(M.prog(t, 25.3, 25.62));
-    const cx = M.lerp(954, 620, end);
+    // the end lockup (tile + wordmark) is centred as a group
+    const wmw = M.measure(c, 'Higgsfield', 134, 700, -0.02);
+    const lockX = 960 - (113 + 22 + wmw) / 2;
+    const cx = M.lerp(954, lockX + 56.5, end);
     const cy = M.lerp(368, 528, end);
     const sz = M.lerp(1, 113 / 260, end);
     const w = iw * sz;
@@ -482,6 +485,6 @@
     c.restore();
     // wordmark blurs in to the right of the shrinking icon
     const wm = M.prog(t, 25.36, 25.6);
-    if (wm > 0) M.blurWord(c, 'Higgsfield', 698, 578, wm, { size: 134, weight: 700, color: '#ffffff', blurFrom: 16, track: -0.02 });
+    if (wm > 0) M.blurWord(c, 'Higgsfield', lockX + 135, 578, wm, { size: 134, weight: 700, color: '#ffffff', blurFrom: 16, track: -0.02 });
   };
 })();

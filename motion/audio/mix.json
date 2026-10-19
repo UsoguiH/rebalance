@@ -1,0 +1,14 @@
+{
+  "duration": 26.6,
+  "music": {
+    "file": "music/original-bed.mp3",
+    "title": "One Button music bed",
+    "note": "The original video's own music, voice removed (supplied by the project owner). It lines up with the original recording, whose clip starts 0.288s in, so it plays from 0.288s; its hits already land on the original's cuts.",
+    "anchor": { "track": 0.288, "at": 0 },
+    "fade_in": 0.02,
+    "fade_out": [26.3, 26.6],
+    "lufs": -16,
+    "duck": { "threshold": 0.05, "ratio": 2.5, "attack_ms": 25, "release_ms": 450 }
+  },
+  "master": { "lufs": -14, "true_peak": -1 }
+}

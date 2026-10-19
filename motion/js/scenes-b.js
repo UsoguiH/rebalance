@@ -18,7 +18,20 @@
   };
 
   // ---------------------------------------------------------------- But...
-  const BUT = { size: 486, base: 718, letters: [['B', 443, 7.555], ['u', 739, 7.585], ['t', 980, 7.62]], dots: [[1164, 7.81], [1292, 7.87], [1418, 7.92]] };
+  const BUT = { size: 486, base: 718, x: 443, letters: [['B', 7.555], ['u', 7.585], ['t', 7.62]], dots: [7.81, 7.87, 7.92] };
+  // letters sit at their measured advances, so the word stays tight in any weight
+  let butLayout = null;
+  const layoutBut = (c) => {
+    if (butLayout) return butLayout;
+    let x = BUT.x;
+    const letters = BUT.letters.map(([ch, t0]) => {
+      const at = [ch, M.inkX(c, ch, x, BUT.size, 500), t0];
+      x += M.measure(c, ch, BUT.size, 500, -0.01);
+      return at;
+    });
+    const dots = BUT.dots.map((t0, i) => [x + 30 + i * 128, t0]);
+    return (butLayout = { letters, dots });
+  };
   // each letter also travels in from the left: B and u drift, t snaps past and back
   const BUT_DX = {
     B: [[7.55, -110], [8.05, 0, 'outCubic']],
@@ -35,10 +48,11 @@
     if (g > 0) c.filter = `saturate(${1 - 0.75 * g}) brightness(${1 - 0.2 * g}) blur(${g * 3}px)`;
     c.drawImage(A.hillsDOF(), 0, 0);
     c.restore();
-    for (const [ch, ix, t0] of BUT.letters) {
+    const L = layoutBut(c);
+    for (const [ch, ix, t0] of L.letters) {
       const r = rise(t, t0);
       if (r.a <= 0) continue;
-      const x = M.inkX(c, ch, ix, BUT.size, 500) + M.key(t, BUT_DX[ch]);
+      const x = ix + M.key(t, BUT_DX[ch]);
       M.withLayer(
         c,
         (l) => {
@@ -49,7 +63,7 @@
         { alpha: r.a, blur: r.blur * 0.25 }
       );
     }
-    for (const [x, t0] of BUT.dots) {
+    for (const [x, t0] of L.dots) {
       const r = rise(t, t0);
       if (r.a <= 0) continue;
       // the dots keep sinking to the baseline a little longer
@@ -284,12 +298,25 @@
 
   // ---------------------------------------------------------------- No more endless
   const NM = [
-    { s: 'No', t0: 12.76, x: 196, a: 110 },
-    { s: 'more', t0: 12.81, x: 347, a: 120 },
-    { s: 'endless', t0: 12.86, x: 596, a: 110, weight: 700, color: '#2452b8' },
-    { s: 'ai', t0: 12.99, x: 1008, a: 100 },
-    { s: 'subscriptions', t0: 13.13, x: 1108, a: 100 },
+    { s: 'No', t0: 12.76, a: 110 },
+    { s: 'more', t0: 12.81, a: 120 },
+    { s: 'endless', t0: 12.86, a: 110, weight: 700, color: '#2452b8' },
+    { s: 'ai', t0: 12.99, a: 100 },
+    { s: 'subscriptions', t0: 13.13, a: 100 },
   ];
+  // the line is centred where the original's was (around x 950) at a space apart
+  let nmEnd = null;
+  const layoutNM = (c) => {
+    if (nmEnd !== null) return;
+    const space = M.measure(c, ' ', 102, 400) * 1.15;
+    const ws = NM.map((w) => M.measure(c, w.s, 102, w.weight || 400, -0.02));
+    let x = 950 - (ws.reduce((a, b) => a + b, 0) + space * (NM.length - 1)) / 2;
+    NM.forEach((w, i) => {
+      w.x = x;
+      x += ws[i] + space;
+    });
+    nmEnd = x - space;
+  };
   const BLUE = '#1f4fc6';
 
   // iMessage-style tapback: a blob with a heart, which catches fire
@@ -298,9 +325,9 @@
     const r = M.key(t, [[13.43, 6], [13.5, 22, 'outQuad'], [13.59, 100, 'outQuad'], [13.66, 126, 'outQuad'], [13.75, 98, 'inOutQuad'], [13.83, 90, 'outQuad'], [13.98, 110, 'outQuad'], [15.1, 116, 'linear']]);
     const grow = M.prog(t, 13.5, 13.62);
     // anchor: the tail dot sits at the top right of "subscriptions"
-    const tx = 1650;
+    const tx = nmEnd - 54;
     const ty = 497;
-    const cx = M.lerp(tx + 10, 1763, grow);
+    const cx = M.lerp(tx + 10, tx + 113, grow);
     const cy = M.lerp(ty - 10, 378, grow);
     c.save();
     c.fillStyle = BLUE;
@@ -354,6 +381,7 @@
     c.translate(1224, 540);
     c.scale(z, z);
     c.translate(-1224, -540);
+    layoutNM(c);
     for (const w of NM) {
       const p = M.clamp((t - w.t0) / 0.17, 0, 1);
       if (p <= 0) continue;

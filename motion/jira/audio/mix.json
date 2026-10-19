@@ -22,19 +22,14 @@
     "lufs": -16
   },
   "music": {
-    "file": "music/the-corporate-upbeat.mp3",
-    "title": "The Corporate Upbeat",
-    "artist": "Soundrider/Dope",
-    "license": "CC BY 3.0",
-    "license_url": "https://creativecommons.org/licenses/by/3.0/",
-    "source": "https://www.jamendo.com/track/1670594",
-    "note": "Back-timed so the track's own stop ending (118.25s) lands as 'Jira.' is spoken; low-passed under 'But...' and opened up on the Jira reveal.",
-    "anchor": { "track": 118.25, "at": 25.72 },
-    "dip": [7.613, 9.904],
-    "fade_in": 0.3,
-    "fade_out": [26.05, 26.6],
-    "lufs": -20,
-    "duck": { "threshold": 0.05, "ratio": 4.5, "attack_ms": 25, "release_ms": 450 }
+    "file": "../../audio/music/original-bed.mp3",
+    "title": "One Button music bed",
+    "note": "The original video's own music, voice removed (supplied by the project owner). It lines up with the original recording, whose clip starts 0.288s in, so it plays from 0.288s; its hits already land on the original's cuts.",
+    "anchor": { "track": 0.288, "at": 0 },
+    "fade_in": 0.02,
+    "fade_out": [26.3, 26.6],
+    "lufs": -21,
+    "duck": { "threshold": 0.05, "ratio": 2.5, "attack_ms": 25, "release_ms": 450 }
   },
   "master": { "lufs": -14, "true_peak": -1 }
 }
