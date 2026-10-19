@@ -6,8 +6,7 @@
   "duration": 27.0,
   "lines": [
     { "t": 0.3, "text": "Your team's work is everywhere." },
-    { "t": 3.55, "text": "Sticky notes. Spreadsheets. Endless threads asking..." },
-    { "t": 6.15, "text": "any update?" },
+    { "t": 3.55, "text": "Sticky notes. Spreadsheets. Endless threads asking... any update?" },
     { "t": 7.7, "text": "But... what if every task had one home?" },
     { "t": 10.35, "text": "Meet Jira." },
     { "t": 11.4, "text": "Plan it. Track it. Ship it." },
