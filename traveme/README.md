@@ -23,8 +23,10 @@ npx http-server -p 8080   # from the repo root, then open http://localhost:8080/
 It autoplays with the same timing as the recording and loops. Tap the arrow to advance,
 **Skip** to jump to the last slide, and **Get started** to replay.
 
-It opens in Arabic, with the whole screen mirrored for right-to-left reading: chrome, 3D
-scene and the paths the text winds along. Add `?lang=en` for the original English.
+It opens in Arabic, with the screen and 3D scene mirrored for right-to-left reading. In
+Arabic the display lines sit on two stacked rings that orbit the suitcase (Rubik
+ExtraBold); only the half facing you is drawn, so the words never show mirrored. Add
+`?lang=en` for the original English, with its spiral text.
 
 URL options:
 

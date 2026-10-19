@@ -7,7 +7,7 @@
 <meta name="traveme-lang" content="ar">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,900&family=Cairo:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,900&family=Cairo:wght@500;600;700;800;900&family=Rubik:wght@800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --sky-0: #0018e6;
@@ -594,31 +594,113 @@ function textCanvas(text, px, stretch, gapAt = -1, gapPx = 0) {
   return { canvas: c, centers };
 }
 
-/* Arabic: words are laid out one by one, right to left, so we know where each word
-   sits on the canvas (prefix measuring does not work with joined, bidi text).
-   `gapBefore` = [wordIndex, px] widens the space in front of that word. */
-const FONT_AR = '"Cairo"';
-function wordsCanvas(words, px, gapBefore = null) {
-  const c = document.createElement('canvas');
-  const g = c.getContext('2d');
-  const setFont = () => { g.font = `900 ${px}px ${FONT_AR}`; g.direction = 'rtl'; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; };
-  setFont();
-  const pad = 10, space = g.measureText(' ').width;
-  const widths = words.map(w => g.measureText(w).width);
-  const gap = i => (gapBefore && gapBefore[0] === i ? gapBefore[1] : 0);
-  // visual order is the reverse of reading order; x runs left to right
-  const left = [];
-  let x = pad;
-  for (let i = words.length - 1; i >= 0; i--) {
-    left[i] = x;
-    x += widths[i] + (i > 0 ? space + gap(i) : 0);   // the space before word i in reading order
+/* Arabic: each line runs on a flat ring that orbits the suitcase. Only the half of
+   the ring facing the camera is drawn, and letters fade out as they turn toward the
+   sides, so the text is never seen mirrored or edge-on. The words are repeated round
+   the ring (with a sparkle between repeats) so there is always text passing while the
+   ring spins, and at rest one copy sits centred at the front. */
+const FONT_ORBIT = '"Rubik"';
+class OrbitText {
+  constructor({ text, radius, cap, dir = 1 }) {
+    const px = 150;
+    const u2w = cap / (0.72 * px);                       // canvas px -> world units
+    const c = document.createElement('canvas');
+    const g = c.getContext('2d');
+    const setFont = () => { g.font = `800 ${px}px ${FONT_ORBIT}`; g.direction = 'rtl'; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; };
+    setFont();
+    const tw = g.measureText(text).width;
+    const total = Math.round(2 * Math.PI * radius / u2w);   // the canvas wraps the ring exactly once
+    const repeats = Math.max(2, Math.floor(total / (tw + px * 1.3)));
+    const unit = total / repeats, sep = unit - tw;
+    c.width = total; c.height = Math.ceil(px * 1.45);
+    setFont();
+    const base = Math.round(px * 1.0);
+    const sparkle = (x, y, r) => {
+      g.beginPath();
+      for (let k = 0; k < 8; k++) {
+        const a = k * Math.PI / 4, rr = k % 2 ? r * 0.28 : r;
+        g.lineTo(x + Math.sin(a) * rr, y - Math.cos(a) * rr);
+      }
+      g.closePath(); g.fill();
+    };
+    g.shadowColor = 'rgba(24, 16, 120, 0.5)'; g.shadowBlur = 18; g.shadowOffsetY = 6;
+    g.fillStyle = '#ffffff';
+    for (let k = 0; k < repeats; k++) {
+      g.fillText(text, k * unit + sep / 2, base);
+      const sy = base - px * 0.36;
+      sparkle((k + 1) * unit, sy, px * 0.15);
+      if (k === repeats - 1) sparkle(0, sy, px * 0.15);   // the half that wraps past the seam
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.anisotropy = 8;
+    const hW = c.height * u2w, segs = 256;
+    const pos = [], nor = [], uv = [], idx = [];
+    for (let i = 0; i <= segs; i++) {
+      const th = i / segs * Math.PI * 2, sx = Math.sin(th), cz = Math.cos(th);
+      for (const y of [-hW / 2, hW / 2]) { pos.push(radius * sx, y, radius * cz); nor.push(sx, 0, cz); uv.push(i / segs, y > 0 ? 1 : 0); }
+      if (i < segs) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx);
+    // canvas colours are already sRGB, so they are written straight out; the back
+    // half faces away from the camera and fades to nothing
+    this.mat = new THREE.ShaderMaterial({
+      uniforms: { map: { value: tex }, opacity: { value: 1 } },
+      vertexShader: `varying vec2 vUv; varying float vFacing;
+        void main() {
+          vUv = uv;
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vFacing = dot(normalize(normalMatrix * normal), normalize(-mv.xyz));
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `uniform sampler2D map; uniform float opacity; varying vec2 vUv; varying float vFacing;
+        void main() {
+          vec4 t = texture2D(map, vUv);
+          gl_FragColor = vec4(t.rgb, t.a * opacity * smoothstep(0.08, 0.45, vFacing));
+        }`,
+      transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide,
+    });
+    this.mesh = new THREE.Mesh(geo, this.mat);
+    this.mesh.renderOrder = 10;
+    // turn the ring so the first copy's centre is at the front (angle 0)
+    this.mesh.rotation.y = -2 * Math.PI * (sep / 2 + tw / 2) / total;
+    this.spin = new THREE.Group();
+    this.spin.add(this.mesh);
+    this.dir = dir;
   }
-  c.width = Math.ceil(x + pad); c.height = Math.ceil(px * 1.3);
-  setFont();
-  g.fillStyle = '#ffffff';
-  words.forEach((w, i) => g.fillText(w, left[i], Math.round(px * 0.9)));
-  const centers = words.map((w, i) => left[i] + widths[i] / 2);
-  return { canvas: c, centers, widths };
+  // off < 0: still arriving (spun back); off > 0: leaving (spun on)
+  update(off, opacity, time) {
+    this.spin.rotation.y = this.dir * off * 0.3 + Math.sin(time * 0.9 + this.dir) * 0.045;
+    this.mat.uniforms.opacity.value = opacity;
+    this.mesh.visible = opacity > 0.002;
+  }
+}
+
+/* Two stacked rings that read top line first. They counter-rotate into place, sway a
+   little at rest, and spin away and sink when the slide changes. */
+class OrbitLines {
+  constructor({ lines, radius, cap, gap }) {
+    this.group = new THREE.Group();   // placement and tilt
+    this.lift = new THREE.Group();    // arrival scale and exit drop
+    this.group.add(this.lift);
+    this.rings = lines.map((text, i) => {
+      const r = new OrbitText({ text, radius, cap, dir: i % 2 ? -1 : 1 });
+      r.spin.position.y = (lines.length - 1) * gap / 2 - i * gap;
+      this.lift.add(r.spin);
+      return r;
+    });
+  }
+  update(off, opacity, dt, time = 0) {
+    this.lift.scale.setScalar(Math.max(0.6, off < 0 ? 1 + off * 0.018 : 1));
+    this.lift.position.y = off > 0 ? -off * 0.12 : 0;
+    // the lower line trails the upper one slightly on the way in
+    this.rings.forEach((r, i) => r.update(off * (1 + i * 0.25), opacity, time));
+  }
 }
 
 /* Text printed on a ribbon that follows a 3D path. `sample(d)` returns the point,
@@ -687,18 +769,18 @@ class RibbonText {
 }
 
 // The ribbons are drawn into canvases, so the display face has to be ready first.
-await Promise.race([Promise.all([document.fonts.load(`900 220px ${FONT}`), document.fonts.load(`900 220px ${FONT_AR}`, 'سافر')]), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
+await Promise.race([Promise.all([document.fonts.load(`900 220px ${FONT}`), document.fonts.load(`800 150px ${FONT_ORBIT}`, 'سافر')]), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
 
 const CAP_EM = 0.72;   // cap height of the display face, in ems
 
 /* Helix: `anchor` = [charA, charB, angle]. The radius is solved so char B lands
    `angle` radians further round than char A; char A sits at the front, height 0. */
-function helixText({ text, words = null, pitch, cap, anchor, stretch = 'normal', ...rest }) {
+function helixText({ text, pitch, cap, anchor, stretch = 'normal', ...rest }) {
   const px = 220;
-  const { canvas, centers } = words ? wordsCanvas(words, px) : textCanvas(text, px, stretch);
+  const { canvas, centers } = textCanvas(text, px, stretch);
   const u2w = cap / CAP_EM / px;
   const [ia, ib, ang] = anchor;
-  const k = pitch / (Math.PI * 2);   // a negative pitch climbs as the text runs left to right
+  const k = pitch / (Math.PI * 2);
   const perRad = (centers[ib] - centers[ia]) * u2w / ang;
   const R = Math.sqrt(Math.max(0.09, perRad * perRad - k * k));
   const sample = d => {
@@ -749,46 +831,13 @@ function pathText({ text, points, pa, pb, ca, cb, rejoin = null, center, lean = 
   return r;
 }
 
-/* Two Arabic words on a free path: the first word fills the stretch between
-   points[first[0]] and points[first[1]], the second is centred on points[second]
-   and the space between them is widened to fit. */
-function arabicPathText({ words, points, first, second, center, lean, ...rest }) {
-  const px = 220;
-  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-  const N = 3000, pts = curve.getSpacedPoints(N), total = curve.getLength();
-  const arcOf = q => { let bi = 0, bd = Infinity; pts.forEach((v, i) => { const d = v.distanceToSquared(q); if (d < bd) { bd = d; bi = i; } }); return bi / N * total; };
-  const a0 = arcOf(points[first[0]]), a1 = arcOf(points[first[1]]), a2 = arcOf(points[second]);
-  let info = wordsCanvas(words, px);
-  const u2w = Math.abs(a1 - a0) * 0.95 / info.widths[0];
-  const firstMid = (a0 + a1) / 2;
-  const gap = (firstMid - a2) / u2w - (info.centers[0] - info.centers[1]);
-  info = wordsCanvas(words, px, [1, Math.max(0, gap)]);
-  const fwd = new THREE.Vector3(0, 0, 1);
-  const sample = d => {
-    let a = firstMid + d, over = 0;
-    if (a < 0) { over = a; a = 0; } else if (a > total) { over = a - total; a = total; }
-    const u = a / total;
-    const t = curve.getTangentAt(u).normalize();
-    const p = curve.getPointAt(u).addScaledVector(t, over);
-    const radial = new THREE.Vector3(p.x - center.x, 0, p.z - center.z).normalize();
-    const n = radial.multiplyScalar(lean).addScaledVector(fwd, 1 - lean).normalize();
-    n.addScaledVector(t, -n.dot(t)).normalize();
-    return { p, t, n };
-  };
-  const r = new RibbonText({ u2w, anchorChar: 0, sample, canvas: info.canvas, centers: info.centers, ...rest });
-  r.cap = u2w * px * CAP_EM;
-  return r;
-}
-
 // TRAVEL sits on the front, LIKE NE runs across the back, NEVER drops down the
 // left silhouette and BEFORE comes round to the front one turn lower.
-// In Arabic the first word sits at the top front and the line winds down to the
-// left, the mirror image of the English helix.
 const ring1 = AR
-  ? helixText({ words: ['سافر', 'كما', 'لم', 'تسافر', 'من', 'قبل'], pitch: -2.7, cap: 0.5, anchor: [0, 5, -Math.PI * 1.7], extraBefore: 16, extraAfter: 16, depthTest: false })
+  ? new OrbitLines({ lines: ['سافر كما لم', 'تسافر من قبل'], radius: 1.75, cap: 0.4, gap: 0.98 })
   : helixText({ text: 'TRAVEL LIKE NEVER BEFORE', pitch: 2.95, cap: 0.45, anchor: [2, 20, Math.PI * 2], extraBefore: 16, extraAfter: 16, depthTest: false, stretch: 'expanded' });
-ring1.group.position.set(AR ? -0.12 : 0.12, 0.98, 0);
-ring1.group.rotation.set(0.0, 0, AR ? -0.1 : 0.1);
+if (AR) { ring1.group.position.set(-0.02, 0.2, 0); ring1.group.rotation.set(0.3, 0, -0.1); }
+else { ring1.group.position.set(0.12, 0.98, 0); ring1.group.rotation.set(0.0, 0, 0.1); }
 scene.add(ring1.group);
 
 // Slide three's line is traced from the reference: LET'S climbs across the top,
@@ -804,13 +853,10 @@ const R3_POINTS = [
   scr(282, 646, 1.3), scr(352, 610, 1.3), scr(402, 530, 1.2), scr(470, 430, 1.0), scr(560, 330, 0.8),
 ];
 const ring3 = AR
-  ? arabicPathText({ words: ['لنستعد', 'للانطلاق!'],
-      // mirrored and reversed, so the line starts at the top right and reads right to left
-      points: R3_POINTS.map(v => new THREE.Vector3(-v.x, v.y, v.z)).reverse(),
-      first: [14, 16], second: 5, center: scr(393 - 250, 400, 0), lean: 0.12, extraBefore: 18, extraAfter: 18, depthTest: false,
-      alphaAt: p => clamp01((p.z + 0.25) / 0.35) })
+  ? new OrbitLines({ lines: ['لنستعد', 'للانطلاق!'], radius: 1.7, cap: 0.5, gap: 1.12 })
   : pathText({ text: "LET\u2019S GET READY!", points: R3_POINTS, pa: 2, pb: 4, ca: 0, cb: 4, rejoin: [11, 10], center: scr(250, 400, 0), lean: 0.12, extraBefore: 18, extraAfter: 18, depthTest: false, stretch: 'semi-condensed',
       alphaAt: p => clamp01((p.z + 0.25) / 0.35) });
+if (AR) { ring3.group.position.set(-0.5, 0.85, 0.2); ring3.group.rotation.set(0.34, 0, 0.08); }
 scene.add(ring3.group);
 
 /* ---------- DOM ---------- */
@@ -903,7 +949,7 @@ function frame(phase, t, time) {
   const st = {
     pose: POSE[0], lid: 0, items: 1, belt: 0,
     r1: { off: 0, op: 1 }, r3: { off: -999, op: 0 },
-    copy0: [1, 1, 1], copy1: [0, 0, 0], dots: 0, cta: 0, fade: 1
+    copy0: [1, 1, 1], copy1: [0, 0, 0], dots: 0, cta: 0, fade: 1, time
   };
   const bobY = Math.sin(time * 1.7) * 0.035, bobR = Math.sin(time * 1.1) * 0.025;
   if (phase === 'intro') {
@@ -969,8 +1015,8 @@ function apply(st, dt) {
   belt.position.set(BELT_HOME.x + (1 - b) * 6.5, BELT_HOME.y - (1 - b) * 1.2, BELT_HOME.z);
   belt.rotation.set(BELT_ROT.x, BELT_ROT.y + (1 - b) * 0.2, BELT_ROT.z);
 
-  ring1.update(st.r1.off, st.r1.op * st.fade, dt);
-  ring3.update(st.r3.off, st.r3.op, dt);
+  ring1.update(st.r1.off, st.r1.op * st.fade, dt, st.time);
+  ring3.update(st.r3.off, st.r3.op, dt, st.time);
 
   copyState(0, ...st.copy0.map(v => v * (phase === 'intro' ? 1 : 1)));
   copyState(1, ...st.copy1);
@@ -1028,7 +1074,6 @@ function timelineAt(T) {
     }
     renderer.render(scene, camera);
     document.body.dataset.ready = '1';
-    console.log('radii', ring1.radius.toFixed(3), ring3.cap.toFixed(3));
   } else {
     requestAnimationFrame(t => { last = t; requestAnimationFrame(tick); });
   }
