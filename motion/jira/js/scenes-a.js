@@ -312,10 +312,10 @@
     c.shadowBlur = 30;
     M.fillRR(c, 150, 90, 1620, 900, 16, '#fbfcfd');
     c.restore();
-    c.font = `700 92px ${J.HAND}`;
+    c.font = `500 92px ${J.HAND}`;
     c.fillStyle = '#1f4fbf';
     c.fillText('SPRINT PLAN??', 300, 260);
-    c.font = `600 64px ${J.HAND}`;
+    c.font = `400 64px ${J.HAND}`;
     c.fillStyle = '#c0362c';
     c.fillText('launch → ??? → done?', 330, 420);
     c.fillStyle = '#2b2b2b';
@@ -327,7 +327,7 @@
     c.beginPath();
     c.ellipse(1340, 540, 260 * p, 170 * p, -0.2, 0, Math.PI * 2 * p);
     c.stroke();
-    c.font = `700 76px ${J.HAND}`;
+    c.font = `500 76px ${J.HAND}`;
     c.fillStyle = '#c0362c';
     c.fillText('URGENT', 1205, 565);
   };
@@ -449,7 +449,20 @@
     const v = Math.abs(M.key(u + 0.01, RISE) - y);
     return { y, a: M.clamp(u / 0.06, 0, 1), blur: Math.min(30, v * 1.6) };
   };
-  const BUT = { size: 486, base: 718, letters: [['B', 443, 7.555], ['u', 739, 7.585], ['t', 980, 7.62]], dots: [[1164, 7.81], [1292, 7.87], [1418, 7.92]] };
+  const BUT = { size: 486, base: 718, x: 443, letters: [['B', 7.555], ['u', 7.585], ['t', 7.62]], dots: [7.81, 7.87, 7.92] };
+  // letters sit at their measured advances, so the word stays tight in any weight
+  let butLayout = null;
+  const layoutBut = (c) => {
+    if (butLayout) return butLayout;
+    let x = BUT.x;
+    const letters = BUT.letters.map(([ch, t0]) => {
+      const at = [ch, M.inkX(c, ch, x, BUT.size, 500), t0];
+      x += M.measure(c, ch, BUT.size, 500, -0.01);
+      return at;
+    });
+    const dots = BUT.dots.map((t0, i) => [x + 30 + i * 128, t0]);
+    return (butLayout = { letters, dots });
+  };
   const BUT_DX = {
     B: [[7.55, -110], [8.05, 0, 'outCubic']],
     u: [[7.58, -150], [8.0, 0, 'outCubic']],
@@ -464,10 +477,11 @@
     if (g > 0) c.filter = `saturate(${1 - 0.6 * g}) brightness(${1 - 0.3 * g}) blur(${g * 3}px)`;
     c.drawImage(J.sky(), 0, 0);
     c.restore();
-    for (const [ch, ix, t0] of BUT.letters) {
+    const L = layoutBut(c);
+    for (const [ch, ix, t0] of L.letters) {
       const r = rise(t, t0);
       if (r.a <= 0) continue;
-      const x = M.inkX(c, ch, ix, BUT.size, 500) + M.key(t, BUT_DX[ch]);
+      const x = ix + M.key(t, BUT_DX[ch]);
       M.withLayer(
         c,
         (l) => {
@@ -477,7 +491,7 @@
         { alpha: r.a, blur: r.blur * 0.25 }
       );
     }
-    for (const [x, t0] of BUT.dots) {
+    for (const [x, t0] of L.dots) {
       const r = rise(t, t0);
       if (r.a <= 0) continue;
       const sink = tw(t, t0 + 0.2, t0 + 0.45, -25, 0, 'inOutQuad');

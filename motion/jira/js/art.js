@@ -234,7 +234,7 @@
     c.fillStyle = 'rgba(0,0,0,0.06)';
     c.fillRect(-s / 2, s / 2 - s * 0.12, s, s * 0.12);
     c.fillStyle = ink;
-    c.font = `700 ${s * 0.2}px ${J.HAND}`;
+    c.font = `500 ${s * 0.2}px ${J.HAND}`;
     c.textAlign = 'center';
     const lines = text.split('\n');
     lines.forEach((ln, i) => c.fillText(ln, 0, (i - (lines.length - 1) / 2) * s * 0.23 + s * 0.06));

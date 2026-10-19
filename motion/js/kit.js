@@ -182,7 +182,9 @@
   M.rgba = (rgb, a) => `rgba(${rgb[0] | 0},${rgb[1] | 0},${rgb[2] | 0},${a})`;
 
   // ---------- text ----------
-  M.font = (size, weight = 400) => `${weight} ${size}px ${M.FONT}`;
+  // a piece can remap every weight at once (e.g. a lighter cut of the whole film)
+  M.weight = (w) => w;
+  M.font = (size, weight = 400) => `${M.weight(weight)} ${size}px ${M.FONT}`;
   M.setFont = (c, size, weight = 400, track = 0) => {
     c.font = M.font(size, weight);
     if ('letterSpacing' in c) c.letterSpacing = `${track * size}px`;

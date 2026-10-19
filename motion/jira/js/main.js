@@ -6,7 +6,10 @@
   M.DURATION = 26.6;
   // voiceover + music, made by tools/mix.js; the piece plays silently without it
   M.AUDIO = 'audio/soundtrack.mp3';
-  M.EXTRA_FONTS = ['700 40px Caveat', '600 40px Caveat'];
+  // a lighter cut of every weight: regular and medium go Light, bold goes Medium
+  const LIGHTER = { 400: 300, 500: 300, 600: 400, 700: 500, 800: 600 };
+  M.weight = (w) => LIGHTER[w] || w;
+  M.EXTRA_FONTS = ['300 40px Inter', '500 40px Caveat', '400 40px Caveat'];
 
   // [start, scene, timing] in seconds, on the original's scene boundaries so the
   // voiceover can follow its delivery beat for beat. timing is an offset into the
