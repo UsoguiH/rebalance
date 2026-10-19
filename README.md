@@ -107,3 +107,9 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+## Motion recreation
+
+`motion/` holds a separate piece: a frame-by-frame canvas recreation of a
+26-second promo animation, with a player and an offline MP4 renderer. See
+[`motion/README.md`](motion/README.md).
