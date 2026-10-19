@@ -53,9 +53,11 @@ trademarks of their owners. Some brands asked Simple Icons to remove their logos
 
 ## Voiceover (ElevenLabs)
 
-The Jira script lives in `jira/voice/script.json`: one entry per line, with the
-second it starts on the timeline, plus the voice and its settings (default voice:
-Brian). To voice it:
+The Jira script lives in `jira/voice/script.json`. It mirrors the original's narration
+beat for beat: the same silences (none over the montage), the same pauses, and
+the same rise and fall. Each line's cue is the original's word timing, and the delivery
+is marked with Eleven v3 audio tags (`[curious]`, `[softly]`, …). The original is
+narrated by a soft voice at around 200 Hz, so the default voice is Sarah. To voice it:
 
 ```sh
 ELEVENLABS_API_KEY=... node motion/tools/voice.js --piece motion/jira

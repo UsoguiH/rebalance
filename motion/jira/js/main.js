@@ -3,40 +3,47 @@
 (function () {
   const S = M.scenes;
   const { W, H } = M;
-  M.DURATION = 27.0;
+  M.DURATION = 26.6;
   // ElevenLabs voiceover, made by tools/voice.js; the piece plays silently without it
   M.AUDIO = 'audio/vo.mp3';
   M.EXTRA_FONTS = ['700 40px Caveat', '600 40px Caveat'];
 
-  // [start, scene] in seconds; each scene runs until the next one starts
+  // [start, scene, timing] in seconds, on the original's scene boundaries so the
+  // voiceover can follow its delivery beat for beat. timing is an offset into the
+  // scene's own clock, or [from, to] to stretch the slot over that span of it.
   const TIMELINE = [
-    [0, S.intro],
-    [3.4, S.montage],
-    [7.6, S.but],
-    [10.25, S.meetJira],
-    [13.4, S.noMore],
-    [15.3, S.arch],
-    [17.2, S.planOnce],
-    [18.85, S.boards],
-    [20.2, S.automation],
-    [23.1, S.end],
+    [0, S.intro, 0],
+    [3.345, S.montage, 0],
+    [7.613, S.but, 0],
+    [9.904, S.meetJira, [10.25, 13.4]],
+    [12.74, S.noMore, 0.66],
+    [15.135, S.arch, 0.165],
+    [17.056, S.planOnce, 0.144],
+    [18.714, S.boards, 0.136],
+    [20.082, S.automation, 0.118],
+    [23.05, S.end, 0.05],
   ];
 
-  // letterbox bar height per side
+  // letterbox bar height per side: the original's curve, except the bars arrive
+  // with this piece's later intro zoom
   const BARS = [
-    [0, 0], [2.9, 0], [3.15, 22, 'inQuad'], [3.4, 51, 'outQuad'],
+    [0, 0], [2.85, 0], [3.1, 22, 'inQuad'], [3.345, 51, 'outQuad'],
     [7.98, 51], [8.21, 62, 'inQuad'], [8.39, 93, 'inQuad'], [8.52, 155, 'linear'], [8.74, 198, 'outQuad'], [8.95, 206, 'outQuad'],
-    [9.75, 206], [9.95, 190, 'inQuad'], [10.1, 144, 'inQuad'], [10.2, 90, 'linear'], [10.32, 57, 'outQuad'], [10.6, 43, 'outQuad'],
-    [14.2, 44], [14.9, 51, 'inQuad'], [15.15, 66, 'inQuad'], [15.3, 80, 'linear'],
-    [15.305, 105], [15.5, 131, 'outQuad'], [15.9, 147, 'outQuad'], [16.7, 157, 'outQuad'],
-    [17.1, 157], [17.21, 122, 'inQuad'], [17.4, 95, 'outQuad'], [17.8, 69, 'outQuad'], [18.3, 52, 'outQuad'], [18.95, 42, 'outQuad'],
-    [27, 42],
+    [9.55, 206], [9.74, 190, 'inQuad'], [9.87, 144, 'inQuad'], [9.94, 90, 'linear'], [10.08, 57, 'outQuad'], [10.36, 43, 'outQuad'],
+    [13.86, 44], [14.54, 51, 'inQuad'], [14.94, 66, 'inQuad'], [15.13, 80, 'linear'],
+    [15.135, 105], [15.36, 131, 'outQuad'], [15.7, 147, 'outQuad'], [16.5, 157, 'outQuad'],
+    [16.95, 157], [17.06, 122, 'inQuad'], [17.25, 95, 'outQuad'], [17.66, 69, 'outQuad'], [18.18, 52, 'outQuad'], [18.84, 42, 'outQuad'],
+    [25.5, 42],
   ];
 
+  // the scene playing at t, and t on that scene's own clock
   const sceneAt = (t) => {
     let i = TIMELINE.length - 1;
     while (i > 0 && t < TIMELINE[i][0]) i--;
-    return TIMELINE[i][1];
+    const [start, scene, timing] = TIMELINE[i];
+    if (!Array.isArray(timing)) return [scene, t + timing];
+    const end = i < TIMELINE.length - 1 ? TIMELINE[i + 1][0] : M.DURATION;
+    return [scene, M.lerp(timing[0], timing[1], (t - start) / (end - start))];
   };
 
   M.renderAt = (c, t) => {
@@ -44,8 +51,8 @@
     c.save();
     c.fillStyle = '#000';
     c.fillRect(0, 0, W, H);
-    const scene = sceneAt(t);
-    if (scene) scene(c, t);
+    const [scene, local] = sceneAt(t);
+    if (scene) scene(c, local);
     c.restore();
     const b = M.key(t, BARS);
     M.bars(c, b, b);

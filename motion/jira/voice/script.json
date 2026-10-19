@@ -1,20 +1,18 @@
 {
-  "voice_id": "nPczCjzI2devNBz1zQrb",
-  "voice_name": "Brian",
-  "model_id": "eleven_multilingual_v2",
-  "voice_settings": { "stability": 0.4, "similarity_boost": 0.8, "style": 0.35, "use_speaker_boost": true },
-  "duration": 27.0,
+  "voice_id": "EXAVITQu4vr4xnSDxMaL",
+  "voice_name": "Sarah",
+  "model_id": "eleven_v3",
+  "voice_settings": { "stability": 0.5, "similarity_boost": 0.75, "use_speaker_boost": true },
+  "duration": 26.6,
+  "note": "Cues mirror the original's narration word for word (its timings minus the 0.29s recording offset). Square-bracket tags are Eleven v3 audio tags; remove them for other models.",
   "lines": [
-    { "t": 0.3, "text": "Your team's work is everywhere." },
-    { "t": 3.55, "text": "Sticky notes. Spreadsheets. Endless threads asking... any update?" },
-    { "t": 7.7, "text": "But... what if every task had one home?" },
-    { "t": 10.35, "text": "Meet Jira." },
-    { "t": 11.4, "text": "Plan it. Track it. Ship it." },
-    { "t": 13.65, "text": "No more chasing updates." },
-    { "t": 15.45, "text": "From backlog... to launch." },
-    { "t": 17.35, "text": "Plan once. Ship faster." },
-    { "t": 19.0, "text": "Boards. Timelines." },
-    { "t": 20.35, "text": "Automation. All connected." },
-    { "t": 23.55, "text": "Jira. Your whole team, in one place." }
+    { "t": 0.41, "text": "[calm] Your team's work is everywhere." },
+    { "t": 7.47, "text": "[thoughtful] But... [curious] what if one board could actually... save your sprint?" },
+    { "t": 12.85, "text": "[confident] No more chasing updates," },
+    { "t": 15.33, "text": "[firmly] no more pointless meetings." },
+    { "t": 17.23, "text": "[playful] Plan once... and ship!" },
+    { "t": 18.89, "text": "[upbeat] Boards. Timelines. Automation. Reports. [softly] Pure focus," },
+    { "t": 23.01, "text": "[warmly] your whole team... in one place." },
+    { "t": 25.73, "text": "[softly] Jira." }
   ]
 }

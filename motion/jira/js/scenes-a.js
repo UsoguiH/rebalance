@@ -492,9 +492,9 @@
   };
 
   // the typed line; the caret jumps ahead and each glyph blurs in just after
-  const TYPE = 'But,what if one home';
+  const TYPE = 'But,what if one board';
   const BOLD_FROM = 16;
-  const KEYS = [8.32, 8.36, 8.4, 8.46, 8.5, 8.58, 8.65, 8.69, 8.74, 8.82, 8.88, 8.94, 9.0, 9.05, 9.09, 9.13, 9.2, 9.27, 9.34, 9.42];
+  const KEYS = [8.32, 8.36, 8.4, 8.46, 8.5, 8.58, 8.65, 8.69, 8.74, 8.82, 8.88, 8.94, 9.0, 9.05, 9.09, 9.13, 9.18, 9.24, 9.3, 9.36, 9.42];
   const TSIZE = 500;
   const TBASE = 720;
   // on-screen x of the caret, then a whip off to the left into "Meet Jira"

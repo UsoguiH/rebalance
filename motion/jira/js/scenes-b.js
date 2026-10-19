@@ -259,7 +259,7 @@
       bubble(c, t, ex + 10, 470);
     }
     if (t > 14.75) {
-      const tr = [[14.75, -40, 760], [14.85, 200, 850], [15.0, 520, 900], [15.15, 760, 860], [15.3, 900, 760]];
+      const tr = [[14.75, -40, 760], [14.85, 200, 850], [15.0, 520, 900], [15.15, 760, 860], [15.3, 900, 760], [15.55, 960, 700], [15.8, 1000, 650]];
       const [x, y] = M.track(t, tr);
       const [x0, y0] = M.track(t - 0.03, tr);
       M.cursorSmear(c, x0, y0, x, y, 1.0);
@@ -269,15 +269,10 @@
   // ---------------------------------------------------------------- From backlog... to launch
   // glyphs laid on a 3D arch: [text, accent?, weight, size, appear time]
   const ARCH = [
-    ['From', 0, 500, 160, 15.38],
-    ['backlog...', 0, 500, 128, 15.56],
-    ['to', 0, 500, 102, 16.25],
-    ['l', 1, 800, 168, 16.42],
-    ['a', 1, 800, 154, 16.47],
-    ['u', 1, 800, 146, 16.52],
-    ['n', 1, 800, 146, 16.57],
-    ['c', 1, 800, 154, 16.62],
-    ['h', 1, 800, 168, 16.67],
+    ['No', 0, 500, 170, 15.3],
+    ['more', 0, 500, 104, 15.32],
+    ...'pointless'.split('').map((ch, i) => [ch, 1, 800, [150, 128, 120, 132, 168, 124, 128, 120, 138][i], 15.34 + i * 0.012]),
+    ['meetings', 0, 500, 110, 15.46],
   ];
   const cardsPlate = () =>
     M.pic('jira-dark-cards', W, H, (c) => {
@@ -317,7 +312,7 @@
     const sp = 0.03;
     // centre the run of glyphs on the arc, then let it orbit slowly
     let span = 0;
-    ARCH.forEach(([s, , wt, size], i) => (span += M.measure(c, s, size, wt, -0.02) / R + (i < 3 ? sp : 0.004)));
+    ARCH.forEach(([s, accent, wt, size], i) => (span += M.measure(c, s, size, wt, -0.02) / R + (accent && ARCH[i + 1][1] ? 0.004 : sp)));
     let a = -span / 2 + k * 0.05;
     ARCH.forEach(([s, accent, wt, size], i) => {
       const t0 = ARCH[i][4];
@@ -327,7 +322,7 @@
       a += da;
       const x = cx + Math.sin(a) * R;
       const y = cy - Math.cos(a) * R + (i === 0 ? 40 : 0);
-      a += da + (i < 3 ? sp : 0.004);
+      a += da + (accent && ARCH[i + 1][1] ? 0.004 : sp);
       if (p <= 0) return;
       const draw = (l, dx, col) => {
         l.save();
@@ -343,9 +338,9 @@
         (l) => {
           if (accent) {
             l.save();
-            l.shadowColor = 'rgba(76,154,255,0.8)';
-            l.shadowBlur = 22;
-            draw(l, 0, C.blue3);
+            l.shadowColor = 'rgba(255,60,40,0.7)';
+            l.shadowBlur = 18;
+            draw(l, 0, '#ff2a1a');
             l.restore();
           } else {
             l.globalCompositeOperation = 'lighter';
@@ -358,7 +353,7 @@
         { blur }
       );
     });
-    const [x, y] = M.track(t, [[15.3, 900, 760], [15.6, 960, 560], [16.2, 1100, 470], [16.8, 1260, 430], [17.2, 1330, 420]]);
+    const [x, y] = M.track(t, [[15.3, 940, 520], [15.6, 990, 470], [16.2, 1100, 430], [16.8, 1240, 400], [17.2, 1320, 390]]);
     M.cursor(c, x, y, 0.95, { rot: -0.5 });
   };
 })();

@@ -38,8 +38,9 @@ const tts = (text, previous, next) =>
       text,
       model_id: modelId,
       voice_settings: script.voice_settings,
-      previous_text: previous || undefined,
-      next_text: next || undefined,
+      // request stitching is not available on Eleven v3
+      previous_text: (!modelId.startsWith('eleven_v3') && previous) || undefined,
+      next_text: (!modelId.startsWith('eleven_v3') && next) || undefined,
     });
     const req = https.request(
       {
