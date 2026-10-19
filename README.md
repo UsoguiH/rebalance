@@ -107,3 +107,7 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+## Motion study: `reel/`
+
+`reel/index.html` is a standalone 27.4-second kinetic-type product reel for a placeholder brand, Onelight. It is drawn live on a `<canvas>` at 1920 × 994 and 30 fps. The player has scrubbing, frame stepping (← →) and a chip for each scene. The cuts, holds, easing and camera moves are timed against a reference screen recording. All the copy, buttons, generated images and the mark are new placeholders.
