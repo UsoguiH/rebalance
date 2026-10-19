@@ -1,0 +1,40 @@
+{
+  "duration": 26.6,
+  "voice": {
+    "take": "take.mp3",
+    "note": "One ElevenLabs take (voice: Hope, Eleven v3), cut at its pauses. from/to bound the speech in the take; at is when that speech starts in the piece, on the original's beats.",
+    "segments": [
+      { "text": "Your team's work is everywhere.", "from": 0.1, "to": 2.33, "at": 0.41 },
+      { "text": "But", "from": 2.68, "to": 3.08, "at": 7.47 },
+      { "text": "what if one board could actually save your sprint?", "from": 3.8, "to": 6.93, "at": 8.71 },
+      { "text": "No more chasing updates,", "from": 7.25, "to": 8.7, "at": 12.85 },
+      { "text": "no more pointless meetings.", "from": 8.83, "to": 10.7, "at": 15.15 },
+      { "text": "Plan once", "from": 11.02, "to": 11.83, "at": 17.15 },
+      { "text": "and ship.", "from": 12.02, "to": 12.72, "at": 18.04 },
+      { "text": "Boards,", "from": 13.07, "to": 13.67, "at": 18.85 },
+      { "text": "timelines,", "from": 13.86, "to": 14.57, "at": 19.55 },
+      { "text": "automation reports.", "from": 14.7, "to": 16.26, "at": 20.32 },
+      { "text": "Pure focus.", "from": 16.62, "to": 17.77, "at": 22.0 },
+      { "text": "Your whole team", "from": 18.16, "to": 19.07, "at": 23.25 },
+      { "text": "in one place.", "from": 19.34, "to": 20.33, "at": 24.3 },
+      { "text": "Jira.", "from": 20.79, "to": 21.24, "at": 25.73 }
+    ],
+    "lufs": -16
+  },
+  "music": {
+    "file": "music/the-corporate-upbeat.mp3",
+    "title": "The Corporate Upbeat",
+    "artist": "Soundrider/Dope",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0/",
+    "source": "https://www.jamendo.com/track/1670594",
+    "note": "Back-timed so the track's own stop ending (118.25s) lands as 'Jira.' is spoken; low-passed under 'But...' and opened up on the Jira reveal.",
+    "anchor": { "track": 118.25, "at": 25.72 },
+    "dip": [7.613, 9.904],
+    "fade_in": 0.3,
+    "fade_out": [26.05, 26.6],
+    "lufs": -20,
+    "duck": { "threshold": 0.05, "ratio": 4.5, "attack_ms": 25, "release_ms": 450 }
+  },
+  "master": { "lufs": -14, "true_peak": -1 }
+}

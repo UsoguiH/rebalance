@@ -6,7 +6,7 @@ backdrops. Brand logos come from Simple Icons. There is no build step.
 | Piece | Page | Render |
 |---|---|---|
 | **One Button**: a frame-by-frame recreation of a 26-second promo | `index.html` | `renders/one-button.mp4`, plus `renders/side-by-side.mp4` (original on top) |
-| **Jira**: a 27-second promo in the same visual language, with a voiceover script | `jira/index.html` | `renders/jira.mp4` |
+| **Jira**: a 26.6-second promo in the same visual language, with an ElevenLabs voiceover and licensed music | `jira/index.html` | `renders/jira.mp4` |
 
 ## Play
 
@@ -31,7 +31,7 @@ allow sound after a click, so press Play.
 
 ```sh
 node motion/tools/render.js --mp4 out.mp4                                  # One Button
-node motion/tools/render.js --page jira/index.html --audio motion/jira/audio/vo.mp3 --mp4 jira.mp4
+node motion/tools/render.js --page jira/index.html --audio motion/jira/audio/soundtrack.mp3 --mp4 jira.mp4
 node motion/tools/render.js --out frames --from 8 --to 10                  # a range, as PNGs
 node motion/tools/render.js --out frames --times 1.9,3.2                   # single frames
 ```
@@ -51,24 +51,32 @@ Pieces draw a mark with `M.icon(ctx, slug, x, y, size, color?)`. The marks are
 trademarks of their owners. Some brands asked Simple Icons to remove their logos
 (Slack, OpenAI, Microsoft and others), so those are still drawn by hand.
 
-## Voiceover (ElevenLabs)
+## Soundtrack (voiceover and music)
 
 The Jira script lives in `jira/voice/script.json`. It mirrors the original's narration
 beat for beat: the same silences (none over the montage), the same pauses, and
-the same rise and fall. Each line's cue is the original's word timing, and the delivery
-is marked with Eleven v3 audio tags (`[curious]`, `[softly]`, …). The original is
-narrated by a soft voice at around 200 Hz, so the default voice is Sarah. To voice it:
+the same rise and fall. It is tagged for Eleven v3 (`[curious]`, `[softly]`, …).
+
+The voice was recorded as one ElevenLabs take (`jira/audio/take.mp3`). `tools/mix.js`
+builds the soundtrack from it, following `jira/audio/mix.json`:
+
+- **Voice:** each phrase is cut from the take at its pauses and placed on its beat
+  (`segments`: where it sits in the take, and when it starts in the piece).
+- **Music:** "The Corporate Upbeat" by Soundrider/Dope (CC BY 3.0, see
+  `jira/audio/CREDITS.md`). It is back-timed so the track's own stop ending lands as
+  "Jira." is spoken, low-passed under "But…", opened up on the Jira reveal, and
+  ducked under the voice.
+- **Master:** both stems are measured (EBU R128) and gained to their targets, then
+  mastered to -14 LUFS with a -1 dBTP limiter.
 
 ```sh
-ELEVENLABS_API_KEY=... node motion/tools/voice.js --piece motion/jira
-# options: --voice <voice_id>   --model <model_id>   --force
+node motion/tools/mix.js --piece motion/jira     # writes jira/audio/vo.mp3 and soundtrack.mp3
+node motion/tools/render.js --page jira/index.html --audio motion/jira/audio/soundtrack.mp3 --mp4 jira.mp4
 ```
 
-The tool voices each line through the ElevenLabs API and mixes the lines at their
-cue times into `jira/audio/vo.mp3`, loudness-normalised. It also warns about any line that
-runs past its slot. Lines are cached, so editing one line only re-voices that line.
-After that, the player plays the voiceover, and re-running the render command
-above muxes it into the MP4.
+To re-voice the script through the API instead, run
+`ELEVENLABS_API_KEY=... node motion/tools/voice.js --piece motion/jira`. It voices
+each line, caches it, and mixes the lines to their cue times as `jira/audio/vo.mp3`.
 
 ## How One Button was matched
 
@@ -104,11 +112,13 @@ collage photos) are painted procedurally as stand-ins.
 | `js/scenes-c.js` | One Button: "unnecessary costs" arch, "Pay once", Video/Voice, Image/Motion/Creation, end card |
 | `js/main.js` | One Button: master timeline and letterbox curve |
 | `jira/js/art.js` | Jira: sky plate, app tiles, the Jira tile, the board UI kit, clutter props |
-| `jira/js/scenes-a.js` | Jira: "Your team's work is everywhere", the clutter montage, "But…" into the caret line |
-| `jira/js/scenes-b.js` | Jira: "Meet Jira" and the live board, "No more chasing updates", the "From backlog… to launch" arch |
-| `jira/js/scenes-c.js` | Jira: "Plan once, Ship faster", Boards to Timeline, Automation to "All connected", end card |
+| `jira/js/scenes-a.js` | Jira: "Your team's work is everywhere", the clutter montage, "But…" into "what if one board" |
+| `jira/js/scenes-b.js` | Jira: "Meet Jira" and the live board, "No more chasing updates", the "No more pointless meetings" arch |
+| `jira/js/scenes-c.js` | Jira: "Plan once, And ship (:", Boards to Timeline, Automation to "Reports" and "Pure focus.", end card |
 | `jira/js/main.js` | Jira: master timeline, letterbox curve, soundtrack |
-| `jira/voice/script.json` | Jira voiceover lines and their cue times |
+| `jira/voice/script.json` | Jira voiceover script, with Eleven v3 tags and cue times |
+| `jira/audio/mix.json` | Jira soundtrack: where each voice phrase lands, music timing, levels |
 | `tools/render.js` | Headless frame renderer and MP4 export (with optional soundtrack) |
 | `tools/icons.js` | Regenerates `js/icons.js` from Simple Icons |
 | `tools/voice.js` | Voices a script with ElevenLabs and mixes it to the timeline |
+| `tools/mix.js` | Builds the soundtrack: cuts and places the voice, back-times and ducks the music, masters |

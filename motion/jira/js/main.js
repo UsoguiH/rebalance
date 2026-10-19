@@ -4,8 +4,8 @@
   const S = M.scenes;
   const { W, H } = M;
   M.DURATION = 26.6;
-  // ElevenLabs voiceover, made by tools/voice.js; the piece plays silently without it
-  M.AUDIO = 'audio/vo.mp3';
+  // voiceover + music, made by tools/mix.js; the piece plays silently without it
+  M.AUDIO = 'audio/soundtrack.mp3';
   M.EXTRA_FONTS = ['700 40px Caveat', '600 40px Caveat'];
 
   // [start, scene, timing] in seconds, on the original's scene boundaries so the

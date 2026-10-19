@@ -12,9 +12,9 @@
   const WORDS = [
     { s: 'Plan', t0: 17.27, w: 500, col: C.ink },
     { s: 'once,', t0: 17.33, w: 500, col: C.ink },
-    { s: 'And', t0: 17.86, w: 800, col: C.blue, up: 1 },
-    { s: 'ship', t0: 17.95, w: 800, col: C.blue, up: 1 },
-    { s: '(:', t0: 18.02, w: 800, col: C.blue, up: 1 },
+    { s: 'And', t0: 18.14, w: 800, col: C.blue, up: 1 },
+    { s: 'ship', t0: 18.27, w: 800, col: C.blue, up: 1 },
+    { s: '(:', t0: 18.38, w: 800, col: C.blue, up: 1 },
   ];
   const layout = (c) => {
     if (WORDS[0].dx !== undefined) return;
@@ -320,14 +320,14 @@
     M.fillRR(c, CARD.x, CARD.y, CARD.w, CARD.h, 26, C.ink);
     c.restore();
     J.jiraTile(c, CARD.x + 80, CARD.y + 80, 84, { flat: true });
-    const sw = M.prog(t, 21.62, 21.8);
+    const sw = M.prog(t, 22.03, 22.2);
     if (sw < 1) M.blurWord(c, 'Reports', CARD.x + CARD.w / 2, CARD.y + 220, 1 - sw, { size: 112, weight: 800, color: '#ffffff', align: 'center', blurFrom: 12, track: -0.02 });
     if (sw > 0) {
       M.blurWord(c, 'Pure', CARD.x + 52, CARD.y + 205, sw, { size: 60, weight: 500, color: C.blue3, blurFrom: 10 });
       M.blurWord(c, 'focus.', CARD.x + 50, CARD.y + 290, sw, { size: 112, weight: 800, color: '#ffffff', blurFrom: 12, track: -0.02 });
     }
     c.restore();
-    const wo = M.prog(t, 22.35, 23.1);
+    const wo = M.prog(t, 22.7, 23.15);
     if (wo > 0) {
       c.fillStyle = `rgba(233,235,238,${M.ease.inOutQuad(wo)})`;
       c.fillRect(0, 0, W, H);
@@ -336,12 +336,12 @@
 
   // ---------------------------------------------------------------- end card
   const TAG = [
-    { s: 'Your', t0: 23.15 },
-    { s: 'whole', t0: 23.33 },
-    { s: 'team,', t0: 23.55 },
-    { s: 'in', t0: 23.85 },
-    { s: 'one', t0: 24.05 },
-    { s: 'place.', t0: 24.35, weight: 800, blue: true },
+    { s: 'Your', t0: 23.25 },
+    { s: 'whole', t0: 23.38 },
+    { s: 'team,', t0: 23.66 },
+    { s: 'in', t0: 24.3 },
+    { s: 'one', t0: 24.43 },
+    { s: 'place.', t0: 24.66, weight: 800, blue: true },
   ];
   S.end = (c, t) => {
     const v = M.key(t, [[25.6, 233], [25.75, 128, 'inQuad'], [25.86, 42, 'linear'], [26.0, 17, 'outQuad'], [26.27, 0, 'outQuad']]);
