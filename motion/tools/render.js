@@ -1,8 +1,10 @@
-// Renders the piece offline, frame by frame, in headless Chromium.
+// Renders a piece offline, frame by frame, in headless Chromium.
 //   node motion/tools/render.js --mp4 out.mp4            whole piece, 30 fps, 1080p
 //   node motion/tools/render.js --out frames --times 1.2,3.4
 //   node motion/tools/render.js --out frames --from 8 --to 10 --fps 30
-// --mp4 needs ffmpeg on the PATH.
+//   node motion/tools/render.js --page jira/index.html --audio motion/jira/audio/vo.mp3 --mp4 jira.mp4
+// --page picks the piece (default index.html, relative to motion/); --audio
+// muxes a soundtrack into the MP4. --mp4 needs ffmpeg on the PATH.
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -26,7 +28,7 @@ for (let i = 2; i < process.argv.length; i++) {
 
 (async () => {
   const root = path.join(__dirname, '..');
-  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png' };
+  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.mp3': 'audio/mpeg', '.json': 'application/json' };
   const server = http.createServer((req, res) => {
     const file = path.join(root, decodeURIComponent(req.url.split('?')[0]));
     if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
@@ -44,7 +46,8 @@ for (let i = 2; i < process.argv.length; i++) {
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   page.on('pageerror', (e) => console.error('PAGE ERROR', e.message));
   page.on('console', (m) => m.type() === 'error' && console.error('console:', m.text()));
-  await page.goto(`http://127.0.0.1:${port}/index.html?render`);
+  const pagePath = String(args.page || 'index.html').replace(/^\/+/, '');
+  await page.goto(`http://127.0.0.1:${port}/${pagePath}?render`);
   await page.waitForFunction(() => window.motionReady, null, { timeout: 30000 });
 
   const fps = parseFloat(args.fps || '30');
@@ -78,9 +81,16 @@ for (let i = 2; i < process.argv.length; i++) {
   server.close();
 
   if (args.mp4) {
+    const audio = args.audio && fs.existsSync(path.resolve(args.audio)) ? ['-i', path.resolve(args.audio)] : [];
+    if (args.audio && !audio.length) console.warn('no soundtrack at', args.audio, '- rendering silent');
     const r = spawnSync(
       'ffmpeg',
-      ['-y', '-v', 'error', '-framerate', String(fps), '-i', path.join(out, `f%04d.${ext}`), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18', path.resolve(args.mp4)],
+      [
+        '-y', '-v', 'error', '-framerate', String(fps), '-i', path.join(out, `f%04d.${ext}`), ...audio,
+        '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '18',
+        ...(audio.length ? ['-c:a', 'aac', '-b:a', '192k', '-af', 'apad', '-shortest'] : []),
+        path.resolve(args.mp4),
+      ],
       { stdio: 'inherit' }
     );
     if (r.status === 0) console.log('wrote', path.resolve(args.mp4));

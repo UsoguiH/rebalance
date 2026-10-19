@@ -1,0 +1,21 @@
+{
+  "voice_id": "nPczCjzI2devNBz1zQrb",
+  "voice_name": "Brian",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": { "stability": 0.4, "similarity_boost": 0.8, "style": 0.35, "use_speaker_boost": true },
+  "duration": 27.0,
+  "lines": [
+    { "t": 0.3, "text": "Your team's work is everywhere." },
+    { "t": 3.55, "text": "Sticky notes. Spreadsheets. Endless threads asking..." },
+    { "t": 6.15, "text": "any update?" },
+    { "t": 7.7, "text": "But... what if every task had one home?" },
+    { "t": 10.35, "text": "Meet Jira." },
+    { "t": 11.4, "text": "Plan it. Track it. Ship it." },
+    { "t": 13.65, "text": "No more chasing updates." },
+    { "t": 15.45, "text": "From backlog... to launch." },
+    { "t": 17.35, "text": "Plan once. Ship faster." },
+    { "t": 19.0, "text": "Boards. Timelines." },
+    { "t": 20.35, "text": "Automation. All connected." },
+    { "t": 23.55, "text": "Jira. Your whole team, in one place." }
+  ]
+}

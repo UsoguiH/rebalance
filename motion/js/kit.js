@@ -226,6 +226,22 @@
     M.withLayer(c, (l) => M.text(l, s, x, y, Object.assign({}, o, { alpha: 1 })), { blur, alpha: a * (o.alpha ?? 1) });
   };
 
+  // ---------- brand icons ----------
+  // draws a Simple Icons mark (see js/icons.js) centred on (x, y), fitting a box of size s
+  const iconPaths = {};
+  M.icon = (c, slug, x, y, s, color) => {
+    const ic = M.ICONS && M.ICONS[slug];
+    if (!ic) return false;
+    if (!iconPaths[slug]) iconPaths[slug] = new Path2D(ic.path);
+    c.save();
+    c.translate(x - s / 2, y - s / 2);
+    c.scale(s / 24, s / 24);
+    c.fillStyle = color || '#' + ic.hex;
+    c.fill(iconPaths[slug]);
+    c.restore();
+    return true;
+  };
+
   // ---------- cursor ----------
   // The macOS pointing-hand cursor: white glove, black outline, knuckle lines.
   // (x, y) is the fingertip. s is the scale (1 = 64px tall), press 0..1 squashes it.

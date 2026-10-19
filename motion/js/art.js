@@ -744,7 +744,10 @@
 
   // ---------- glyphs drawn inside the buttons ----------
   // each glyph is centred on (x, y) and fits roughly in a box of size s
+  // brands with a real mark in js/icons.js use it; the rest are drawn below
+  const REAL = { apple: 'apple', claude: 'claude', gemini: 'googlegemini', perplexity: 'perplexity' };
   A.glyph = (c, kind, x, y, s, color) => {
+    if (REAL[kind] && M.icon(c, REAL[kind], x, y, s * 0.9, color)) return;
     c.save();
     c.translate(x, y);
     c.fillStyle = color;

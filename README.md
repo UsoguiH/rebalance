@@ -108,8 +108,9 @@ Open `tools/viewer.html` (served over http) to play each animation.
 
 Progress saves automatically to `localStorage`.
 
-## Motion recreation
+## Motion pieces
 
-`motion/` holds a separate piece: a frame-by-frame canvas recreation of a
-26-second promo animation, with a player and an offline MP4 renderer. See
-[`motion/README.md`](motion/README.md).
+`motion/` holds two canvas motion pieces, each with a player and an offline MP4
+renderer: a frame-by-frame recreation of a 26-second promo ("One Button") and a
+27-second Jira promo with real brand icons and an ElevenLabs voiceover pipeline.
+See [`motion/README.md`](motion/README.md).
