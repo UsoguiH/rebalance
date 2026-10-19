@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Traveme Onboarding</title>
+<meta name="traveme-lang" content="ar">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,900&family=Cairo:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --sky-0: #0018e6;
@@ -21,7 +22,9 @@
     --ink: #17123a;
     --cta-pink: #f58ad5;
     --stage: #07060d;
+    --ui-font: "Plus Jakarta Sans", system-ui, sans-serif;
   }
+  .screen[dir="rtl"] { --ui-font: "Cairo", "Plus Jakarta Sans", system-ui, sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; background: var(--stage); overflow: hidden; }
   body { display: grid; place-items: center; font-family: "Plus Jakarta Sans", system-ui, sans-serif; }
@@ -49,33 +52,38 @@
 
   /* iOS chrome */
   .island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #000; z-index: 6; }
-  .status { position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 5; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 46px; font: 600 16px/1 -apple-system, "SF Pro Text", "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -.2px; }
+  .status { position: absolute; top: 0; left: 0; right: 0; height: 54px; z-index: 5; display: flex; align-items: center; justify-content: space-between; padding-block: 6px 0; padding-inline: 46px 30px; font: 600 16px/1 -apple-system, "SF Pro Text", "Plus Jakarta Sans", system-ui, sans-serif; letter-spacing: -.2px; }
   .status .time { display: flex; align-items: center; gap: 5px; }
   .status .right { display: flex; align-items: center; gap: 6px; }
-  .skip { position: absolute; top: 66px; right: 26px; z-index: 5; background: none; border: 0; color: rgba(255,255,255,.82); font: 500 12px/1 "Plus Jakarta Sans", sans-serif; cursor: pointer; padding: 6px; }
+  .skip { position: absolute; top: 60px; inset-inline-end: 18px; z-index: 5; background: none; border: 0; color: rgba(255,255,255,.88); font: 600 16px/1 var(--ui-font); cursor: pointer; padding: 10px 12px; }
 
   /* Copy */
   .copy { position: absolute; left: 0; right: 0; top: 104px; z-index: 4; text-align: center; pointer-events: none; }
-  .copy h1 { font: 800 33px/1.02 "Plus Jakarta Sans", sans-serif; letter-spacing: -.9px; }
+  .copy h1 { font: 800 33px/1.02 var(--ui-font); letter-spacing: -.9px; }
+  .screen[dir="rtl"] .copy h1 { font-size: 34px; line-height: 1.3; letter-spacing: 0; }
+  .screen[dir="rtl"] .copy p { font-size: 12.5px; line-height: 1.75; letter-spacing: 0; max-width: 300px; margin-top: 10px; }
   .copy h1 span, .copy p { display: block; will-change: filter, opacity, transform; }
-  .copy p { margin: 15px auto 0; max-width: 262px; font: 500 10.5px/1.6 "Plus Jakarta Sans", sans-serif; color: rgba(255,255,255,.78); letter-spacing: -.05px; }
+  .copy p { margin: 15px auto 0; max-width: 262px; font: 500 10.5px/1.6 var(--ui-font); color: rgba(255,255,255,.78); letter-spacing: -.05px; }
 
   /* Bottom bar */
-  .bottom { position: absolute; left: 30px; right: 22px; bottom: 54px; height: 46px; z-index: 5; display: flex; align-items: center; justify-content: space-between; }
-  .dots { position: relative; width: 52px; height: 5px; }
-  .dots i { position: absolute; top: 0; height: 5px; border-radius: 3px; background: #fff; }
+  .bottom { position: absolute; left: 26px; right: 22px; bottom: 50px; height: 60px; z-index: 5; display: flex; align-items: center; justify-content: space-between; }
+  .dots { position: relative; width: 58px; height: 8px; }
+  .dots i { position: absolute; top: 0; height: 8px; border-radius: 4px; background: #fff; }
   .cta {
-    position: relative; height: 44px; width: 92px; border: 0; border-radius: 22px; cursor: pointer; overflow: hidden;
+    position: relative; height: 58px; width: 116px; border: 0; border-radius: 29px; cursor: pointer; overflow: hidden;
     background: rgba(255, 244, 240, .86); color: var(--ink);
     box-shadow: 0 6px 18px rgba(120, 40, 90, .18);
     display: flex; align-items: center; justify-content: center; gap: 7px;
-    font: 600 15px/1 "Plus Jakarta Sans", sans-serif; letter-spacing: -.2px;
+    font: 700 18px/1 var(--ui-font); letter-spacing: -.2px;
   }
+  .cta:focus-visible, .skip:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .screen[dir="rtl"] .cta { letter-spacing: 0; }
+  .screen[dir="rtl"] .cta svg { transform: scaleX(-1); }
   .cta .label { white-space: nowrap; overflow: hidden; display: inline-block; }
   .cta svg { flex: none; }
   .home { position: absolute; bottom: 8px; left: 50%; width: 136px; height: 5px; margin-left: -68px; border-radius: 3px; background: rgba(255,255,255,.0); z-index: 5; }
 
-  .hint { position: fixed; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12px/1.4 "Plus Jakarta Sans", sans-serif; color: rgba(255,255,255,.38); pointer-events: none; }
+  .hint { position: fixed; left: 0; right: 0; bottom: 14px; text-align: center; font: 500 12px/1.4 "Cairo", "Plus Jakarta Sans", sans-serif; color: rgba(255,255,255,.38); pointer-events: none; }
   @media (max-width: 520px) { .hint { display: none; } }
 </style>
 <script type="importmap">
@@ -102,29 +110,29 @@
           <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="#fff" stroke-opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.4" fill="#fff"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" fill="#fff" fill-opacity=".45"/></svg>
         </span>
       </div>
-      <button class="skip" id="skip" type="button">Skip</button>
+      <button class="skip" id="skip" type="button" data-str="skip">Skip</button>
 
       <div class="copy" id="copy0">
-        <h1><span>Welcome to</span><span>Traveme!</span></h1>
-        <p>Plan smarter, discover better, and make every trip worth remembering.</p>
+        <h1><span data-str="t0a">Welcome to</span><span data-str="t0b">Traveme!</span></h1>
+        <p data-str="p0">Plan smarter, discover better, and make every trip worth remembering.</p>
       </div>
       <div class="copy" id="copy1">
-        <h1><span>Pack The</span><span>Possibility</span></h1>
-        <p>From places to stay to things to do, keep every part of your journey organized in one place.</p>
+        <h1><span data-str="t1a">Pack The</span><span data-str="t1b">Possibility</span></h1>
+        <p data-str="p1">From places to stay to things to do, keep every part of your journey organized in one place.</p>
       </div>
 
       <div class="bottom">
         <div class="dots" id="dots"><i></i><i></i><i></i></div>
         <button class="cta" id="cta" type="button" aria-label="Next">
-          <span class="label" id="ctaLabel">Get started</span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg>
+          <span class="label" id="ctaLabel" data-str="cta">Get started</span>
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg>
         </button>
       </div>
       <div class="home"></div>
     </div>
   </div>
 </div>
-<div class="hint">Tap the arrow to advance · Skip jumps to the end · it also plays on its own</div>
+<div class="hint" data-str="hint">Tap the arrow to advance · Skip jumps to the end · it also plays on its own</div>
 
 <script type="module">
 import * as THREE from 'three';
@@ -132,6 +140,27 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
 const W = 393, H = 852;
 const params = new URLSearchParams(location.search);
+
+/* ---------- language ----------
+   Arabic is the default; ?lang=en gives the original English. In Arabic the whole
+   screen is mirrored: chrome, 3D scene and the paths the text winds along. */
+const LANG = params.get('lang') || document.querySelector('meta[name="traveme-lang"]')?.content || 'ar';
+const AR = LANG === 'ar';
+const STR = {
+  en: {
+    skip: 'Skip', t0a: 'Welcome to', t0b: 'Traveme!', p0: 'Plan smarter, discover better, and make every trip worth remembering.',
+    t1a: 'Pack The', t1b: 'Possibility', p1: 'From places to stay to things to do, keep every part of your journey organized in one place.',
+    cta: 'Get started', next: 'Next', hint: 'Tap the arrow to advance · Skip jumps to the end · it also plays on its own',
+  },
+  ar: {
+    skip: 'تخطّي', t0a: 'مرحبًا بك في', t0b: 'ترافمي!', p0: 'خطّط بذكاء، واكتشف أكثر، واجعل كل رحلة ذكرى لا تُنسى.',
+    t1a: 'احزم', t1b: 'كل الإمكانيات', p1: 'من أماكن الإقامة إلى الأنشطة، نظّم كل تفاصيل رحلتك في مكان واحد.',
+    cta: 'ابدأ الآن', next: 'التالي', hint: 'اضغط السهم للمتابعة · «تخطّي» ينقلك إلى النهاية · ويعمل تلقائيًا أيضًا',
+  },
+}[AR ? 'ar' : 'en'];
+const screenEl = document.getElementById('screen');
+if (AR) { screenEl.setAttribute('dir', 'rtl'); screenEl.setAttribute('lang', 'ar'); document.querySelector('.hint').setAttribute('dir', 'rtl'); }
+document.querySelectorAll('[data-str]').forEach(el => { el.textContent = STR[el.dataset.str]; });
 
 /* ---------- fit the phone to the viewport ---------- */
 const device = document.getElementById('device');
@@ -449,9 +478,14 @@ function buildItems(g) {
   book.scale.multiplyScalar(0.7);
 }
 
+/* Everything except the text ribbons lives in `world`, which is mirrored for Arabic. */
+const world = new THREE.Group();
+if (AR) world.scale.x = -1;
+scene.add(world);
+
 /* ---------- the hero suitcase ---------- */
 const hero = buildSuitcase({ items: true });
-scene.add(hero.root);
+world.add(hero.root);
 
 /* ---------- slide three: baggage carousel, scanner and the other bags ----------
    The belt is a U in its local XZ plane: a front arm along z = +r, a half-circle
@@ -460,7 +494,7 @@ scene.add(hero.root);
 const BELT = { r: 1.6, width: 1.7, front: 6.5, back: 6.5, heroAt: 0 };
 BELT.heroAt = BELT.front + Math.PI * BELT.r + 1.3;   // on the left-hand arm, just past the bend
 const belt = new THREE.Group();
-scene.add(belt);
+world.add(belt);
 function beltAt(d) {
   const { r, front, back } = BELT, bend = Math.PI * r;
   if (d <= front) return { p: new THREE.Vector3(front - d, 0, r), t: new THREE.Vector3(-1, 0, 0) };
@@ -560,6 +594,33 @@ function textCanvas(text, px, stretch, gapAt = -1, gapPx = 0) {
   return { canvas: c, centers };
 }
 
+/* Arabic: words are laid out one by one, right to left, so we know where each word
+   sits on the canvas (prefix measuring does not work with joined, bidi text).
+   `gapBefore` = [wordIndex, px] widens the space in front of that word. */
+const FONT_AR = '"Cairo"';
+function wordsCanvas(words, px, gapBefore = null) {
+  const c = document.createElement('canvas');
+  const g = c.getContext('2d');
+  const setFont = () => { g.font = `900 ${px}px ${FONT_AR}`; g.direction = 'rtl'; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; };
+  setFont();
+  const pad = 10, space = g.measureText(' ').width;
+  const widths = words.map(w => g.measureText(w).width);
+  const gap = i => (gapBefore && gapBefore[0] === i ? gapBefore[1] : 0);
+  // visual order is the reverse of reading order; x runs left to right
+  const left = [];
+  let x = pad;
+  for (let i = words.length - 1; i >= 0; i--) {
+    left[i] = x;
+    x += widths[i] + (i > 0 ? space + gap(i) : 0);   // the space before word i in reading order
+  }
+  c.width = Math.ceil(x + pad); c.height = Math.ceil(px * 1.3);
+  setFont();
+  g.fillStyle = '#ffffff';
+  words.forEach((w, i) => g.fillText(w, left[i], Math.round(px * 0.9)));
+  const centers = words.map((w, i) => left[i] + widths[i] / 2);
+  return { canvas: c, centers, widths };
+}
+
 /* Text printed on a ribbon that follows a 3D path. `sample(d)` returns the point,
    unit tangent and outward normal at distance d (world units) along the path from
    the anchor character's centre. The ribbon extends past both ends of the text so
@@ -626,18 +687,18 @@ class RibbonText {
 }
 
 // The ribbons are drawn into canvases, so the display face has to be ready first.
-await Promise.race([document.fonts.load(`900 220px ${FONT}`), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
+await Promise.race([Promise.all([document.fonts.load(`900 220px ${FONT}`), document.fonts.load(`900 220px ${FONT_AR}`, 'سافر')]), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
 
 const CAP_EM = 0.72;   // cap height of the display face, in ems
 
 /* Helix: `anchor` = [charA, charB, angle]. The radius is solved so char B lands
    `angle` radians further round than char A; char A sits at the front, height 0. */
-function helixText({ text, pitch, cap, anchor, stretch = 'normal', ...rest }) {
+function helixText({ text, words = null, pitch, cap, anchor, stretch = 'normal', ...rest }) {
   const px = 220;
-  const { canvas, centers } = textCanvas(text, px, stretch);
+  const { canvas, centers } = words ? wordsCanvas(words, px) : textCanvas(text, px, stretch);
   const u2w = cap / CAP_EM / px;
   const [ia, ib, ang] = anchor;
-  const k = pitch / (Math.PI * 2);
+  const k = pitch / (Math.PI * 2);   // a negative pitch climbs as the text runs left to right
   const perRad = (centers[ib] - centers[ia]) * u2w / ang;
   const R = Math.sqrt(Math.max(0.09, perRad * perRad - k * k));
   const sample = d => {
@@ -688,11 +749,46 @@ function pathText({ text, points, pa, pb, ca, cb, rejoin = null, center, lean = 
   return r;
 }
 
+/* Two Arabic words on a free path: the first word fills the stretch between
+   points[first[0]] and points[first[1]], the second is centred on points[second]
+   and the space between them is widened to fit. */
+function arabicPathText({ words, points, first, second, center, lean, ...rest }) {
+  const px = 220;
+  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+  const N = 3000, pts = curve.getSpacedPoints(N), total = curve.getLength();
+  const arcOf = q => { let bi = 0, bd = Infinity; pts.forEach((v, i) => { const d = v.distanceToSquared(q); if (d < bd) { bd = d; bi = i; } }); return bi / N * total; };
+  const a0 = arcOf(points[first[0]]), a1 = arcOf(points[first[1]]), a2 = arcOf(points[second]);
+  let info = wordsCanvas(words, px);
+  const u2w = Math.abs(a1 - a0) * 0.95 / info.widths[0];
+  const firstMid = (a0 + a1) / 2;
+  const gap = (firstMid - a2) / u2w - (info.centers[0] - info.centers[1]);
+  info = wordsCanvas(words, px, [1, Math.max(0, gap)]);
+  const fwd = new THREE.Vector3(0, 0, 1);
+  const sample = d => {
+    let a = firstMid + d, over = 0;
+    if (a < 0) { over = a; a = 0; } else if (a > total) { over = a - total; a = total; }
+    const u = a / total;
+    const t = curve.getTangentAt(u).normalize();
+    const p = curve.getPointAt(u).addScaledVector(t, over);
+    const radial = new THREE.Vector3(p.x - center.x, 0, p.z - center.z).normalize();
+    const n = radial.multiplyScalar(lean).addScaledVector(fwd, 1 - lean).normalize();
+    n.addScaledVector(t, -n.dot(t)).normalize();
+    return { p, t, n };
+  };
+  const r = new RibbonText({ u2w, anchorChar: 0, sample, canvas: info.canvas, centers: info.centers, ...rest });
+  r.cap = u2w * px * CAP_EM;
+  return r;
+}
+
 // TRAVEL sits on the front, LIKE NE runs across the back, NEVER drops down the
 // left silhouette and BEFORE comes round to the front one turn lower.
-const ring1 = helixText({ text: 'TRAVEL LIKE NEVER BEFORE', pitch: 2.95, cap: 0.45, anchor: [2, 20, Math.PI * 2], extraBefore: 16, extraAfter: 16, depthTest: false, stretch: 'expanded' });
-ring1.group.position.set(0.12, 0.98, 0);
-ring1.group.rotation.set(0.0, 0, 0.1);
+// In Arabic the first word sits at the top front and the line winds down to the
+// left, the mirror image of the English helix.
+const ring1 = AR
+  ? helixText({ words: ['سافر', 'كما', 'لم', 'تسافر', 'من', 'قبل'], pitch: -2.7, cap: 0.5, anchor: [0, 5, -Math.PI * 1.7], extraBefore: 16, extraAfter: 16, depthTest: false })
+  : helixText({ text: 'TRAVEL LIKE NEVER BEFORE', pitch: 2.95, cap: 0.45, anchor: [2, 20, Math.PI * 2], extraBefore: 16, extraAfter: 16, depthTest: false, stretch: 'expanded' });
+ring1.group.position.set(AR ? -0.12 : 0.12, 0.98, 0);
+ring1.group.rotation.set(0.0, 0, AR ? -0.1 : 0.1);
 scene.add(ring1.group);
 
 // Slide three's line is traced from the reference: LET'S climbs across the top,
@@ -707,8 +803,14 @@ const R3_POINTS = [
   scr(150, 348, 0.3), scr(122, 398, 1.1), scr(172, 488, 1.25), scr(222, 582, 1.3),
   scr(282, 646, 1.3), scr(352, 610, 1.3), scr(402, 530, 1.2), scr(470, 430, 1.0), scr(560, 330, 0.8),
 ];
-const ring3 = pathText({ text: "LET\u2019S GET READY!", points: R3_POINTS, pa: 2, pb: 4, ca: 0, cb: 4, rejoin: [11, 10], center: scr(250, 400, 0), lean: 0.12, extraBefore: 18, extraAfter: 18, depthTest: false, stretch: 'semi-condensed',
-  alphaAt: p => clamp01((p.z + 0.25) / 0.35) });
+const ring3 = AR
+  ? arabicPathText({ words: ['لنستعد', 'للانطلاق!'],
+      // mirrored and reversed, so the line starts at the top right and reads right to left
+      points: R3_POINTS.map(v => new THREE.Vector3(-v.x, v.y, v.z)).reverse(),
+      first: [14, 16], second: 5, center: scr(393 - 250, 400, 0), lean: 0.12, extraBefore: 18, extraAfter: 18, depthTest: false,
+      alphaAt: p => clamp01((p.z + 0.25) / 0.35) })
+  : pathText({ text: "LET\u2019S GET READY!", points: R3_POINTS, pa: 2, pb: 4, ca: 0, cb: 4, rejoin: [11, 10], center: scr(250, 400, 0), lean: 0.12, extraBefore: 18, extraAfter: 18, depthTest: false, stretch: 'semi-condensed',
+      alphaAt: p => clamp01((p.z + 0.25) / 0.35) });
 scene.add(ring3.group);
 
 /* ---------- DOM ---------- */
@@ -727,26 +829,27 @@ function copyState(i, line1, line2, para) {
   setBlurIn(a, line1); setBlurIn(b, line2); setBlurIn(copies[i].querySelector('p'), para, 5, 6);
 }
 function setDots(pos) {
-  // pos is the (fractional) active index; active pill is 22px, idle dots 5px, gap 4px
+  // pos is the (fractional) active index; active pill is 30px, idle dots 8px, gap 6px.
+  // Laid out from the reading start: the left in English, the right in Arabic.
   let x = 0;
   dots.forEach((d, i) => {
-    const w = 5 + 17 * Math.max(0, 1 - Math.abs(pos - i));
-    d.style.left = x + 'px'; d.style.width = w + 'px';
+    const w = 8 + 22 * Math.max(0, 1 - Math.abs(pos - i));
+    d.style[AR ? 'right' : 'left'] = x + 'px'; d.style.width = w + 'px';
     d.style.opacity = (0.45 + 0.55 * Math.max(0, 1 - Math.abs(pos - i))).toFixed(3);
-    x += w + 4;
+    x += w + 6;
   });
 }
 function setCta(m) {
   // m: 0 = round arrow chip, 1 = pink "Get started" pill
-  cta.style.width = lerp(92, 150, eInOut(m)) + 'px';
+  cta.style.width = lerp(116, AR ? 168 : 184, eInOut(m)) + 'px';
   const c0 = [255, 244, 240, .86], c1 = [245, 138, 213, 1];
   const c = c0.map((v, i) => lerp(v, c1[i], m));
   cta.style.background = `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${c[3].toFixed(3)})`;
-  ctaLabel.style.maxWidth = lerp(0, 90, eInOut(m)) + 'px';
+  ctaLabel.style.maxWidth = lerp(0, 120, eInOut(m)) + 'px';
   ctaLabel.style.opacity = seg(m, .35, 1).toFixed(3);
   ctaLabel.style.filter = m >= 1 ? 'none' : `blur(${((1 - seg(m, .3, 1)) * 4).toFixed(2)}px)`;
-  cta.style.gap = lerp(0, 7, m) + 'px';
-  cta.setAttribute('aria-label', m > .5 ? 'Get started' : 'Next');
+  cta.style.gap = lerp(0, 9, m) + 'px';
+  cta.setAttribute('aria-label', m > .5 ? STR.cta : STR.next);
 }
 
 /* ---------- poses ---------- */

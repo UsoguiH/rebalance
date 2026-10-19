@@ -23,8 +23,12 @@ npx http-server -p 8080   # from the repo root, then open http://localhost:8080/
 It autoplays with the same timing as the recording and loops. Tap the arrow to advance,
 **Skip** to jump to the last slide, and **Get started** to replay.
 
+It opens in Arabic, with the whole screen mirrored for right-to-left reading: chrome, 3D
+scene and the paths the text winds along. Add `?lang=en` for the original English.
+
 URL options:
 
+- `?lang=en` — English instead of Arabic.
 - `?auto=0` — no autoplay; advance with the arrow.
 - `?t=<seconds>&auto=0` — render a single deterministic frame of the autoplay timeline
   (used to compare against the reference frames).
