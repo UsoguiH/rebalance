@@ -23,10 +23,11 @@ npx http-server -p 8080   # from the repo root, then open http://localhost:8080/
 It autoplays with the same timing as the recording and loops. Tap the arrow to advance,
 **Skip** to jump to the last slide, and **Get started** to replay.
 
-It opens in Arabic, with the screen and 3D scene mirrored for right-to-left reading. In
-Arabic the display lines sit on two stacked rings that orbit the suitcase (Rubik
-ExtraBold); only the half facing you is drawn, so the words never show mirrored. Add
-`?lang=en` for the original English, with its spiral text.
+It opens in Arabic: the screen chrome is mirrored for right-to-left reading, while the 3D
+scene and the spiral motion are exactly the video's. The Arabic display text (Noto Kufi
+Arabic) is split into short lines placed where the video's words rest: on the front of
+the spiral they are drawn normally, and the line that crosses the back is pre-mirrored so
+it reads correctly through the ribbon. Add `?lang=en` for the original English.
 
 URL options:
 

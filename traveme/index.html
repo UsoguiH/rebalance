@@ -7,7 +7,7 @@
 <meta name="traveme-lang" content="ar">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,900&family=Cairo:wght@500;600;700;800;900&family=Rubik:wght@800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,900&family=Cairo:wght@500;600;700;800;900&family=Noto+Kufi+Arabic:wght@800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --sky-0: #0018e6;
@@ -142,8 +142,8 @@ const W = 393, H = 852;
 const params = new URLSearchParams(location.search);
 
 /* ---------- language ----------
-   Arabic is the default; ?lang=en gives the original English. In Arabic the whole
-   screen is mirrored: chrome, 3D scene and the paths the text winds along. */
+   Arabic is the default; ?lang=en gives the original English. In Arabic the screen
+   chrome is mirrored; the 3D scene and the spiral motion are the same as the video. */
 const LANG = params.get('lang') || document.querySelector('meta[name="traveme-lang"]')?.content || 'ar';
 const AR = LANG === 'ar';
 const STR = {
@@ -478,9 +478,9 @@ function buildItems(g) {
   book.scale.multiplyScalar(0.7);
 }
 
-/* Everything except the text ribbons lives in `world`, which is mirrored for Arabic. */
+/* The 3D scene. It is the same in both languages, so the text spirals keep the
+   video's exact paths; only the screen chrome is mirrored for Arabic. */
 const world = new THREE.Group();
-if (AR) world.scale.x = -1;
 scene.add(world);
 
 /* ---------- the hero suitcase ---------- */
@@ -594,113 +594,42 @@ function textCanvas(text, px, stretch, gapAt = -1, gapPx = 0) {
   return { canvas: c, centers };
 }
 
-/* Arabic: each line runs on a flat ring that orbits the suitcase. Only the half of
-   the ring facing the camera is drawn, and letters fade out as they turn toward the
-   sides, so the text is never seen mirrored or edge-on. The words are repeated round
-   the ring (with a sparkle between repeats) so there is always text passing while the
-   ring spins, and at rest one copy sits centred at the front. */
-const FONT_ORBIT = '"Rubik"';
-class OrbitText {
-  constructor({ text, radius, cap, dir = 1 }) {
-    const px = 150;
-    const u2w = cap / (0.72 * px);                       // canvas px -> world units
-    const c = document.createElement('canvas');
-    const g = c.getContext('2d');
-    const setFont = () => { g.font = `800 ${px}px ${FONT_ORBIT}`; g.direction = 'rtl'; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; };
-    setFont();
-    const tw = g.measureText(text).width;
-    const total = Math.round(2 * Math.PI * radius / u2w);   // the canvas wraps the ring exactly once
-    const repeats = Math.max(2, Math.floor(total / (tw + px * 1.3)));
-    const unit = total / repeats, sep = unit - tw;
-    c.width = total; c.height = Math.ceil(px * 1.45);
-    setFont();
-    const base = Math.round(px * 1.0);
-    const sparkle = (x, y, r) => {
-      g.beginPath();
-      for (let k = 0; k < 8; k++) {
-        const a = k * Math.PI / 4, rr = k % 2 ? r * 0.28 : r;
-        g.lineTo(x + Math.sin(a) * rr, y - Math.cos(a) * rr);
-      }
-      g.closePath(); g.fill();
-    };
-    g.shadowColor = 'rgba(24, 16, 120, 0.5)'; g.shadowBlur = 18; g.shadowOffsetY = 6;
-    g.fillStyle = '#ffffff';
-    for (let k = 0; k < repeats; k++) {
-      g.fillText(text, k * unit + sep / 2, base);
-      const sy = base - px * 0.36;
-      sparkle((k + 1) * unit, sy, px * 0.15);
-      if (k === repeats - 1) sparkle(0, sy, px * 0.15);   // the half that wraps past the seam
-    }
-
-    const tex = new THREE.CanvasTexture(c);
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.anisotropy = 8;
-    const hW = c.height * u2w, segs = 256;
-    const pos = [], nor = [], uv = [], idx = [];
-    for (let i = 0; i <= segs; i++) {
-      const th = i / segs * Math.PI * 2, sx = Math.sin(th), cz = Math.cos(th);
-      for (const y of [-hW / 2, hW / 2]) { pos.push(radius * sx, y, radius * cz); nor.push(sx, 0, cz); uv.push(i / segs, y > 0 ? 1 : 0); }
-      if (i < segs) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    geo.setIndex(idx);
-    // canvas colours are already sRGB, so they are written straight out; the back
-    // half faces away from the camera and fades to nothing
-    this.mat = new THREE.ShaderMaterial({
-      uniforms: { map: { value: tex }, opacity: { value: 1 } },
-      vertexShader: `varying vec2 vUv; varying float vFacing;
-        void main() {
-          vUv = uv;
-          vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          vFacing = dot(normalize(normalMatrix * normal), normalize(-mv.xyz));
-          gl_Position = projectionMatrix * mv;
-        }`,
-      fragmentShader: `uniform sampler2D map; uniform float opacity; varying vec2 vUv; varying float vFacing;
-        void main() {
-          vec4 t = texture2D(map, vUv);
-          gl_FragColor = vec4(t.rgb, t.a * opacity * smoothstep(0.08, 0.45, vFacing));
-        }`,
-      transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide,
-    });
-    this.mesh = new THREE.Mesh(geo, this.mat);
-    this.mesh.renderOrder = 10;
-    // turn the ring so the first copy's centre is at the front (angle 0)
-    this.mesh.rotation.y = -2 * Math.PI * (sep / 2 + tw / 2) / total;
-    this.spin = new THREE.Group();
-    this.spin.add(this.mesh);
-    this.dir = dir;
-  }
-  // off < 0: still arriving (spun back); off > 0: leaving (spun on)
-  update(off, opacity, time) {
-    this.spin.rotation.y = this.dir * off * 0.3 + Math.sin(time * 0.9 + this.dir) * 0.045;
-    this.mat.uniforms.opacity.value = opacity;
-    this.mesh.visible = opacity > 0.002;
-  }
-}
-
-/* Two stacked rings that read top line first. They counter-rotate into place, sway a
-   little at rest, and spin away and sink when the slide changes. */
-class OrbitLines {
-  constructor({ lines, radius, cap, gap }) {
-    this.group = new THREE.Group();   // placement and tilt
-    this.lift = new THREE.Group();    // arrival scale and exit drop
-    this.group.add(this.lift);
-    this.rings = lines.map((text, i) => {
-      const r = new OrbitText({ text, radius, cap, dir: i % 2 ? -1 : 1 });
-      r.spin.position.y = (lines.length - 1) * gap / 2 - i * gap;
-      this.lift.add(r.spin);
-      return r;
-    });
-  }
-  update(off, opacity, dt, time = 0) {
-    this.lift.scale.setScalar(Math.max(0.6, off < 0 ? 1 + off * 0.018 : 1));
-    this.lift.position.y = off > 0 ? -off * 0.12 : 0;
-    // the lower line trails the upper one slightly on the way in
-    this.rings.forEach((r, i) => r.update(off * (1 + i * 0.25), opacity, time));
-  }
+/* Arabic on the video's ribbons. A single long Arabic line cannot simply replace
+   the English: where the ribbon passes behind the suitcase it is seen from inside,
+   so joined letters show mirrored and the words run in reverse. Instead the phrase
+   is split into short lines, each placed where the video has a word at rest:
+   on a front pass it is drawn normally, and on a back pass it is drawn pre-mirrored,
+   so seen through the ribbon it reads the right way round.
+   lines: [{ text, at, back }] with `at` = distance along the ribbon (world units)
+   from the first line's centre. Returns the canvas and each line's centre (px). */
+const FONT_AR = '"Noto Kufi Arabic"';
+function arabicRibbonCanvas(lines, u2w, px) {
+  const c = document.createElement('canvas');
+  const g = c.getContext('2d');
+  const setFont = () => { g.font = `800 ${px}px ${FONT_AR}`; g.direction = 'rtl'; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; };
+  setFont();
+  const m = lines.map(l => g.measureText(l.text));
+  const asc = Math.max(...m.map(x => x.actualBoundingBoxAscent));
+  const desc = Math.max(...m.map(x => x.actualBoundingBoxDescent));
+  const margin = Math.round(px * 0.14), pad = 16;
+  const x0 = pad + m[0].width / 2;
+  const centers = lines.map(l => x0 + l.at / u2w);
+  const last = lines.length - 1;
+  c.width = Math.ceil(centers[last] + m[last].width / 2 + pad);
+  c.height = Math.ceil(asc + desc + margin * 2);
+  setFont();
+  const base = margin + asc;
+  g.shadowColor = 'rgba(28, 18, 110, 0.38)'; g.shadowBlur = 12; g.shadowOffsetY = 4;
+  g.fillStyle = '#ffffff';
+  lines.forEach((l, i) => {
+    const w = m[i].width;
+    if (l.back) {
+      g.save(); g.translate(centers[i], 0); g.scale(-1, 1);
+      g.fillText(l.text, -w / 2, base);
+      g.restore();
+    } else g.fillText(l.text, centers[i] - w / 2, base);
+  });
+  return { canvas: c, centers };
 }
 
 /* Text printed on a ribbon that follows a 3D path. `sample(d)` returns the point,
@@ -769,7 +698,7 @@ class RibbonText {
 }
 
 // The ribbons are drawn into canvases, so the display face has to be ready first.
-await Promise.race([Promise.all([document.fonts.load(`900 220px ${FONT}`), document.fonts.load(`800 150px ${FONT_ORBIT}`, 'سافر')]), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
+await Promise.race([Promise.all([document.fonts.load(`900 220px ${FONT}`), document.fonts.load(`800 200px ${FONT_AR}`, 'سافر')]), new Promise(r => setTimeout(r, 2500))]).catch(() => {});
 
 const CAP_EM = 0.72;   // cap height of the display face, in ems
 
@@ -794,6 +723,58 @@ function helixText({ text, pitch, cap, anchor, stretch = 'normal', ...rest }) {
   const r = new RibbonText({ text, u2w, anchorChar: ia, sample, canvas, centers, ...rest });
   r.radius = R;
   return r;
+}
+
+/* The video's helix, with Arabic lines placed by turn: 0 = front at the top,
+   0.5 = across the back, 1 = front one turn lower. `em` = world size of the font. */
+function helixLines({ lines, R, pitch, em, ...rest }) {
+  const px = 200, u2w = em / px;
+  const k = pitch / (Math.PI * 2), perRad = Math.sqrt(R * R + k * k);
+  const { canvas, centers } = arabicRibbonCanvas(lines.map(l => ({ ...l, at: l.turn * Math.PI * 2 * perRad })), u2w, px);
+  const sample = d => {
+    const th = d / perRad;
+    return {
+      p: new THREE.Vector3(R * Math.sin(th), -k * th, R * Math.cos(th)),
+      t: new THREE.Vector3(R * Math.cos(th), -k, -R * Math.sin(th)).normalize(),
+      n: new THREE.Vector3(Math.sin(th), 0, Math.cos(th)),
+    };
+  };
+  return new RibbonText({ u2w, anchorChar: 0, sample, canvas, centers, ...rest });
+}
+
+/* Arc-length sampler along a free path (see pathText). */
+function pathSampler(points, center, lean) {
+  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+  const N = 3000, pts = curve.getSpacedPoints(N), total = curve.getLength();
+  const arcOf = q => { let bi = 0, bd = Infinity; pts.forEach((v, i) => { const d = v.distanceToSquared(q); if (d < bd) { bd = d; bi = i; } }); return bi / N * total; };
+  const fwd = new THREE.Vector3(0, 0, 1);
+  const at = (arcA, d) => {
+    let a = arcA + d, over = 0;
+    if (a < 0) { over = a; a = 0; } else if (a > total) { over = a - total; a = total; }
+    const u = a / total;
+    const t = curve.getTangentAt(u).normalize();
+    const p = curve.getPointAt(u).addScaledVector(t, over);
+    const radial = new THREE.Vector3(p.x - center.x, 0, p.z - center.z).normalize();
+    const n = radial.multiplyScalar(lean).addScaledVector(fwd, 1 - lean).normalize();
+    n.addScaledVector(t, -n.dot(t)).normalize();   // keep the normal perpendicular to the tangent
+    return { p, t, n };
+  };
+  return { arcOf, at };
+}
+
+/* Two Arabic lines on the video's slide-three path: the first fills the stretch
+   between points[span[0]] and points[span[1]] (where LET'S sits), the second is
+   centred on points[second] (where READY sits). */
+function pathLines({ lines, points, span, second, center, lean, ...rest }) {
+  const px = 200;
+  const { arcOf, at } = pathSampler(points, center, lean);
+  const a0 = arcOf(points[span[0]]), a1 = arcOf(points[span[1]]), a2 = arcOf(points[second]);
+  const probe = document.createElement('canvas').getContext('2d');
+  probe.font = `800 ${px}px ${FONT_AR}`; probe.direction = 'rtl';
+  const u2w = (a1 - a0) * 1.15 / probe.measureText(lines[0]).width;
+  const mid = (a0 + a1) / 2;
+  const { canvas, centers } = arabicRibbonCanvas([{ text: lines[0], at: 0 }, { text: lines[1], at: a2 - mid }], u2w, px);
+  return new RibbonText({ u2w, anchorChar: 0, sample: d => at(mid, d), canvas, centers, ...rest });
 }
 
 /* Free path through `points` (world space). Text is sized so that char A's centre
@@ -833,11 +814,16 @@ function pathText({ text, points, pa, pb, ca, cb, rejoin = null, center, lean = 
 
 // TRAVEL sits on the front, LIKE NE runs across the back, NEVER drops down the
 // left silhouette and BEFORE comes round to the front one turn lower.
+// Arabic uses the same helix (radius and pitch as the English solves to): سافر كما on
+// the front where TRAVEL is, لم تسافر across the back where LIKE NE is (pre-mirrored
+// so it reads correctly through the ribbon), من قبل on the front a turn lower where
+// BEFORE is.
 const ring1 = AR
-  ? new OrbitLines({ lines: ['سافر كما لم', 'تسافر من قبل'], radius: 1.75, cap: 0.4, gap: 0.98 })
+  ? helixLines({ lines: [{ text: 'سافر كما', turn: 0 }, { text: 'لم تسافر', turn: 0.5, back: true }, { text: 'من قبل', turn: 1 }],
+      R: 1.28, pitch: 2.95, em: 0.57, extraBefore: 16, extraAfter: 16, depthTest: false })
   : helixText({ text: 'TRAVEL LIKE NEVER BEFORE', pitch: 2.95, cap: 0.45, anchor: [2, 20, Math.PI * 2], extraBefore: 16, extraAfter: 16, depthTest: false, stretch: 'expanded' });
-if (AR) { ring1.group.position.set(-0.02, 0.2, 0); ring1.group.rotation.set(0.3, 0, -0.1); }
-else { ring1.group.position.set(0.12, 0.98, 0); ring1.group.rotation.set(0.0, 0, 0.1); }
+ring1.group.position.set(0.12, 0.98, 0);
+ring1.group.rotation.set(0.0, 0, 0.1);
 scene.add(ring1.group);
 
 // Slide three's line is traced from the reference: LET'S climbs across the top,
@@ -853,10 +839,10 @@ const R3_POINTS = [
   scr(282, 646, 1.3), scr(352, 610, 1.3), scr(402, 530, 1.2), scr(470, 430, 1.0), scr(560, 330, 0.8),
 ];
 const ring3 = AR
-  ? new OrbitLines({ lines: ['لنستعد', 'للانطلاق!'], radius: 1.7, cap: 0.5, gap: 1.12 })
+  ? pathLines({ lines: ['لنستعد', 'للانطلاق!'], points: R3_POINTS, span: [2, 4], second: 12, center: scr(250, 400, 0), lean: 0.12,
+      extraBefore: 18, extraAfter: 18, depthTest: false, alphaAt: p => clamp01((p.z + 0.25) / 0.35) })
   : pathText({ text: "LET\u2019S GET READY!", points: R3_POINTS, pa: 2, pb: 4, ca: 0, cb: 4, rejoin: [11, 10], center: scr(250, 400, 0), lean: 0.12, extraBefore: 18, extraAfter: 18, depthTest: false, stretch: 'semi-condensed',
       alphaAt: p => clamp01((p.z + 0.25) / 0.35) });
-if (AR) { ring3.group.position.set(-0.5, 0.85, 0.2); ring3.group.rotation.set(0.34, 0, 0.08); }
 scene.add(ring3.group);
 
 /* ---------- DOM ---------- */
