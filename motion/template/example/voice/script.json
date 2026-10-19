@@ -1,0 +1,24 @@
+{
+  "voice": {
+    "name": "Hope",
+    "model": "Eleven v3",
+    "settings": "Stability: Natural (50) · Similarity: 75 · Speaker boost: on",
+    "note": "Generate the whole script as one take. Square-bracket words are Eleven v3 audio tags. The ... pauses are where tools/align.py cuts the take into phrases, so keep them."
+  },
+  "phrases": [
+    { "slot": "intro", "text": "[calm] Your team's work is everywhere." },
+    { "slot": "but", "text": "[thoughtful] But..." },
+    { "slot": "whatIf", "text": "[curious] what if one board could actually... save your sprint?" },
+    { "slot": "noMore1", "text": "[confident] No more chasing updates," },
+    { "slot": "noMore2", "text": "[firmly] no more pointless meetings." },
+    { "slot": "once1", "text": "[playful] Plan once..." },
+    { "slot": "once2", "text": "and ship!" },
+    { "slot": "feature1", "text": "[upbeat] Boards." },
+    { "slot": "feature2", "text": "Timelines." },
+    { "slot": "feature34", "text": "Automation. Reports." },
+    { "slot": "payoff", "text": "[softly] Pure focus," },
+    { "slot": "tag1", "text": "[warmly] your whole team..." },
+    { "slot": "tag2", "text": "in one place." },
+    { "slot": "name", "text": "[softly] Jira." }
+  ]
+}

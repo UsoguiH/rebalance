@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=Inter:wght@300;400;500;600;700;800&display=swap">
+<style>
+  :root { --bg: #0b0b0c; --fg: #e9e9ea; --dim: #8a8a90; color-scheme: dark; }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 Inter, system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; box-sizing: border-box; }
+  canvas { display: block; width: min(100%, calc((100vh - 110px) * 16 / 9)); aspect-ratio: 16 / 9; background: #000; }
+  .bar { display: flex; align-items: center; gap: 12px; width: min(100%, calc((100vh - 110px) * 16 / 9)); }
+  button { background: #1d1d20; color: var(--fg); border: 1px solid #333; border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  input[type=range] { flex: 1; accent-color: #2a5bab; }
+  #time { color: var(--dim); font-variant-numeric: tabular-nums; min-width: 150px; text-align: right; }
+  .hint { color: var(--dim); font-size: 12px; }
+  body.render { padding: 0; display: block; }
+  body.render canvas { width: 1920px; height: 1080px; }
+  body.render .bar, body.render .hint { display: none; }
+</style>
+</head>
+<body>
+<canvas id="screen" width="1920" height="1080" aria-label="__TITLE__ motion piece"></canvas>
+<div class="bar">
+  <button id="play">Play</button>
+  <input id="scrub" type="range" min="0" max="1" step="0.0001" value="0" aria-label="Scrub">
+  <button id="rate">1x</button>
+  <span id="time"></span>
+</div>
+<div class="hint">Space play/pause · ← → step one frame · Shift+← → one second · Home restart</div>
+<script>if (location.search.includes('render')) document.body.className = 'render';</script>
+<script src="../js/kit.js"></script>
+<script src="../js/icons.js"></script>
+<script src="content.js"></script>
+<script src="timing.js"></script>
+<script src="../template/js/art.js"></script>
+<script src="../template/js/scenes-a.js"></script>
+<script src="../template/js/scenes-b.js"></script>
+<script src="../template/js/scenes-c.js"></script>
+<!-- a piece can override or add scenes here, e.g. <script src="js/custom.js"></script> -->
+<script src="../template/js/main.js"></script>
+<script src="../js/player.js"></script>
+<script>M.boot(document.getElementById('screen'));</script>
+</body>
+</html>

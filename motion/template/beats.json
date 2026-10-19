@@ -1,0 +1,20 @@
+{
+  "note": "The phrase slots of the template, on the original film's beats. Each spoken phrase starts at 'at' (piece seconds) and must be done within 'max' seconds, before the next phrase. 'line' is the script line (1-8) it belongs to, which is also the line of the original narration whose loudness it is matched to. 'words' is a guide for writing it. tools/script.js checks a script against these; tools/align.py places a take on them.",
+  "duration": 26.6,
+  "slots": [
+    { "id": "intro", "line": 1, "at": 0.41, "max": 2.75, "words": "4-6", "shows": "intro.line, over the app tiles", "example": "Your team's work is everywhere." },
+    { "id": "but", "line": 2, "at": 7.47, "max": 1.15, "words": "1", "shows": "the giant 'But...'", "example": "But..." },
+    { "id": "whatIf", "line": 2, "at": 8.71, "max": 3.95, "words": "7-10", "shows": "whatIf.typed is typed; the rest is heard over the reveal", "example": "what if one board could actually... save your sprint?" },
+    { "id": "noMore1", "line": 3, "at": 12.85, "max": 2.15, "words": "4", "shows": "noMore[0]", "example": "No more chasing updates," },
+    { "id": "noMore2", "line": 4, "at": 15.15, "max": 1.9, "words": "4", "shows": "noMore[1], on the arch", "example": "no more pointless meetings." },
+    { "id": "once1", "line": 5, "at": 17.15, "max": 0.85, "words": "2", "shows": "once, the plain half", "example": "Plan once..." },
+    { "id": "once2", "line": 5, "at": 18.04, "max": 0.76, "words": "2", "shows": "once, the accent half", "example": "and ship!" },
+    { "id": "feature1", "line": 6, "at": 18.85, "max": 0.66, "words": "1", "shows": "features.ring", "example": "Boards." },
+    { "id": "feature2", "line": 6, "at": 19.55, "max": 0.73, "words": "1", "shows": "features.panel.word", "example": "Timelines." },
+    { "id": "feature34", "line": 6, "at": 20.32, "max": 1.63, "words": "2", "shows": "features.wall.word, then features.card", "example": "Automation. Reports." },
+    { "id": "payoff", "line": 6, "at": 22.0, "max": 1.2, "words": "2", "shows": "features.payoff", "example": "Pure focus," },
+    { "id": "tag1", "line": 7, "at": 23.25, "max": 1.0, "words": "3", "shows": "end.tagline, before the comma", "example": "your whole team..." },
+    { "id": "tag2", "line": 7, "at": 24.3, "max": 1.38, "words": "3", "shows": "end.tagline, after the comma", "example": "in one place." },
+    { "id": "name", "line": 8, "at": 25.73, "max": 0.8, "words": "1", "shows": "brand.name on the end card", "example": "Jira." }
+  ]
+}
