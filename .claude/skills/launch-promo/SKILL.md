@@ -32,9 +32,9 @@ The film's structure, which the content fills:
 You need the product's name, what it does, who it is for and the pain it removes. Its
 brand colour and logo are usually knowable. If the user only names the product, fill the
 rest from what you know and say what you assumed. Ask only for what you can't infer.
-Check the logo exists in Simple Icons (see `references/content.md`). Some big brands
-(Slack, OpenAI, Microsoft) asked to be removed. Without a mark, the brand tile shows a
-monogram.
+Check the logo exists by running `node motion/tools/icons.js <slug>`. It fetches the
+mark from Simple Icons, or warns "no Simple Icons mark". Some big brands (Slack, OpenAI,
+Microsoft) asked to be removed. Without a mark, the brand tile shows a monogram.
 
 ### 2. Scaffold
 
@@ -42,9 +42,10 @@ monogram.
 node motion/tools/new-piece.js --slug <slug> --name "<Product>"
 ```
 
-This makes `motion/<slug>/`: `index.html`, `content.js` (a copy of the Jira example to
-edit), an empty `timing.js`, `voice/script.json`, and `audio/mix.json`, already set to the
-original film's levels.
+This makes `motion/<slug>/`: `index.html`, `content.js`, an empty `timing.js`,
+`voice/script.json`, and `audio/mix.json`, already set to the original film's levels.
+`content.js` and `script.json` start as copies of the Jira example. Replace every field,
+including `brand.icon`, `brand.color` and `brand.key`, or Jira leaks into the film.
 
 ### 3. Write the content and the script
 
@@ -67,26 +68,34 @@ node motion/tools/script.js --piece motion/<slug>  # the ElevenLabs block, plus 
 `script.js` estimates each phrase's spoken length against its slot. Rewrite anything it
 flags as TOO LONG. "tight" is usually fine.
 
-### 4. Preview without a voice
+### 4. Check stills, then preview without a voice
+
+Iterate on stills first; they take seconds:
+
+```sh
+motion/tools/qa.sh motion/<slug> [out-dir]   # 32 stills tiled 4 across, in time order
+```
+
+It renders every montage card, each beat of the reveal and every scene into one contact
+sheet (`motion/frames/<slug>-qa/sheet.jpg` by default; pass a scratch directory if the
+session has one). Look at the sheet with the Read tool, fix the content, and run it
+again. Look for:
+- text running off the frame or into other elements (shorten the copy rather than fight it);
+- accents (`*word*`) on the right words;
+- every tile showing a real mark (a purple chat bubble on a tile you didn't set to
+  `'chat'` means a missing slug);
+- copy that reads as this product, not Jira (keys like `JRA-101`, and Jira-only
+  integrations on the wall).
+
+When the stills are right, render the whole film once:
 
 ```sh
 motion/tools/build.sh motion/<slug> --preview
 ```
 
-This renders `motion/renders/<slug>.mp4` with the music only (about 2 minutes). Check
-frames, not just that it ran. Render stills at the moments that matter and look at
-them:
-
-```sh
-cd motion && node tools/render.js --page <slug>/index.html --out /tmp/<slug>-qa --jpeg \
-  --times 1.9,4.0,5.6,6.9,7.8,9.2,10.6,11.6,12.4,14.6,16.3,18.3,19.2,19.9,20.6,21.5,22.4,24.8,26.4
-```
-
-Look for:
-- text running off the frame or into other elements (shorten the copy rather than fight it);
-- accents (`*word*`) on the right words;
-- every tile showing a real mark (a purple chat bubble means a missing slug);
-- copy that reads as this product, not Jira.
+This renders `motion/renders/<slug>.mp4` with the music only (about 2 minutes). With no
+voice it reads about -28.7 LUFS, the music at its own level in the original. That is
+expected; with the voice the film lands near -17.
 
 ### 5. Hand over the ElevenLabs text
 
@@ -105,7 +114,9 @@ preview MP4, so they can see the film while they record.
 motion/tools/build.sh motion/<slug> /path/to/the/take.mp3
 ```
 
-This copies the take to `audio/take.<ext>` and does the rest:
+A take the user attaches arrives as a file path in their message (often under
+`~/.claude/uploads/`). Pass that path. `build.sh` copies the take to `audio/take.<ext>`
+and does the rest:
 
 1. `align.py` transcribes the take (faster-whisper), finds each phrase, trims it at its
    real pauses, and places it on its beat. It writes the segments to `audio/mix.json`
@@ -124,15 +135,21 @@ Read the aligner's report:
 - **"not in the take"** stops the build. The take is missing a phrase, so ask for a new
   one.
 
-Then QA as in step 4. Check the frames where words should meet the voice: the intro
-line (about 0.4-2.6 s), "once" (17.2-18.6 s) and the tagline (23.2-25 s). The loudness
-should read about -17 LUFS.
+Then run `qa.sh` again and check the frames where words should meet the voice: the
+intro line (about 0.4-2.6 s), "once" (17.2-18.6 s) and the tagline (23.2-25 s). The
+loudness should read about -17 LUFS.
 
 ### 7. Deliver
 
-Send `motion/renders/<slug>.mp4` to the user. Commit the piece on the working branch:
-`content.js`, `timing.js`, `voice/`, `audio/` with the take, `mix.json` and
-`soundtrack.mp3`, and the render. Push it.
+Send `motion/renders/<slug>.mp4` to the user. Commit the piece on the working branch and
+push it. Include:
+- the piece: `content.js`, `timing.js`, `voice/`, and `audio/` with the take, `mix.json`
+  and `soundtrack.mp3`;
+- the render;
+- `motion/js/icons.js`.
+
+`icons.js` is shared. `tools/icons.js` rebuilds it from the marks every piece uses, so a
+commit without it leaves the new marks as generic tiles on another checkout.
 
 ## The sound: the original film's levels
 
@@ -186,4 +203,5 @@ and how a piece's `js/custom.js` replaces a scene.
 | `motion/tools/align.py` | Cuts a take into phrases and places them on the beats |
 | `motion/tools/mix.js` | Builds the soundtrack at the original's levels |
 | `motion/tools/render.js` | Renders frames or the MP4 |
+| `motion/tools/qa.sh` | Renders QA stills into one contact sheet |
 | `motion/tools/build.sh` | align, then mix, then render, in one go |

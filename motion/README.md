@@ -105,6 +105,7 @@ node motion/tools/new-piece.js --slug acme --name "Acme"   # scaffold motion/acm
 # edit motion/acme/content.js and motion/acme/voice/script.json
 node motion/tools/icons.js                                 # fetch the brand marks the content uses
 node motion/tools/script.js --piece motion/acme            # the ElevenLabs text, plus a timing check
+motion/tools/qa.sh motion/acme                             # 32 stills on one contact sheet
 motion/tools/build.sh motion/acme --preview                # music-only preview render
 motion/tools/build.sh motion/acme ~/Downloads/take.mp3     # with the voice: align, mix, render
 ```
@@ -171,6 +172,7 @@ collage photos) are painted procedurally as stand-ins.
 | `tools/script.js` | Prints a piece's ElevenLabs text and checks each phrase against its slot |
 | `tools/align.py` | Cuts a voice take into phrases and places them on the beats; writes word timings |
 | `tools/build.sh` | Align, mix and render in one go (`--preview` for music only) |
+| `tools/qa.sh` | Renders 32 QA stills of a piece into one contact sheet |
 | `tools/voice.js` | Voices a script with ElevenLabs and mixes it to the timeline |
 | `tools/mix.js` | Builds the soundtrack: cuts and places the voice, levels it to the original, lays the music under it |
 | `audio/original-levels.json` | The original film's levels: music gain, narration loudness, and loudness per line |

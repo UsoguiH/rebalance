@@ -33,6 +33,16 @@ brand: { name: 'Stripe', icon: 'stripe', color: '#635BFF', key: 'PAY' },
 | `markColor` | The colour of the mark inside the brand tile (default white). |
 | `colors` | Overrides for derived colours, e.g. `{ text: '#1a1a1a' }`. Keys: `brand light lighter tint wash text onDark navy ink sub line page` (hex), `sky` (4 hex, top to bottom), `deep` (2 hex), `night` ([r,g,b]), `haze` (3 hex). Use this when the brand colour is very light (yellow) or near black, and the accents look wrong. |
 
+**Black, white or very pale brands:** the palette derives from the brand colour's hue.
+- **Black or near-black** (Notion, Vercel, Uber): everything comes out greyscale. That
+  reads as deliberate for a monochrome brand. Accent words on light pages then differ
+  only by weight. To add one touch of colour, keep `color` black and set
+  `colors: { light: '<accent>', lighter: '<lighter accent>' }`. These two drive the
+  swoosh, the wires, the highlights, the chart line, the confetti and the brand tile's
+  gradient.
+- **Very light** (yellow, mint): set `colors: { text: '<a darker shade>' }` so that accent
+  text on light pages stays readable.
+
 ## intro (0-3.3 s)
 
 ```js
@@ -100,6 +110,16 @@ Then it flips dark, brand and light, and whites out. Common fields: `title`, `su
 | `chat` | AI assistants and copilots | `prompt` (up to about 40 characters, typed and sent), `reply` (up to 3 lines of up to about 48 characters, streamed in), `result` (`[title, detail]`, a card that lands and is ticked), `placeholder` |
 
 For a product none of these fit (a design tool, a camera app), see `custom-scenes.md`.
+
+## itemStyle
+
+```js
+itemStyle: { key: false, points: false, type: false },
+```
+
+Cards carry Jira-style details by default: an item key (`PAY-101`), story points and a
+story, bug or task icon. Turn off any that don't belong to the product. A Notion or
+Trello board wants none of them; a dashboard's ring cards are fine either way.
 
 ## items
 

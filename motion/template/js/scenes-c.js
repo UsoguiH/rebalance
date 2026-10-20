@@ -115,11 +115,12 @@
     c.restore();
     if (sy > 0.4) {
       c.scale(s * sx, s * sy);
-      T.typeIcon(c, 18, 18, 30, is.type);
+      if (T.STYLE.type) T.typeIcon(c, 18, 18, 30, is.type);
+      else M.fillRR(c, 18, 18, 30, 30, 8, is.col);
       M.fillRR(c, 18, 66, 190, 14, 7, C.line);
       M.fillRR(c, 18, 92, 130, 14, 7, C.line);
       T.avatar(c, 196, 122, 18, is.who, is.col);
-      M.text(c, is.key, 18, 132, { size: 18, weight: 700, color: C.sub });
+      if (T.STYLE.key) M.text(c, is.key, 18, 132, { size: 18, weight: 700, color: C.sub });
     }
     c.restore();
   };

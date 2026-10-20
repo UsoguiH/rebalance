@@ -18,7 +18,7 @@ if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
   console.error('usage: node motion/tools/new-piece.js --slug <lowercase-slug> [--name "Product"] [--from <piece dir>] [--force]');
   process.exit(1);
 }
-if (['js', 'tools', 'audio', 'renders', 'frames', 'template', 'jira'].includes(slug)) {
+if (['js', 'tools', 'audio', 'renders', 'frames', 'template'].includes(slug)) {
   console.error(`"${slug}" is taken by the toolkit; pick another slug`);
   process.exit(1);
 }
@@ -73,5 +73,6 @@ const mix = {
 fs.writeFileSync(path.join(dir, 'audio', 'mix.json'), JSON.stringify(mix, null, 2) + '\n');
 
 console.log(`made ${path.relative(process.cwd(), dir)}/ for ${name}`);
+if (!args.from) console.log('content.js and voice/script.json are the Jira example: replace every field (brand icon, colour and key too)');
 console.log('next: edit content.js and voice/script.json, then');
 console.log(`  node motion/tools/script.js --piece motion/${slug}`);

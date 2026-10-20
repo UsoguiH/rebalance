@@ -54,6 +54,8 @@ const sayable = (text) =>
     .replace(/(\d+)%/g, '$1 percent')
     .replace(/\$(\d+)/g, '$1 dollars')
     .replace(/&/g, ' and ')
+    // acronyms are read letter by letter (AI, CRM, API)
+    .replace(/\b[A-Z]{2,5}\b/g, (w) => w.split('').join(' '))
     .replace(/\d+/g, (n) => ' number '.repeat(Math.min(4, n.length)));
 
 // the block: phrases of the same script line run together, one line per script line

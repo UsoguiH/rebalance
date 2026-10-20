@@ -58,6 +58,9 @@ Write to the budget, not to the rescue.
   in a slot.
 - **Spell numbers out** ("twenty-four seven", not "24/7"). TTS reads digits unpredictably
   and they eat syllables.
+- **Acronyms are read letter by letter** ("AI" is "A-I", two syllables, and `script.js`
+  counts it that way). Write them in capitals without dots. Avoid ones TTS might read as
+  a word.
 - **A name TTS mispronounces** can be spelt the way it sounds in the script (e.g.
   "Jeera"). The aligner tolerates it, and the screen keeps the real name.
 - **The spoken words of `intro`, `once1`/`once2`, `tag1`/`tag2` and the first word of

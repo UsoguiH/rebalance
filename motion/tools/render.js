@@ -30,6 +30,11 @@ for (let i = 2; i < process.argv.length; i++) {
   const root = path.join(__dirname, '..');
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.mp3': 'audio/mpeg', '.json': 'application/json' };
   const server = http.createServer((req, res) => {
+    // browsers ask for a favicon; answering keeps a 404 out of the log
+    if (req.url.startsWith('/favicon')) {
+      res.writeHead(204);
+      return res.end();
+    }
     const file = path.join(root, decodeURIComponent(req.url.split('?')[0]));
     if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
       res.writeHead(404);

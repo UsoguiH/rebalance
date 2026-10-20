@@ -299,6 +299,8 @@
     col: [C.purple, C.teal, C.orange, C.green, C.purple, C.red, C.teal, C.orange, C.red][i % 9],
     pts: [3, 2, 1, 2, 3, 5, 2, 1, 5][i % 9],
   }));
+  // which Jira-style details the product's cards carry: an item key, points, a type icon
+  T.STYLE = Object.assign({ key: true, points: true, type: true }, K.itemStyle || {});
   // one product card; theme picks light/dark; done adds the green check
   T.card = (c, x, y, w, h, item, { lift = 0, rot = 0, theme = 'light', done = 0 } = {}) => {
     const is = typeof item === 'number' ? T.ITEMS[item % T.ITEMS.length] : item;
@@ -315,10 +317,14 @@
     M.fillRR(c, 0, 0, w, h, 10, dark ? '#22272b' : '#ffffff');
     c.restore();
     M.text(c, is.title, 20, 42, { size: T.fit(c, is.title, 24, 500, w - 40), weight: 500, color: dark ? '#dee4ea' : C.navy });
-    T.typeIcon(c, 20, h - 42, 24, is.type);
-    M.text(c, is.key, 54, h - 23, { size: 18, weight: 600, color: dark ? '#9fadbc' : C.sub, track: 0.01 });
-    M.fillRR(c, w - 104, h - 42, 34, 24, 12, dark ? '#38414a' : C.line);
-    M.text(c, String(is.pts), w - 87, h - 23, { size: 16, weight: 700, color: dark ? '#dee4ea' : C.navy, align: 'center' });
+    const st = T.STYLE;
+    if (st.type) T.typeIcon(c, 20, h - 42, 24, is.type);
+    if (st.key) M.text(c, is.key, st.type ? 54 : 20, h - 23, { size: 18, weight: 600, color: dark ? '#9fadbc' : C.sub, track: 0.01 });
+    if (st.points) {
+      M.fillRR(c, w - 104, h - 42, 34, 24, 12, dark ? '#38414a' : C.line);
+      M.text(c, String(is.pts), w - 87, h - 23, { size: 16, weight: 700, color: dark ? '#dee4ea' : C.navy, align: 'center' });
+    }
+    if (!st.type && !st.key) M.fillRR(c, 20, h - 36, 120, 12, 6, dark ? '#38414a' : C.line);
     T.avatar(c, w - 36, h - 30, 17, is.who, is.col);
     if (done > 0) T.check(c, w - 34, 32, 16, done);
     c.restore();
@@ -370,7 +376,7 @@
     c.restore();
   };
   // a macOS-style window frame; returns the content origin
-  T.window = (c, x, y, w, h, title, { dark = false, bar = null } = {}) => {
+  T.window = (c, x, y, w, h, title, { dark = false, bar = null, icon = null } = {}) => {
     c.save();
     c.shadowColor = 'rgba(0,0,0,0.3)';
     c.shadowBlur = 40;
@@ -390,6 +396,8 @@
       c.fill();
     });
     if (title) M.text(c, title, x + w / 2, y + 41, { size: T.fit(c, title, 22, 600, w - 320), weight: 600, color: dark ? '#c9ccd1' : '#44474d', align: 'center' });
+    // the app's mark, just after the traffic lights
+    if (icon) M.icon(c, icon, x + 132, y + 32, 34);
     return [x, y + 64];
   };
   T.chatBubble = (c, x, y, text, { size = 40, fill = '#ffffff', ink = C.navy, tail = 'left', alpha = 1 } = {}) => {

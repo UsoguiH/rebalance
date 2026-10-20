@@ -150,8 +150,7 @@
     const notes = d.notes || ['last week?', 'see Slack', 'Tuesday', '??', 'ask Sam'];
     c.fillStyle = '#d5dbe3';
     c.fillRect(0, 0, W, H);
-    const [x0, y0] = T.window(c, 190, 90, 1540, 900, d.title || 'tracker_v7_FINAL_final (2).xlsx', { bar: '#e6f4ea' });
-    if (d.icon !== null) M.icon(c, d.icon || 'googlesheets', 290, 122, 34);
+    const [x0, y0] = T.window(c, 190, 90, 1540, 900, d.title || 'tracker_v7_FINAL_final (2).xlsx', { bar: '#e6f4ea', icon: d.icon === null ? null : d.icon || 'googlesheets' });
     const cols = [x0, x0 + 60, x0 + 520, x0 + 800, x0 + 1100, x0 + 1540];
     c.fillStyle = '#f8f9fa';
     c.fillRect(x0, y0, 1540, 46);
@@ -192,8 +191,7 @@
     const mails = d.mails || [['Sam K.', 'Re: Re: Fwd: status update', '9:41'], ['Jordan', 'any update on the launch?', '9:38'], ['Priya', 'quick question re: deadline', '9:30'], ['Alex', 'Re: Re: Re: notes from sync', '9:12'], ['Sam K.', 'Fwd: who owns the API work?', '8:57'], ['Jordan', 'Re: any update?', '8:40'], ['Calendar', 'Status sync moved to 3pm', '8:31']];
     c.fillStyle = '#e9edf3';
     c.fillRect(0, 0, W, H);
-    T.window(c, 230, 110, 1460, 860, d.title || 'Inbox (43)');
-    if (d.icon !== null) M.icon(c, d.icon || 'gmail', 330, 142, 34);
+    T.window(c, 230, 110, 1460, 860, d.title || 'Inbox (43)', { icon: d.icon === null ? null : d.icon || 'gmail' });
     const drop = M.ease.outCubic(M.prog(k, 0.02, 0.14));
     mails.slice(0, 7).forEach(([who, sub, at], i) => {
       const y = 200 + (i - 1 + drop) * 104;
@@ -233,8 +231,7 @@
     const labels = d.blocks || ['Status sync', 'Standup', 'Sync re: sync', 'Status sync', 'Check-in', 'Standup', 'Status sync', 'Retro?', 'Sync re: sync', 'Status sync', 'Standup', 'Status sync', 'Where are we?', 'Status sync', 'Check-in'];
     c.fillStyle = '#f1f3f4';
     c.fillRect(0, 0, W, H);
-    const [x0, y0] = T.window(c, 210, 100, 1500, 880, d.title || 'Week of the launch');
-    if (d.icon !== null) M.icon(c, d.icon || 'googlecalendar', 310, 132, 34);
+    const [x0, y0] = T.window(c, 210, 100, 1500, 880, d.title || 'Week of the launch', { icon: d.icon === null ? null : d.icon || 'googlecalendar' });
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
     const cw = 1500 / 5;
     days.forEach((dd, i) => M.text(c, dd, x0 + cw * i + cw / 2, y0 + 50, { size: 28, weight: 600, color: '#3c4043', align: 'center' }));
@@ -249,23 +246,24 @@
       if (p > 0.6) M.text(c, label, x + 18, y + 44, { size: T.fit(c, label, 26, 600, cw - 60), weight: 600, color: '#ffffff' });
     });
   };
+  // laid out inside what the montage zoom (up to about 1.2x) leaves in frame
   CARD.call = (c, k, d) => {
     const people = d.people || ['SK', 'JL', 'AM', 'RT', 'PR'];
     c.fillStyle = '#111214';
     c.fillRect(0, 0, W, H);
-    if (d.icon !== null) M.icon(c, d.icon || 'zoom', 120, 90, 60, d.icon ? null : '#0B5CFF');
+    if (d.icon !== null) M.icon(c, d.icon || 'zoom', 270, 176, 46, d.icon ? null : '#0B5CFF');
     [...people.slice(0, 5), 'You'].forEach((n, i) => {
-      const x = 180 + (i % 3) * 540;
-      const y = 150 + Math.floor(i / 3) * 400;
-      M.fillRR(c, x, y, 520, 380, 18, '#232428');
-      T.avatar(c, x + 260, y + 180, 82, n, n === 'You' ? C.light : T.ACCENTS[i % 5]);
-      M.text(c, n === 'You' ? 'You (muted)' : n, x + 22, y + 356, { size: 24, weight: 600, color: '#d0d0d0' });
+      const x = 240 + (i % 3) * 486;
+      const y = 214 + Math.floor(i / 3) * 316;
+      M.fillRR(c, x, y, 470, 300, 18, '#232428');
+      T.avatar(c, x + 235, y + 140, 68, n, n === 'You' ? C.light : T.ACCENTS[i % 5]);
+      M.text(c, n === 'You' ? 'You (muted)' : n, x + 22, y + 280, { size: 24, weight: 600, color: '#d0d0d0' });
     });
     const p = M.prog(k, 0.03, 0.08);
     const banner = d.banner || 'You are muted';
     const bw = Math.max(400, M.measure(c, banner, 30, 700) + 80);
-    M.fillRR(c, 960 - bw / 2, 950, bw, 70, 35, `rgba(255,86,48,${p})`);
-    M.text(c, banner, 960, 996, { size: 30, weight: 700, color: '#ffffff', align: 'center', alpha: p });
+    M.fillRR(c, 960 - bw / 2, 860, bw, 64, 32, `rgba(255,86,48,${p})`);
+    M.text(c, banner, 960, 903, { size: 30, weight: 700, color: '#ffffff', align: 'center', alpha: p });
   };
   CARD.whiteboard = (c, k, d) => {
     const lines = d.lines || ['launch → ??? → done?', 'who: Sam? Jordan?', 'when: next wk (maybe)'];
