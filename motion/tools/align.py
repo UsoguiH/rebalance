@@ -283,7 +283,7 @@ def main():
             note = f"starts {shift:.2f}s early" if shift > 0.005 else ""
             if tempo > 1.0:
                 note += (", " if note else "") + f"sped up {100 * (tempo - 1):.0f}%"
-            if left > 0.02:
+            if left > 0.06:
                 note += (", " if note else "") + f"STILL {left:.2f}s OVER: shorten this phrase or re-generate it faster"
         prev_end = at + dur / tempo
         seg = {"line": sl["line"], "slot": p["slot"], "text": spoken(p["text"]).strip(), "from": round(s, 3), "to": round(e, 3), "at": round(at, 3)}

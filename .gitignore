@@ -6,3 +6,4 @@ motion/frames/
 __pycache__/
 motion/.venv/
 motion/*/audio/*.words.json
+.claude/worktrees/
