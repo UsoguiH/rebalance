@@ -8,6 +8,7 @@ in a light cut of Inter (`M.weight` maps every weight one step lighter).
 |---|---|---|
 | **One Button**: a frame-by-frame recreation of a 26-second promo | `index.html` | `renders/one-button.mp4`, plus `renders/side-by-side.mp4` (original on top) |
 | **Jira**: a 26.6-second promo in the same visual language, with an ElevenLabs voiceover | `jira/index.html` | `renders/jira.mp4` |
+| **Stripe**: a promo made from the template (dashboard screen), waiting for its voice take | `stripe/index.html` | `renders/stripe.mp4` (music only) |
 
 ## Play
 
@@ -92,6 +93,29 @@ To re-voice the script through the API instead, run
 `ELEVENLABS_API_KEY=... node motion/tools/voice.js --piece motion/jira`. It voices
 each line, caches it, and mixes the lines to their cue times as `jira/audio/vo.mp3`.
 
+## New promos from the template
+
+`template/` is the Jira piece made data-driven: any product gets the same film, beat for
+beat, from a `content.js` (copy, brand colour and marks, product screen) and a
+`voice/script.json` (the voiceover, on 14 phrase slots in `template/beats.json`). The
+`launch-promo` skill (`.claude/skills/launch-promo/`) walks Claude through it. By hand:
+
+```sh
+node motion/tools/new-piece.js --slug acme --name "Acme"   # scaffold motion/acme/
+# edit motion/acme/content.js and motion/acme/voice/script.json
+node motion/tools/icons.js                                 # fetch the brand marks the content uses
+node motion/tools/script.js --piece motion/acme            # the ElevenLabs text, plus a timing check
+motion/tools/build.sh motion/acme --preview                # music-only preview render
+motion/tools/build.sh motion/acme ~/Downloads/take.mp3     # with the voice: align, mix, render
+```
+
+`tools/align.py` transcribes the take (faster-whisper), trims each phrase at its real
+pauses and places it on its beat. It writes the phrase cuts to `audio/mix.json` and each
+word's spoken time to `timing.js`, so on-screen words land with the voice. On the Jira
+take it reproduces the hand-made cuts to within 0.03 s at the starts and 0.07 s at the
+ends. It needs `pip install faster-whisper numpy` (in `motion/.venv`, or point
+`MOTION_PY` at another interpreter).
+
 ## How One Button was matched
 
 The source was a phone screen recording (1156x2510, variable frame rate around
@@ -133,8 +157,20 @@ collage photos) are painted procedurally as stand-ins.
 | `jira/js/main.js` | Jira: master timeline, letterbox curve, soundtrack |
 | `jira/voice/script.json` | Jira voiceover script, with Eleven v3 tags and cue times |
 | `jira/audio/mix.json` | Jira soundtrack: where each voice phrase lands, music timing, levels |
+| `template/js/art.js` | Template: the palette derived from one brand colour, plates, tiles, the product UI kit, montage props, voice sync |
+| `template/js/scenes-a.js` | Template: the intro line, the clutter montage (nine card types), "But..." and the typed line |
+| `template/js/scenes-b.js` | Template: the reveal with its product screens (board, dashboard, chat), "No more ...", the arch |
+| `template/js/scenes-c.js` | Template: "... once, And ...", the four features and payoff, the end card |
+| `template/js/main.js` | Template: master timeline, letterbox, weights, soundtrack |
+| `template/beats.json` | The 14 voice phrase slots: start, max length, script line |
+| `template/example/` | The Jira content and script, as a worked example |
+| `stripe/content.js` | A second example: Stripe on the template |
 | `tools/render.js` | Headless frame renderer and MP4 export (with optional soundtrack) |
-| `tools/icons.js` | Regenerates `js/icons.js` from Simple Icons |
+| `tools/icons.js` | Regenerates `js/icons.js` from Simple Icons, including every mark a piece's content uses |
+| `tools/new-piece.js` | Scaffolds a template piece |
+| `tools/script.js` | Prints a piece's ElevenLabs text and checks each phrase against its slot |
+| `tools/align.py` | Cuts a voice take into phrases and places them on the beats; writes word timings |
+| `tools/build.sh` | Align, mix and render in one go (`--preview` for music only) |
 | `tools/voice.js` | Voices a script with ElevenLabs and mixes it to the timeline |
 | `tools/mix.js` | Builds the soundtrack: cuts and places the voice, levels it to the original, lays the music under it |
 | `audio/original-levels.json` | The original film's levels: music gain, narration loudness, and loudness per line |

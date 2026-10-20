@@ -41,9 +41,11 @@ const syllables = (word) => {
   else if (/[^aeiouysxz]es$/.test(w) && !/(ch|sh)es$/.test(w)) w = w.slice(0, -2);
   else if (/[^aeiouytd]ed$/.test(w)) w = w.slice(0, -2);
   w = w.replace(/([^aeiouy])e([^aeiouy]+)$/, (m, a, b) => (b === 's' ? a + b : m));
+  // a silent e inside a compound (time-lines, safe-ly, hope-ful)
+  w = w.replace(/([aeiou][^aeiouy])e([lsfw][aeiouy])/g, '$1$2');
   const groups = w.replace(/^y/, '').match(/[aeiouy]+/g);
   // vowel pairs that split into two syllables (cre-ate, ac-tu-al, ide-a)
-  const splits = (w.match(/ia|io(?!u)|ua|uo|eo|iu/g) || []).length;
+  const splits = (w.replace(/[ts]io/g, '').match(/ia|io(?!u)|ua|uo|eo|iu|ea(?=t[eio])/g) || []).length;
   return Math.max(1, (groups ? groups.length : 1) + splits);
 };
 // numbers and symbols are read out, so count them as words
@@ -77,7 +79,7 @@ for (const p of script.phrases) {
   const words = sayable(p.text).split(' ').filter(Boolean);
   const syl = words.reduce((n, w) => n + syllables(w), 0);
   const est = 0.22 + 0.25 * syl;
-  const flag = est > s.max * 1.15 ? '  TOO LONG' : est > s.max * 0.95 ? '  tight' : '';
+  const flag = est > s.max * 1.25 ? '  TOO LONG' : est > s.max ? '  tight' : '';
   if (flag === '  TOO LONG') over++;
   console.log(`${p.slot.padEnd(11)} ${String(words.length).padStart(5)} ${String(syl).padStart(4)}  ${est.toFixed(2).padStart(5)}  ${s.max.toFixed(2).padStart(5)}${flag}`);
 }

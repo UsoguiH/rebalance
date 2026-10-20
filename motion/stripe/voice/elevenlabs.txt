@@ -1,0 +1,8 @@
+[calm] Your payments are everywhere.
+[thoughtful] But... [curious] what if one dashboard could actually... get you paid?
+[confident] No more chasing invoices,
+[firmly] no more failed payments.
+[playful] Build once... and scale!
+[upbeat] Payments. Billing. Connect. Payouts. [softly] Pure growth,
+[warmly] your money... in one place.
+[softly] Stripe.

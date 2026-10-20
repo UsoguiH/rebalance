@@ -187,7 +187,8 @@
     c.fillStyle = C.grey;
     c.fillRect(0, 0, W, H);
     if (!ringSize) {
-      ringSize = T.fit(c, ringWord, 116, 800, 540, -0.03);
+      // the word sits inside the ring, clear of the cards at its sides
+      ringSize = T.fit(c, ringWord, 116, 800, 400, -0.03);
       panelSize = T.fit(c, panelWord, 112, 800, 1160, -0.02);
     }
     if (t < 19.52) {

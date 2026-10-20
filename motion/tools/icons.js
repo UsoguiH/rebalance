@@ -1,10 +1,14 @@
 // Pulls brand marks from Simple Icons (pinned version) into js/icons.js, so the
 // pieces can draw real logos with no runtime dependency.
-//   node motion/tools/icons.js
-// Simple Icons is CC0; the marks themselves are trademarks of their owners.
+//   node motion/tools/icons.js                 the marks below plus every mark a piece's content.js uses
+//   node motion/tools/icons.js stripe paypal   ... plus these
+// Simple Icons is CC0; the marks themselves are trademarks of their owners. Some
+// brands asked to be removed (Slack, OpenAI, Microsoft, ...); those slugs 404 and
+// are skipped with a warning.
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const vm = require('vm');
 
 const VERSION = '16.35.0';
 const SLUGS = [
@@ -14,6 +18,29 @@ const SLUGS = [
   // One Button piece
   'apple', 'claude', 'googlegemini', 'perplexity',
 ];
+
+// the marks template pieces use: brand.icon, intro.tiles, features.wall.tiles, montage card icons
+const root = path.join(__dirname, '..');
+for (const dir of fs.readdirSync(root)) {
+  const file = path.join(root, dir, 'content.js');
+  if (!fs.existsSync(file)) continue;
+  const sandbox = { M: {} };
+  try {
+    vm.runInNewContext(fs.readFileSync(file, 'utf8'), sandbox);
+  } catch (e) {
+    console.warn(`skipping ${dir}/content.js: ${e.message}`);
+    continue;
+  }
+  const K = sandbox.M.CONTENT || {};
+  const used = [
+    K.brand && K.brand.icon,
+    ...((K.intro && K.intro.tiles) || []),
+    ...((K.features && K.features.wall && K.features.wall.tiles) || []),
+    ...((K.montage && K.montage.cards) || []).map((c) => c.icon),
+  ];
+  for (const slug of used) if (slug && slug !== 'chat' && !SLUGS.includes(slug)) SLUGS.push(slug);
+}
+for (const slug of process.argv.slice(2)) if (!SLUGS.includes(slug)) SLUGS.push(slug);
 
 const get = (url) =>
   new Promise((resolve, reject) => {
@@ -44,7 +71,13 @@ const get = (url) =>
       .replace(/[^a-z0-9]/g, '');
   const icons = {};
   for (const slug of SLUGS) {
-    const svg = await get(`${base}/icons/${slug}.svg`);
+    let svg;
+    try {
+      svg = await get(`${base}/icons/${slug}.svg`);
+    } catch (e) {
+      console.warn(`no Simple Icons mark "${slug}" (${e.message.split(' ')[0]}); a piece using it gets a generic tile`);
+      continue;
+    }
     const d = /<path d="([^"]+)"/.exec(svg)[1];
     const meta = list.find((i) => slugOf(i) === slug);
     icons[slug] = { title: meta ? meta.title : slug, hex: meta ? meta.hex : '000000', path: d };

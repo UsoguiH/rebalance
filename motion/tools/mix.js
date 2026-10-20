@@ -42,15 +42,19 @@ const loudness = (file, ss = 0, t = 0) => {
 // ---- voice (optional): each phrase trimmed with a little air, faded, and delayed to its beat
 const PRE = 0.04;
 const POST = 0.12;
-const segs = cfg.voice ? cfg.voice.segments : [];
+// a piece with no take yet (no segments) mixes as music only, for a preview
+const segs = (cfg.voice && cfg.voice.segments) || [];
+const hasVoice = segs.length > 0;
 const place = (gains) =>
   segs.map((s, i) => {
     const from = Math.max(0, s.from - PRE);
     const dur = s.to + POST - from;
+    // tempo above 1 speeds a phrase up (pitch kept) so it fits its slot
+    const k = s.tempo || 1;
     return (
-      `[0:a]atrim=start=${from}:end=${from + dur},asetpts=PTS-STARTPTS,volume=${gains[i].toFixed(2)}dB,` +
-      `afade=t=in:d=0.015,afade=t=out:st=${(dur - 0.06).toFixed(3)}:d=0.06,` +
-      `adelay=delays=${ms(s.at - (s.from - from))}:all=1[v${i}]`
+      `[0:a]atrim=start=${from}:end=${from + dur},asetpts=PTS-STARTPTS,${k !== 1 ? `atempo=${k},` : ''}volume=${gains[i].toFixed(2)}dB,` +
+      `afade=t=in:d=0.015,afade=t=out:st=${(dur / k - 0.06).toFixed(3)}:d=0.06,` +
+      `adelay=delays=${ms(s.at - (s.from - from) / k)}:all=1[v${i}]`
     );
   });
 const voice = (gains, file) =>
@@ -62,7 +66,7 @@ const voice = (gains, file) =>
 const voWav = path.join(tmp, 'vo-level.wav');
 let voGain = 0;
 const lineGains = [];
-if (cfg.voice) {
+if (hasVoice) {
   const voRaw = path.join(tmp, 'vo.wav');
   voice(segs.map(() => 0), voRaw);
   voGain = cfg.voice.lufs - loudness(voRaw);
@@ -75,7 +79,7 @@ if (cfg.voice) {
       const idx = segs.map((s, i) => (s.line === L.line ? i : -1)).filter((i) => i >= 0);
       if (!idx.length) continue;
       const a = Math.min(...idx.map((i) => segs[i].at)) - PRE;
-      const z = Math.max(...idx.map((i) => segs[i].at + segs[i].to - segs[i].from)) + POST;
+      const z = Math.max(...idx.map((i) => segs[i].at + (segs[i].to - segs[i].from) / (segs[i].tempo || 1))) + POST;
       const g = Math.max(voGain - 6, Math.min(voGain + 6, L.lufs - loudness(voRaw, a, z - a)));
       for (const i of idx) gains[i] = g;
       lineGains.push(`${L.line}:${(g - voGain >= 0 ? '+' : '') + (g - voGain).toFixed(1)}`);
@@ -126,5 +130,5 @@ ffmpeg([
 ]);
 const out = loudness(path.join(dir, 'soundtrack.mp3'));
 fs.rmSync(tmp, { recursive: true, force: true });
-console.log(`${cfg.voice ? `voice ${voGain.toFixed(1)} dB${lineGains.length ? ` (lines ${lineGains.join(' ')})` : ''}, ` : ''}music ${muGain.toFixed(1)} dB, master ${gain.toFixed(1)} dB -> ${out.toFixed(1)} LUFS`);
+console.log(`${hasVoice ? `voice ${voGain.toFixed(1)} dB${lineGains.length ? ` (lines ${lineGains.join(' ')})` : ''}, ` : ''}music ${muGain.toFixed(1)} dB, master ${gain.toFixed(1)} dB -> ${out.toFixed(1)} LUFS`);
 console.log('wrote', path.join(dir, 'soundtrack.mp3'));

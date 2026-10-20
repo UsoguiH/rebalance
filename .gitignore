@@ -1,3 +1,8 @@
 node_modules/
 .DS_Store
 motion/frames/
+
+# Python caches, the tools venv, and transcripts cached next to voice takes
+__pycache__/
+motion/.venv/
+motion/*/audio/*.words.json

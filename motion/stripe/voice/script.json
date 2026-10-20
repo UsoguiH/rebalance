@@ -1,0 +1,24 @@
+{
+  "voice": {
+    "name": "Hope",
+    "model": "Eleven v3",
+    "settings": "Stability: Natural (50) · Similarity: 75 · Speaker boost: on",
+    "note": "Generate the whole script as one take. Square-bracket words are Eleven v3 audio tags. The ... pauses are where tools/align.py cuts the take into phrases, so keep them."
+  },
+  "phrases": [
+    { "slot": "intro", "text": "[calm] Your payments are everywhere." },
+    { "slot": "but", "text": "[thoughtful] But..." },
+    { "slot": "whatIf", "text": "[curious] what if one dashboard could actually... get you paid?" },
+    { "slot": "noMore1", "text": "[confident] No more chasing invoices," },
+    { "slot": "noMore2", "text": "[firmly] no more failed payments." },
+    { "slot": "once1", "text": "[playful] Build once..." },
+    { "slot": "once2", "text": "and scale!" },
+    { "slot": "feature1", "text": "[upbeat] Payments." },
+    { "slot": "feature2", "text": "Billing." },
+    { "slot": "feature34", "text": "Connect. Payouts." },
+    { "slot": "payoff", "text": "[softly] Pure growth," },
+    { "slot": "tag1", "text": "[warmly] your money..." },
+    { "slot": "tag2", "text": "in one place." },
+    { "slot": "name", "text": "[softly] Stripe." }
+  ]
+}

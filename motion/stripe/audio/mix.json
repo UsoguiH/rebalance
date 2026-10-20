@@ -1,0 +1,31 @@
+{
+  "duration": 26.6,
+  "voice": {
+    "take": "take.mp3",
+    "note": "One ElevenLabs take, cut at its pauses. from/to bound each phrase in the take; at is when it starts in the piece. Written by tools/align.py.",
+    "segments": [],
+    "lufs": -16.7,
+    "levels": "../../audio/original-levels.json",
+    "level_note": "The original narration's loudness; levels matches each line to the same line of the original."
+  },
+  "music": {
+    "file": "../../audio/music/original-bed.mp3",
+    "title": "One Button music bed",
+    "note": "The original video's own music, voice removed. It lines up with the original recording, whose clip starts 0.288 s in.",
+    "anchor": {
+      "track": 0.288,
+      "at": 0
+    },
+    "fade_in": 0.02,
+    "fade_out": [
+      26.3,
+      26.6
+    ],
+    "gain_db": 0,
+    "level_note": "Played at the bed's own level, which is the level it has in the original film. No extra ducking."
+  },
+  "master": {
+    "true_peak": -1,
+    "note": "No loudness normalisation, so the mix lands where the original does (-16.7 LUFS)."
+  }
+}

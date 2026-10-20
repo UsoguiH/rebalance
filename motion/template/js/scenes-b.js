@@ -258,7 +258,7 @@
         // the user's message bubble, right-aligned once sent
         if (sent) {
           const p = M.ease.outBack(M.prog(t, 11.98, 12.2), 1.6);
-          const size = T.fit(c, prompt, 34, 500, 900);
+          const size = T.fit(c, prompt, 40, 500, 900);
           const w = M.measure(c, prompt, size, 500) + size * 1.2;
           c.save();
           c.globalAlpha *= M.clamp(p, 0, 1);
@@ -268,13 +268,13 @@
         }
         // the answer streams in word by word with the first action
         if (t > A1[0] + 0.05) {
-          T.brandTile(c, 362, 452, 56, { flat: true });
+          T.brandTile(c, 366, 456, 64, { flat: true });
           let n = Math.floor(M.prog(t, A1[0] + 0.05, A1[1] + 0.1) * reply.join(' ').split(' ').length + 0.999);
           reply.slice(0, 3).forEach((ln, i) => {
             const ws = ln.split(' ');
             const shown = ws.slice(0, Math.max(0, n)).join(' ');
             n -= ws.length;
-            if (shown) M.text(c, shown, 410, 466 + i * 52, { size: T.fit(c, ln, 32, 500, 1160), weight: 500, color: th.fg });
+            if (shown) M.text(c, shown, 418, 470 + i * 58, { size: T.fit(c, ln, 38, 500, 1150), weight: 500, color: th.fg });
           });
         }
         // the result card pops with the second action and is ticked done
@@ -282,8 +282,8 @@
         if (rp > 0) {
           c.save();
           c.globalAlpha *= M.clamp(rp * 1.5, 0, 1);
-          c.translate(410, 650);
-          c.scale(0.9 + 0.1 * rp, 0.9 + 0.1 * rp);
+          c.translate(418, 672);
+          c.scale(1.12 * (0.9 + 0.1 * rp), 1.12 * (0.9 + 0.1 * rp));
           c.save();
           c.shadowColor = 'rgba(9,30,66,0.2)';
           c.shadowBlur = 30;
@@ -323,9 +323,9 @@
         c.lineTo(SEND[0] + 11, SEND[1] - 2);
         c.stroke();
       },
-      burst: () => [1000, 650],
+      burst: () => [1090, 672],
       cursor(t) {
-        const done = [1000, 668];
+        const done = [1080, 690];
         if (t < 11.98) return M.track(t, [[11.62, 1400, 1150], [11.8, 1500, 960], [11.96, SEND[0] + 6, SEND[1] + 8]]);
         if (t < A2[1]) return M.track(t, [[11.98, SEND[0] + 6, SEND[1] + 8], [A2[0], 1300, 760], [A2[1] - 0.04, done[0], done[1]]]);
         return M.track(t, [[A2[1], done[0], done[1]], [13.15, done[0] + 240, done[1] + 240]]);
