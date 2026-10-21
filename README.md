@@ -123,24 +123,25 @@ greeting with today's summary, a ring that draws itself into the first world, th
 fanning out along the wheel, and the knob pulled out of the rising dial. Tap or press any key
 to skip it.
 
-Seven worlds, each with its own interaction:
+Opening a circle dives into its world. Every open view has the same layout: a title with
+the main number, the world itself as an interactive hero, and a panel underneath with
+readable rows and controls (steppers, check-ins, copy buttons, an add field, and undo when
+you remove something). The dial sinks to a small handle; tap it or press Esc to close.
 
 1. **My goals: gravity.** Goals orbit a sun; the closer the orbit, the more progress.
-   Drag a planet inward to log progress, all the way in to finish it (it becomes a ring),
-   or fling it past the edge to let it go.
-2. **Exercise: pulse.** The week is an ECG strip. Press and hold anywhere to charge
-   today's heartbeat and log the session; tap a past day to change it.
-3. **My agents: cells.** Claude Code subagents are gooey metaball cells. Tap one to read
-   it; drag it into the dial to "summon" it, which copies a prompt that calls it.
-   Adding an agent splits a new cell off an existing one.
-4. **Habits: harp.** Each habit is a string with seven beads for the last seven days.
-   Pull a string sideways and let go to check in (it plays a note); strum to play.
-5. **Reading: vessels.** Each book is a glass tube of liquid. Tap to pour in ten pages,
-   or drag the level.
-6. **Journal: ink.** Ink blooms from the caret as you type. Old entries float as stains;
-   tap one to reread it.
-7. **Sleep: moon.** Last night's hours are the moon's phase (full moon = 8 hours).
-   Drag up or down or turn the dial to set it; tap a small moon for another night.
+   Drag a planet inward or use the − / + steppers. At 100% it falls into the sun and becomes a ring.
+2. **Exercise: pulse.** The week is a ring of seven segments around a heart monitor.
+   Press and hold the monitor to log today (it starts beating); tap a day in the list to change it.
+3. **My agents: cells.** Claude Code subagents are gooey metaball cells. Drag one into the
+   dial, or tap copy in the list, to copy a prompt that calls it.
+4. **Habits: harp.** Each habit is a string with beads for the last seven days. Pull a string
+   and let go, or tap the check button, to check in. Strum to play.
+5. **Reading: vessels.** Each book is a glass tube. Tap it or press +10 to pour in ten pages;
+   drag the level to set it exactly.
+6. **Journal: ink.** Today's prompt sits in the water; ink blooms as you write in the panel.
+   Older entries are listed below; tap one to expand it.
+7. **Sleep: moon.** The moon's phase is the hours slept (full = 8 h). Drag it, use the stepper,
+   or tap a bar in the seven-night chart to look at another night.
 
 Everywhere: turn the dial, swipe the circles, scroll, or use ← → to move between worlds.
 Tap the knob or the centre circle to open, and the knob again (or Esc) to close.
