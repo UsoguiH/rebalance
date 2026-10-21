@@ -107,3 +107,28 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+---
+
+# Orbit (`orbit/`)
+
+A personal dashboard built as a one-to-one recreation of a "Navigation Test (E.27)"
+micro-interaction: circles on a large wheel, a rotary dial of eight dots around a
+thumb-friendly semicircle, and a knob that melts into the semicircle (an SVG goo
+filter) while the centre circle expands into a black detail view.
+
+Open `orbit/index.html` in a browser. Seven orbits, each with its own detail page:
+
+1. **My goals**: progress per goal; tap to add 10%
+2. **Exercise**: the weekly plan; tap a day to mark it done, with a streak
+3. **My agents**: Claude Code subagents; tap one to copy a prompt that calls it
+4. **Habits**: daily check-ins with a seven-day history
+5. **Reading**: books in progress; tap to add ten pages
+6. **Journal**: one prompt a day, saved as you type
+7. **Sleep**: the last seven nights against an eight-hour target
+
+Controls: turn the dial (or swipe the circles, scroll, or use ← →) to move; release past
+about 15° to step. Tap the knob or the centre circle to open, tap it again (or Esc) to
+close. In the open view, swipe sideways or scroll to reach the panel. Data starts with
+sample entries and is saved in `localStorage` on your device. All circle artwork is drawn
+on a canvas at load, so there are no image files.
