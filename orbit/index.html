@@ -112,6 +112,9 @@
   .toast { position: absolute; z-index: 7; left: 50%; bottom: calc(var(--u) * 470); transform: translate(-50%, 8px); max-width: 84%;
            background: #1c1c1c; color: #eee; border-radius: 999px; padding: 8px 16px; font-size: 12px; opacity: 0; pointer-events: none;
            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .intro-text { position: absolute; z-index: 5; left: 0; right: 0; top: var(--cy); transform: translateY(-50%); text-align: center; pointer-events: none; padding: 0 16px; }
+  .intro-text .hi { font-weight: 300; font-size: max(30px, calc(var(--u) * 96)); letter-spacing: -.035em; line-height: 1.05; color: var(--deep); text-wrap: balance; }
+  .intro-text .sum { margin-top: calc(var(--u) * 26); font-size: max(11px, calc(var(--u) * 26)); color: #7b8792; font-variant-numeric: tabular-nums; }
   .nogsap { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #555; font-size: 14px; background: var(--paper); z-index: 10; }
 </style>
 <!-- ARTIFACT:HEAD-END -->
@@ -124,6 +127,7 @@
   <div id="carousel"></div>
   <div class="cta" id="cta"><i></i><span id="ctaText"></span></div>
   <span class="sizer" id="sizer"></span>
+  <div class="intro-text" id="introText" hidden><div class="hi" id="introHi"></div><div class="sum" id="introSum"></div></div>
 
   <div id="detail" hidden>
     <canvas id="wc"></canvas>
@@ -150,6 +154,8 @@
     <circle id="knobInner"></circle>
     <circle id="knobDot" fill="#fcfcfc"></circle>
     <circle id="touch" fill="#4a4a4a" opacity="0"></circle>
+    <circle id="introRing" fill="none" stroke="#1d2a36" r="0"></circle>
+    <circle id="introDot" fill="#1d2a36" r="0"></circle>
   </svg>
   <button class="knob-hit" id="knobHit" aria-label="Open the current orbit"></button>
   <div class="toast" id="toast" role="status"></div>
@@ -927,6 +933,8 @@ const C = { pos: 0 };
 const dial = { rot: 0 };
 const V = { clip: 0, cam: 0, ui: 0, neck: 0, dots: 1, shell: 0 };
 const kp = { v: 0 };
+const intro = { on: false, spread: 1, side: 1, clip: 1, navY: 0, dialR: G.DIAL, dotsS: 1 };
+let introTl = null;
 let mode = 'carousel', openIdx = 0, cur = -1, posTw = null, posTarget = 0, tl = null, split = null, unmount = null;
 const worlds = {}; const world = (i) => worlds[ITEMS[i].key] || (worlds[ITEMS[i].key] = WORLDS[ITEMS[i].key]());
 
@@ -1061,8 +1069,14 @@ gsap.ticker.add((time) => {
   if (mode !== 'detail') for (let i = 0; i < N; i++) {
     const k = mod(i - C.pos + N / 2, N) - N / 2, el = items[i].el;
     if (Math.abs(k) > 1.75) { el.style.visibility = 'hidden'; continue; }
-    const a = k * G.WSTEP * Math.PI / 180, x = W / 2 + G.WHEEL * U * Math.sin(a), y = Cy + G.WHEEL * U * (1 - Math.cos(a));
-    el.style.visibility = 'visible'; el.style.transform = `translate3d(${x - G.R * U}px, ${y - G.R * U}px, 0)`;
+    const a = k * G.WSTEP * intro.spread * Math.PI / 180, x = W / 2 + G.WHEEL * U * Math.sin(a), y = Cy + G.WHEEL * U * (1 - Math.cos(a));
+    el.style.visibility = 'visible';
+    if (intro.on) {
+      const centre = Math.abs(k) < .5;
+      el.style.transform = `translate3d(${x - G.R * U}px, ${y - G.R * U}px, 0) scale(${centre ? 1 : lerp(.3, 1, intro.side)})`;
+      el.style.opacity = centre ? 1 : intro.side; el.style.zIndex = centre ? 2 : 1;
+      el.style.clipPath = centre ? `circle(${intro.clip * 50}% at 50% 50%)` : 'none';
+    } else el.style.transform = `translate3d(${x - G.R * U}px, ${y - G.R * U}px, 0)`;
     vis.push(i);
   }
   setCur(mod(Math.round(C.pos), N));
@@ -1082,12 +1096,18 @@ gsap.ticker.add((time) => {
   }
   /* nav: dial dots, knob, goo bridge */
   const rad = Math.PI / 180;
-  dots.forEach(([a, b], j) => { const ang = (-90 + (j + 1) * G.DSTEP + dial.rot) * rad, x = dcx + G.DIAL * U * Math.cos(ang), y = dcy + G.DIAL * U * Math.sin(ang); attr(a, { cx: x, cy: y }); attr(b, { cx: x, cy: y }); });
+  const dy0 = dcy + intro.navY;
+  if (intro.on) { attr(semi, { cy: dy0 }); attr(semiLabel, { y: dy0 - 108 * U }); }
+  dots.forEach(([a, b], j) => {
+    const ang = (-90 + (j + 1) * G.DSTEP + dial.rot) * rad, x = dcx + G.DIAL * U * Math.cos(ang), y = dy0 + G.DIAL * U * Math.sin(ang);
+    attr(a, { cx: x, cy: y }); attr(b, { cx: x, cy: y });
+    if (intro.on) { a.setAttribute('r', G.DOT * U * intro.dotsS); b.setAttribute('r', G.DOTC * U * intro.dotsS); }
+  });
   dotsG.style.opacity = V.dots;
-  const ka = (-90 + dial.rot) * rad, kx = dcx + G.DIAL * U * Math.cos(ka), ky = dcy + G.DIAL * U * Math.sin(ka);
+  const ka = (-90 + (intro.on ? 0 : dial.rot)) * rad, kx = dcx + intro.dialR * U * Math.cos(ka), ky = dy0 + intro.dialR * U * Math.sin(ka);
   attr(knobOuter, { cx: kx, cy: ky, r: G.KNOB * U * (1 + kp.v * .08) }); attr(knobInner, { cx: kx, cy: ky, r: G.KNOBIN * U * (1 - .1 * kp.v) }); attr(knobDot, { cx: kx, cy: ky, r: G.KNOBDOT * U * (1 + kp.v * .6) });
   const nw = 34 * U * clamp(V.neck, 0, 1.4);
-  attr(neck, { x: kx - nw / 2, y: ky, width: Math.max(0, nw), height: Math.max(0, dcy - G.SEMI * U - ky + 30 * U), rx: nw / 2 });
+  attr(neck, { x: kx - nw / 2, y: ky, width: Math.max(0, nw), height: Math.max(0, dy0 - G.SEMI * U - ky + 30 * U), rx: nw / 2 });
   const tone = ITEMS[isOpen ? openIdx : Math.max(0, cur)].tone, dark = tone === 'dark' ? V.shell : 0;
   const shell = mix(LIGHT.semi, DARK.semi, dark);
   semi.setAttribute('fill', shell); neck.setAttribute('fill', shell); knobOuter.setAttribute('fill', shell);
@@ -1107,6 +1127,7 @@ const rubber = (v, lim) => (Math.abs(v) <= lim ? v : Math.sign(v) * (lim + (Math
 const toScene = (p) => { const k = lerp(kT, 1, V.cam); return { x: F.x + (p.x - F.x) / k, y: F.y + (p.y - F.y) / k }; };
 
 stage.addEventListener('pointerdown', (e) => {
+  if (intro.on) { introTl.progress(1); return; }
   if (e.button > 0 || mode === 'opening' || mode === 'closing') return;
   if (e.target.closest('textarea, input, button, form, .w-card, .w-confirm')) return;
   if (!$('wConfirm').hidden) hideConfirm();
@@ -1184,6 +1205,7 @@ stage.addEventListener('pointercancel', endGesture);
 
 let wheelAcc = 0, wheelT = 0, wheelLock = 0;
 stage.addEventListener('wheel', (e) => {
+  if (intro.on) { e.preventDefault(); introTl.progress(1); return; }
   if (e.target.closest('textarea')) return;
   e.preventDefault();
   const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
@@ -1195,6 +1217,7 @@ stage.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 document.addEventListener('keydown', (e) => {
+  if (intro.on) { introTl.progress(1); e.preventDefault(); return; }
   if (e.target.closest && e.target.closest('textarea, input')) { if (e.key === 'Escape') { e.target.blur(); hideForm(); stage.focus({ preventScroll: true }); } return; }
   if (mode === 'carousel') {
     if (e.key === 'ArrowRight') { step(1); e.preventDefault(); }
@@ -1206,12 +1229,72 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+
+/* ---------- opening sequence ---------- */
+function greeting() { const h = new Date().getHours(); return h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; }
+function summary() {
+  const avg = st.goals.length ? Math.round(st.goals.reduce((a, g) => a + g.p, 0) / st.goals.length) : 0;
+  const hab = `${st.habits.filter((h) => h.log[TK]).length}/${st.habits.length} habits`;
+  const sl = st.sleep[TK]; return [`${avg}% to goals`, hab, sl ? `${fmtH(sl)} slept` : `${st.agents.length} agents ready`].join('  ·  ');
+}
+function playIntro() {
+  const R = G.R * U, circ = Math.PI * 2 * R, ring = $('introRing'), dot = $('introDot'), txt = $('introText');
+  const sum = summary(), count = $('count'), it = ITEMS[cur];
+  $('introHi').textContent = greeting(); $('introSum').textContent = sum; txt.hidden = false;
+  Object.assign(intro, { on: true, spread: 0, side: 0, clip: 0, navY: 620 * U, dialR: 40, dotsS: 0 });
+  V.neck = 1; dial.rot = -220;
+  count.textContent = `0/${N}`; gsap.set([cta, semiLabel], { opacity: 0 });
+  attr(ring, { cx: F.x, cy: F.y, r: R, 'stroke-width': Math.max(1, 2.2 * U), 'stroke-dasharray': circ, 'stroke-dashoffset': circ, opacity: 1 });
+  attr(dot, { cx: F.x, cy: F.y, r: 0 });
+  const hi = SplitText.create('#introHi', { type: 'chars,words', mask: 'chars' });
+  const hdr = SplitText.create(['.hdr .l1', '.hdr .l2'], { type: 'chars', mask: 'chars' });
+  gsap.set(hdr.chars, { yPercent: 110 }); gsap.set(count, { scale: 0 });
+  sizer.textContent = it.cta || ''; const ctaW = 34 * U + 11 * U + 26 * U + sizer.offsetWidth + 34 * U;
+  introTl = gsap.timeline({ onComplete: () => {
+      intro.on = false; Object.assign(intro, { spread: 1, side: 1, clip: 1, navY: 0, dialR: G.DIAL, dotsS: 1 });
+      items.forEach(({ el }) => { el.style.clipPath = ''; el.style.opacity = ''; el.style.zIndex = ''; });
+      attr(ring, { r: 0 }); attr(dot, { r: 0 }); txt.hidden = true; hi.revert(); hdr.revert(); layout();
+      gsap.set(count, { scale: 1 }); count.textContent = `${cur + 1}/${N}`; semiLabel.textContent = ITEMS[cur].name; V.neck = 0; dial.rot = 0;
+      gsap.set(semiLabel, { opacity: 1 }); ctaText.textContent = ITEMS[cur].cta || ''; sizeCta(); gsap.set(cta, { opacity: ITEMS[cur].cta ? 1 : 0 });
+    } })
+    // a heartbeat in the void, and a greeting
+    .to(dot, { attr: { r: 10 * U }, duration: .5, ease: 'back.out(3)' }, 0)
+    .to(dot, { attr: { r: 6 * U }, duration: .2, repeat: 3, yoyo: true, ease: 'sine.inOut' }, .5)
+    .from(hi.chars, { yPercent: 115, duration: 1, ease: 'expo.out', stagger: .028 }, .15)
+    .fromTo('#introSum', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .6, ease: 'power2.out' }, .6)
+    .to('#introSum', { duration: .9, scrambleText: { text: sum, chars: '0123456789/%·', speed: .5 } }, .6)
+    // the ring draws itself, then becomes the first world
+    .to(ring, { attr: { 'stroke-dashoffset': 0 }, duration: 1.15, ease: 'power3.inOut' }, .35)
+    .to(txt, { y: -60 * U, opacity: 0, filter: 'blur(8px)', duration: .55, ease: 'power2.in' }, 1.55)
+    .to(dot, { attr: { r: 0 }, duration: .3, ease: 'power2.in' }, 1.6)
+    .to(intro, { clip: 1, duration: .9, ease: 'expo.out' }, 1.7)
+    .to(ring, { attr: { r: R * 1.35 }, opacity: 0, duration: .8, ease: 'expo.out' }, 1.72)
+    // the other worlds fan out along the wheel
+    .to(intro, { side: 1, duration: .45, ease: 'power1.out' }, 1.9)
+    .to(intro, { spread: 1, duration: 1.5, ease: 'elastic.out(1,.62)' }, 1.9)
+    // the dial rises; the knob is pulled out of it, stretches and lets go
+    .to(intro, { navY: 0, duration: 1.1, ease: 'expo.out' }, 1.8)
+    .to(intro, { dialR: G.DIAL, duration: 1.2, ease: 'elastic.out(1,.5)' }, 2.15)
+    .to(V, { neck: 0, duration: .3, ease: 'power2.in' }, 2.62)
+    .to(intro, { dotsS: 1, duration: .9, ease: 'back.out(2.2)' }, 2.45)
+    .to(dial, { rot: 0, duration: 1.6, ease: 'expo.out' }, 2.35)
+    // labels arrive
+    .to(hdr.chars, { yPercent: 0, duration: .9, ease: 'expo.out', stagger: .018 }, 2.2)
+    .to(count, { scale: 1, duration: .7, ease: 'back.out(2.5)' }, 2.4)
+    .to(count, { duration: .8, scrambleText: { text: `${cur + 1}/${N}`, chars: '0123456789', speed: .6 } }, 2.5)
+    .call(() => { semiLabel.textContent = ''; gsap.set(semiLabel, { opacity: 1 }); }, null, 2.6)
+    .to(semiLabel, { duration: .9, scrambleText: { text: it.name, chars: 'lowerCase', speed: .6 } }, 2.6)
+    .fromTo(cta, { width: 73 * U, opacity: 0 }, { width: ctaW, opacity: it.cta ? 1 : 0, duration: .8, ease: 'expo.out' }, 2.7)
+    .call(() => { ctaText.textContent = ''; }, null, 2.74)
+    .to(ctaText, { duration: .7, scrambleText: { text: it.cta || '', chars: 'lowerCase', speed: .8 } }, 2.75);
+  if (REDUCED) introTl.timeScale(2.5);
+}
+
 /* ---------- boot ---------- */
 layout();
 new ResizeObserver(() => layout()).observe(stage);
 setCur(0);
-gsap.from(items.map((x) => x.el), { opacity: 0, duration: 1.2, ease: 'power2.out', stagger: .08 });
-gsap.from(dots.map(([a]) => a.parentNode), { opacity: 0, duration: .8, stagger: .05, delay: .3 });
+playIntro();
 stage.focus({ preventScroll: true });
 window.__orbit = { open, close, step, get mode() { return mode; }, world: () => world(openIdx), V };
 })();

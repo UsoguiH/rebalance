@@ -118,7 +118,12 @@ and a knob that melts into the semicircle (an SVG goo filter). Every circle is a
 window into its own world; opening one dives through the circle into that world.
 Motion runs on GSAP (core, SplitText, ScrambleText) loaded from jsDelivr.
 
-Open `orbit/index.html` in a browser. Seven worlds, each with its own interaction:
+Open `orbit/index.html` in a browser. It opens with a short sequence: a heartbeat dot and a
+greeting with today's summary, a ring that draws itself into the first world, the other worlds
+fanning out along the wheel, and the knob pulled out of the rising dial. Tap or press any key
+to skip it.
+
+Seven worlds, each with its own interaction:
 
 1. **My goals: gravity.** Goals orbit a sun; the closer the orbit, the more progress.
    Drag a planet inward to log progress, all the way in to finish it (it becomes a ring),
