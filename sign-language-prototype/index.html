@@ -1,0 +1,893 @@
+<title>إشارتي</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=Rubik:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one phone-width column; screens swap inside it like a native app (home path, lesson, results) */
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --sunk:#F4F8F8; --line:#E3E8E8; --ink:#4B5455; --ink-strong:#2F3A3B; --muted:#76807F; --faint:#AEB6B5;
+  --brand:#14B8A6; --brand-shadow:#0C8E80; --brand-soft:#D3F6F1; --on-accent:#FFFFFF;
+  --blue:#1CB0F6; --blue-shadow:#1899D6; --blue-soft:#DDF4FF; --blue-line:#84D8FF;
+  --green:#58CC02; --green-shadow:#58A700; --green-soft:#D7FFB8;
+  --red:#FF4B4B; --red-shadow:#EA2B2B; --red-soft:#FFDFE0;
+  --gold:#FFC800; --gold-shadow:#E0A800; --orange:#FF9600; --orange-shadow:#E07F00;
+  --violet:#CE82FF; --violet-shadow:#A764D6;
+  --locked:#E5E9E9; --locked-shadow:#BAC2C1;
+  --mascot:#FF8A5B; --mascot-dark:#E2683A; --skin:#F2C6A0; --skin-line:#D9A57D; --hair:#3B2A20; --shirt:#14B8A6;
+  --display:"Baloo Bhaijaan 2","Rubik","Segoe UI",Tahoma,sans-serif;
+  --body:"Rubik","Segoe UI",Tahoma,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#121D21; --surface:#121D21; --sunk:#1A2A30; --line:#33454D; --ink:#D5E1E5; --ink-strong:#EFF6F8; --muted:#93A7AF; --faint:#55696F;
+  --brand-soft:#123E3A; --on-accent:#0E191C; --blue-soft:#15334A; --blue-line:#2A7FA8;
+  --green-soft:#1D3A16; --red-soft:#3F1E22; --locked:#33454D; --locked-shadow:#22323A; --skin-line:#C08C66;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#121D21; --surface:#121D21; --sunk:#1A2A30; --line:#33454D; --ink:#D5E1E5; --ink-strong:#EFF6F8; --muted:#93A7AF; --faint:#55696F;
+  --brand-soft:#123E3A; --on-accent:#0E191C; --blue-soft:#15334A; --blue-line:#2A7FA8;
+  --green-soft:#1D3A16; --red-soft:#3F1E22; --locked:#33454D; --locked-shadow:#22323A; --skin-line:#C08C66;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0;
+  -webkit-tap-highlight-color:transparent}
+button{font-family:inherit}
+#root{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;position:relative}
+.screen{flex:1;min-height:0;display:flex;flex-direction:column;animation:screenIn .28s ease-out}
+@keyframes screenIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+:focus-visible{outline:3px solid var(--blue-line);outline-offset:3px}
+
+/* chunky 3D buttons */
+.btn{--c:var(--brand);--s:var(--brand-shadow);--t:var(--on-accent);
+  font:700 1.15rem/1 var(--display);border:0;border-radius:16px;padding:15px 20px 11px;min-height:54px;width:100%;
+  background:var(--c);color:var(--t);box-shadow:0 4px 0 var(--s);cursor:pointer;transition:transform .08s,box-shadow .08s,filter .15s}
+.btn:hover:not(:disabled){filter:brightness(1.06)}
+.btn:active:not(:disabled){transform:translateY(4px);box-shadow:0 0 0 var(--s)}
+.btn.green{--c:var(--green);--s:var(--green-shadow)}
+.btn.red{--c:var(--red);--s:var(--red-shadow)}
+.btn.blue{--c:var(--blue);--s:var(--blue-shadow)}
+.btn.ghost{--c:var(--surface);--s:var(--line);--t:var(--blue);border:2px solid var(--line)}
+.btn.link{background:none;box-shadow:none;color:var(--red);min-height:44px}
+.btn:disabled,.btn[disabled]{--c:var(--locked);--s:var(--locked-shadow);--t:var(--faint);border:0;cursor:default}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+/* selectable tiles */
+.tile{background:var(--surface);border:2px solid var(--line);border-bottom-width:4px;border-radius:16px;padding:14px 12px;
+  color:var(--ink-strong);font:600 1.1rem/1.3 var(--body);cursor:pointer;text-align:center;
+  transition:transform .08s,background .15s,border-color .15s,color .15s}
+.tile:active{transform:translateY(2px)}
+.tile.sel{background:var(--blue-soft);border-color:var(--blue-line);color:var(--blue-shadow)}
+.tile.ok{background:var(--green-soft);border-color:var(--green);color:var(--green-shadow)}
+.tile.bad{background:var(--red-soft);border-color:var(--red);color:var(--red-shadow);animation:shake .4s}
+.tile.gone{opacity:.3;pointer-events:none;transition:opacity .4s}
+.tile .emo{display:block;font-size:2.2rem;line-height:1.2;margin-bottom:4px}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* onboarding */
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;padding-block:24px}
+.brandname{font:800 2.6rem/1 var(--display);color:var(--brand);margin:0}
+.lead{font:700 1.45rem/1.4 var(--display);color:var(--ink-strong);margin:0;max-width:22ch;text-wrap:balance}
+.foot{padding-block:16px 20px;display:flex;flex-direction:column;gap:12px}
+.ob-head{display:flex;align-items:center;gap:14px;padding-block:16px}
+.ob-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding-block:4px 12px}
+.say{display:flex;align-items:flex-end;gap:10px}
+.say .mascot{width:96px;flex:none}
+.speech{position:relative;border:2px solid var(--line);border-radius:16px;padding:12px 14px;font:700 1.15rem/1.4 var(--display);color:var(--ink-strong);background:var(--surface)}
+.speech::before{content:"";position:absolute;bottom:16px;inset-inline-start:-9px;width:14px;height:14px;background:var(--surface);
+  border-inline-start:2px solid var(--line);border-bottom:2px solid var(--line);transform:rotate(45deg)}
+.choice{display:flex;align-items:center;gap:14px;text-align:start;padding:14px 16px}
+.choice .emo{font-size:2rem;margin:0;flex:none}
+.choice b{display:block;font:700 1.12rem/1.3 var(--display)}
+.choice small{display:block;color:var(--muted);font:400 .88rem/1.4 var(--body);margin-top:2px}
+.choice.sel small{color:var(--blue-shadow)}
+.dots{display:flex;gap:8px}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--brand);animation:dot 1s infinite ease-in-out}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-8px);opacity:1}}
+
+/* home */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-block:12px;border-bottom:2px solid var(--line)}
+.stats{display:flex;gap:16px}
+.stat{display:flex;align-items:center;gap:5px;font:800 1.1rem/1 var(--display)}
+.stat svg{width:26px;height:26px}
+.stat.fire{color:var(--orange)}.stat.gem{color:var(--blue)}.stat.heart{color:var(--red)}
+.stat.fire.off{color:var(--faint)}
+.chip{display:flex;align-items:center;gap:6px;border:2px solid var(--line);border-radius:12px;padding:6px 10px;background:var(--surface);
+  font:700 .95rem var(--display);color:var(--ink-strong);cursor:pointer}
+.path-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding-block:16px 40px;scrollbar-width:none}
+.path-scroll::-webkit-scrollbar{display:none}
+.unit{margin-bottom:34px}
+.unit-head{background:var(--uc);color:var(--on-accent);border-radius:16px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:0 4px 0 var(--us)}
+.unit-head small{display:block;font:600 .85rem var(--body);opacity:.85}
+.unit-head h2{margin:2px 0 0;font:800 1.35rem/1.2 var(--display)}
+.unit-head .guide{border:2px solid rgba(255,255,255,.35);background:transparent;color:inherit;border-radius:12px;padding:8px 12px;font:700 .9rem var(--display);cursor:pointer;flex:none}
+.unit.soon .unit-head{--uc:var(--locked);--us:var(--locked-shadow);color:var(--muted)}
+.nodes{display:flex;flex-direction:column;align-items:center;gap:26px;padding-top:34px;position:relative}
+.node-wrap{position:relative;transform:translateX(var(--x,0px))}
+.node-wrap.cur{margin-top:38px}
+.node{--nc:var(--uc);--ns:var(--us);width:74px;height:68px;border-radius:50%;border:0;background:var(--nc);box-shadow:0 7px 0 var(--ns);
+  display:grid;place-items:center;cursor:pointer;color:#fff;transition:transform .1s,box-shadow .1s;position:relative;z-index:1}
+.node:active{transform:translateY(5px);box-shadow:0 2px 0 var(--ns)}
+.node svg{width:34px;height:34px}
+.node.locked{--nc:var(--locked);--ns:var(--locked-shadow);color:var(--faint)}
+.node.done{--nc:var(--gold);--ns:var(--gold-shadow)}
+.node.just-done{animation:pop .6s cubic-bezier(.3,1.8,.5,1)}
+@keyframes pop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+.ring{position:absolute;inset:-11px -11px -4px;border-radius:50%;border:7px solid var(--line);z-index:0}
+.bubble{position:absolute;bottom:calc(100% + 18px);left:50%;transform:translateX(-50%);background:var(--surface);border:2px solid var(--line);color:var(--uc);
+  font:800 1.05rem/1 var(--display);padding:10px 16px 8px;border-radius:12px;white-space:nowrap;animation:bob 1.3s ease-in-out infinite;z-index:2}
+.bubble::after{content:"";position:absolute;top:100%;left:50%;width:12px;height:12px;background:var(--surface);
+  border-right:2px solid var(--line);border-bottom:2px solid var(--line);transform:translate(-50%,-6px) rotate(45deg)}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -6px}}
+.path-mascot{position:absolute;width:104px;top:120px;pointer-events:none}
+.tabbar{display:flex;justify-content:space-around;border-top:2px solid var(--line);padding-block:6px}
+.tab{background:none;border:2px solid transparent;border-radius:12px;padding:6px 14px;cursor:pointer;color:var(--faint);display:grid;place-items:center}
+.tab svg{width:30px;height:30px}
+.tab.on{border-color:var(--blue-line);background:var(--blue-soft);color:var(--blue)}
+
+/* lesson */
+.lhead{display:flex;align-items:center;gap:14px;padding-block:16px 8px}
+.iconbtn{background:none;border:0;color:var(--faint);cursor:pointer;padding:4px;display:grid;place-items:center}
+.iconbtn svg{width:26px;height:26px}
+.pwrap{flex:1;position:relative}
+.pbar{height:16px;background:var(--line);border-radius:99px;overflow:hidden}
+.pfill{height:100%;background:var(--green);border-radius:99px;position:relative;min-width:16px;transition:width .55s cubic-bezier(.3,1.4,.6,1)}
+.pfill::after{content:"";position:absolute;top:4px;inset-inline:8px;height:4px;border-radius:99px;background:rgba(255,255,255,.35)}
+.combo{position:absolute;bottom:calc(100% + 2px);inset-inline-start:4px;font:800 .9rem var(--display);color:var(--orange);animation:comboIn .5s cubic-bezier(.3,1.8,.5,1)}
+@keyframes comboIn{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.hearts{display:flex;align-items:center;gap:4px;color:var(--red);font:800 1.15rem var(--display)}
+.hearts svg{width:26px;height:26px}
+.hearts.lost svg{animation:heartLost .6s}
+@keyframes heartLost{30%{transform:scale(1.4) rotate(-12deg)}60%{transform:scale(.8)}}
+.lbody{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding-block:10px 24px}
+.prompt{font:800 1.5rem/1.35 var(--display);color:var(--ink-strong);margin:0;text-wrap:balance}
+.newtag{display:flex;align-items:center;gap:6px;color:var(--violet-shadow);font:800 1rem var(--display)}
+.newtag svg{width:22px;height:22px}
+.signcard{position:relative;border:2px solid var(--line);border-radius:20px;background:var(--sunk);overflow:hidden;aspect-ratio:5/4;width:100%;max-width:100%}
+.signcard.sm{aspect-ratio:1/1;border-radius:16px}
+.signer{width:100%;height:100%;display:block}
+.sc-tools{position:absolute;bottom:10px;inset-inline-start:10px;display:flex;gap:10px}
+.round{width:46px;height:46px;border-radius:14px;background:var(--blue);box-shadow:0 4px 0 var(--blue-shadow);border:0;color:#fff;display:grid;place-items:center;cursor:pointer;transition:transform .08s,box-shadow .08s}
+.round:active{transform:translateY(4px);box-shadow:none}
+.round svg{width:24px;height:24px}
+.round.on{background:var(--orange);box-shadow:0 4px 0 var(--orange-shadow)}
+.sc-note{position:absolute;top:8px;inset-inline-end:10px;font:500 .72rem/1.3 var(--body);color:var(--muted);background:var(--surface);padding:3px 8px;border-radius:99px;border:1px solid var(--line)}
+.word-big{display:flex;align-items:center;justify-content:center;gap:12px;font:800 2rem/1.2 var(--display);color:var(--ink-strong)}
+.word-big .emo{font-size:2.2rem}
+.speak{width:44px;height:44px;border-radius:12px;border:2px solid var(--line);border-bottom-width:4px;background:var(--surface);color:var(--blue);cursor:pointer;display:grid;place-items:center}
+.speak svg{width:22px;height:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pickgrid .tile{padding:6px;display:flex;flex-direction:column;gap:6px}
+.pickgrid .tile .signcard{border:0;border-radius:12px}
+.pickgrid .tile .num{font:700 .8rem var(--display);color:var(--faint)}
+.pickgrid .tile.sel .num{color:var(--blue)}
+.match{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.match .tile{height:112px}
+.match .col{display:flex;flex-direction:column;gap:12px}
+.match .tile.signt{padding:4px}
+.match .tile.signt .signcard{border:0;aspect-ratio:auto;height:100%;border-radius:12px}
+.match .tile.wordt{display:flex;align-items:center;justify-content:center;flex-direction:column}
+.mirror-steps{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.mirror-steps li{display:flex;align-items:center;gap:12px;font:500 1rem/1.4 var(--body);color:var(--ink)}
+.mirror-steps li span{flex:none;width:30px;height:30px;border-radius:50%;background:var(--brand-soft);color:var(--brand-shadow);display:grid;place-items:center;font:800 .95rem var(--display)}
+.mirror-steps li.done span{background:var(--green);color:#fff}
+.cam-hint{display:flex;gap:10px;align-items:center;border:2px dashed var(--line);border-radius:14px;padding:10px 12px;color:var(--muted);font:500 .88rem/1.4 var(--body)}
+.cam-hint svg{width:24px;height:24px;flex:none;color:var(--brand)}
+.lfoot{border-top:2px solid var(--line);padding-block:16px 20px}
+
+/* bottom sheet */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:2px solid var(--line);
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  animation:sheetUp .25s cubic-bezier(.2,.9,.3,1)}
+.sheet.good{background:var(--green-soft);border-color:transparent}
+.sheet.bad{background:var(--red-soft);border-color:transparent}
+.sheet-in{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.sheet-title{display:flex;align-items:center;gap:12px;font:800 1.5rem/1.2 var(--display)}
+.sheet.good .sheet-title{color:var(--green-shadow)}
+.sheet.bad .sheet-title{color:var(--red-shadow)}
+.sheet-title .badge{width:44px;height:44px;border-radius:50%;background:var(--surface);display:grid;place-items:center;flex:none}
+.sheet-title .badge svg{width:26px;height:26px}
+.sheet-sub{margin:-6px 0 0;font:600 1.05rem/1.4 var(--body)}
+.sheet.bad .sheet-sub{color:var(--red-shadow)}
+.sheet.good .sheet-sub{color:var(--green-shadow)}
+.scrim{position:fixed;inset:0;background:rgba(10,20,22,.45);z-index:19;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+
+/* results + streak */
+.results{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding-block:20px}
+.results h1{font:800 2rem/1.2 var(--display);color:var(--gold-shadow);margin:0}
+.results p{margin:0;color:var(--muted);font:500 1.05rem var(--body)}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
+.scard{border:2px solid var(--sc);border-radius:16px;overflow:hidden;background:var(--sc)}
+.scard small{display:block;color:var(--on-accent);font:800 .8rem/1 var(--display);padding:7px 4px 5px}
+.scard div{background:var(--surface);border-radius:13px;padding:12px 4px;font:800 1.35rem/1 var(--display);color:var(--sc);display:flex;align-items:center;justify-content:center;gap:4px;font-variant-numeric:tabular-nums}
+.scard svg{width:20px;height:20px}
+.flame{width:150px;height:150px;animation:flameIn .8s cubic-bezier(.3,1.6,.5,1)}
+@keyframes flameIn{from{transform:scale(.2) rotate(-20deg);opacity:0}}
+.streak-num{font:800 4.5rem/1 var(--display);color:var(--orange)}
+.week{display:flex;gap:10px;justify-content:center;border:2px solid var(--line);border-radius:16px;padding:14px 16px}
+.week div{display:flex;flex-direction:column;align-items:center;gap:6px;font:700 .8rem var(--display);color:var(--muted)}
+.week i{width:28px;height:28px;border-radius:50%;background:var(--line);display:grid;place-items:center}
+.week i.on{background:var(--orange)}
+.week i svg{width:16px;height:16px;color:#fff}
+canvas.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+
+/* profile */
+.me{flex:1;overflow-y:auto;padding-block:16px 24px;display:flex;flex-direction:column;gap:18px}
+.me h1{margin:0;font:800 1.6rem var(--display);color:var(--ink-strong)}
+.me h2{margin:0;font:700 1.15rem var(--display);color:var(--ink-strong)}
+.mstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mstat{border:2px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.mstat b{font:800 1.3rem var(--display);color:var(--ink-strong);font-variant-numeric:tabular-nums}
+.mstat span{font:500 .82rem var(--body);color:var(--muted)}
+.note{border-radius:14px;background:var(--sunk);padding:12px 14px;color:var(--muted);font:400 .9rem/1.6 var(--body)}
+
+/* toast */
+.toast{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:40;background:var(--ink-strong);color:var(--bg);
+  font:700 1rem var(--display);padding:12px 18px 10px;border-radius:14px;animation:toastIn .3s cubic-bezier(.3,1.5,.5,1);max-width:calc(100% - 32px);text-align:center}
+@keyframes toastIn{from{transform:translate(-50%,-30px);opacity:0}}
+
+/* mascot "كفو" */
+.mascot{display:block;overflow:visible}
+.mascot .m-body{transform-box:fill-box;transform-origin:50% 100%;animation:idle 2.4s ease-in-out infinite}
+.mascot .m-palm,.mascot .m-f{fill:var(--mascot)}
+.mascot .m-belly{fill:#FFB08F}
+.mascot .m-shadow{fill:var(--line)}
+.mascot .m-eyew{fill:#fff}.mascot .m-pupil{fill:#2B1B14}.mascot .m-cheek{fill:#FF6F91;opacity:.55}.mascot .m-mouth{fill:#9C3B1F}
+.mascot .m-wave{transform-box:fill-box;transform-origin:50% 100%}
+.mascot.waving .m-wave{animation:fingerWave 1.1s ease-in-out infinite}
+.mascot.waving .m-wave:nth-of-type(2){animation-delay:.08s}
+.mascot.waving .m-wave:nth-of-type(3){animation-delay:.16s}
+.mascot.waving .m-wave:nth-of-type(4){animation-delay:.24s}
+.mascot.jump .m-body{animation:jump .9s cubic-bezier(.3,1.4,.5,1) infinite}
+.mascot .m-lid{fill:var(--mascot);transform-box:fill-box;transform-origin:50% 0;transform:scaleY(0);animation:blink 4.5s infinite}
+@keyframes idle{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-4px) scale(1.02,.98)}}
+@keyframes fingerWave{0%,100%{transform:rotate(0)}50%{transform:rotate(-10deg)}}
+@keyframes jump{0%,100%{transform:translateY(0) scale(1.05,.95)}40%{transform:translateY(-26px) scale(.96,1.05)}70%{transform:translateY(0) scale(1.08,.92)}}
+@keyframes blink{0%,94%,100%{transform:scaleY(0)}96%{transform:scaleY(1)}}
+
+/* the signer (placeholder illustration for each sign) */
+.signer .s-bg{fill:var(--sunk)}
+.signer .s-torso{fill:var(--shirt)}
+.signer .s-collar{fill:var(--brand-shadow)}
+.signer .s-skin{fill:var(--skin)}
+.signer .s-hair{fill:var(--hair)}
+.signer .s-eye{fill:#2B1B14;transform-box:fill-box;transform-origin:50% 50%}
+.signer .s-mouth{fill:none;stroke:#9C5B3B;stroke-width:2.2;stroke-linecap:round}
+.signer .hand{fill:var(--skin);stroke:var(--skin-line);stroke-width:1.6;transform-box:view-box;transform-origin:0 0;
+  animation-duration:calc(2.8s * var(--spd,1));animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.signer .s-head{transform-box:fill-box;transform-origin:50% 100%;animation-duration:calc(2.8s * var(--spd,1));animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.paused .hand,.paused .s-head,.paused .s-eye{animation-play-state:paused}
+.m-wave .handR{animation-name:sWave}
+.m-thanks .handR{animation-name:sThanks}
+.m-bye .handR{animation-name:sBye}
+.m-how .handR{animation-name:sHow}
+.m-yes .handR{animation-name:sYes}
+.m-no .handR{animation-name:sNo}
+.m-mama .handR{animation-name:sMama}
+.m-baba .handR{animation-name:sBaba}
+.m-eat .handR{animation-name:sEat}
+.m-water .handR{animation-name:sWater}
+.m-sleep .handR{animation-name:sSleep}
+.m-sleep .s-head{animation-name:sTilt}
+.m-sleep .s-eye{animation:sClose calc(2.8s * var(--spd,1)) ease-in-out infinite}
+.m-love .handR{animation-name:sHugR}
+.m-love .handL{animation-name:sHugL}
+@keyframes sWave{0%,100%{transform:translate(0,0) rotate(0)}20%{transform:translate(4px,-72px) rotate(0)}35%{transform:translate(4px,-72px) rotate(-22deg)}50%{transform:translate(4px,-72px) rotate(18deg)}65%{transform:translate(4px,-72px) rotate(-22deg)}80%{transform:translate(4px,-72px) rotate(8deg)}}
+@keyframes sThanks{0%,100%{transform:translate(0,0) rotate(0) scale(1)}22%,38%{transform:translate(-36px,-62px) rotate(0) scale(1)}62%,82%{transform:translate(-14px,-26px) rotate(-32deg) scale(1.18)}}
+@keyframes sBye{0%,100%{transform:translate(0,0) scale(1,1)}20%{transform:translate(6px,-74px) scale(1,1)}30%{transform:translate(6px,-74px) scale(1,.5)}40%{transform:translate(6px,-74px) scale(1,1)}50%{transform:translate(6px,-74px) scale(1,.5)}60%{transform:translate(6px,-74px) scale(1,1)}80%{transform:translate(6px,-74px) scale(1,1)}}
+@keyframes sHow{0%,100%{transform:translate(0,0)}15%{transform:translate(-16px,-38px)}30%{transform:translate(-30px,-52px)}45%{transform:translate(-44px,-38px)}60%{transform:translate(-30px,-24px)}75%{transform:translate(-16px,-38px)}}
+@keyframes sYes{0%,100%{transform:translate(0,0) rotate(0)}15%,45%,75%{transform:translate(-26px,-36px) rotate(0)}30%,60%{transform:translate(-26px,-28px) rotate(28deg)}}
+@keyframes sNo{0%,100%{transform:translate(0,0) rotate(0)}15%,75%{transform:translate(-26px,-50px) rotate(0)}30%,60%{transform:translate(-14px,-50px) rotate(16deg)}45%{transform:translate(-38px,-50px) rotate(-16deg)}}
+@keyframes sMama{0%,100%{transform:translate(0,0)}20%,40%,60%{transform:translate(-38px,-56px)}30%,50%{transform:translate(-38px,-63px)}}
+@keyframes sBaba{0%,100%{transform:translate(0,0)}20%,40%,60%{transform:translate(-38px,-98px)}30%,50%{transform:translate(-38px,-105px)}}
+@keyframes sEat{0%,100%{transform:translate(0,0) rotate(0)}20%,40%,60%{transform:translate(-38px,-68px) rotate(-24deg)}30%,50%{transform:translate(-38px,-52px) rotate(-24deg)}}
+@keyframes sWater{0%,100%{transform:translate(0,0) rotate(0)}20%,50%{transform:translate(-28px,-60px) rotate(22deg)}35%,65%{transform:translate(-44px,-62px) rotate(22deg)}}
+@keyframes sSleep{0%,100%{transform:translate(0,0) scale(1,1)}22%{transform:translate(-38px,-100px) scale(1,1)}60%,82%{transform:translate(-38px,-64px) scale(.86,.7)}}
+@keyframes sTilt{0%,30%,100%{transform:rotate(0)}60%,82%{transform:rotate(-12deg)}}
+@keyframes sClose{0%,30%,100%{transform:scaleY(1)}55%,85%{transform:scaleY(.15)}}
+@keyframes sHugR{0%,100%{transform:translate(0,0) rotate(0)}30%,75%{transform:translate(-62px,-30px) rotate(-30deg)}}
+@keyframes sHugL{0%,100%{transform:translate(0,0) rotate(0)}30%,75%{transform:translate(62px,-26px) rotate(30deg)}}
+
+/* kids mode: larger type, friendlier tiles */
+.kid .prompt{font-size:1.7rem}
+.kid .tile{font-size:1.3rem;border-radius:20px}
+.kid .tile .emo{font-size:2.8rem}
+.kid .word-big{font-size:2.4rem}
+
+@media (prefers-reduced-motion: reduce){
+  .screen,.bubble,.mascot .m-body,.mascot .m-wave,.flame,.toast,.sheet,.combo,.node.just-done{animation:none!important}
+  .pfill{transition:none}
+}
+</style>
+
+<div id="root" dir="rtl" lang="ar"></div>
+
+<script>
+(() => {
+const KEY = 'ishara-proto-v1';
+const root = document.getElementById('root');
+const ar = n => Number(n).toLocaleString('ar-SA');
+
+/* ---------- content ---------- */
+// Motions are placeholder illustrations. Real signs get recorded with a certified Saudi Sign Language interpreter.
+const SIGNS = {
+  hello: {ar:'مرحبا', emo:'👋', m:'wave'},
+  thanks:{ar:'شكراً', emo:'🙏', m:'thanks'},
+  bye:   {ar:'مع السلامة', emo:'🚪', m:'bye'},
+  how:   {ar:'كيف حالك؟', emo:'🙂', m:'how'},
+  yes:   {ar:'نعم', emo:'👍', m:'yes'},
+  no:    {ar:'لا', emo:'✋', m:'no'},
+  mama:  {ar:'ماما', emo:'👩', m:'mama'},
+  baba:  {ar:'بابا', emo:'👨', m:'baba'},
+  eat:   {ar:'أكل', emo:'🍎', m:'eat'},
+  water: {ar:'ماء', emo:'💧', m:'water'},
+  sleep: {ar:'نوم', emo:'😴', m:'sleep'},
+  love:  {ar:'أحبك', emo:'❤️', m:'love'}
+};
+const PROFILES = {
+  adult: {emo:'🧑', name:'كبير', title:'أنا كبير وأبي أتعلم', sub:'تتواصل مع الصم في الشغل والحياة',
+    units:[{t:'التحية', w:['hello','thanks','bye','how','yes','no'], c:'brand'},
+           {t:'العائلة والبيت', w:['mama','baba','love','eat','water','sleep'], c:'blue'},
+           {t:'الطوارئ', w:[], c:'violet', soon:true}]},
+  kid: {emo:'🧒', name:'طفل', title:'طفل (٤–١٠ سنوات)', sub:'دروس أسهل فيها صور وأصوات',
+    units:[{t:'أول كلماتي', w:['mama','baba','eat','water','sleep','love'], c:'orange'},
+           {t:'أسلّم على الناس', w:['hello','thanks','bye','yes','no','how'], c:'violet'},
+           {t:'الألوان', w:[], c:'blue', soon:true}]},
+  parent: {emo:'👪', name:'أهل', title:'أهل طفل أصم', sub:'كلمات يومية تتواصل فيها مع طفلك',
+    units:[{t:'كلمات كل يوم', w:['mama','baba','eat','water','sleep','love'], c:'brand'},
+           {t:'نتكلم مع الناس', w:['hello','thanks','bye','yes','no','how'], c:'orange'},
+           {t:'المشاعر', w:[], c:'violet', soon:true}]}
+};
+const NODE_TYPES = ['lesson','lesson','practice','chest','trophy'];
+const GOALS = [{m:5,t:'عادي'},{m:10,t:'جاد'},{m:15,t:'قوي'},{m:20,t:'بطل'}];
+const PRAISE = ['كفو!','ممتاز!','رهيب!','أحسنت!','صح عليك!'];
+
+/* ---------- icons ---------- */
+const I = {
+  fire:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c1 3.5 5.5 5.6 5.5 11a5.5 5.5 0 0 1-11 0c0-2.6 1.3-4.3 2.6-5.6.2 1.7.9 2.9 2.1 3.4C10.6 8 11.2 5 12 2z"/><path fill="#fff" opacity=".55" d="M12 21a2.8 2.8 0 0 1-2.8-2.8c0-1.6 1.4-2.6 2.8-4.4 1.4 1.8 2.8 2.8 2.8 4.4A2.8 2.8 0 0 1 12 21z"/></svg>',
+  gem:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 3h12l4 6-10 12L2 9z"/><path fill="#fff" opacity=".4" d="M6 3l3 6h6l3-6zM2 9h20L12 21z" fill-rule="evenodd"/></svg>',
+  heart:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-8.5-5.3-8.5-11.2A4.8 4.8 0 0 1 12 6.6a4.8 4.8 0 0 1 8.5 3.2C20.5 15.7 12 21 12 21z"/><ellipse cx="8" cy="9" rx="2" ry="1.3" fill="#fff" opacity=".5"/></svg>',
+  star:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  x:'<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>',
+  dumbbell:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 9h2V7h3v10H5v-2H3zM21 9h-2V7h-3v10h3v-2h2zM8 11h8v2H8z"/></svg>',
+  chest:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 10a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v1H3z" opacity=".85"/><path fill="currentColor" d="M3 12h18v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><rect x="10" y="10" width="4" height="5" rx="1" fill="#fff" opacity=".7"/></svg>',
+  trophy:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10v5a5 5 0 0 1-10 0zM5 4H3v2a4 4 0 0 0 4 4V8a2 2 0 0 1-2-2zm14 0h2v2a4 4 0 0 1-4 4V8a2 2 0 0 0 2-2zM10 14h4v3h3v3H7v-3h3z"/></svg>',
+  lock:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 10V8a5 5 0 0 1 10 0v2h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z"/></svg>',
+  home:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>',
+  medal:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 2h4l1 4 1-4h4l-3 7a6 6 0 1 1-4 0z" opacity=".55"/><circle cx="12" cy="15" r="6" fill="currentColor"/><path fill="#fff" opacity=".7" d="M12 11.5l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z"/></svg>',
+  user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.5" fill="currentColor"/><path fill="currentColor" d="M3.5 21a8.5 8.5 0 0 1 17 0z"/></svg>',
+  replay:'<svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/></svg>',
+  turtle:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 15a7 6 0 0 1 14 0z"/><circle cx="20" cy="13" r="2.2" fill="currentColor"/><path fill="currentColor" d="M5 15h3v3H5zM14 15h3v3h-3z"/></svg>',
+  sound:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 9h4l5-4v14l-5-4H4z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>',
+  sparkle:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7zM19 15l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z"/></svg>',
+  camera:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 7h3l2-2h6l2 2h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zm8 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor"/><path fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" d="M12 7v5l3 2"/></svg>',
+  target:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor"/><circle cx="12" cy="12" r="5" fill="#fff" opacity=".6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>'
+};
+const NODE_ICON = {lesson:I.star, practice:I.dumbbell, chest:I.chest, trophy:I.trophy};
+
+/* ---------- art ---------- */
+function mascot(cls=''){
+  return `<svg class="mascot ${cls}" viewBox="0 0 160 176" aria-hidden="true">
+    <ellipse class="m-shadow" cx="80" cy="168" rx="46" ry="7"/>
+    <g class="m-body">
+      <rect class="m-f m-wave" x="40" y="26" width="19" height="58" rx="9.5"/>
+      <rect class="m-f m-wave" x="62" y="12" width="19" height="70" rx="9.5"/>
+      <rect class="m-f m-wave" x="84" y="16" width="19" height="66" rx="9.5"/>
+      <rect class="m-f m-wave" x="106" y="32" width="18" height="52" rx="9"/>
+      <rect class="m-f" x="6" y="78" width="46" height="21" rx="10.5" transform="rotate(-32 30 88)"/>
+      <rect class="m-palm" x="34" y="56" width="94" height="106" rx="42"/>
+      <ellipse class="m-belly" cx="81" cy="132" rx="26" ry="18" opacity=".5"/>
+      <ellipse class="m-eyew" cx="66" cy="96" rx="12" ry="14"/><ellipse class="m-eyew" cx="98" cy="96" rx="12" ry="14"/>
+      <circle class="m-pupil" cx="68" cy="99" r="6.5"/><circle class="m-pupil" cx="96" cy="99" r="6.5"/>
+      <circle cx="70.5" cy="96" r="2.2" fill="#fff"/><circle cx="98.5" cy="96" r="2.2" fill="#fff"/>
+      <rect class="m-lid" x="53" y="81" width="26" height="29" rx="12"/><rect class="m-lid" x="85" y="81" width="26" height="29" rx="12"/>
+      <ellipse class="m-cheek" cx="52" cy="118" rx="8" ry="5"/><ellipse class="m-cheek" cx="112" cy="118" rx="8" ry="5"/>
+      <path class="m-mouth" d="M70 116 Q82 132 94 116 Z"/>
+    </g>
+  </svg>`;
+}
+const HAND_R = '<rect x="-10" y="-14" width="20" height="25" rx="9"/><rect x="-17" y="-4" width="8" height="15" rx="4" transform="rotate(-22)"/>';
+const HAND_L = '<rect x="-10" y="-14" width="20" height="25" rx="9"/><rect x="9" y="-4" width="8" height="15" rx="4" transform="rotate(22)"/>';
+function signer(key, spd=1){
+  const m = SIGNS[key].m;
+  return `<svg class="signer m-${m}" viewBox="0 0 200 160" style="--spd:${spd}" role="img" aria-label="مقطع توضيحي لإشارة">
+    <rect class="s-bg" width="200" height="160"/>
+    <path class="s-torso" d="M38 160 C42 122 66 106 100 106 C134 106 158 122 162 160Z"/>
+    <path class="s-collar" d="M86 106 L100 122 L114 106Z"/>
+    <rect class="s-skin" x="90" y="78" width="20" height="22" rx="7"/>
+    <g class="s-head">
+      <circle class="s-skin" cx="100" cy="56" r="26"/>
+      <path class="s-hair" d="M73 56 C71 26 129 26 127 56 C121 41 79 41 73 56Z"/>
+      <ellipse class="s-eye" cx="91" cy="58" rx="3" ry="3.4"/><ellipse class="s-eye" cx="109" cy="58" rx="3" ry="3.4"/>
+      <path class="s-mouth" d="M92 68 Q100 74 108 68"/>
+    </g>
+    <g transform="translate(62 142)"><g class="hand handL">${HAND_L}</g></g>
+    <g transform="translate(138 142)"><g class="hand handR">${HAND_R}</g></g>
+  </svg>`;
+}
+function signCard(key, {tools=true, small=false, spd=1}={}){
+  return `<div class="signcard ${small?'sm':''}">${signer(key, spd)}
+    ${tools?`<span class="sc-note">حركة توضيحية</span>
+    <div class="sc-tools">
+      <button class="round" data-a="replay" aria-label="إعادة">${I.replay}</button>
+      <button class="round ${spd>1?'on':''}" data-a="slow" aria-label="تشغيل بطيء">${I.turtle}</button>
+    </div>`:''}
+  </div>`;
+}
+
+/* ---------- state ---------- */
+const today = () => new Date().toISOString().slice(0,10);
+const fresh = () => ({screen:'welcome', profile:null, goal:10, xp:0, gems:120, hearts:5, streak:0, lastDay:null, progress:0, days:[]});
+function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); return s && s.screen ? s : null; }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+let S = load() || fresh();
+if (S.screen === 'lesson' || S.screen === 'done' || S.screen === 'streak') S.screen = 'home';
+let draft = {};     // onboarding selections
+let L = null;       // current lesson runtime
+let lastDone = -1;  // node index to animate on home
+
+/* ---------- sound ---------- */
+let actx;
+function tone(freq, t0, dur, type='sine', vol=.18){
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, actx.currentTime + t0);
+    g.gain.setValueAtTime(0, actx.currentTime + t0);
+    g.gain.linearRampToValueAtTime(vol, actx.currentTime + t0 + .015);
+    g.gain.exponentialRampToValueAtTime(.001, actx.currentTime + t0 + dur);
+    o.connect(g).connect(actx.destination); o.start(actx.currentTime + t0); o.stop(actx.currentTime + t0 + dur + .05);
+  }catch(e){}
+}
+const sfx = {
+  tap(){ tone(520,0,.06,'triangle',.08); },
+  good(){ tone(880,0,.12); tone(1320,.09,.22); },
+  bad(){ tone(220,0,.18,'square',.07); tone(165,.12,.26,'square',.07); },
+  win(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.11,.25,'triangle',.14)); },
+  gem(){ tone(1200,0,.08); tone(1600,.07,.12); tone(2000,.14,.16); }
+};
+function speak(text){
+  try{ const u = new SpeechSynthesisUtterance(text); u.lang = 'ar-SA'; u.rate = .9; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){}
+}
+
+/* ---------- helpers ---------- */
+const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const profile = () => PROFILES[S.profile || 'adult'];
+const isKid = () => S.profile === 'kid';
+function allNodes(){
+  const out = [];
+  profile().units.forEach((u,ui) => { if (!u.soon) NODE_TYPES.forEach((t,k) => out.push({ui, k, type:t, unit:u})); });
+  return out;
+}
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t = document.createElement('div'); t.className='toast'; t.textContent = msg; root.appendChild(t);
+  setTimeout(()=>t.remove(), 2200);
+}
+function color(c){ return `--uc:var(--${c});--us:var(--${c}-shadow)`; }
+function wordLabel(key, withEmo){
+  const s = SIGNS[key];
+  return withEmo ? `<span class="emo">${s.emo}</span>${s.ar}` : s.ar;
+}
+
+/* ---------- screens ---------- */
+function vWelcome(){
+  return `<section class="screen">
+    <div class="center">
+      ${mascot('waving').replace('<svg','<svg style="width:180px"')}
+      <h1 class="brandname">إشارتي</h1>
+      <p class="lead">تعلّم لغة الإشارة كل يوم، خمس دقايق بس</p>
+    </div>
+    <div class="foot">
+      <button class="btn" data-a="go" data-to="who">ابدأ</button>
+      <button class="btn ghost" data-a="toast" data-msg="تسجيل الدخول غير متوفر في النموذج التجريبي">عندي حساب</button>
+    </div>
+  </section>`;
+}
+function obHead(step){
+  return `<div class="ob-head">
+    <button class="iconbtn" data-a="go" data-to="${step===1?'welcome':'who'}" aria-label="رجوع"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+    <div class="pwrap"><div class="pbar"><div class="pfill" style="width:${step*33}%"></div></div></div>
+  </div>`;
+}
+function vWho(){
+  const sel = draft.profile;
+  return `<section class="screen">${obHead(1)}
+    <div class="ob-body">
+      <div class="say">${mascot('waving')}<div class="speech">هلا! مين بيتعلم معنا؟</div></div>
+      <div class="stack">
+        ${Object.entries(PROFILES).map(([k,p]) => `
+          <button class="tile choice ${sel===k?'sel':''}" data-a="pickProfile" data-k="${k}">
+            <span class="emo">${p.emo}</span><span><b>${p.title}</b><small>${p.sub}</small></span>
+          </button>`).join('')}
+      </div>
+    </div>
+    <div class="foot"><button class="btn" data-a="go" data-to="goal" ${sel?'':'disabled'}>متابعة</button></div>
+  </section>`;
+}
+function vGoal(){
+  const sel = draft.goal;
+  return `<section class="screen">${obHead(2)}
+    <div class="ob-body">
+      <div class="say">${mascot()}<div class="speech">كم دقيقة تبي تتعلم كل يوم؟</div></div>
+      <div class="stack">
+        ${GOALS.map(g => `<button class="tile choice ${sel===g.m?'sel':''}" data-a="pickGoal" data-m="${g.m}" style="justify-content:space-between">
+          <b>${ar(g.m)} دقايق في اليوم</b><small style="margin:0">${g.t}</small></button>`).join('')}
+      </div>
+    </div>
+    <div class="foot"><button class="btn" data-a="finishOnboarding" ${sel?'':'disabled'}>متابعة</button></div>
+  </section>`;
+}
+function vPrep(){
+  return `<section class="screen"><div class="center">
+    ${mascot('jump').replace('<svg','<svg style="width:150px"')}
+    <p class="lead">نجهّز لك أول درس…</p><div class="dots"><i></i><i></i><i></i></div>
+  </div></section>`;
+}
+function topbar(){
+  const p = profile();
+  const active = S.lastDay === today();
+  return `<header class="topbar">
+    <button class="chip" data-a="tab" data-t="me" aria-label="تغيير المتعلم">${p.emo} ${p.name}</button>
+    <div class="stats">
+      <span class="stat fire ${active?'':'off'}" title="سلسلة الأيام">${I.fire}${ar(S.streak)}</span>
+      <span class="stat gem" title="جواهر">${I.gem}${ar(S.gems)}</span>
+      <span class="stat heart" title="قلوب">${I.heart}${ar(S.hearts)}</span>
+    </div>
+  </header>`;
+}
+function tabbar(on){
+  const tabs = [['home',I.home,'الدروس'],['practice',I.dumbbell,'تدريب'],['league',I.medal,'الترتيب'],['me',I.user,'ملفي']];
+  return `<nav class="tabbar">${tabs.map(([k,ic,l])=>`<button class="tab ${on===k?'on':''}" data-a="tab" data-t="${k}" aria-label="${l}" title="${l}">${ic}</button>`).join('')}</nav>`;
+}
+const OFFSETS = [0, 46, 70, 46, 0];
+function vHome(){
+  const nodes = allNodes();
+  let gi = 0;
+  const units = profile().units.map((u, ui) => {
+    if (u.soon) return `<div class="unit soon">
+      <div class="unit-head"><div><small>الوحدة ${ar(ui+1)}</small><h2>${u.t}</h2></div><span style="display:flex;width:26px">${I.lock}</span></div>
+      <div class="nodes"><p style="margin:0;color:var(--muted);font:600 1rem var(--display)">قريباً</p></div></div>`;
+    const items = NODE_TYPES.map((t, k) => {
+      const idx = gi++;
+      const state = idx < S.progress ? 'done' : idx === S.progress ? 'current' : 'locked';
+      const icon = state==='done' && t!=='chest' ? I.check : state==='locked' && t==='lesson' ? I.lock : NODE_ICON[t];
+      return `<div class="node-wrap ${state==='current'&&k>0?'cur':''}" style="--x:${OFFSETS[k]}px">
+        ${state==='current' ? `<span class="bubble">${idx===0?'ابدأ':t==='chest'?'افتح':'يلا'}</span><span class="ring"></span>` : ''}
+        <button class="node ${state} ${idx===lastDone?'just-done':''}" data-a="node" data-i="${idx}" aria-label="${t}">${icon}</button>
+      </div>`;
+    }).join('');
+    const side = ui % 2 ? 'inset-inline-start:2%' : 'inset-inline-end:2%';
+    return `<div class="unit" style="${color(u.c)}">
+      <div class="unit-head"><div><small>الوحدة ${ar(ui+1)}</small><h2>${u.t}</h2></div>
+        <button class="guide" data-a="toast" data-msg="دليل الوحدة: كل الإشارات مع شرحها (قريباً)">دليل</button></div>
+      <div class="nodes">${items}<div class="path-mascot" style="${side}">${mascot(ui===0?'waving':'')}</div></div>
+    </div>`;
+  }).join('');
+  return `<section class="screen ${isKid()?'kid':''}">${topbar()}<div class="path-scroll" id="path">${units}</div>${tabbar('home')}</section>`;
+}
+function vMe(){
+  const doneLessons = Math.min(S.progress, allNodes().length);
+  return `<section class="screen ${isKid()?'kid':''}">${topbar()}
+    <div class="me">
+      <h1>ملفي</h1>
+      <div class="mstats">
+        <div class="mstat"><b>${ar(S.xp)}</b><span>نقاط XP</span></div>
+        <div class="mstat"><b>${ar(S.streak)}</b><span>أيام متتالية</span></div>
+        <div class="mstat"><b>${ar(doneLessons)}</b><span>دروس خلصتها</span></div>
+      </div>
+      <h2>مين يتعلم؟</h2>
+      <div class="stack">
+        ${Object.entries(PROFILES).map(([k,p]) => `<button class="tile choice ${S.profile===k?'sel':''}" data-a="switchProfile" data-k="${k}">
+          <span class="emo">${p.emo}</span><span><b>${p.title}</b><small>${p.sub}</small></span></button>`).join('')}
+      </div>
+      <p class="note">هذا نموذج أولي. حركات الإشارات توضيحية بس، والإشارات الحقيقية تنسجل مع مترجم معتمد للغة الإشارة السعودية قبل الإطلاق.</p>
+      <button class="btn ghost" style="--t:var(--red)" data-a="reset">ابدأ من جديد</button>
+    </div>${tabbar('me')}</section>`;
+}
+
+/* ---------- lessons ---------- */
+function buildSteps(node){
+  const w = node.unit.w;
+  const pool = w;
+  if (node.type === 'lesson'){
+    const [a,b,c] = w.slice(node.k*3, node.k*3+3);
+    return [
+      {t:'intro', w:a}, {t:'meaning', w:a},
+      {t:'intro', w:b}, {t:'pick', w:b},
+      {t:'intro', w:c}, {t:'meaning', w:c},
+      {t:'match', ws:[a,b,c]}, {t:'mirror', w:b}, {t:'pick', w:c}, {t:'meaning', w:b}
+    ].map(s => ({...s, pool}));
+  }
+  const mix = shuffle(w);
+  const steps = [
+    {t:'meaning', w:mix[0]}, {t:'pick', w:mix[1]}, {t:'match', ws:mix.slice(0,3)},
+    {t:'meaning', w:mix[2]}, {t:'pick', w:mix[3]}, {t:'mirror', w:mix[4]},
+    {t:'match', ws:mix.slice(3,6)}, {t:'meaning', w:mix[5]}
+  ];
+  if (node.type === 'trophy') steps.push({t:'pick', w:mix[0]}, {t:'meaning', w:mix[1]});
+  return steps.map(s => ({...s, pool}));
+}
+function startLesson(idx){
+  const node = allNodes()[idx];
+  const steps = buildSteps(node);
+  L = {idx, node, steps, i:0, total:steps.length, progress:0, firstTry:0, questions:0, mistakes:0, combo:0, start:Date.now(), sel:null, spd:1, mirror:0, match:null, answered:false};
+  S.screen = 'lesson'; render();
+}
+function step(){ return L.steps[L.i]; }
+function distractors(answer, pool, n=3){ return shuffle(pool.filter(x => x !== answer)).slice(0, n); }
+
+function vLesson(){
+  const s = step();
+  if (!s.opts && (s.t==='meaning' || s.t==='pick')) s.opts = shuffle([s.w, ...distractors(s.w, s.pool)]);
+  if (s.t==='match' && !L.match) L.match = {left:shuffle(s.ws), right:shuffle(s.ws), selL:null, selR:null, done:[]};
+  const pct = Math.max(4, Math.round(L.progress / L.total * 100));
+  let body = '', foot = `<button class="btn green" id="checkBtn" data-a="check" ${L.sel?'':'disabled'}>تحقّق</button>`;
+  const kid = isKid();
+  if (s.t === 'intro'){
+    body = `<div class="newtag">${I.sparkle} إشارة جديدة</div>
+      ${signCard(s.w, {spd:L.spd})}
+      <div class="word-big">${kid?`<span class="emo">${SIGNS[s.w].emo}</span>`:''}${SIGNS[s.w].ar}
+        <button class="speak" data-a="speak" data-w="${s.w}" aria-label="اسمع الكلمة">${I.sound}</button></div>`;
+    foot = `<button class="btn" data-a="next">متابعة</button>`;
+  } else if (s.t === 'meaning'){
+    body = `<h1 class="prompt">وش معنى هذي الإشارة؟</h1>${signCard(s.w, {spd:L.spd})}
+      <div class="grid2">${s.opts.map(o => `<button class="tile ${L.sel===o?'sel':''}" data-a="opt" data-w="${o}">${wordLabel(o, kid)}</button>`).join('')}</div>`;
+  } else if (s.t === 'pick'){
+    body = `<h1 class="prompt">اختر إشارة «${SIGNS[s.w].ar}»</h1>
+      <div class="word-big" style="justify-content:flex-start;font-size:1.2rem">${kid?`<span class="emo" style="font-size:1.8rem">${SIGNS[s.w].emo}</span>`:''}
+        <button class="speak" data-a="speak" data-w="${s.w}" aria-label="اسمع الكلمة">${I.sound}</button></div>
+      <div class="grid2 pickgrid">${s.opts.map((o,n) => `<button class="tile ${L.sel===o?'sel':''}" data-a="opt" data-w="${o}" aria-label="خيار ${n+1}">
+        ${signCard(o, {tools:false, small:true})}<span class="num">${ar(n+1)}</span></button>`).join('')}</div>`;
+  } else if (s.t === 'match'){
+    const M = L.match;
+    const st = (side, k) => M.done.includes(k) ? 'gone' : (side==='l'?M.selL:M.selR)===k ? 'sel' : '';
+    body = `<h1 class="prompt">طابق كل إشارة بمعناها</h1>
+      <div class="match">
+        <div class="col">${M.left.map(k => `<button class="tile signt ${st('l',k)}" data-a="matchL" data-w="${k}" aria-label="إشارة">${signCard(k,{tools:false})}</button>`).join('')}</div>
+        <div class="col">${M.right.map(k => `<button class="tile wordt ${st('r',k)}" data-a="matchR" data-w="${k}">${wordLabel(k, kid)}</button>`).join('')}</div>
+      </div>`;
+    foot = `<button class="btn" disabled>طابق الكل عشان تكمّل</button>`;
+  } else if (s.t === 'mirror'){
+    const n = L.mirror;
+    body = `<h1 class="prompt">قلّد الإشارة: «${SIGNS[s.w].ar}»</h1>${signCard(s.w, {spd:L.spd})}
+      <ol class="mirror-steps">${[1,2,3].map(k => `<li class="${n>=k?'done':''}"><span>${n>=k?'✓':ar(k)}</span>سوّها مرة ${['أولى','ثانية','ثالثة'][k-1]} قدام المراية</li>`).join('')}</ol>
+      <div class="cam-hint">${I.camera}<span>في النسخة الكاملة الكاميرا تشوف يدك وتقولك وش تعدّل.</span></div>`;
+    foot = `<button class="btn" data-a="mirror">سويتها ✋ (${ar(n)}/${ar(3)})</button>`;
+  }
+  return `<section class="screen ${kid?'kid':''}">
+    <div class="lhead">
+      <button class="iconbtn" data-a="quit" aria-label="خروج">${I.x}</button>
+      <div class="pwrap">${L.combo>=3?`<span class="combo">${ar(L.combo)} صح ورا بعض!</span>`:''}<div class="pbar"><div class="pfill" style="width:${pct}%"></div></div></div>
+      <span class="hearts" id="hearts">${I.heart}${ar(S.hearts)}</span>
+    </div>
+    <div class="lbody">${body}</div>
+    <div class="lfoot">${foot}</div>
+  </section>`;
+}
+function feedback(ok, extra=''){
+  const s = step();
+  const title = ok ? PRAISE[Math.floor(Math.random()*PRAISE.length)] : 'الإجابة الصحيحة:';
+  const sub = ok ? extra : `${SIGNS[s.w].ar}`;
+  showSheet(`<div class="sheet ${ok?'good':'bad'}"><div class="sheet-in">
+    <div class="sheet-title"><span class="badge">${ok?I.check:I.x}</span>${title}</div>
+    ${sub?`<p class="sheet-sub">${sub}</p>`:''}
+    <button class="btn ${ok?'green':'red'}" data-a="next">${ok?'متابعة':'فهمت'}</button>
+  </div></div>`);
+}
+function showSheet(html, scrim=false){ closeSheet(); const d = document.createElement('div'); d.id='sheet'; d.innerHTML = (scrim?'<div class="scrim" data-a="closeSheet"></div>':'') + html; root.appendChild(d); }
+function closeSheet(){ const s = document.getElementById('sheet'); if (s) s.remove(); }
+function markCorrect(){
+  L.combo++;
+  if (!step().retry){ L.firstTry++; }
+  L.progress++;
+}
+function markWrong(){
+  L.combo = 0; L.mistakes++;
+  S.hearts = Math.max(0, S.hearts - 1); save();
+  const h = document.getElementById('hearts'); if (h){ h.innerHTML = I.heart + ar(S.hearts); h.classList.remove('lost'); void h.offsetWidth; h.classList.add('lost'); }
+  const s = step(); L.steps.push({...s, retry:true, opts:null});
+}
+function finishLesson(){
+  const secs = Math.round((Date.now() - L.start)/1000);
+  const acc = L.questions ? Math.round(L.firstTry / L.questions * 100) : 100;
+  const xp = 10 + (L.mistakes === 0 ? 5 : 0) + (L.node.type === 'trophy' ? 10 : 0);
+  S.xp += xp;
+  lastDone = L.idx;
+  S.progress = Math.max(S.progress, L.idx + 1);
+  let streakUp = false;
+  if (S.lastDay !== today()){
+    const y = new Date(Date.now() - 864e5).toISOString().slice(0,10);
+    S.streak = S.lastDay === y ? S.streak + 1 : 1;
+    S.lastDay = today(); S.days = [...(S.days||[]), today()].slice(-7); streakUp = true;
+  }
+  L.result = {secs, acc, xp, streakUp};
+  S.screen = 'done'; save(); render(); sfx.win();
+}
+function vDone(){
+  const r = L.result;
+  const mm = Math.floor(r.secs/60), ss = String(r.secs%60).padStart(2,'0');
+  return `<section class="screen"><div class="results">
+    ${mascot('jump').replace('<svg','<svg style="width:150px"')}
+    <h1>${L.mistakes===0?'درس بدون ولا غلطة!':'خلصت الدرس!'}</h1>
+    <p>${L.mistakes===0?'كفو عليك، ركّزت من أول لآخر.':'كل يوم شوي، وبتصير تتكلم بيدينك.'}</p>
+    <div class="cards3">
+      <div class="scard" style="--sc:var(--gold)"><small>نقاط XP</small><div>${I.bolt}<span data-count="${r.xp}">٠</span></div></div>
+      <div class="scard" style="--sc:var(--blue)"><small>الوقت</small><div>${I.clock}<span>${ar(mm)}:${ss.split('').map(ar).join('')}</span></div></div>
+      <div class="scard" style="--sc:var(--green)"><small>الدقة</small><div>${I.target}<span data-count="${r.acc}" data-suffix="٪">٠</span></div></div>
+    </div>
+  </div>
+  <div class="foot"><button class="btn" data-a="afterDone">متابعة</button></div></section>`;
+}
+function vStreak(){
+  const days = ['ح','ن','ث','ر','خ','ج','س'];
+  const set = new Set(S.days||[]);
+  const now = new Date(); const dow = now.getDay();
+  const week = days.map((d,i) => { const dt = new Date(now - (dow - i)*864e5).toISOString().slice(0,10); return `<div><i class="${set.has(dt)?'on':''}">${set.has(dt)?I.check:''}</i>${d}</div>`; }).join('');
+  return `<section class="screen"><div class="results">
+    <svg class="flame" viewBox="0 0 24 24" style="color:var(--orange)">${I.fire.replace(/<\/?svg[^>]*>/g,'')}</svg>
+    <div class="streak-num">${ar(S.streak)}</div>
+    <h1 style="color:var(--orange)">${S.streak===1?'أول يوم في سلسلتك!':`سلسلة ${ar(S.streak)} أيام!`}</h1>
+    <p>تعلّم كل يوم عشان ما تنقطع السلسلة.</p>
+    <div class="week">${week}</div>
+  </div><div class="foot"><button class="btn" data-a="go" data-to="home">تمام</button></div></section>`;
+}
+
+/* ---------- confetti + counters ---------- */
+function confetti(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const c = document.createElement('canvas'); c.className='confetti'; root.appendChild(c);
+  const ctx = c.getContext('2d'), dpr = devicePixelRatio || 1;
+  c.width = innerWidth*dpr; c.height = innerHeight*dpr; ctx.scale(dpr,dpr);
+  const cols = ['#58CC02','#1CB0F6','#FFC800','#FF4B4B','#CE82FF','#14B8A6','#FF9600'];
+  const ps = Array.from({length:120}, () => ({x:innerWidth/2, y:innerHeight*.35, vx:(Math.random()-.5)*12, vy:-Math.random()*13-4, r:Math.random()*6+4, c:cols[Math.floor(Math.random()*cols.length)], a:Math.random()*6, va:(Math.random()-.5)*.4}));
+  let t = 0;
+  (function f(){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    ps.forEach(p => { p.vy += .35; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.a += p.va;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillStyle=p.c; ctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); ctx.restore(); });
+    if (++t < 160 && c.isConnected) requestAnimationFrame(f); else c.remove();
+  })();
+}
+function countUp(){
+  root.querySelectorAll('[data-count]').forEach(el => {
+    const end = +el.dataset.count, suf = el.dataset.suffix || ''; const t0 = performance.now();
+    (function f(t){ const k = Math.min(1,(t-t0)/800); el.textContent = ar(Math.round(end*k)) + suf; if (k<1) requestAnimationFrame(f); })(t0);
+  });
+}
+
+/* ---------- render ---------- */
+function render(){
+  closeSheet();
+  const v = {welcome:vWelcome, who:vWho, goal:vGoal, prep:vPrep, home:vHome, me:vMe, lesson:vLesson, done:vDone, streak:vStreak}[S.screen] || vHome;
+  root.innerHTML = v();
+  if (S.screen === 'home'){
+    const cur = root.querySelector('.node.current') || root.querySelector('.node.just-done');
+    if (cur) cur.scrollIntoView({block:'center'});
+    lastDone = -1;
+  }
+  if (S.screen === 'done'){ confetti(); countUp(); }
+}
+
+/* ---------- actions ---------- */
+const A = {
+  go(el){ S.screen = el.dataset.to; if (S.screen==='who') draft = {profile:S.profile, goal:S.goal}; save(); render(); },
+  toast(el){ toast(el.dataset.msg); },
+  pickProfile(el){ draft.profile = el.dataset.k; render(); },
+  pickGoal(el){ draft.goal = +el.dataset.m; render(); },
+  finishOnboarding(){
+    S.profile = draft.profile || 'adult'; S.goal = draft.goal || 10;
+    S.screen = 'prep'; render();
+    setTimeout(() => { if (S.screen === 'prep'){ S.screen = 'home'; save(); render(); } }, 1600);
+  },
+  tab(el){
+    const t = el.dataset.t;
+    if (t === 'home' || t === 'me'){ S.screen = t; save(); render(); }
+    else toast(t === 'practice' ? 'تدريب الإشارات اللي غلطت فيها (قريباً)' : 'الترتيب الأسبوعي مع أصحابك (قريباً)');
+  },
+  switchProfile(el){
+    if (S.profile === el.dataset.k) return;
+    S.profile = el.dataset.k; S.progress = 0; save(); render(); toast('تغيّر المسار، وبدأ التقدم من أول');
+  },
+  reset(){ try{ localStorage.removeItem(KEY); }catch(e){} S = fresh(); draft = {}; render(); },
+  node(el){
+    const i = +el.dataset.i, node = allNodes()[i];
+    if (i > S.progress) return toast('خلّص الدرس اللي قبله أول');
+    if (node.type === 'chest'){
+      if (i < S.progress) return toast('فتحت هالصندوق من قبل');
+      S.gems += 20; S.progress = i + 1; lastDone = i; save(); sfx.gem(); render(); toast('حصلت ٢٠ جوهرة!');
+      return;
+    }
+    if (S.hearts === 0){ S.hearts = 5; save(); toast('رجعت قلوبك (نسخة تجريبية)'); }
+    startLesson(i);
+  },
+  quit(){
+    showSheet(`<div class="sheet"><div class="sheet-in" style="text-align:center">
+      ${mascot().replace('<svg','<svg style="width:110px;margin:0 auto"')}
+      <div class="sheet-title" style="justify-content:center;color:var(--ink-strong)">لا تروح الحين!</div>
+      <p class="sheet-sub" style="color:var(--muted)">لو طلعت بيروح تقدمك في هالدرس.</p>
+      <button class="btn blue" data-a="closeSheet">كمّل التعلّم</button>
+      <button class="btn link" data-a="leave">اطلع</button></div></div>`, true);
+  },
+  leave(){ L = null; S.screen = 'home'; save(); render(); },
+  closeSheet(){ closeSheet(); },
+  replay(){ const sv = root.querySelector('.lbody .signer'); if (!sv) return; const p = sv.parentNode, html = sv.outerHTML; sv.remove(); p.insertAdjacentHTML('afterbegin', html); },
+  slow(){ L.spd = L.spd > 1 ? 1 : 2; render(); },
+  speak(el){ speak(SIGNS[el.dataset.w].ar); },
+  opt(el){
+    if (L.answered) return;
+    L.sel = el.dataset.w; sfx.tap();
+    root.querySelectorAll('[data-a="opt"]').forEach(b => b.classList.toggle('sel', b === el));
+    document.getElementById('checkBtn').disabled = false;
+  },
+  check(){
+    if (!L.sel || L.answered) return;
+    const s = step(); L.answered = true; L.questions += s.retry ? 0 : 1;
+    const ok = L.sel === s.w;
+    root.querySelectorAll('[data-a="opt"]').forEach(b => {
+      if (b.dataset.w === L.sel) b.classList.add(ok ? 'ok' : 'bad');
+      b.classList.remove('sel');
+    });
+    if (ok){ markCorrect(); sfx.good(); } else { markWrong(); sfx.bad(); }
+    const pf = root.querySelector('.pfill'); if (pf) pf.style.width = Math.max(4, Math.round(L.progress / L.total * 100)) + '%';
+    feedback(ok);
+  },
+  next(){
+    const s = step();
+    if (s.t === 'intro') L.progress++;
+    if (S.hearts === 0 && !document.querySelector('.sheet.hearts-out')){
+      showSheet(`<div class="sheet hearts-out"><div class="sheet-in" style="text-align:center">
+        <div class="hearts" style="justify-content:center;font-size:1.6rem">${I.heart}${ar(0)}</div>
+        <div class="sheet-title" style="justify-content:center;color:var(--ink-strong)">خلصت قلوبك</div>
+        <p class="sheet-sub" style="color:var(--muted)">في التطبيق الكامل ترجع القلوب مع الوقت أو بالتدريب.</p>
+        <button class="btn blue" data-a="refill">ارجع القلوب وكمّل</button>
+        <button class="btn link" data-a="leave">اطلع</button></div></div>`, true);
+      return;
+    }
+    L.i++; L.sel = null; L.answered = false; L.mirror = 0; L.match = null;
+    if (L.i >= L.steps.length) return finishLesson();
+    render();
+  },
+  refill(){ S.hearts = 5; save(); closeSheet(); A.next(); },
+  matchL(el){ L.match.selL = el.dataset.w; sfx.tap(); tryMatch(); },
+  matchR(el){ L.match.selR = el.dataset.w; sfx.tap(); tryMatch(); },
+  mirror(){
+    L.mirror++; sfx.tap();
+    if (L.mirror >= 3){ markCorrect(); sfx.good(); render(); feedback(true, 'في التطبيق الكامل الكاميرا بتتأكد من حركتك.'); }
+    else render();
+  },
+  afterDone(){ S.screen = L.result.streakUp ? 'streak' : 'home'; save(); render(); }
+};
+function tryMatch(){
+  const M = L.match;
+  if (!M.selL || !M.selR){ render(); return; }
+  const ok = M.selL === M.selR;
+  if (ok){
+    M.done.push(M.selL); M.selL = M.selR = null; sfx.good(); render();
+    root.querySelectorAll('.match .tile').forEach(b => { if (b.dataset.w === M.done[M.done.length-1]) { b.classList.remove('gone'); b.classList.add('ok'); setTimeout(()=>b.classList.add('gone'), 350); } });
+    if (M.done.length === step().ws.length){ L.questions++; markCorrect(); L.answered = true; setTimeout(() => { const pf = root.querySelector('.pfill'); if (pf) pf.style.width = Math.round(L.progress/L.total*100)+'%'; feedback(true, 'طابقت كل الإشارات.'); }, 450); }
+  } else {
+    const l = M.selL, r = M.selR; M.selL = M.selR = null; L.combo = 0; sfx.bad(); render();
+    root.querySelectorAll(`.match [data-a="matchL"][data-w="${l}"], .match [data-a="matchR"][data-w="${r}"]`).forEach(b => b.classList.add('bad'));
+  }
+}
+root.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]');
+  if (!el || el.disabled) return;
+  const fn = A[el.dataset.a]; if (fn) fn(el);
+});
+
+/* ---------- boot ---------- */
+window.claude?.hot?.snapshot?.(() => ({S}));
+const start = data => { if (data && data.S) { S = data.S; if (S.screen === 'lesson' || S.screen === 'done') S.screen = 'home'; } render(); };
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
