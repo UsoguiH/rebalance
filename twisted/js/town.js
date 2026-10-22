@@ -172,6 +172,7 @@ export function buildTown(world, batch, paint) {
         [0, 1],
       ]);
     }
+    if (o.theater) theaterSigns(L, y0, w, d, rot, top);
     // rooftop clutter
     const n = r.int(0, 3);
     for (let i = 0; i < n; i++) {
@@ -194,6 +195,68 @@ export function buildTown(world, batch, paint) {
     world.addBox(x, z, w, d, rot, 0, top + 1.2);
     return { top, L };
   };
+  // theater: vertical blade sign with bulbs and a lit marquee over the doors
+  function theaterSigns(L, y0, w, d, rot, top) {
+    const blade = cached('theaterBlade', () => {
+      const cv = canvas(128, 640);
+      const x = cv.getContext('2d');
+      x.fillStyle = '#7a1612';
+      x.fillRect(0, 0, 128, 640);
+      x.fillStyle = '#f2d890';
+      x.font = '700 78px Rye, serif';
+      x.textAlign = 'center';
+      x.textBaseline = 'middle';
+      'THEATER'.split('').forEach((ch, i) => x.fillText(ch, 64, 60 + i * 84));
+      x.fillStyle = '#fff2c0';
+      for (let i = 0; i < 26; i++) {
+        x.beginPath();
+        x.arc(10, 10 + i * 24.4, 5, 0, Math.PI * 2);
+        x.arc(118, 10 + i * 24.4, 5, 0, Math.PI * 2);
+        x.fill();
+      }
+      grime(x, 128, 640, 33, 0.3, false);
+      return toTex(cv, { repeat: false });
+    });
+    const bk = K('theaterBlade', () => std({ map: blade, emissive: new THREE.Color('#ffffff'), emissiveMap: blade, emissiveIntensity: 0.45, side: THREE.DoubleSide }));
+    const [bx, bz] = L(w / 2 - 1.2, d / 2 + 1.4);
+    const bh = Math.min(9, top - y0 - 1.5);
+    // the blade itself is a thin slab perpendicular to the facade
+    const c = Math.cos(rot), sn = Math.sin(rot);
+    const fx = Math.sin(rot), fz = Math.cos(rot);
+    const halfW = 1.2;
+    const P0 = [bx - fx * halfW, bz - fz * halfW], P1 = [bx + fx * halfW, bz + fz * halfW];
+    const y1 = y0 + 4.6, y2 = y1 + bh;
+    // both faces of the blade (along the facade normal)
+    batch.quad(bk, [P0[0] + c * 0.15, y1, P0[1] - sn * 0.15], [P1[0] + c * 0.15, y1, P1[1] - sn * 0.15], [P1[0] + c * 0.15, y2, P1[1] - sn * 0.15], [P0[0] + c * 0.15, y2, P0[1] - sn * 0.15]);
+    batch.quad(bk, [P1[0] - c * 0.15, y1, P1[1] + sn * 0.15], [P0[0] - c * 0.15, y1, P0[1] + sn * 0.15], [P0[0] - c * 0.15, y2, P0[1] + sn * 0.15], [P1[0] - c * 0.15, y2, P1[1] + sn * 0.15]);
+    // marquee
+    const mq = cached('marquee', () => {
+      const cv = canvas(512, 128);
+      const x = cv.getContext('2d');
+      x.fillStyle = '#efe6cc';
+      x.fillRect(0, 0, 512, 128);
+      x.fillStyle = '#1a1410';
+      x.font = '700 40px Oswald, sans-serif';
+      x.textAlign = 'center';
+      x.fillText('TONIGHT: CALYPSO\'S', 256, 52);
+      x.fillText('TWISTED CONTEST', 256, 98);
+      x.fillStyle = '#fff2c0';
+      for (let i = 0; i < 26; i++) {
+        x.beginPath();
+        x.arc(10 + i * 19.6, 8, 5, 0, Math.PI * 2);
+        x.arc(10 + i * 19.6, 120, 5, 0, Math.PI * 2);
+        x.fill();
+      }
+      grime(x, 512, 128, 34, 0.3, false);
+      return toTex(cv, { repeat: false });
+    });
+    const mk = K('marquee', () => std({ map: mq, emissive: new THREE.Color('#ffffff'), emissiveMap: mq, emissiveIntensity: 0.35 }));
+    const [mx, mz] = L(0, d / 2 + 1.5);
+    batch.box(TRIM, mx, y0 + 3.4, mz, Math.min(w - 2, 10), 1.6, 3, rot, 1, col('#2a1e18'));
+    const [fx2, fz2] = L(0, d / 2 + 3.02);
+    quadOnFace(mk, fx2, y0 + 4.2, fz2, Math.min(w - 2, 10) - 0.4, 1.4, rot);
+  }
+
   // vertical quad flush with a building face rotated by rot (faces local +z)
   function quadOnFace(key, cx, cy, cz, w, h, rot, uv) {
     const c = Math.cos(rot), s = Math.sin(rot);
@@ -1072,6 +1135,38 @@ export function buildTown(world, batch, paint) {
         const t0 = i / N, t1 = (i + 1) / N;
         const sag = (t) => -Math.sin(t * Math.PI) * 1.4;
         pos.push(lerp(a.x, b.x, t0), a.y + sag(t0), lerp(a.z, b.z, t0), lerp(a.x, b.x, t1), a.y + sag(t1), lerp(a.z, b.z, t1));
+      }
+    }
+    const lg = new THREE.BufferGeometry();
+    lg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    world.scene.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0x1e1a16 })));
+  }
+
+  // ---------- wooden utility poles through the suburbs ----------
+  {
+    const poleGeo = new THREE.CylinderGeometry(0.14, 0.2, 10, 6);
+    const armGeo = new THREE.BoxGeometry(2.4, 0.15, 0.15);
+    const pos = [];
+    for (const z of [158.6, 242.4, 141.4]) {
+      let prev = null;
+      for (let x = -232; x <= 232; x += 34) {
+        if (world.onRoad(x, z) || world.pointSolid(x, 1, z)) {
+          prev = null;
+          continue;
+        }
+        addGeo(TRIM, poleGeo, x, CURB + 5, z, 0, '#4f3d2c');
+        addGeo(TRIM, armGeo, x, CURB + 9.4, z, Math.PI / 2, '#4f3d2c');
+        addGeo(METAL, new THREE.CylinderGeometry(0.35, 0.35, 0.8, 8), x + 0.3, CURB + 8.5, z, 0, '#5a5a56');
+        world.addCircle(x, z, 0.3, 0, 10, { minimap: false });
+        if (prev !== null) for (const o of [-1, 1]) {
+          const N = 8;
+          for (let i = 0; i < N; i++) {
+            const t0 = i / N, t1 = (i + 1) / N;
+            const sag = (t) => -Math.sin(t * Math.PI) * 1.1;
+            pos.push(lerp(prev, x, t0), CURB + 9.5 + sag(t0), z + o, lerp(prev, x, t1), CURB + 9.5 + sag(t1), z + o);
+          }
+        }
+        prev = x;
       }
     }
     const lg = new THREE.BufferGeometry();

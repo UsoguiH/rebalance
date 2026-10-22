@@ -328,6 +328,25 @@ export class FX {
     this.decalMesh.renderOrder = 1;
     scene.add(this.decalMesh);
     this.decals = [];
+    // blood splats (used by pedestrians)
+    const bc = canvas(128, 128);
+    const bx = bc.getContext('2d');
+    const br = rng(5);
+    for (let i = 0; i < 40; i++) {
+      const a = br() * Math.PI * 2, d = br() * br() * 52;
+      bx.fillStyle = `rgba(${90 + br() * 40},${4 + br() * 8},${2 + br() * 6},${0.6 + br() * 0.4})`;
+      bx.beginPath();
+      bx.ellipse(64 + Math.cos(a) * d, 64 + Math.sin(a) * d, 3 + br() * 12, 2 + br() * 8, br() * 3, 0, Math.PI * 2);
+      bx.fill();
+    }
+    const btex = new THREE.CanvasTexture(bc);
+    btex.colorSpace = THREE.SRGBColorSpace;
+    this.bloodMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: btex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, roughness: 0.3 }), 60);
+    this.bloodMesh.count = 0;
+    this.bloodMesh.frustumCulled = false;
+    this.bloodMesh.renderOrder = 1;
+    scene.add(this.bloodMesh);
+    this.blood = [];
     this.shakeAmt = 0;
     this._m = new THREE.Matrix4();
     this._q = new THREE.Quaternion();
@@ -452,9 +471,10 @@ export class FX {
       });
     }
   }
-  decal(x, y, z, size) {
-    if (this.decals.length >= 120) this.decals.shift();
-    this.decals.push({ x, y: y + 0.03, z, s: size * (0.8 + R() * 0.5), r: R() * 6, t: 0 });
+  decal(x, y, z, size, kind = 'scorch') {
+    const list = kind === 'blood' ? this.blood : this.decals;
+    if (list.length >= (kind === 'blood' ? 60 : 120)) list.shift();
+    list.push({ x, y: y + 0.03, z, s: size * (0.8 + R() * 0.5), r: R() * 6, t: 0 });
   }
 
   update(dt) {
@@ -514,6 +534,17 @@ export class FX {
     }
     de.count = k;
     de.instanceMatrix.needsUpdate = true;
+    const bm = this.bloodMesh;
+    k = 0;
+    for (const d of this.blood) {
+      this._e.set(0, d.r, 0);
+      this._q.setFromEuler(this._e);
+      this._s.set(d.s, 1, d.s);
+      this._m.compose(this._p.set(d.x, d.y + 0.005, d.z), this._q, this._s);
+      bm.setMatrixAt(k++, this._m);
+    }
+    bm.count = k;
+    bm.instanceMatrix.needsUpdate = true;
     this.shakeAmt = Math.max(0, this.shakeAmt - dt * 1.8);
   }
 }

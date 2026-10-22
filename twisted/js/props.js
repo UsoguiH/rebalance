@@ -272,6 +272,24 @@ export class Props {
     const trunkMat = new THREE.MeshStandardMaterial({ vertexColors: true, map: bark, roughness: 0.95 });
     const canopyMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
     const cardMat = new THREE.MeshStandardMaterial({ map: leaves, vertexColors: true, alphaTest: 0.45, alphaToCoverage: true, side: THREE.DoubleSide, roughness: 0.95, color: 0xffffff });
+    // dissolve foliage that gets between the chase camera and the car (dithered by distance)
+    for (const m of [canopyMat, cardMat]) {
+      m.onBeforeCompile = (sh) => {
+        sh.vertexShader = sh.vertexShader
+          .replace('#include <common>', '#include <common>\nvarying vec3 vFadePos;')
+          .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvFadePos = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;');
+        sh.fragmentShader = sh.fragmentShader
+          .replace('#include <common>', '#include <common>\nvarying vec3 vFadePos;')
+          .replace(
+            'void main() {',
+            `void main() {
+              float fd = distance(vFadePos, cameraPosition);
+              float keep = smoothstep(3.5, 8.0, fd);
+              float dither = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
+              if (keep < dither) discard;`,
+          );
+      };
+    }
     let s = 1;
     for (const kind of ['broad', 'broad', 'broad', 'pine', 'pine', 'dead', 'dry']) {
       const gs = treeGeos(kind, s++ * 17);

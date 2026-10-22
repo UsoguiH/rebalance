@@ -209,7 +209,7 @@ export class UI {
       case 'title':
         this.vignette(0.55);
         this.logo(W * 0.07, H * 0.12, s * 1.15);
-        if (Math.sin(this.t * 4) > -0.3) this.hud.text('PRESS ANY KEY', W * 0.5, H * 0.86, 22 * s, '#d8d0bc', 'center', 500);
+        if (Math.sin(this.t * 4) > -0.3) this.hud.text('CLICK OR PRESS ANY KEY', W * 0.5, H * 0.86, 22 * s, '#d8d0bc', 'center', 500);
         this.hud.text('UNOFFICIAL FAN RECREATION. TWISTED METAL IS A TRADEMARK OF SONY INTERACTIVE ENTERTAINMENT.', W * 0.5, H * 0.96, 10 * s, 'rgba(200,190,170,0.55)', 'center', 400, null);
         break;
       case 'main':

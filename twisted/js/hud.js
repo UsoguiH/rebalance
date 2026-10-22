@@ -28,6 +28,45 @@ export class HUD {
     this.agg = new Map();
     this.flash = 0;
     this.scale = 1;
+    this.splats = [];
+  }
+  // blood droplets on the "lens" after running someone over
+  splat(amount = 1) {
+    const n = Math.round(6 + amount * 16);
+    for (let i = 0; i < n; i++) {
+      const big = Math.random() < 0.25;
+      this.splats.push({
+        x: Math.random(), y: Math.random() * 0.85, r: (big ? 16 : 5) + Math.random() * (big ? 26 : 12), t: 0, life: 2.5 + Math.random() * 2,
+        drip: big && Math.random() < 0.6 ? 20 + Math.random() * 60 : 0, seed: Math.random() * 1000,
+      });
+    }
+  }
+  drawSplats(dt) {
+    const c = this.ctx, W = this.w, H = this.h, s = this.s;
+    this.splats = this.splats.filter((p) => (p.t += dt) < p.life);
+    for (const p of this.splats) {
+      const a = clamp((p.life - p.t) / 1.2, 0, 1) * 0.85;
+      const x = p.x * W, y = p.y * H, r = p.r * s;
+      c.globalAlpha = a;
+      c.fillStyle = '#5a0604';
+      c.beginPath();
+      for (let k = 0; k <= 10; k++) {
+        const ang = (k / 10) * Math.PI * 2;
+        const rr = r * (0.75 + 0.35 * Math.sin(p.seed + k * 2.3));
+        if (k === 0) c.moveTo(x + Math.cos(ang) * rr, y + Math.sin(ang) * rr);
+        else c.lineTo(x + Math.cos(ang) * rr, y + Math.sin(ang) * rr);
+      }
+      c.fill();
+      c.fillStyle = 'rgba(150,20,14,0.9)';
+      c.beginPath();
+      c.arc(x - r * 0.2, y - r * 0.2, r * 0.55, 0, Math.PI * 2);
+      c.fill();
+      if (p.drip) {
+        c.fillStyle = '#5a0604';
+        c.fillRect(x - r * 0.12, y, r * 0.24, Math.min(p.drip, p.t * 30) * s);
+      }
+      c.globalAlpha = 1;
+    }
   }
   resize(w, h, dpr) {
     this.cv.width = Math.round(w * dpr);
@@ -117,6 +156,7 @@ export class HUD {
     this.pickupT -= dt;
     this.warnT -= dt;
 
+    this.drawSplats(dt);
     if (!state.minimal) {
       this.markers(state);
       this.minimap(20 * s, 40 * s, 148 * s, state);

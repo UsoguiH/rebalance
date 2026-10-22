@@ -18,6 +18,7 @@ import { UI } from './ui.js';
 import { Post } from './post.js';
 import { Match } from './match.js';
 import { buildVehicle } from './vehicles.js';
+import { Peds } from './peds.js';
 
 loadSettings();
 const glCanvas = document.getElementById('gl');
@@ -89,6 +90,7 @@ function makeEnv() {
 }
 G.envMap = makeEnv();
 G.lights = { hemi, sun };
+G.hud = hud;
 G.post = post;
 
 // ---------- showroom scene (menus / vehicle select) ----------
@@ -225,6 +227,17 @@ async function buildWorld() {
     props.blast(p, it.type.explode.r * 0.8, 15, by);
   };
   props.onBump = (it, rel) => audio.impact(it.pos, rel);
+  await step('Filling the sidewalks...');
+  const peds = new Peds(world, scene, fx);
+  G.peds = peds;
+  peds.onSplat = (p, car, k) => {
+    audio.impact(p.pos, 6);
+    if (car.isPlayer) hud.splat(k);
+  };
+  // smoke columns from fires burning around town
+  world.smokeSources = [
+    [62, -18, 1.2], [-150, 128, 1], [196, 210, 1.4], [-60, -232, 0.8], [210, -130, 1.1], [-300, 40, 1.6], [120, 300, 1.8],
+  ].map(([x, z, k]) => ({ x, z, k, y: world.groundHeight(x, z, 50) }));
   await step('Wiring the roads...');
   world.buildGraph();
   world.buildMinimap();
@@ -442,6 +455,12 @@ function frame(now) {
       }
       fx.update(dt);
       for (const a of world.animated) a(dt);
+      if (G.peds) G.peds.update(dt);
+      for (const sm of world.smokeSources) {
+        if (Math.hypot(sm.x - camera.position.x, sm.z - camera.position.z) > 700 || R() > 0.55) continue;
+        fx.emit('alpha', { pos: new THREE.Vector3(sm.x + (R() - 0.5) * 3, sm.y + 1, sm.z + (R() - 0.5) * 3), vel: new THREE.Vector3(1.2 + R(), 4 + R() * 2, 0.4), size: 2.5 * sm.k, size1: 14 * sm.k, life: 9, drag: 0.15, grav: -0.3, color: 0x1e1a16, color2: 0x5a5048, alpha: 0.55, frame: 9, fadeIn: 0.6, fadePow: 1.2 });
+        if (R() < 0.5) fx.fireTrail(new THREE.Vector3(sm.x + (R() - 0.5) * 2, sm.y + 0.5 + R(), sm.z + (R() - 0.5) * 2), 0xffc060, 0xff3a00, 1.4 * sm.k);
+      }
     } else ui.update(dt);
     if (state === 'intro') setIntroCamera(introT);
     else if (state === 'results') {
@@ -543,6 +562,12 @@ function menuScene(dt) {
   void id;
   void lerp;
 }
+
+// embedded pages only get keyboard input once focused: clicking anywhere focuses the game
+window.addEventListener('pointerdown', () => {
+  glCanvas.focus();
+  audio.unlock();
+});
 
 // boot
 showVehicle('sweettooth');
