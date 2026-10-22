@@ -64,6 +64,7 @@ button{font-family:inherit}
 .tile.bad{background:var(--red-soft);border-color:var(--red);color:var(--red-shadow);animation:shake .4s}
 .tile.gone{opacity:.3;pointer-events:none;transition:opacity .4s}
 .tile .emo{display:block;font-size:2.2rem;line-height:1.2;margin-bottom:4px}
+.signer image{pointer-events:none}
 @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 
 /* onboarding */
@@ -176,6 +177,23 @@ button{font-family:inherit}
 .mirror-steps li.done span{background:var(--green);color:#fff}
 .cam-hint{display:flex;gap:10px;align-items:center;border:2px dashed var(--line);border-radius:14px;padding:10px 12px;color:var(--muted);font:500 .88rem/1.4 var(--body)}
 .cam-hint svg{width:24px;height:24px;flex:none;color:var(--brand)}
+.cam-hint .camgo{margin-inline-start:auto;flex:none;border:2px solid var(--line);border-bottom-width:4px;border-radius:12px;background:var(--surface);color:var(--blue);font:700 .9rem var(--display);padding:7px 12px;cursor:pointer}
+.cam{position:relative;border-radius:20px;overflow:hidden;background:#0b1316;aspect-ratio:4/3;width:100%;max-width:100%}
+.cam video,.cam canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.cam-status{position:absolute;bottom:10px;inset-inline:10px;background:rgba(11,19,22,.72);color:#fff;font:700 .95rem/1.3 var(--display);padding:8px 12px 6px;border-radius:12px;text-align:center}
+.cam-status.ok{background:rgba(88,167,0,.9)}
+.cam-x{position:absolute;top:10px;inset-inline-end:10px;width:36px;height:36px;border-radius:50%;border:0;background:rgba(11,19,22,.6);color:#fff;display:grid;place-items:center;cursor:pointer}
+.cam-x svg{width:20px;height:20px}
+.lot-badge svg{width:100%!important;height:100%!important}
+.lot-big{width:170px;height:170px}
+.tonepick{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.tonepick button{min-width:0;aspect-ratio:1;border:2px solid var(--line);border-bottom-width:4px;border-radius:14px;background:var(--surface);padding:6px;cursor:pointer;display:grid;place-items:center}
+.tonepick button.sel{border-color:var(--blue-line);background:var(--blue-soft)}
+.tonepick img{width:100%;max-width:44px;height:auto}
+.guide-list{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-height:52vh;overflow-y:auto}
+.guide-item{border:2px solid var(--line);border-radius:14px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--surface);cursor:pointer;font:700 1rem var(--display);color:var(--ink-strong)}
+.guide-item img{width:52px;height:52px}
+.credits{font:400 .78rem/1.6 var(--body);color:var(--faint)}
 .lfoot{border-top:2px solid var(--line);padding-block:16px 20px}
 
 /* bottom sheet */
@@ -307,6 +325,8 @@ canvas.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:non
 
 <div id="root" dir="rtl" lang="ar"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie_light.min.js"></script>
+<script src="hands-data.js"></script>
 <script>
 (() => {
 const KEY = 'ishara-proto-v1';
@@ -316,18 +336,18 @@ const ar = n => Number(n).toLocaleString('ar-SA');
 /* ---------- content ---------- */
 // Motions are placeholder illustrations. Real signs get recorded with a certified Saudi Sign Language interpreter.
 const SIGNS = {
-  hello: {ar:'مرحبا', emo:'👋', m:'wave'},
-  thanks:{ar:'شكراً', emo:'🙏', m:'thanks'},
-  bye:   {ar:'مع السلامة', emo:'🚪', m:'bye'},
-  how:   {ar:'كيف حالك؟', emo:'🙂', m:'how'},
-  yes:   {ar:'نعم', emo:'👍', m:'yes'},
-  no:    {ar:'لا', emo:'✋', m:'no'},
-  mama:  {ar:'ماما', emo:'👩', m:'mama'},
-  baba:  {ar:'بابا', emo:'👨', m:'baba'},
-  eat:   {ar:'أكل', emo:'🍎', m:'eat'},
-  water: {ar:'ماء', emo:'💧', m:'water'},
-  sleep: {ar:'نوم', emo:'😴', m:'sleep'},
-  love:  {ar:'أحبك', emo:'❤️', m:'love'}
+  hello: {ar:'مرحبا', emo:'👋', m:'wave', h:'raised_hand', g:'Open_Palm'},
+  thanks:{ar:'شكراً', emo:'🙏', m:'thanks', h:'rightwards_hand', g:'Open_Palm'},
+  bye:   {ar:'مع السلامة', emo:'🚪', m:'bye', h:'hand_fingers_splayed', g:'Open_Palm'},
+  how:   {ar:'كيف حالك؟', emo:'🙂', m:'how', h:'palm_up_hand', g:'Open_Palm'},
+  yes:   {ar:'نعم', emo:'👍', m:'yes', h:'raised_fist', g:'Closed_Fist'},
+  no:    {ar:'لا', emo:'✋', m:'no', h:'index_pointing_up', g:'Pointing_Up'},
+  mama:  {ar:'ماما', emo:'👩', m:'mama', h:'hand_fingers_splayed', g:'Open_Palm'},
+  baba:  {ar:'بابا', emo:'👨', m:'baba', h:'hand_fingers_splayed', g:'Open_Palm'},
+  eat:   {ar:'أكل', emo:'🍎', m:'eat', h:'pinched_fingers', g:null},
+  water: {ar:'ماء', emo:'💧', m:'water', h:'pinching_hand', g:null},
+  sleep: {ar:'نوم', emo:'😴', m:'sleep', h:'raised_back_of_hand', g:'Open_Palm'},
+  love:  {ar:'أحبك', emo:'❤️', m:'love', h:'raised_fist', g:'Closed_Fist'}
 };
 const PROFILES = {
   adult: {emo:'🧑', name:'كبير', title:'أنا كبير وأبي أتعلم', sub:'تتواصل مع الصم في الشغل والحياة',
@@ -396,6 +416,13 @@ function mascot(cls=''){
 }
 const HAND_R = '<rect x="-10" y="-14" width="20" height="25" rx="9"/><rect x="-17" y="-4" width="8" height="15" rx="4" transform="rotate(-22)"/>';
 const HAND_L = '<rect x="-10" y="-14" width="20" height="25" rx="9"/><rect x="9" y="-4" width="8" height="15" rx="4" transform="rotate(22)"/>';
+const TONES = ['default','light','medium-light','medium','medium-dark','dark'];
+const skinTone = () => (window.HANDS && HANDS.img[S.tone]) ? S.tone : 'medium-light';
+function handImg(slug, mirror){
+  const src = window.HANDS && HANDS.img[skinTone()][slug];
+  if (!src) return mirror ? HAND_L : HAND_R;
+  return `<image href="${src}" x="-22" y="-24" width="44" height="44"${mirror?' transform="scale(-1 1)"':''}/>`;
+}
 function signer(key, spd=1){
   const m = SIGNS[key].m;
   return `<svg class="signer m-${m}" viewBox="0 0 200 160" style="--spd:${spd}" role="img" aria-label="مقطع توضيحي لإشارة">
@@ -409,8 +436,8 @@ function signer(key, spd=1){
       <ellipse class="s-eye" cx="91" cy="58" rx="3" ry="3.4"/><ellipse class="s-eye" cx="109" cy="58" rx="3" ry="3.4"/>
       <path class="s-mouth" d="M92 68 Q100 74 108 68"/>
     </g>
-    <g transform="translate(62 142)"><g class="hand handL">${HAND_L}</g></g>
-    <g transform="translate(138 142)"><g class="hand handR">${HAND_R}</g></g>
+    <g transform="translate(62 142)"><g class="hand handL">${handImg(m==='love'?SIGNS[key].h:'raised_back_of_hand', true)}</g></g>
+    <g transform="translate(138 142)"><g class="hand handR">${handImg(SIGNS[key].h)}</g></g>
   </svg>`;
 }
 function signCard(key, {tools=true, small=false, spd=1}={}){
@@ -425,7 +452,7 @@ function signCard(key, {tools=true, small=false, spd=1}={}){
 
 /* ---------- state ---------- */
 const today = () => new Date().toISOString().slice(0,10);
-const fresh = () => ({screen:'welcome', profile:null, goal:10, xp:0, gems:120, hearts:5, streak:0, lastDay:null, progress:0, days:[]});
+const fresh = () => ({screen:'welcome', profile:null, goal:10, tone:'medium-light', xp:0, gems:120, hearts:5, streak:0, lastDay:null, progress:0, days:[]});
 function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); return s && s.screen ? s : null; }catch(e){ return null; } }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 let S = load() || fresh();
@@ -456,6 +483,18 @@ const sfx = {
 };
 function speak(text){
   try{ const u = new SpeechSynthesisUtterance(text); u.lang = 'ar-SA'; u.rate = .9; speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){}
+}
+
+/* ---------- animated hands (Noto Emoji Animation) ---------- */
+function mountLotties(scope=document){
+  scope.querySelectorAll('[data-lottie]:not([data-on])').forEach(el => {
+    el.dataset.on = '1';
+    const data = window.HANDS && HANDS.lottie[el.dataset.lottie];
+    if (!window.lottie || !data){ el.innerHTML = el.dataset.fallback ? I[el.dataset.fallback] : ''; return; }
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const a = lottie.loadAnimation({container:el, renderer:'svg', loop:!!el.dataset.loop && !still, autoplay:!still, animationData:data});
+    if (still) a.goToAndStop(a.totalFrames - 1, true);
+  });
 }
 
 /* ---------- helpers ---------- */
@@ -568,7 +607,7 @@ function vHome(){
     const side = ui % 2 ? 'inset-inline-start:2%' : 'inset-inline-end:2%';
     return `<div class="unit" style="${color(u.c)}">
       <div class="unit-head"><div><small>الوحدة ${ar(ui+1)}</small><h2>${u.t}</h2></div>
-        <button class="guide" data-a="toast" data-msg="دليل الوحدة: كل الإشارات مع شرحها (قريباً)">دليل</button></div>
+        <button class="guide" data-a="guide" data-u="${ui}">دليل</button></div>
       <div class="nodes">${items}<div class="path-mascot" style="${side}">${mascot(ui===0?'waving':'')}</div></div>
     </div>`;
   }).join('');
@@ -589,8 +628,11 @@ function vMe(){
         ${Object.entries(PROFILES).map(([k,p]) => `<button class="tile choice ${S.profile===k?'sel':''}" data-a="switchProfile" data-k="${k}">
           <span class="emo">${p.emo}</span><span><b>${p.title}</b><small>${p.sub}</small></span></button>`).join('')}
       </div>
+      <h2>لون اليد</h2>
+      <div class="tonepick">${TONES.map(t => `<button class="${skinTone()===t?'sel':''}" data-a="tone" data-t="${t}" aria-label="لون ${TONES.indexOf(t)+1}">${window.HANDS?`<img alt="" src="${HANDS.img[t].raised_hand}">`:''}</button>`).join('')}</div>
       <p class="note">هذا نموذج أولي. حركات الإشارات توضيحية بس، والإشارات الحقيقية تنسجل مع مترجم معتمد للغة الإشارة السعودية قبل الإطلاق.</p>
       <button class="btn ghost" style="--t:var(--red)" data-a="reset">ابدأ من جديد</button>
+      <p class="credits" dir="ltr">Hands: Microsoft Fluent Emoji (MIT). Animations: Noto Emoji Animation by Google (CC BY 4.0). Camera check: MediaPipe (Apache 2.0).</p>
     </div>${tabbar('me')}</section>`;
 }
 
@@ -660,7 +702,9 @@ function vLesson(){
     const n = L.mirror;
     body = `<h1 class="prompt">قلّد الإشارة: «${SIGNS[s.w].ar}»</h1>${signCard(s.w, {spd:L.spd})}
       <ol class="mirror-steps">${[1,2,3].map(k => `<li class="${n>=k?'done':''}"><span>${n>=k?'✓':ar(k)}</span>سوّها مرة ${['أولى','ثانية','ثالثة'][k-1]} قدام المراية</li>`).join('')}</ol>
-      <div class="cam-hint">${I.camera}<span>في النسخة الكاملة الكاميرا تشوف يدك وتقولك وش تعدّل.</span></div>`;
+      ${CAM.on ? `<div class="cam" id="cam"><video id="camv" playsinline muted></video><canvas id="camc"></canvas>
+          <button class="cam-x" data-a="camStop" aria-label="طفّ الكاميرا">${I.x}</button><span class="cam-status" id="cams">نجهّز الكاميرا…</span></div>`
+        : `<div class="cam-hint">${I.camera}<span>خلّ الكاميرا تشوف يدك وتعدّ المحاولات عنك.</span><button class="camgo" data-a="cam">شغّل الكاميرا</button></div>`}`;
     foot = `<button class="btn" data-a="mirror">سويتها ✋ (${ar(n)}/${ar(3)})</button>`;
   }
   return `<section class="screen ${kid?'kid':''}">
@@ -678,10 +722,11 @@ function feedback(ok, extra=''){
   const title = ok ? PRAISE[Math.floor(Math.random()*PRAISE.length)] : 'الإجابة الصحيحة:';
   const sub = ok ? extra : `${SIGNS[s.w].ar}`;
   showSheet(`<div class="sheet ${ok?'good':'bad'}"><div class="sheet-in">
-    <div class="sheet-title"><span class="badge">${ok?I.check:I.x}</span>${title}</div>
+    <div class="sheet-title">${ok?'<span class="badge lot-badge" data-lottie="thumbs_up" data-fallback="check"></span>':`<span class="badge">${I.x}</span>`}${title}</div>
     ${sub?`<p class="sheet-sub">${sub}</p>`:''}
     <button class="btn ${ok?'green':'red'}" data-a="next">${ok?'متابعة':'فهمت'}</button>
   </div></div>`);
+  mountLotties();
 }
 function showSheet(html, scrim=false){ closeSheet(); const d = document.createElement('div'); d.id='sheet'; d.innerHTML = (scrim?'<div class="scrim" data-a="closeSheet"></div>':'') + html; root.appendChild(d); }
 function closeSheet(){ const s = document.getElementById('sheet'); if (s) s.remove(); }
@@ -716,7 +761,7 @@ function vDone(){
   const r = L.result;
   const mm = Math.floor(r.secs/60), ss = String(r.secs%60).padStart(2,'0');
   return `<section class="screen"><div class="results">
-    ${mascot('jump').replace('<svg','<svg style="width:150px"')}
+    <div class="lot-big" data-lottie="clapping_hands" data-loop="1" aria-hidden="true"></div>
     <h1>${L.mistakes===0?'درس بدون ولا غلطة!':'خلصت الدرس!'}</h1>
     <p>${L.mistakes===0?'كفو عليك، ركّزت من أول لآخر.':'كل يوم شوي، وبتصير تتكلم بيدينك.'}</p>
     <div class="cards3">
@@ -767,6 +812,8 @@ function countUp(){
 /* ---------- render ---------- */
 function render(){
   closeSheet();
+  if (S.screen !== 'lesson') stopCam();
+  if (window.HANDS){ const [sk, line] = HANDS.skin[skinTone()]; root.style.setProperty('--skin', sk); root.style.setProperty('--skin-line', line); }
   const v = {welcome:vWelcome, who:vWho, goal:vGoal, prep:vPrep, home:vHome, me:vMe, lesson:vLesson, done:vDone, streak:vStreak}[S.screen] || vHome;
   root.innerHTML = v();
   if (S.screen === 'home'){
@@ -775,6 +822,7 @@ function render(){
     lastDone = -1;
   }
   if (S.screen === 'done'){ confetti(); countUp(); }
+  mountLotties(root);
 }
 
 /* ---------- actions ---------- */
@@ -817,7 +865,7 @@ const A = {
       <button class="btn blue" data-a="closeSheet">كمّل التعلّم</button>
       <button class="btn link" data-a="leave">اطلع</button></div></div>`, true);
   },
-  leave(){ L = null; S.screen = 'home'; save(); render(); },
+  leave(){ stopCam(); L = null; S.screen = 'home'; save(); render(); },
   closeSheet(){ closeSheet(); },
   replay(){ const sv = root.querySelector('.lbody .signer'); if (!sv) return; const p = sv.parentNode, html = sv.outerHTML; sv.remove(); p.insertAdjacentHTML('afterbegin', html); },
   slow(){ L.spd = L.spd > 1 ? 1 : 2; render(); },
@@ -852,6 +900,7 @@ const A = {
         <button class="btn link" data-a="leave">اطلع</button></div></div>`, true);
       return;
     }
+    stopCam();
     L.i++; L.sel = null; L.answered = false; L.mirror = 0; L.match = null;
     if (L.i >= L.steps.length) return finishLesson();
     render();
@@ -860,12 +909,97 @@ const A = {
   matchL(el){ L.match.selL = el.dataset.w; sfx.tap(); tryMatch(); },
   matchR(el){ L.match.selR = el.dataset.w; sfx.tap(); tryMatch(); },
   mirror(){
+    if (L.answered) return;
     L.mirror++; sfx.tap();
-    if (L.mirror >= 3){ markCorrect(); sfx.good(); render(); feedback(true, 'في التطبيق الكامل الكاميرا بتتأكد من حركتك.'); }
-    else render();
+    if (L.mirror >= 3){
+      L.answered = true; markCorrect(); sfx.good();
+      const viaCam = CAM.on; stopCam(); render();
+      feedback(true, viaCam ? 'الكاميرا شافت حركتك ٣ مرات.' : 'المرة الجاية جرّب الكاميرا عشان تتأكد من حركتك.');
+    } else if (CAM.on) updateMirror(); else render();
+  },
+  cam(){ startCam(); },
+  camStop(){ stopCam(); render(); },
+  tone(el){ S.tone = el.dataset.t; save(); render(); },
+  guide(el){
+    const u = profile().units[+el.dataset.u];
+    showSheet(`<div class="sheet"><div class="sheet-in">
+      <div class="sheet-title" style="color:var(--ink-strong)">دليل: ${u.t}</div>
+      <div class="guide-list">${u.w.map(k => `<button class="guide-item" data-a="speak" data-w="${k}">${window.HANDS?`<img alt="" src="${HANDS.img[skinTone()][SIGNS[k].h]}">`:''}${SIGNS[k].ar}</button>`).join('')}</div>
+      <p class="sheet-sub" style="color:var(--muted);font-size:.9rem">الصور توضّح شكل اليد بس. فيديو كل إشارة يُسجَّل مع مترجم معتمد.</p>
+      <button class="btn" data-a="closeSheet">تمام</button></div></div>`, true);
   },
   afterDone(){ S.screen = L.result.streakUp ? 'streak' : 'home'; save(); render(); }
 };
+/* ---------- camera check (MediaPipe gesture recognizer) ---------- */
+// Runs when the app is opened in a normal browser. Inside a sandboxed viewer the camera is refused,
+// so the learner keeps the "سويتها" button.
+const MP_VER = '0.10.14';
+const MP_MODEL = 'assets/hands/5-mediapipe-hand-models/gesture_recognizer.task';
+const GESTURE_AR = {Open_Palm:'افتح كفّك', Closed_Fist:'سكّر يدك قبضة', Pointing_Up:'ارفع إصبعك'};
+const CAM = {on:false, stream:null, raf:0, rec:null, hold:0, gap:0, armed:true};
+let recognizerPromise = null;
+function loadRecognizer(){
+  if (!recognizerPromise) recognizerPromise = (async () => {
+    const v = await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}/vision_bundle.mjs`);
+    const files = await v.FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}/wasm`);
+    const opts = d => ({baseOptions:{modelAssetPath:MP_MODEL, delegate:d}, runningMode:'VIDEO', numHands:2});
+    try { return await v.GestureRecognizer.createFromOptions(files, opts('GPU')); }
+    catch(e){ return await v.GestureRecognizer.createFromOptions(files, opts('CPU')); }
+  })().catch(e => { recognizerPromise = null; throw e; });
+  return recognizerPromise;
+}
+async function startCam(){
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:640, height:480}, audio:false}); }
+  catch(e){ toast('الكاميرا مو متاحة هنا. اضغط «سويتها» بعد كل محاولة.'); return; }
+  if (!L || step().t !== 'mirror'){ stream.getTracks().forEach(t => t.stop()); return; }
+  Object.assign(CAM, {on:true, stream, hold:0, gap:0, armed:true});
+  render();
+  const v = document.getElementById('camv'); v.srcObject = stream; await v.play().catch(()=>{});
+  setStatus('نحمّل نموذج اليد…');
+  try { CAM.rec = await loadRecognizer(); }
+  catch(e){ setStatus('ما قدرنا نحمّل نموذج اليد. استخدم زر «سويتها».'); return; }
+  if (CAM.on) loop();
+}
+function stopCam(){
+  if (!CAM.on) return;
+  cancelAnimationFrame(CAM.raf);
+  if (CAM.stream) CAM.stream.getTracks().forEach(t => t.stop());
+  Object.assign(CAM, {on:false, stream:null, raf:0});
+}
+function setStatus(msg, ok){ const el = document.getElementById('cams'); if (el){ el.textContent = msg; el.classList.toggle('ok', !!ok); } }
+const HAND_LINKS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function loop(){
+  const v = document.getElementById('camv'), c = document.getElementById('camc');
+  if (!CAM.on || !v || !c){ return; }
+  if (v.readyState >= 2){
+    const res = CAM.rec.recognizeForVideo(v, performance.now());
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+    (res.landmarks || []).forEach(pts => {
+      ctx.strokeStyle = '#14B8A6'; ctx.lineWidth = 4;
+      HAND_LINKS.forEach(([a,b]) => { ctx.beginPath(); ctx.moveTo(pts[a].x*c.width, pts[a].y*c.height); ctx.lineTo(pts[b].x*c.width, pts[b].y*c.height); ctx.stroke(); });
+      pts.forEach((p,i) => { ctx.fillStyle = [4,8,12,16,20].includes(i) ? '#FFC800' : '#fff'; ctx.beginPath(); ctx.arc(p.x*c.width, p.y*c.height, 5, 0, 7); ctx.fill(); });
+    });
+    const want = SIGNS[step().w].g;
+    const seen = (res.gestures || []).map(g => g[0] && g[0].categoryName);
+    const hand = (res.landmarks || []).length > 0;
+    const match = hand && (!want || seen.includes(want));
+    if (match){ CAM.gap = 0; if (CAM.armed && ++CAM.hold >= 12){ CAM.armed = false; CAM.hold = 0; A.mirror(); if (!CAM.on) return; } }
+    else { CAM.hold = 0; if (++CAM.gap >= 8) CAM.armed = true; }
+    if (!hand) setStatus('ارفع يدك قدام الكاميرا');
+    else if (!CAM.armed) setStatus('كفو! نزّل يدك وعيدها', true);
+    else if (match) setStatus('ثبّت يدك…', true);
+    else setStatus(GESTURE_AR[want] || 'ثبّت يدك');
+  }
+  CAM.raf = requestAnimationFrame(loop);
+}
+function updateMirror(){
+  root.querySelectorAll('.mirror-steps li').forEach((li, k) => { const done = L.mirror > k; li.classList.toggle('done', done); li.querySelector('span').textContent = done ? '✓' : ar(k+1); });
+  const b = root.querySelector('.lfoot .btn'); if (b) b.textContent = `سويتها ✋ (${ar(L.mirror)}/${ar(3)})`;
+}
+
 function tryMatch(){
   const M = L.match;
   if (!M.selL || !M.selR){ render(); return; }

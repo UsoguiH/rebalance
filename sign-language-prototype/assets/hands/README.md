@@ -23,3 +23,7 @@ Run `python3 download.py` to fetch everything again from the original sources.
 - Emoji hands show general gestures, not the official signs of Saudi Sign Language. The lesson videos for each sign still need to be recorded with a certified interpreter.
 - SignWriting handshapes are named by their ISWA key (for example `S14c00`). Fill 0 and rotation 0 means right hand, palm facing the viewer.
 - Fluent Emoji has the handshake in one tone only.
+
+## Used in the app
+
+`build_app_data.py` packs the parts the prototype uses into `../../hands-data.js`: nine Fluent 3D handshapes in all six skin tones (drawn on the signer, in the unit guide and in the skin-tone picker) and three Noto animations (thumbs up on a correct answer, clapping on the results screen). The mirror step loads `5-mediapipe-hand-models/gesture_recognizer.task` to count the learner's attempts with the camera. That needs the app served over http (`python3 -m http.server` in `sign-language-prototype/`); where the camera is unavailable the learner taps «سويتها» instead.
