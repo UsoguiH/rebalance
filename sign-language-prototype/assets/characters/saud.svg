@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="سعود">
+  <!-- ground shadow -->
+  <ellipse cx="200" cy="373" rx="80" ry="7" fill="#E3E6EA"/>
+
+  <!-- thobe -->
+  <path d="M164 222 C148 230 146 262 148 296 C148 322 146 344 144 362 L256 362 C254 344 252 322 252 296 C254 262 252 230 236 222 C222 216 178 216 164 222 Z" fill="#F8F2E9"/>
+  <path d="M234 224 C248 232 250 260 250 296 C250 322 252 344 254 362 L230 362 C236 330 238 296 236 262 C236 244 234 232 228 224 Z" fill="#EEE5D8"/>
+  <path d="M188 222 C194 230 206 230 212 222" stroke="#E6DBCC" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="195" y="230" width="10" height="36" rx="4" fill="none" stroke="#E6DBCC" stroke-width="2.4"/>
+  <circle cx="200" cy="242" r="2.2" fill="#E2D6C6"/><circle cx="200" cy="255" r="2.2" fill="#E2D6C6"/>
+
+  <!-- arm at the side -->
+  <path d="M236 226 C252 232 258 252 258 272 C252 278 242 278 238 272 C238 258 236 244 230 234 Z" fill="#F3ECE1"/>
+  <circle class="skin" cx="249" cy="282" r="11" fill="#F1A06C"/>
+
+  <!-- waving arm -->
+  <path d="M168 228 C148 228 128 218 114 204 C116 194 126 190 134 196 C146 206 160 212 178 216 Z" fill="#F3ECE1"/>
+  <g transform="translate(-26 26)"><g class="wave">
+    <path class="skin" d="M124 178 C120 166 120 150 124 140 C126 134 132 134 134 140 L136 156 L138 134 C139 127 147 127 148 134 L148 156 L151 136 C152 129 160 130 160 137 L158 160 L163 148 C165 142 172 144 171 150 L164 176 C160 188 150 192 140 190 C132 189 126 185 124 178 Z" fill="#F1A06C"/>
+    <path d="M140 170 L152 170" stroke="#DB8352" stroke-width="2" stroke-linecap="round"/>
+  </g></g>
+  <path d="M92 146 C86 154 84 164 86 172 M82 138 C74 148 72 162 76 174" stroke="#1CB0F6" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- shoes -->
+  <path d="M150 362 C154 354 168 352 184 354 C196 356 202 362 200 368 L152 370 C148 368 148 366 150 362 Z" fill="#4A3030"/>
+  <path d="M206 362 C210 354 226 352 240 354 C252 356 256 362 254 368 L208 370 C204 368 204 366 206 362 Z" fill="#4A3030"/>
+
+  <g class="head" transform="rotate(4 200 220)">
+    <!-- ears -->
+    <ellipse class="skin2" cx="132" cy="144" rx="12" ry="15" fill="#E98C58"/>
+    <ellipse class="skin2" cx="268" cy="144" rx="12" ry="15" fill="#E98C58"/>
+    <!-- face -->
+    <path class="skin" d="M134 130 C134 92 162 74 200 74 C238 74 266 92 266 130 C266 180 238 212 200 212 C162 212 134 180 134 130 Z" fill="#F1A06C"/>
+    <!-- hair under the cap -->
+    <path d="M136 120 C136 104 142 94 150 88 L150 120 Z" fill="#2E2626"/>
+    <path d="M264 120 C264 104 258 94 250 88 L250 120 Z" fill="#2E2626"/>
+    <!-- cheeks -->
+    <ellipse cx="152" cy="168" rx="13" ry="8" fill="#F27D6B" opacity=".45"/>
+    <ellipse cx="248" cy="168" rx="13" ry="8" fill="#F27D6B" opacity=".45"/>
+    <!-- eyes -->
+    <g class="eyes">
+    <circle cx="172" cy="138" r="21" fill="#FFFFFF"/>
+    <circle cx="228" cy="138" r="21" fill="#FFFFFF"/>
+    <path d="M154 146 C151 128 162 117 176 118" stroke="#2B2222" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <path d="M210 146 C207 128 218 117 232 118" stroke="#2B2222" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <circle cx="175" cy="139" r="12.5" fill="#2B2222"/>
+    <circle cx="231" cy="139" r="12.5" fill="#2B2222"/>
+    <circle cx="179" cy="134" r="3.2" fill="#FFFFFF"/>
+    <circle cx="235" cy="134" r="3.2" fill="#FFFFFF"/>
+    </g>
+    <!-- eyebrows -->
+    <rect x="156" y="104" width="28" height="11" rx="3" fill="#2E2626" transform="rotate(-6 170 110)"/>
+    <rect x="216" y="104" width="28" height="11" rx="3" fill="#2E2626" transform="rotate(6 230 110)"/>
+    <!-- nose -->
+    <path class="skin2" d="M194 154 C192 162 194 168 200 168 C206 168 208 162 206 154 Z" fill="#E98C58"/>
+    <!-- grin with a missing tooth -->
+    <path d="M172 176 C178 204 222 204 228 176 C212 180 188 180 172 176 Z" fill="#7C2F22"/>
+    <path d="M176 178 L224 178 C222 186 218 189 214 190 L186 190 C182 189 178 186 176 178 Z" fill="#FFFFFF"/>
+    <rect x="197" y="178" width="7" height="12" fill="#7C2F22"/>
+    <path d="M186 196 C194 200 206 200 214 196 C210 200 204 202 200 202 C196 202 190 200 186 196 Z" fill="#E58A7C"/>
+    <!-- white taqiyah cap -->
+    <path d="M136 108 C136 70 166 56 200 56 C234 56 264 70 264 108 C246 98 224 94 200 94 C176 94 154 98 136 108 Z" fill="#FFFFFF"/>
+    <path d="M136 108 C154 98 176 94 200 94 C224 94 246 98 264 108" stroke="#E6DED4" stroke-width="3" fill="none"/>
+    <path d="M160 74 L162 98 M182 62 L182 94 M200 58 L200 94 M218 62 L218 94 M240 74 L238 98" stroke="#EFE8DF" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

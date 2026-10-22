@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="أبو سعد">
+  <defs>
+    <pattern id="shmagh" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#FBEAE3"/>
+      <rect x="1" y="1" width="5.6" height="5.6" rx="2" fill="#E5675F"/>
+      <rect x="7" y="7" width="2.4" height="2.4" rx="1" fill="#EF9C92"/>
+    </pattern>
+    <pattern id="shmaghShade" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#F2D8CF"/>
+      <rect x="1" y="1" width="5.6" height="5.6" rx="2" fill="#D45A53"/>
+    </pattern>
+  </defs>
+
+  <!-- ground shadow -->
+  <ellipse cx="210" cy="373" rx="96" ry="7" fill="#E3E6EA"/>
+
+  <!-- shmagh tail falling behind the right shoulder -->
+  <path d="M244 150 C278 160 300 190 302 236 C292 238 282 234 272 226 C266 200 256 176 236 166 Z" fill="url(#shmaghShade)"/>
+
+  <!-- arm behind the back -->
+  <path d="M262 206 C284 214 292 236 286 256 C280 268 266 266 262 254 Z" fill="#EFE6D9"/>
+
+  <!-- thobe -->
+  <path d="M168 188 C150 196 148 226 150 262 C150 300 146 334 142 360 L284 360 C280 330 278 296 278 258 C278 222 272 198 252 188 C236 182 186 182 168 188 Z" fill="#F8F2E9"/>
+  <path d="M250 190 C270 200 276 226 276 258 C276 296 278 330 282 360 L250 360 C258 320 262 280 258 236 C256 214 252 200 244 190 Z" fill="#EEE5D8"/>
+  <path d="M206 250 L208 356" stroke="#EAE0D2" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- collar, placket, buttons, pocket and pen -->
+  <path d="M190 188 C196 196 214 196 222 188" stroke="#E6DBCC" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <rect x="200" y="196" width="12" height="44" rx="4" fill="none" stroke="#E6DBCC" stroke-width="2.4"/>
+  <circle cx="206" cy="210" r="2.4" fill="#E2D6C6"/><circle cx="206" cy="226" r="2.4" fill="#E2D6C6"/>
+  <path d="M222 220 L252 220 L252 246 C252 249 250 250 247 250 L227 250 C224 250 222 249 222 246 Z" fill="none" stroke="#E6DBCC" stroke-width="2.4" stroke-linejoin="round"/>
+  <rect x="226" y="212" width="3.2" height="16" rx="1.4" fill="#2E2626"/>
+
+  <!-- sleeve of the arm on the cane -->
+  <path d="M188 194 C164 194 150 206 146 222 C144 230 146 236 150 238 L170 238 C172 226 178 214 192 204 Z" fill="#F3ECE1"/>
+  <path d="M150 238 L170 238" stroke="#E6DBCC" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- cane -->
+  <path d="M140 372 C138 330 136 288 136 258 C136 246 142 240 150 240 C158 240 162 246 162 254" fill="none" stroke="#7A3F2A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M140 372 C138 330 136 288 136 258" fill="none" stroke="#8E4E35" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- hand on the cane -->
+  <path d="M124 238 C124 224 136 216 150 218 C164 220 170 230 168 240 C166 248 156 250 146 250 C134 250 124 248 124 238 Z" fill="#EE9A66"/>
+  <path d="M138 226 C138 232 138 238 140 244 M148 224 C148 230 148 238 150 246 M157 226 C158 232 158 238 158 244" stroke="#DB8352" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- shoes -->
+  <path d="M146 360 C150 352 166 350 186 352 C202 354 210 360 208 368 L148 370 C144 368 144 364 146 360 Z" fill="#4A3030"/>
+  <path d="M228 360 C232 352 250 350 268 352 C282 354 288 360 286 368 L230 370 C226 368 226 364 228 360 Z" fill="#4A3030"/>
+
+  <g class="head" transform="rotate(-6 204 190)">
+  <!-- shmagh back drape around the head -->
+  <path d="M120 128 C112 92 136 50 192 44 C246 38 290 64 298 108 C304 140 292 168 268 190 C256 196 242 196 236 188 L176 188 C160 192 138 184 126 168 C116 154 116 142 120 128 Z" fill="url(#shmagh)"/>
+  <path d="M120 128 C116 150 122 168 136 180 C150 190 166 192 178 188 L170 176 C150 172 136 160 130 140 Z" fill="url(#shmaghShade)"/>
+
+  <!-- ears -->
+  <ellipse cx="135" cy="152" rx="11" ry="14" fill="#EE9A66"/>
+  <ellipse cx="263" cy="122" rx="10" ry="13" fill="#EE9A66"/>
+  <path d="M260 116 C264 120 264 126 260 130" stroke="#DB8352" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- face -->
+  <path d="M140 108 C140 84 160 72 200 72 C238 72 260 84 260 108 L260 150 C260 178 236 192 200 192 C164 192 140 178 140 150 Z" fill="#F1A06C"/>
+  <!-- white side hair -->
+  <path d="M140 100 C134 112 134 128 138 140 L146 140 C144 128 146 114 150 104 Z" fill="#F2EEEA"/>
+  <path d="M258 96 C264 104 264 116 262 126 L254 124 C256 114 256 104 252 98 Z" fill="#F2EEEA"/>
+
+  <!-- beard and moustache -->
+  <path d="M144 140 C146 168 168 194 200 194 C234 194 256 168 258 136 C250 150 240 156 230 158 C216 146 186 146 172 158 C160 156 150 150 144 140 Z" fill="#ECE8E3"/>
+  <path d="M152 158 C162 182 182 190 200 190 C218 190 238 182 248 160 C238 178 222 186 200 186 C178 186 162 178 152 158 Z" fill="#DEDAD5"/>
+
+  <!-- grin -->
+  <path d="M170 140 C176 176 226 182 240 136 C222 144 190 146 170 140 Z" fill="#7C2F22"/>
+  <path d="M173 142 C190 149 220 148 238 138 C236 150 228 158 216 160 C198 162 182 156 173 142 Z" fill="#FFFFFF"/>
+  <path d="M186 166 C198 172 214 172 226 164 C222 170 212 174 202 174 C194 174 188 170 186 166 Z" fill="#E58A7C"/>
+
+  <!-- moustache -->
+  <path d="M166 136 C176 125 194 127 204 133 C214 125 234 125 244 132 C238 140 222 140 205 138 C188 141 174 142 166 136 Z" fill="#DAD5CF"/>
+  <!-- nose -->
+  <path d="M186 120 C182 132 180 140 186 142 C190 144 196 142 196 138 Z" fill="#E4885A"/>
+
+  <!-- eyes -->
+  <g class="eyes">
+    <circle cx="168" cy="114" r="19" fill="#FFFFFF"/>
+    <circle cx="215" cy="109" r="20" fill="#FFFFFF"/>
+    <path d="M150 124 C147 106 158 94 172 95" stroke="#2B2222" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <path d="M197 116 C194 98 205 88 219 89" stroke="#2B2222" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+    <circle cx="170" cy="114" r="11.5" fill="#2B2222"/>
+    <circle cx="217" cy="109" r="12" fill="#2B2222"/>
+    <circle cx="173" cy="110" r="2.6" fill="#FFFFFF"/>
+    <circle cx="220" cy="105" r="2.8" fill="#FFFFFF"/>
+  </g>
+  <!-- eyebrows -->
+  <rect x="149" y="84" width="32" height="15" rx="3" fill="#4A3A34" transform="rotate(-8 165 94)"/>
+  <rect x="201" y="73" width="29" height="15" rx="3" fill="#4A3A34" transform="rotate(-4 215 84)"/>
+
+  <!-- shmagh front fold over the forehead -->
+  <path d="M132 100 C138 70 166 56 200 56 C236 56 262 70 268 98 C254 84 230 78 200 78 C170 78 146 86 132 100 Z" fill="url(#shmagh)"/>
+
+  <!-- agal -->
+  <path d="M124 60 C150 42 250 38 276 58 C280 62 278 70 272 70 C246 56 154 58 130 72 C122 74 120 64 124 60 Z" fill="#3A2E2E"/>
+  <path d="M120 76 C150 58 252 54 280 74 C284 78 282 86 276 86 C248 72 152 74 126 88 C118 90 116 80 120 76 Z" fill="#3A2E2E"/>
+  <path d="M132 62 C160 50 236 48 266 58" stroke="#5A4A48" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M128 78 C158 66 240 64 272 74" stroke="#5A4A48" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
