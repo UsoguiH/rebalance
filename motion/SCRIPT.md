@@ -17,6 +17,23 @@ So give him a job.
 You're thinking, why would a guy like that help me?
 ```
 
+## Tagged version (Eleven v3, used for the final cut)
+
+Used with the voice "John Doe – Gravely Deep and Engaging", stability on Natural.
+
+```
+[calm, low and serious] When you know nobody at an event... [short pause] talk to this person first.
+[pause] Skip the speaker. [short pause] And the CEO.
+[pause] Find the connector. [short pause] The guy who knows half the room.
+[pause] Say his name's Daniel. [short pause] You'll spot him fast.
+[pause] He never stays in one group. [short pause] And he's always the one who waves the new guy over.
+[long pause] Tonight... [short pause] that's you.
+[pause] But a quick "hey" won't work. [short pause] He'll forget you by the next group.
+[pause] So give him a job.
+[short pause] [confident] "I'm starting an agency and want to meet founders. [short pause] Who should I talk to?"
+[long pause] [quietly] You're thinking... [short pause] why would a guy like that help me?
+```
+
 ## Timing of the original read (seconds)
 
 | Line | Starts | Ends |
