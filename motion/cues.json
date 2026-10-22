@@ -1,0 +1,594 @@
+{
+ "source": "original reel timing (reel time, seconds)",
+ "duration": 33.9,
+ "words": [
+  {
+   "id": "when",
+   "word": "When",
+   "start": 0.25,
+   "end": 0.54
+  },
+  {
+   "id": "you",
+   "word": "you",
+   "start": 0.54,
+   "end": 0.72
+  },
+  {
+   "id": "know",
+   "word": "know",
+   "start": 0.72,
+   "end": 0.9
+  },
+  {
+   "id": "nobody",
+   "word": "nobody",
+   "start": 0.9,
+   "end": 1.38
+  },
+  {
+   "id": "at",
+   "word": "at",
+   "start": 1.38,
+   "end": 1.66
+  },
+  {
+   "id": "an",
+   "word": "an",
+   "start": 1.66,
+   "end": 1.8
+  },
+  {
+   "id": "event",
+   "word": "event,",
+   "start": 1.8,
+   "end": 2.14
+  },
+  {
+   "id": "talk",
+   "word": "talk",
+   "start": 2.45,
+   "end": 2.7
+  },
+  {
+   "id": "to",
+   "word": "to",
+   "start": 2.7,
+   "end": 2.92
+  },
+  {
+   "id": "this",
+   "word": "this",
+   "start": 2.92,
+   "end": 3.22
+  },
+  {
+   "id": "person",
+   "word": "person",
+   "start": 3.22,
+   "end": 3.52
+  },
+  {
+   "id": "first",
+   "word": "first.",
+   "start": 3.52,
+   "end": 4.08
+  },
+  {
+   "id": "skip",
+   "word": "Skip",
+   "start": 4.55,
+   "end": 4.88
+  },
+  {
+   "id": "the",
+   "word": "the",
+   "start": 4.88,
+   "end": 5.08
+  },
+  {
+   "id": "speaker",
+   "word": "speaker",
+   "start": 5.08,
+   "end": 5.48
+  },
+  {
+   "id": "and",
+   "word": "and",
+   "start": 5.48,
+   "end": 5.9
+  },
+  {
+   "id": "the2",
+   "word": "the",
+   "start": 5.9,
+   "end": 6.08
+  },
+  {
+   "id": "ceo",
+   "word": "CEO.",
+   "start": 6.08,
+   "end": 6.44
+  },
+  {
+   "id": "find",
+   "word": "Find",
+   "start": 7.14,
+   "end": 7.38
+  },
+  {
+   "id": "the3",
+   "word": "the",
+   "start": 7.38,
+   "end": 7.56
+  },
+  {
+   "id": "connector",
+   "word": "connector.",
+   "start": 7.56,
+   "end": 7.94
+  },
+  {
+   "id": "the4",
+   "word": "The",
+   "start": 8.54,
+   "end": 8.68
+  },
+  {
+   "id": "guy",
+   "word": "guy",
+   "start": 8.68,
+   "end": 8.86
+  },
+  {
+   "id": "who",
+   "word": "who",
+   "start": 8.86,
+   "end": 9.06
+  },
+  {
+   "id": "knows",
+   "word": "knows",
+   "start": 9.06,
+   "end": 9.3
+  },
+  {
+   "id": "half",
+   "word": "half",
+   "start": 9.3,
+   "end": 9.58
+  },
+  {
+   "id": "the5",
+   "word": "the",
+   "start": 9.58,
+   "end": 9.8
+  },
+  {
+   "id": "room",
+   "word": "room.",
+   "start": 9.8,
+   "end": 10.08
+  },
+  {
+   "id": "say",
+   "word": "Say",
+   "start": 10.6,
+   "end": 10.78
+  },
+  {
+   "id": "his",
+   "word": "his",
+   "start": 10.78,
+   "end": 10.94
+  },
+  {
+   "id": "names",
+   "word": "name's",
+   "start": 10.94,
+   "end": 11.36
+  },
+  {
+   "id": "daniel",
+   "word": "Daniel.",
+   "start": 11.36,
+   "end": 11.76
+  },
+  {
+   "id": "youll",
+   "word": "You'll",
+   "start": 12.2,
+   "end": 12.38
+  },
+  {
+   "id": "spot",
+   "word": "spot",
+   "start": 12.38,
+   "end": 12.58
+  },
+  {
+   "id": "him",
+   "word": "him",
+   "start": 12.58,
+   "end": 12.8
+  },
+  {
+   "id": "fast",
+   "word": "fast.",
+   "start": 12.8,
+   "end": 13.12
+  },
+  {
+   "id": "he",
+   "word": "He",
+   "start": 13.56,
+   "end": 13.7
+  },
+  {
+   "id": "never",
+   "word": "never",
+   "start": 13.7,
+   "end": 14.06
+  },
+  {
+   "id": "stays",
+   "word": "stays",
+   "start": 14.06,
+   "end": 14.38
+  },
+  {
+   "id": "in",
+   "word": "in",
+   "start": 14.38,
+   "end": 14.6
+  },
+  {
+   "id": "one",
+   "word": "one",
+   "start": 14.6,
+   "end": 14.8
+  },
+  {
+   "id": "group",
+   "word": "group.",
+   "start": 14.8,
+   "end": 15.06
+  },
+  {
+   "id": "and2",
+   "word": "And",
+   "start": 15.42,
+   "end": 15.54
+  },
+  {
+   "id": "hes",
+   "word": "he's",
+   "start": 15.54,
+   "end": 15.82
+  },
+  {
+   "id": "always",
+   "word": "always",
+   "start": 15.82,
+   "end": 16.12
+  },
+  {
+   "id": "the6",
+   "word": "the",
+   "start": 16.12,
+   "end": 16.34
+  },
+  {
+   "id": "one2",
+   "word": "one",
+   "start": 16.34,
+   "end": 16.54
+  },
+  {
+   "id": "who2",
+   "word": "who",
+   "start": 16.54,
+   "end": 16.78
+  },
+  {
+   "id": "waves",
+   "word": "waves",
+   "start": 16.78,
+   "end": 17.0
+  },
+  {
+   "id": "the7",
+   "word": "the",
+   "start": 17.0,
+   "end": 17.2
+  },
+  {
+   "id": "new",
+   "word": "new",
+   "start": 17.2,
+   "end": 17.42
+  },
+  {
+   "id": "guy2",
+   "word": "guy",
+   "start": 17.42,
+   "end": 17.6
+  },
+  {
+   "id": "over",
+   "word": "over.",
+   "start": 17.6,
+   "end": 17.94
+  },
+  {
+   "id": "tonight",
+   "word": "Tonight,",
+   "start": 18.46,
+   "end": 18.74
+  },
+  {
+   "id": "thats",
+   "word": "that's",
+   "start": 19.2,
+   "end": 19.46
+  },
+  {
+   "id": "you2",
+   "word": "you.",
+   "start": 19.46,
+   "end": 19.76
+  },
+  {
+   "id": "but",
+   "word": "But",
+   "start": 20.24,
+   "end": 20.34
+  },
+  {
+   "id": "a",
+   "word": "a",
+   "start": 20.34,
+   "end": 20.46
+  },
+  {
+   "id": "quick",
+   "word": "quick,",
+   "start": 20.46,
+   "end": 20.64
+  },
+  {
+   "id": "hey",
+   "word": "hey,",
+   "start": 21.08,
+   "end": 21.14
+  },
+  {
+   "id": "wont",
+   "word": "won't",
+   "start": 21.48,
+   "end": 21.64
+  },
+  {
+   "id": "work",
+   "word": "work.",
+   "start": 21.64,
+   "end": 21.94
+  },
+  {
+   "id": "hell",
+   "word": "He'll",
+   "start": 22.36,
+   "end": 22.5
+  },
+  {
+   "id": "forget",
+   "word": "forget",
+   "start": 22.5,
+   "end": 22.74
+  },
+  {
+   "id": "you3",
+   "word": "you",
+   "start": 22.74,
+   "end": 23.0
+  },
+  {
+   "id": "by",
+   "word": "by",
+   "start": 23.0,
+   "end": 23.16
+  },
+  {
+   "id": "the8",
+   "word": "the",
+   "start": 23.16,
+   "end": 23.3
+  },
+  {
+   "id": "next",
+   "word": "next",
+   "start": 23.3,
+   "end": 23.5
+  },
+  {
+   "id": "group2",
+   "word": "group.",
+   "start": 23.5,
+   "end": 23.8
+  },
+  {
+   "id": "so",
+   "word": "So",
+   "start": 24.48,
+   "end": 24.72
+  },
+  {
+   "id": "give",
+   "word": "give",
+   "start": 24.72,
+   "end": 24.96
+  },
+  {
+   "id": "him2",
+   "word": "him",
+   "start": 24.96,
+   "end": 25.08
+  },
+  {
+   "id": "a2",
+   "word": "a",
+   "start": 25.08,
+   "end": 25.22
+  },
+  {
+   "id": "job",
+   "word": "job.",
+   "start": 25.22,
+   "end": 25.52
+  },
+  {
+   "id": "im",
+   "word": "I'm",
+   "start": 26.02,
+   "end": 26.18
+  },
+  {
+   "id": "starting",
+   "word": "starting",
+   "start": 26.18,
+   "end": 26.5
+  },
+  {
+   "id": "an2",
+   "word": "an",
+   "start": 26.5,
+   "end": 26.7
+  },
+  {
+   "id": "agency",
+   "word": "agency",
+   "start": 26.7,
+   "end": 27.04
+  },
+  {
+   "id": "and3",
+   "word": "and",
+   "start": 27.04,
+   "end": 27.38
+  },
+  {
+   "id": "want",
+   "word": "want",
+   "start": 27.38,
+   "end": 27.52
+  },
+  {
+   "id": "to2",
+   "word": "to",
+   "start": 27.52,
+   "end": 27.68
+  },
+  {
+   "id": "meet",
+   "word": "meet",
+   "start": 27.68,
+   "end": 27.82
+  },
+  {
+   "id": "founders",
+   "word": "founders.",
+   "start": 27.82,
+   "end": 28.26
+  },
+  {
+   "id": "who3",
+   "word": "Who",
+   "start": 28.26,
+   "end": 28.82
+  },
+  {
+   "id": "should",
+   "word": "should",
+   "start": 28.82,
+   "end": 28.96
+  },
+  {
+   "id": "i",
+   "word": "I",
+   "start": 28.96,
+   "end": 29.1
+  },
+  {
+   "id": "talk2",
+   "word": "talk",
+   "start": 29.1,
+   "end": 29.3
+  },
+  {
+   "id": "to3",
+   "word": "to?",
+   "start": 29.3,
+   "end": 29.58
+  },
+  {
+   "id": "youre",
+   "word": "You're",
+   "start": 30.04,
+   "end": 30.3
+  },
+  {
+   "id": "thinking",
+   "word": "thinking,",
+   "start": 30.3,
+   "end": 30.5
+  },
+  {
+   "id": "why",
+   "word": "why",
+   "start": 30.92,
+   "end": 31.24
+  },
+  {
+   "id": "would",
+   "word": "would",
+   "start": 31.24,
+   "end": 31.38
+  },
+  {
+   "id": "a3",
+   "word": "a",
+   "start": 31.38,
+   "end": 31.5
+  },
+  {
+   "id": "guy3",
+   "word": "guy",
+   "start": 31.5,
+   "end": 31.68
+  },
+  {
+   "id": "like",
+   "word": "like",
+   "start": 31.68,
+   "end": 31.88
+  },
+  {
+   "id": "that",
+   "word": "that",
+   "start": 31.88,
+   "end": 32.22
+  },
+  {
+   "id": "help",
+   "word": "help",
+   "start": 32.22,
+   "end": 32.52
+  },
+  {
+   "id": "me",
+   "word": "me?",
+   "start": 32.52,
+   "end": 32.86
+  }
+ ]
+}

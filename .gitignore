@@ -1,2 +1,5 @@
 node_modules/
 .DS_Store
+motion/out/
+motion/audio/
+motion/cues.voice.json

@@ -1,0 +1,12 @@
+{
+  "name": "connector-reel",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "http-server -p 8090 -c-1 .",
+    "render": "node tools/render.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  }
+}
