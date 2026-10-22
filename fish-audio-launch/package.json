@@ -1,0 +1,28 @@
+{
+  "name": "fish-audio-launch",
+  "private": true,
+  "version": "1.0.0",
+  "description": "30-second Fish Audio launch video, animated in code with Remotion",
+  "scripts": {
+    "studio": "remotion studio",
+    "sound": "python3 scripts/make_soundtrack.py public/soundtrack.wav",
+    "stills": "node scripts/render-stills.mjs",
+    "render": "remotion render FishAudioLaunch renders/fish-audio-launch-16x9.mp4",
+    "render:square": "remotion render FishAudioLaunchSquare renders/fish-audio-launch-1x1.mp4",
+    "render:vertical": "remotion render FishAudioLaunchVertical renders/fish-audio-launch-9x16.mp4"
+  },
+  "dependencies": {
+    "@fontsource/geist-mono": "5.3.0",
+    "@fontsource/onest": "5.3.1",
+    "@remotion/cli": "4.0.538",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.538"
+  },
+  "devDependencies": {
+    "@remotion/bundler": "^4.0.538",
+    "@remotion/renderer": "^4.0.538",
+    "@types/react": "19.1.0",
+    "typescript": "5.8.3"
+  }
+}

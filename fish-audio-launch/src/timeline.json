@@ -1,0 +1,29 @@
+{
+  "fps": 60,
+  "total": 1800,
+  "scenes": {
+    "hook": [0, 240],
+    "problem": [240, 600],
+    "fix": [600, 1140],
+    "payoff": [1140, 1500],
+    "logo": [1500, 1800]
+  },
+  "exitFrames": 18,
+  "hook": { "barsIn": 6, "words": 24, "beat": 15 },
+  "problem": { "clicks": [62, 128, 190], "counterStart": 206, "headline": 214 },
+  "fix": {
+    "typeStart": 34,
+    "typeEnd": 96,
+    "tagsClick": 112,
+    "inserts": [150, 184, 218],
+    "popoverClose": 240,
+    "zoomIn": [250, 290],
+    "generateClick": 292,
+    "zoomOut": [318, 372],
+    "drawStart": 300,
+    "playStart": 334,
+    "playEnd": 504
+  },
+  "payoff": { "words": 8, "cards": 44, "counters": 64 },
+  "logo": { "bars": 8, "wordmark": 44, "badge": 70, "tagline": 92, "cta": 116 }
+}
