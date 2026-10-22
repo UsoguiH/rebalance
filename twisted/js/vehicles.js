@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { rng, lerp, clamp } from './core.js';
 import { canvas, toTex, grime } from './textures.js';
+import { mergeGeometries } from 'three/addons/BufferGeometryUtils.js';
 
 // speeds are mph (base / turbo) like the TM 2012 garage; hp are raw health points
 export const VEHICLES = [
@@ -78,7 +79,7 @@ export function partMats(envMap) {
   const std = (o) => new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.2, envMap, envMapIntensity: 0.7, ...o });
   M = {
     gun: std({ color: 0x2b2b2b, metalness: 0.8, roughness: 0.35 }),
-    chrome: std({ color: 0xd8d8d8, metalness: 1, roughness: 0.18, envMapIntensity: 1.2 }),
+    chrome: std({ color: 0xa8a8a6, metalness: 1, roughness: 0.25, envMapIntensity: 0.75 }),
     black: std({ color: 0x151515, roughness: 0.7 }),
     rubber: std({ color: 0x181716, roughness: 0.95, metalness: 0 }),
     rim: std({ color: 0x9a9a96, metalness: 0.85, roughness: 0.3 }),
@@ -265,6 +266,20 @@ function painter(bb) {
         [z0, bb.max.x - wid * inset],
       ], '#111418', 0.05, 0.9);
     },
+    glassFront(y0, y1, inset = 0.08) {
+      P.rectFB('F', bb.min.x + wid * inset, y0, bb.max.x - wid * inset, y1, '#111418', 0.05, 0.9);
+      const [x0, yy0] = frontMap(bb.min.x + wid * inset, y1);
+      const [x1, yy1] = frontMap(bb.max.x - wid * inset, y0);
+      const g = ctx.createLinearGradient(x0, yy0, x1, yy1);
+      g.addColorStop(0.2, 'rgba(255,214,160,0)');
+      g.addColorStop(0.45, 'rgba(255,214,160,0.25)');
+      g.addColorStop(0.6, 'rgba(255,214,160,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x0, yy0, x1 - x0, yy1 - yy0);
+    },
+    glassBack(y0, y1, inset = 0.1) {
+      P.rectFB('B', bb.min.x + wid * inset, y0, bb.max.x - wid * inset, y1, '#111418', 0.05, 0.9);
+    },
     stripeTop(z0, z1, x0, x1, color) {
       P.poly(topMap, [
         [z0, x0],
@@ -397,6 +412,7 @@ function gunPair(parent, x, y, z, len = 1.1, spread = 0.18, mats) {
     cyl(0.045, 0.05, len, mats.gun, s * spread * 0.5, 0.02, len / 2 + 0.15, g, Math.PI / 2);
     cyl(0.07, 0.07, 0.12, mats.gun, s * spread * 0.5, 0.02, len + 0.1, g, Math.PI / 2);
   }
+  mergeStatic(g, new Set());
   parent.add(g);
   return g;
 }
@@ -406,8 +422,38 @@ function lights(parent, mats, list) {
     m.userData.light = kind;
   }
 }
-function wheelMesh(r, w, mats, style = 'rim') {
+function wheelMesh(r, w, mats, style = 'rim', big = false) {
   const g = new THREE.Group();
+  if (big) {
+    // Axel's giant tires: knobby tread ring, dished rim plate, spokes and a hub
+    const tire = new THREE.Mesh(new THREE.TorusGeometry(r * 0.78, r * 0.24, 10, 36), mats.rubber);
+    tire.rotation.y = Math.PI / 2;
+    tire.scale.set(1, 1, w / (r * 0.48));
+    g.add(tire);
+    for (let i = 0; i < 28; i++) {
+      const a = (i / 28) * Math.PI * 2;
+      const lug = new THREE.Mesh(new THREE.BoxGeometry(w * 0.9, 0.12, 0.28), mats.rubber);
+      lug.position.set(0, Math.cos(a) * r * 0.99, Math.sin(a) * r * 0.99);
+      lug.rotation.x = -a;
+      g.add(lug);
+    }
+    for (const s of [-1, 1]) {
+      const plate = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.58, r * 0.62, 0.08, 24), mats.gun);
+      plate.rotation.z = Math.PI / 2;
+      plate.position.x = s * w * 0.18;
+      g.add(plate);
+    }
+    for (let i = 0; i < 6; i++) {
+      const sp = new THREE.Mesh(new THREE.BoxGeometry(0.1, r * 1.1, 0.14), mats.rim);
+      sp.rotation.x = (i / 6) * Math.PI;
+      sp.position.x = w * 0.3;
+      g.add(sp);
+    }
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.2, r * 0.26, w * 1.1, 10), mats.chrome);
+    hub.rotation.z = Math.PI / 2;
+    g.add(hub);
+    return g;
+  }
   const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, w, 22, 1), mats.rubber);
   tire.rotation.z = Math.PI / 2;
   g.add(tire);
@@ -422,6 +468,7 @@ function wheelMesh(r, w, mats, style = 'rim') {
   const hub = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.2, r * 0.2, w * 1.08, 8), mats.chrome);
   hub.rotation.z = Math.PI / 2;
   g.add(hub);
+  mergeStatic(g, new Set());
   return g;
 }
 
@@ -457,16 +504,39 @@ BUILD.sweettooth = (g, env, mats) => {
   P.glassSide([[1.6, 1.6], [1.95, 1.55], [1.55, 2.4], [1.32, 2.42], [1.32, 1.6]]);
   P.side([[1.25, 0.6], [1.3, 2.45]], '#000');
   P.glassTop(1.32, 1.58, 0.1);
-  // back doors
-  P.rectFB('B', -1.05, 0.7, 1.05, 2.9, '#c8b2a2', 0.6, 0.2);
-  P.rectFB('B', -0.05, 0.7, 0.05, 2.9, '#3a2a22');
-  P.rectFB('B', -0.85, 1.9, -0.2, 2.7, '#121417', 0.05, 0.9);
-  P.rectFB('B', 0.2, 1.9, 0.85, 2.7, '#121417', 0.05, 0.9);
-  P.textBack('S', 0, 1.35, 120, '#7a1a14', 'Rye, serif');
-  P.rectFB('B', -1.2, 0.5, -0.9, 0.7, '#ff3020');
-  P.rectFB('B', 0.9, 0.5, 1.2, 0.7, '#ff3020');
-  // grille
+  // back: weathered plank doors with polka dots, latch rails and the S plate
+  P.rectFB('B', -1.25, 0.45, 1.25, 3.2, '#cdb6a4', 0.65, 0.15);
+  for (let x = -1.2; x < 1.25; x += 0.2) P.rectFB('B', x, 0.5, x + 0.02, 3.1, 'rgba(70,40,30,0.55)');
+  {
+    const rb = rng(9);
+    for (let i = 0; i < 26; i++) {
+      const [cx, cy] = P.backMap(-1.1 + rb() * 2.2, 0.8 + rb() * 2.2);
+      P.ctx.fillStyle = rb() < 0.5 ? '#a8261c' : '#bf3a2a';
+      P.ctx.beginPath();
+      P.ctx.arc(cx, cy, 5 + rb() * 9, 0, Math.PI * 2);
+      P.ctx.fill();
+    }
+  }
+  P.rectFB('B', -0.04, 0.5, 0.04, 3.05, '#3a2a22');
+  P.rectFB('B', -0.9, 1.5, -0.75, 1.62, '#8a8a84', 0.3, 0.9);
+  P.rectFB('B', 0.75, 1.5, 0.9, 1.62, '#8a8a84', 0.3, 0.9);
+  P.rectFB('B', -0.42, 1.0, 0.42, 1.55, '#e8dcc6');
+  P.textBack('S', 0, 1.27, 70, '#8a1a14', 'Rye, serif');
+  P.rectFB('B', -1.2, 0.5, -0.9, 0.75, '#ff3020');
+  P.rectFB('B', 0.9, 0.5, 1.2, 0.75, '#ff3020');
+  // grille, cab windshield and the destination board above it
   P.rectFB('F', -0.8, 0.55, 0.8, 1.0, '#202020', 0.4, 0.8);
+  P.glassFront(1.52, 2.36, 0.07);
+  P.rectFB('F', -0.03, 1.5, 0.03, 2.4, '#d4bcad');
+  P.rectFB('F', -0.9, 2.55, 0.9, 2.95, '#1a1410');
+  {
+    const [cx, cy] = P.frontMap(0, 2.75);
+    P.ctx.font = '700 22px Rye, serif';
+    P.ctx.textAlign = 'center';
+    P.ctx.textBaseline = 'middle';
+    P.ctx.fillStyle = '#ffb23a';
+    P.ctx.fillText('SWEET TOOTH', cx, cy);
+  }
   P.weather(11, 0.5, 0.7);
   const body = new THREE.Mesh(geo, P.build(env));
   g.add(body);
@@ -480,9 +550,8 @@ BUILD.sweettooth = (g, env, mats) => {
     ['tail', 1.05, 0.62, -3.27, 0.24, 0.14],
   ]);
   const guns = [gunPair(g, -0.95, 1.2, 2.6, 0.9, 0.2, mats), gunPair(g, 0.95, 1.2, 2.6, 0.9, 0.2, mats)];
-  // missile rack on the roof
-  box(1.6, 0.25, 1.4, mats.gun, 0, 3.3, -1.8, g);
-  for (const s of [-0.5, 0, 0.5]) cyl(0.12, 0.12, 1.2, mats.red, s, 3.5, -1.8, g, Math.PI / 2);
+  // roof rails
+  for (const s of [-1.05, 1.05]) box(0.08, 0.12, 4.2, mats.rust, s, 3.24, -0.9, g);
   // the burning clown head on a spring
   const spring = new THREE.Group();
   spring.position.set(0, 3.2, 0.2);
@@ -493,6 +562,8 @@ BUILD.sweettooth = (g, env, mats) => {
   spring.add(coil);
   const head = new THREE.Group();
   head.position.y = 0.95;
+  head.scale.setScalar(1.35);
+  coil.scale.set(1.2, 1, 1.2);
   const skull = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 14), new THREE.MeshStandardMaterial({ color: 0xe8dccb, roughness: 0.6 }));
   skull.scale.set(1, 1.1, 1);
   head.add(skull);
@@ -522,7 +593,7 @@ BUILD.sweettooth = (g, env, mats) => {
   spring.add(head);
   g.add(spring);
   return {
-    guns, head, spring, flamePoint: new THREE.Vector3(0, 4.55, 0.15),
+    guns, head, spring, flamePoint: new THREE.Vector3(0, 4.85, 0.12),
     exhausts: [new THREE.Vector3(-1.0, 0.45, -3.25)],
     missile: new THREE.Vector3(0, 3.6, -1.0),
     wheels: [
@@ -689,6 +760,7 @@ BUILD.outlaw = (g, env, mats) => {
   P.rectFB('B', -1.05, 0.95, -0.85, 1.4, '#b01510');
   P.rectFB('B', 0.85, 0.95, 1.05, 1.4, '#b01510');
   P.rectFB('F', -0.7, 0.75, 0.7, 1.1, '#0b0b0b', 0.4, 0.8);
+  P.glassFront(1.36, 1.86, 0.1);
   P.weather(41, 0.45, 0.35);
   g.add(new THREE.Mesh(geo, P.build(env)));
   // push bar
@@ -922,6 +994,8 @@ BUILD.darkside = (g, env, mats) => {
   P.textSide('DARKSIDE', -2.2, 1.2, 40, '#6a6a66', 'Black Ops One, sans-serif');
   P.rectFB('F', -1.0, 0.75, 1.0, 1.7, '#c9c9c4', 0.15, 1);
   for (let i = 0; i < 9; i++) P.rectFB('F', -0.95 + i * 0.22, 0.8, -0.9 + i * 0.22, 1.65, '#202020');
+  P.glassFront(2.0, 2.9, 0.08);
+  P.rectFB('F', -0.04, 1.95, 0.04, 2.95, '#121213');
   P.weather(71, 0.35, 0.3);
   g.add(new THREE.Mesh(geo, P.build(env)));
   // exhaust stacks, sleeper, fuel tanks, ram plow
@@ -979,6 +1053,13 @@ BUILD.vermin = (g, env, mats) => {
   P.rectFB('B', -0.95, 0.75, 0.95, 2.25, '#c8a41e');
   P.rectFB('B', -0.03, 0.75, 0.03, 2.25, '#3a3020');
   P.rectFB('F', -0.8, 0.6, 0.8, 1.0, '#202020', 0.4, 0.8);
+  P.glassFront(1.34, 2.34, 0.08);
+  P.rectFB('F', -0.03, 1.3, 0.03, 2.4, '#d6b320');
+  // rear: barn doors with small windows, bumper shadow, dirt
+  P.glassBack(1.7, 2.2, 0.16);
+  P.rectFB('B', -0.03, 0.75, 0.03, 2.3, '#3a3020');
+  P.rectFB('B', -0.95, 1.15, 0.95, 1.2, 'rgba(60,40,20,0.6)');
+  P.textBack('RAT-A-TAT', 0, 1.45, 34, '#2a2018', 'Rye, serif');
   P.weather(81, 0.5, 0.6);
   g.add(new THREE.Mesh(geo, P.build(env)));
   box(2.25, 0.25, 0.25, mats.rust, 0, 0.55, 2.68, g);
@@ -1049,6 +1130,7 @@ BUILD.shadow = (g, env, mats) => {
   P.side([[-3.05, 0.7], [3.05, 0.7], [3.05, 0.74], [-3.05, 0.74]], '#8a6aa8', 0.3, 0.8);
   P.rectFB('B', -0.85, 0.8, 0.85, 1.45, '#1d1a1e');
   P.rectFB('F', -0.8, 0.55, 0.8, 0.85, '#9a9a96', 0.2, 1);
+  P.glassFront(1.12, 1.5, 0.1);
   P.weather(91, 0.35, 0.2);
   g.add(new THREE.Mesh(geo, P.build(env)));
   box(2.1, 0.2, 0.22, mats.chrome, 0, 0.48, 3.02, g);
@@ -1090,6 +1172,8 @@ BUILD.junkyarddog = (g, env, mats) => {
   P.glassSide([[1.85, 1.7], [1.62, 2.35], [0.75, 2.38], [0.7, 1.7]]);
   P.textSide("JOE'S TOWING", -1.4, 1.1, 44, '#e8d8a0', 'Rye, serif', '#2a2010');
   P.rectFB('F', -0.9, 0.8, 0.9, 1.4, '#1a1a1a', 0.4, 0.8);
+  P.glassFront(1.7, 2.36, 0.1);
+  P.glassBack(1.75, 2.3, 0.2);
   P.weather(101, 0.6, 1.0);
   g.add(new THREE.Mesh(geo, P.build(env)));
   // tow boom + hook + cab light bar
@@ -1129,6 +1213,34 @@ BUILD.junkyarddog = (g, env, mats) => {
   };
 };
 
+// bake the loose static parts of a body (bumpers, frames, guns' mounts...) into one mesh per
+// material so each car costs a handful of draw calls instead of dozens
+function mergeStatic(body, keep) {
+  body.updateMatrix();
+  const byMat = new Map();
+  for (const c of body.children.slice()) {
+    if (!c.isMesh || c.userData.light || c.userData.glow || keep.has(c)) continue;
+    const key = c.material.uuid;
+    if (!byMat.has(key)) byMat.set(key, { mat: c.material, list: [] });
+    byMat.get(key).list.push(c);
+  }
+  for (const { mat, list } of byMat.values()) {
+    if (list.length < 2) continue;
+    const geos = list.map((m) => {
+      m.updateMatrix();
+      let g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+      g.applyMatrix4(m.matrix);
+      for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+      if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      return g;
+    });
+    const merged = mergeGeometries(geos, false);
+    if (!merged) continue;
+    for (const m of list) body.remove(m);
+    body.add(new THREE.Mesh(merged, mat));
+  }
+}
+
 // assemble a vehicle model; returns { root, body, wheels, parts }
 export function buildVehicle(id, envMap) {
   const def = byId[id];
@@ -1137,6 +1249,13 @@ export function buildVehicle(id, envMap) {
   const body = new THREE.Group();
   root.add(body);
   const parts = BUILD[id](body, envMap, mats);
+  // anything the game animates or toggles (light bars, beacons, glow) stays a separate mesh
+  const keep = new Set();
+  for (const v of Object.values(parts)) {
+    if (v && v.isObject3D) keep.add(v);
+    if (Array.isArray(v)) for (const x of v) if (x && x.isObject3D) keep.add(x);
+  }
+  mergeStatic(body, keep);
   const wheels = [];
   for (const w of parts.wheels) {
     const r = w.r || def.wheelR;
@@ -1144,7 +1263,7 @@ export function buildVehicle(id, envMap) {
     const width = w.w || (isRear && parts.rearWheelW) || parts.wheelW || 0.3;
     const pivot = new THREE.Group();
     pivot.position.set(w.x, r, w.z);
-    const spin = wheelMesh(r, width, mats, parts.rimStyle);
+    const spin = wheelMesh(r, width, mats, parts.rimStyle, !!parts.bigWheels);
     pivot.add(spin);
     root.add(pivot);
     wheels.push({ pivot, spin, r, x: w.x, z: w.z, steer: !!w.steer, baseY: r });

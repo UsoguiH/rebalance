@@ -132,6 +132,7 @@ export class Post {
     const r = this.r;
     r.setRenderTarget(this.main);
     r.render(scene, camera);
+    this.stats = { calls: r.info.render.calls, tris: r.info.render.triangles };
     // bloom
     this.bright.uniforms.tDiffuse.value = this.main.texture;
     this.pass(this.bright, this.b0);

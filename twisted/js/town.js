@@ -998,7 +998,7 @@ export function buildTown(world, batch, paint) {
     world.landmarks.radar = new THREE.Vector3(RADAR_SITE.x, 20, RADAR_SITE.z);
   }
 
-  // ---------- wind farm on the hills ----------
+  // ---------- wind farm on the hills (instanced: towers, nacelles, spinning blades) ----------
   {
     const towerMat = new THREE.MeshStandardMaterial({ color: 0xe0dcd2, roughness: 0.6 });
     const towerGeo = new THREE.CylinderGeometry(0.9, 2, 1, 12);
@@ -1011,31 +1011,42 @@ export function buildTown(world, batch, paint) {
       const dist = 470 + r() * 120;
       spots.push([Math.cos(a) * dist, Math.sin(a) * dist]);
     }
-    for (const [x, z] of spots) {
+    const n = spots.length;
+    const towers = new THREE.InstancedMesh(towerGeo, towerMat, n);
+    const navs = new THREE.InstancedMesh(navGeo, towerMat, n);
+    const blades = new THREE.InstancedMesh(bladeGeo, towerMat, n * 3);
+    blades.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), pos = new THREE.Vector3();
+    const rotors = [];
+    spots.forEach(([x, z], i) => {
       const y = terrainH(x, z) - 1;
       const h = 48 + r() * 10;
-      const tower = new THREE.Mesh(towerGeo, towerMat);
-      tower.scale.y = h;
-      tower.position.set(x, y + h / 2, z);
-      world.scene.add(tower);
-      const hub = new THREE.Group();
-      hub.position.set(x, y + h + 1, z);
-      hub.rotation.y = Math.atan2(-x, -z) + 0.6;
-      const nav = new THREE.Mesh(navGeo, towerMat);
-      hub.add(nav);
-      const rotor = new THREE.Group();
-      rotor.position.z = 3.4;
-      for (let b = 0; b < 3; b++) {
-        const bl = new THREE.Mesh(bladeGeo, towerMat);
-        bl.rotation.z = (b / 3) * Math.PI * 2;
-        rotor.add(bl);
-      }
-      rotor.rotation.z = r() * 6;
-      hub.add(rotor);
-      world.scene.add(hub);
-      const speed = 0.5 + r() * 0.5;
-      world.animated.push((dt) => (rotor.rotation.z += dt * speed));
+      towers.setMatrixAt(i, m4.compose(pos.set(x, y + h / 2, z), q.identity(), sc.set(1, h, 1)));
+      const yaw = Math.atan2(-x, -z) + 0.6;
+      e.set(0, yaw, 0);
+      navs.setMatrixAt(i, m4.compose(pos.set(x, y + h + 1, z), q.setFromEuler(e), sc.set(1, 1, 1)));
+      const hub = new THREE.Vector3(x + Math.sin(yaw) * 3.4, y + h + 1, z + Math.cos(yaw) * 3.4);
+      rotors.push({ hub, yaw, ang: r() * 6, speed: 0.5 + r() * 0.5 });
+    });
+    const writeBlades = () => {
+      rotors.forEach((rt, i) => {
+        for (let b = 0; b < 3; b++) {
+          e.set(0, rt.yaw, rt.ang + (b / 3) * Math.PI * 2, 'YXZ');
+          blades.setMatrixAt(i * 3 + b, m4.compose(rt.hub, q.setFromEuler(e), sc.set(1, 1, 1)));
+        }
+      });
+      blades.instanceMatrix.needsUpdate = true;
+    };
+    writeBlades();
+    for (const im of [towers, navs, blades]) {
+      im.computeBoundingSphere();
+      im.frustumCulled = false;
+      world.scene.add(im);
     }
+    world.animated.push((dt) => {
+      for (const rt of rotors) rt.ang += dt * rt.speed;
+      writeBlades();
+    });
   }
 
   // ---------- power lines along the outer roads ----------

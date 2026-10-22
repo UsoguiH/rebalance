@@ -112,13 +112,17 @@ const showCam = new THREE.PerspectiveCamera(36, 16 / 9, 0.1, 200);
   show.add(line);
   void detailTex;
   show.add(new THREE.HemisphereLight(0x6a5a50, 0x0a0806, 0.6));
-  const key = new THREE.SpotLight(0xffe2c0, 220, 40, 0.5, 0.6, 1.6);
+  const key = new THREE.SpotLight(0xffe2c0, 520, 40, 0.55, 0.6, 1.6);
   key.position.set(-6, 9, 8);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   show.add(key);
   show.add(key.target);
-  const rim = new THREE.SpotLight(0xff3a1a, 160, 30, 0.6, 0.8, 1.6);
+  const rim = new THREE.SpotLight(0xff3a1a, 260, 30, 0.6, 0.8, 1.6);
+  const front = new THREE.SpotLight(0xfff0dc, 70, 30, 0.6, 0.9, 1.4);
+  front.position.set(1, 3, 12);
+  show.add(front);
+  show.add(front.target);
   rim.position.set(5, 5, -8);
   show.add(rim);
   show.add(rim.target);
@@ -241,6 +245,7 @@ async function startMatch(cfg) {
   ui.draw();
   await nextFrame();
   match = new Match(cfg, { fx, hud, weapons });
+  G.match = match;
   hud.damageLines = [];
   hud.feed = [];
   // warm up shaders with one render from the intro position
@@ -332,8 +337,8 @@ function chaseCamera(dt) {
   const mech = p.mechT > 0 ? 1 : 0;
   // close, slightly high chase cam like TM 2012: the car sits in the lower middle third
   // calibrated on the Roadkill reference shot: rear bumper ~80% down the screen, car ~20% wide
-  const back = 4.6 + p.length * 0.5 + p.height * 0.3 + mech * 3;
-  const up = 1.35 + p.height * 0.9 + (p.model.parts.head ? 0.6 : 0) + mech * 2;
+  const back = 4.6 + p.length * 0.5 + p.height * 0.75 + mech * 3;
+  const up = 1.4 + p.height * 1.12 + (p.model.parts.head ? 0.7 : 0) + mech * 2;
   const pivot = new THREE.Vector3(p.pos.x, p.pos.y + p.height * 0.6 + mech * 2, p.pos.z);
   const want = new THREE.Vector3(p.pos.x - Math.sin(yaw) * back, p.pos.y + up, p.pos.z - Math.cos(yaw) * back);
   // keep the camera out of buildings
@@ -506,16 +511,21 @@ function menuScene(dt) {
   const t = G.time;
   if (ui.screen === 'select') {
     m.spin = (m.spin || 0) + dt;
-    m.root.rotation.y = -0.6 + Math.sin(t * 0.25) * 0.15;
+    const sz = m.def.size;
+    // frame by the biggest dimension; Axel is shown more head-on so the rider is visible
+    const span = Math.max(sz[2], sz[0] * 2, sz[1] * 2);
+    const ang = m.def.id === 'axel' ? 0.15 : 0.5;
+    m.root.rotation.y = (m.def.id === 'axel' ? -0.25 : -0.6) + Math.sin(t * 0.25) * 0.12;
     m.root.position.set(0, 0, 0);
-    const d = 9 + m.def.size[2] * 0.35;
-    showCam.position.set(Math.sin(0.5) * d - 1.2, 1.7 + m.def.size[1] * 0.3, Math.cos(0.5) * d);
-    showCam.lookAt(-1.4, 0.9 + m.def.size[1] * 0.25, 0);
+    const d = 3.2 + span * 0.95;
+    showCam.position.set(Math.sin(ang) * d - 1.1, 1.2 + sz[1] * 0.45, Math.cos(ang) * d);
+    showCam.lookAt(-1.25 * (d / 9), 0.55 + sz[1] * 0.32, 0);
   } else {
-    m.root.rotation.y = 0.9;
-    m.root.position.set(1.2, 0, -1.5);
-    showCam.position.set(-3.2 + Math.sin(t * 0.2) * 0.3, 2.2 + Math.sin(t * 0.3) * 0.1, 7.5);
-    showCam.lookAt(1.6, 2.6, -1);
+    // main menu: the burning head looms over the logo, truck angled toward the camera
+    m.root.rotation.y = -0.7;
+    m.root.position.set(3.6, 0, -1.2);
+    showCam.position.set(-0.2 + Math.sin(t * 0.2) * 0.25, 1.5 + Math.sin(t * 0.3) * 0.08, 7.6);
+    showCam.lookAt(2.4, 2.9, -0.8);
   }
   // wheels idle / head bob and fire
   if (m.parts.flamePoint) {

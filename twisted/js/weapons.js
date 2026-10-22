@@ -909,7 +909,8 @@ export class Weapons {
           if (ang > 1e-4) {
             const k = Math.min(1, maxT / ang);
             _w.lerp(_u, k).normalize();
-            p.vel.copy(_w).multiplyScalar(p.vel.length());
+            const speed = p.vel.length();
+            p.vel.copy(_w).multiplyScalar(speed);
           }
         }
         if (p.accel) {
