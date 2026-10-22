@@ -144,8 +144,9 @@ export class Overlay {
         const x1 = last.x + last.width + 0.075 * l.cap;
         const k = seg(t, l.box.at, l.box.at + l.box.dur, E.out);
         ctx.save();
-        ctx.beginPath(); ctx.rect(0, l.top - 0.2 * l.cap, W, l.cap * 1.42); ctx.clip();
+        ctx.beginPath(); ctx.rect(0, l.top - 0.16 * l.cap, W, l.cap * 1.42); ctx.clip();
         ctx.fillStyle = YELLOW;
+        ctx.globalAlpha = 1 - exitK;
         ctx.fillRect(x0, l.top - 0.13 * l.cap + dyExit, (x1 - x0) * k, l.cap * 1.27);
         ctx.restore();
       }
