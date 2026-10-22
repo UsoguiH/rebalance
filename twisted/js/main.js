@@ -19,8 +19,22 @@ import { Post } from './post.js';
 import { Match } from './match.js';
 import { buildVehicle } from './vehicles.js';
 import { Peds } from './peds.js';
+import { TouchControls } from './touch.js';
 
 loadSettings();
+// phones and tablets: touch controls, and the lighter renderer unless the player chose otherwise
+const touch = new TouchControls();
+input.touch = touch;
+if (touch.enabled) {
+  input.lastDevice = 'touch';
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem('tm-settings') || '{}').quality;
+  } catch (e) {
+    /* storage blocked */
+  }
+  if (saved === undefined || saved === null) G.settings.quality = 0;
+}
 const glCanvas = document.getElementById('gl');
 const hudCanvas = document.getElementById('hud');
 const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: false, powerPreference: 'high-performance', stencil: false });
@@ -34,8 +48,9 @@ G.input = input;
 const LOWQ = location.hash.includes('lowq');
 // dev: #ts=N speeds up simulated time (headless captures run at a few fps)
 const TIME_SCALE = +((location.hash.match(/ts=([\d.]+)/) || [])[1] || 1);
-const post = new Post(renderer, LOWQ ? 0 : 4);
+const post = new Post(renderer, LOWQ || !G.settings.quality ? 0 : 4);
 const hud = new HUD(hudCanvas);
+hud.touch = touch.enabled;
 const ui = new UI(hud);
 
 // ---------- game scene ----------
@@ -48,7 +63,7 @@ const hemi = new THREE.HemisphereLight(0xcdbca4, 0x4a4036, 1.15);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffe6c8, 2.5);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(G.settings.quality ? 2048 : 1024, G.settings.quality ? 2048 : 1024);
 sun.shadow.camera.left = -95;
 sun.shadow.camera.right = 95;
 sun.shadow.camera.top = 95;
@@ -160,8 +175,34 @@ const camPos = new THREE.Vector3();
 const camLook = new THREE.Vector3();
 let lookBackBlend = 0;
 
+// safe-area insets (notches, home indicator) measured from CSS env() on a probe element
+const insetProbe = document.createElement('div');
+insetProbe.style.cssText = 'position:fixed;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
+document.body.appendChild(insetProbe);
+function insets() {
+  const cs = getComputedStyle(insetProbe);
+  return { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
+}
+// quality can change from the options menu: rebuild what depends on it
+let appliedQuality = G.settings.quality;
+function applyQuality() {
+  if (appliedQuality === G.settings.quality) return;
+  appliedQuality = G.settings.quality;
+  post.setSamples(LOWQ || !G.settings.quality ? 0 : 4);
+  const sm = G.settings.quality ? 2048 : 1024;
+  sun.shadow.mapSize.set(sm, sm);
+  if (sun.shadow.map) {
+    sun.shadow.map.dispose();
+    sun.shadow.map = null;
+  }
+  resize();
+}
+
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
+  const ins = insets();
+  hud.inset = ins;
+  touch.layout(w, h, ins);
   const dpr = LOWQ ? 0.5 : Math.min(window.devicePixelRatio || 1, G.settings.quality ? 1.5 : 0.85);
   renderer.setPixelRatio(dpr);
   renderer.setSize(w, h, false);
@@ -402,9 +443,17 @@ function frame(now) {
     G.fps = fpsN / fpsAcc;
     fpsAcc = fpsN = 0;
   }
+  touch.mode = state === 'play' ? 'play' : 'menu';
+  if (hud.touch !== touch.enabled) {
+    hud.touch = touch.enabled;
+    input.lastDevice = 'touch';
+    resize();
+  }
+  touch.regionHit = (x, y) => hud.hit(x, y);
   input.update(dt);
   if (input.any) audio.unlock();
   if (input.mute) audio.toggleMute();
+  applyQuality();
 
   if (state === 'menu') {
     ui.update(dt);
@@ -423,6 +472,8 @@ function frame(now) {
   } else if (state === 'intro' || state === 'play' || state === 'paused' || state === 'results') {
     const paused = state === 'paused';
     if (state === 'intro') {
+      // a tap skips the flyover
+      if (touch.takeTaps().length) input.confirm = true;
       introT += dt;
       if (introT > INTRO_LEN || (input.confirm && introT > 0.4) || location.hash.includes('nointro')) {
         state = 'play';
@@ -435,7 +486,9 @@ function frame(now) {
     if (state === 'play' && input.pause) {
       state = 'paused';
       ui.go('pause');
+      touch.releaseAll();
     }
+    if (state === 'play') touch.takeTaps();
     if (!paused) {
       if (state === 'play' || state === 'results') {
         // fixed substeps for stable collisions at speed
@@ -515,10 +568,12 @@ function frame(now) {
       const hs = state === 'intro' ? { hidden: true } : match.hudState();
       if (state === 'play' && match.over) hs.minimal = true;
       hud.draw(dt, hs);
+      if (state === 'play' && !match.over) touch.draw(hud.ctx);
     } else if (state === 'paused' || state === 'results') {
       ui.draw();
     }
   }
+  if (touch.portrait) rotatePrompt();
   requestAnimationFrame(frame);
 }
 
@@ -563,11 +618,47 @@ function menuScene(dt) {
   void lerp;
 }
 
-// embedded pages only get keyboard input once focused: clicking anywhere focuses the game
-window.addEventListener('pointerdown', () => {
+// phones held upright: the game is landscape only
+function rotatePrompt() {
+  const c = hud.ctx, W = hud.w, H = hud.h;
+  c.setTransform(hud.dpr, 0, 0, hud.dpr, 0, 0);
+  c.fillStyle = 'rgba(8,5,4,0.94)';
+  c.fillRect(0, 0, W, H);
+  c.save();
+  c.translate(W / 2, H * 0.42);
+  c.rotate(Math.sin(G.time * 2) * 0.5 - 0.5);
+  c.strokeStyle = '#e8e0cc';
+  c.lineWidth = 4;
+  c.strokeRect(-26, -46, 52, 92);
+  c.fillStyle = '#e8e0cc';
+  c.fillRect(-6, 36, 12, 4);
+  c.restore();
+  hud.text('ROTATE YOUR PHONE', W / 2, H * 0.62, 24, '#e8862a', 'center', 700);
+  hud.text('Twisted Metal plays in landscape', W / 2, H * 0.62 + 32, 15, '#d8d0bc', 'center', 500);
+}
+
+// embedded pages only get keyboard input once focused: clicking anywhere focuses the game.
+// On phones the first tap also asks for fullscreen + landscape lock where the browser allows it
+let askedFullscreen = false;
+window.addEventListener('pointerdown', (e) => {
   glCanvas.focus();
   audio.unlock();
+  if (e.pointerType === 'touch' && !askedFullscreen) {
+    askedFullscreen = true;
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (req && !document.fullscreenElement) {
+      try {
+        const pr = req.call(el, { navigationUI: 'hide' });
+        if (pr && pr.then) pr.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {});
+      } catch (err) {
+        /* fullscreen not allowed here */
+      }
+    }
+  }
 });
+// iOS only unlocks audio on the end of a touch
+window.addEventListener('pointerup', () => audio.unlock());
 
 // boot
 showVehicle('sweettooth');

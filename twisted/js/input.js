@@ -74,6 +74,8 @@ const kbPressed = (a) => KB[a].some((c) => pressedNow[c]);
 let padPrev = [];
 let lastGasTap = -1;
 let turboLatch = false;
+// actions injected by touch taps on menus / HUD, applied on the next update
+const injected = new Set();
 
 export const input = {
   lastDevice: 'key',
@@ -107,6 +109,10 @@ export const input = {
   mute: false,
   any: false,
   time: 0,
+  touch: null, // TouchControls, set by main.js
+  inject(action) {
+    injected.add(action);
+  },
 
   update(dt) {
     this.time += dt;
@@ -158,6 +164,36 @@ export const input = {
     this.mute = kbPressed('mute');
     this.any = anyKey || b.some((x, i) => x && !padPrev[i]);
 
+    // touch controls (phones / tablets)
+    const t = this.touch;
+    if (t && t.enabled) {
+      t.update();
+      const ts = t.state, h = t.held, pr = t.pressed;
+      this.throttle = Math.max(this.throttle, ts.throttle);
+      this.brake = Math.max(this.brake, ts.brake);
+      this.steer = Math.max(-1, Math.min(1, this.steer + ts.steer));
+      this.handbrake = this.handbrake || ts.handbrake;
+      this.turbo = this.turbo || !!h.turbo;
+      this.mg = this.mg || !!h.mg;
+      this.fireHeld = this.fireHeld || !!h.fire;
+      this.fire = this.fire || !!pr.fire;
+      this.alt = this.alt || !!pr.alt;
+      this.jump = this.jump || !!pr.jump;
+      this.freeze = this.freeze || !!pr.freeze;
+      this.shield = this.shield || !!pr.shield;
+      this.mine = this.mine || !!pr.mine;
+      this.rear = this.rear || !!h.rear;
+      this.pause = this.pause || !!pr.pause;
+      if (Object.values(pr).some((v) => v)) this.lastDevice = 'touch';
+      t.endFrame();
+    }
+    for (const a of injected) {
+      this[a] = true;
+      this.any = true;
+    }
+    if (injected.size) this.lastDevice = 'touch';
+    injected.clear();
+
     padPrev = b.slice();
     padPrev.r2 = (bv[7] || 0) > 0.3;
     padPrev.ax = Math.abs(ax[0]) > 0.6;
@@ -168,6 +204,9 @@ export const input = {
   },
   // key name hints for on-screen prompts
   hint(action) {
+    if (this.lastDevice === 'touch' || (this.touch && this.touch.enabled && this.lastDevice !== 'pad' && this.lastDevice !== 'key')) {
+      return { confirm: 'TAP', back: 'BACK', nav: '\u25C2 \u25B8', pause: 'II' }[action] || action;
+    }
     const pad = this.lastDevice === 'pad';
     const map = pad
       ? { confirm: 'X', back: 'O', fire: 'R2', mg: 'L2', alt: '△', nav: 'D-PAD', pause: 'START' }

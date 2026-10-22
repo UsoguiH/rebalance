@@ -31,6 +31,7 @@ const MODES = [
 
 export class UI {
   constructor(hud) {
+    this.regions = [];
     this.hud = hud;
     this.ctx = hud.ctx;
     this.screen = 'title';
@@ -54,8 +55,26 @@ export class UI {
     if (screen === 'select' && this.onSelectVehicle) this.onSelectVehicle(VEHICLES[this.vehicleIdx].id);
   }
 
+  // touch: hit-test taps against what was drawn last frame (topmost first)
+  region(x, y, w, h, action) {
+    this.regions.push({ x, y, w, h, action });
+  }
+  tap(x, y) {
+    for (let k = this.regions.length - 1; k >= 0; k--) {
+      const r = this.regions[k];
+      if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+        r.action();
+        return true;
+      }
+    }
+    return false;
+  }
+  get touch() {
+    return !!(input.touch && input.touch.enabled);
+  }
   update(dt) {
     this.t += dt;
+    if (input.touch) for (const t of input.touch.takeTaps()) this.tap(t.x, t.y);
     const i = input;
     const nav = (n) => {
       if (i.up) {
@@ -205,11 +224,13 @@ export class UI {
     const dpr = this.hud.dpr;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.clearRect(0, 0, W, H);
+    this.regions = [];
     switch (this.screen) {
       case 'title':
         this.vignette(0.55);
         this.logo(W * 0.07, H * 0.12, s * 1.15);
-        if (Math.sin(this.t * 4) > -0.3) this.hud.text('CLICK OR PRESS ANY KEY', W * 0.5, H * 0.86, 22 * s, '#d8d0bc', 'center', 500);
+        if (Math.sin(this.t * 4) > -0.3) this.hud.text(this.touch ? 'TAP TO START' : 'CLICK OR PRESS ANY KEY', W * 0.5, H * 0.86, 22 * s, '#d8d0bc', 'center', 500);
+        this.region(0, 0, W, H, () => input.inject('confirm'));
         this.hud.text('UNOFFICIAL FAN RECREATION. TWISTED METAL IS A TRADEMARK OF SONY INTERACTIVE ENTERTAINMENT.', W * 0.5, H * 0.96, 10 * s, 'rgba(200,190,170,0.55)', 'center', 400, null);
         break;
       case 'main':
@@ -252,6 +273,7 @@ export class UI {
         break;
       case 'help':
         this.dim(0.82);
+        this.region(0, 0, W, H, () => input.inject('back'));
         this.help(s, W, H);
         break;
       case 'loading':
@@ -264,6 +286,7 @@ export class UI {
         this.controlsCard(s, W * 0.55, H * 0.25);
         break;
       case 'results':
+        this.region(0, 0, W, H, () => input.inject('confirm'));
         this.resultsCard(s, W, H);
         break;
     }
@@ -357,6 +380,10 @@ export class UI {
         c.restore();
       }
       this.hud.text(it, x, yy, 24 * s, sel ? '#ffffff' : '#bdb5a3', 'left', sel ? 600 : 500, sel ? 'rgba(60,0,0,0.6)' : 'rgba(0,0,0,0.6)');
+      this.region(x - 20 * s, yy - 17 * s, 340 * s, 34 * s, () => {
+        this.sel = i;
+        input.inject('confirm');
+      });
     });
   }
   optionList(s, W, H) {
@@ -373,14 +400,28 @@ export class UI {
   prompts(s, W, H, list) {
     let x = W * 0.07;
     const y = H * 0.95;
+    const ACT = { SELECT: 'confirm', CONTINUE: 'confirm', BACK: 'back' };
     for (const [k, label] of list) {
       const c = this.ctx;
+      const act = ACT[label];
+      if (this.touch) {
+        // on touch the prompts are buttons; keyboard-only hints are dropped
+        if (!act) continue;
+        c.font = `600 ${16 * s}px ${COND}`;
+        const bw = c.measureText(label).width + 36 * s;
+        c.drawImage(this.brush.red, x, y - 18 * s, bw, 36 * s);
+        this.hud.text(label, x + bw / 2, y, 16 * s, '#ffffff', 'center', 600, 'rgba(60,0,0,0.6)');
+        this.region(x - 6 * s, y - 24 * s, bw + 12 * s, 48 * s, () => input.inject(act));
+        x += bw + 24 * s;
+        continue;
+      }
       c.font = `600 ${13 * s}px ${COND}`;
       const kw = c.measureText(k).width + 12 * s;
       c.fillStyle = 'rgba(220,210,190,0.15)';
       c.fillRect(x, y - 10 * s, kw, 20 * s);
       this.hud.text(k, x + kw / 2, y, 13 * s, '#e8e0cc', 'center', 600, null);
       this.hud.text(label, x + kw + 8 * s, y, 13 * s, '#a8a090', 'left', 500, null);
+      if (act) this.region(x - 4 * s, y - 14 * s, kw + c.measureText(label).width + 16 * s, 28 * s, () => input.inject(act));
       x += kw + c.measureText(label).width + 40 * s;
     }
   }
@@ -486,6 +527,12 @@ export class UI {
       c.closePath();
       c.fill();
     }
+    this.region(bx + 60 * s, by, bw - 120 * s, bh, () => input.inject('confirm'));
+    this.region(bx - 30 * s, by - 10 * s, 90 * s, bh + 20 * s, () => input.inject('navLeft'));
+    this.region(bx + bw - 60 * s, by - 10 * s, 90 * s, bh + 20 * s, () => input.inject('navRight'));
+    // tapping the car itself also browses: left half back, right half forward
+    this.region(0, H * 0.15, W * 0.25, H * 0.5, () => input.inject('navLeft'));
+    this.region(W * 0.25, H * 0.15, W * 0.35, H * 0.5, () => input.inject('navRight'));
     this.hud.text(`DRIVER: ${v.driver.toUpperCase()}`, bx + bw / 2, by + bh + 14 * s, 12 * s, '#a8a090', 'center', 500);
     this.hud.text(`${this.vehicleIdx + 1} / ${VEHICLES.length}`, 40 * s, 40 * s, 14 * s, '#a8a090', 'left', 500);
     this.hud.text(this.mode.name, 40 * s, 62 * s, 20 * s, '#e8862a', 'left', 700);
@@ -564,6 +611,26 @@ export class UI {
     this.prompts(s, W, H, [[input.hint('back'), 'BACK']]);
   }
   controlsCard(s, x, y) {
+    if (this.touch) {
+      const rows = [
+        ['LEFT THUMB', 'Touch and steer to drive'],
+        ['PULL BACK', 'Brake / reverse (hard turn + back = slide)'],
+        ['MG', 'Machine gun (hold)'],
+        ['FIRE', 'Fire the armed weapon (hold to charge)'],
+        ['WEAPON ICONS', 'Tap one at the bottom to arm it'],
+        ['TURBO', 'Boost (hold)'],
+        ['ALT', 'Alternate special'],
+        ['JUMP', 'Jump'],
+        ['FRZ  SHLD  MINE', 'Energy: freeze, shield, drop mine'],
+        ['REAR', 'Fire backwards (hold)'],
+        ['II', 'Pause'],
+      ];
+      rows.forEach(([k, a], i) => {
+        this.hud.text(k, x, y + i * 26 * s, 15 * s, '#ffd23a', 'left', 600);
+        this.hud.text(a, x + 170 * s, y + i * 26 * s, 15 * s, '#d8d0bc', 'left', 500);
+      });
+      return;
+    }
     const rows = [
       ['W / ↑', 'Gas'],
       ['S / ↓', 'Brake / reverse'],

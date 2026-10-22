@@ -86,12 +86,15 @@ const compFrag = /* glsl */ `
 export class Post {
   constructor(renderer, samples = 4) {
     this.r = renderer;
-    const opts = { type: THREE.HalfFloatType, depthBuffer: true };
+    // some mobile GPUs can't render to half-float targets: fall back to 8-bit
+    const ext = renderer.extensions;
+    this.hdrType = ext.has('EXT_color_buffer_half_float') || ext.has('EXT_color_buffer_float') ? THREE.HalfFloatType : THREE.UnsignedByteType;
+    const opts = { type: this.hdrType, depthBuffer: true };
     this.main = new THREE.WebGLRenderTarget(4, 4, { ...opts, samples });
-    this.b0 = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
-    this.b1 = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
-    this.c0 = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
-    this.c1 = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
+    this.b0 = new THREE.WebGLRenderTarget(4, 4, { type: this.hdrType, depthBuffer: false });
+    this.b1 = new THREE.WebGLRenderTarget(4, 4, { type: this.hdrType, depthBuffer: false });
+    this.c0 = new THREE.WebGLRenderTarget(4, 4, { type: this.hdrType, depthBuffer: false });
+    this.c1 = new THREE.WebGLRenderTarget(4, 4, { type: this.hdrType, depthBuffer: false });
     this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
     this.quad.frustumCulled = false;
@@ -111,6 +114,11 @@ export class Post {
       depthWrite: false,
     });
     this.u = this.comp.uniforms;
+  }
+  setSamples(n) {
+    const w = this.main.width, h = this.main.height;
+    this.main.dispose();
+    this.main = new THREE.WebGLRenderTarget(w, h, { type: this.hdrType, depthBuffer: true, samples: n });
   }
   setSize(w, h) {
     this.main.setSize(w, h);

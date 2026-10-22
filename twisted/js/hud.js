@@ -29,6 +29,19 @@ export class HUD {
     this.flash = 0;
     this.scale = 1;
     this.splats = [];
+    this.touch = false;
+    this.inset = { l: 0, r: 0, t: 0, b: 0 };
+    this.regions = [];
+  }
+  // tappable HUD things (touch): returns true when a region took the tap
+  hit(x, y) {
+    for (const r of this.regions) {
+      if ((x - r.x) ** 2 + (y - r.y) ** 2 < r.r * r.r) {
+        r.action();
+        return true;
+      }
+    }
+    return false;
   }
   // blood droplets on the "lens" after running someone over
   splat(amount = 1) {
@@ -76,6 +89,8 @@ export class HUD {
     this.dpr = dpr;
     // virtual 1280x720 layout scaled by height, anchored to the edges
     this.s = h / VH;
+    // phones: keep HUD text legible on short landscape screens
+    if (this.touch) this.s = Math.max(this.s, 0.68);
   }
 
   // ----- messages -----
@@ -157,28 +172,31 @@ export class HUD {
     this.warnT -= dt;
 
     this.drawSplats(dt);
+    this.regions = [];
+    const T = this.touch, I = this.inset;
     if (!state.minimal) {
       this.markers(state);
-      this.minimap(20 * s, 40 * s, 148 * s, state);
+      const mx = T ? I.l + 12 * s : 20 * s, my = T ? I.t + 12 * s : 40 * s, ms = T ? 124 * s : 148 * s;
+      this.minimap(mx, my, ms, state);
       // scoreboard rows + feed under the minimap
-      let fy = 40 * s + 148 * s + 16 * s;
+      let fy = my + ms + 16 * s;
       if (state.scoreRows) {
         for (const r of state.scoreRows) {
-          this.text(String(r.rank), 24 * s, fy, 13 * s, r.me ? '#ffd23a' : '#ffffff', 'left', 600);
-          this.text(r.name, 40 * s, fy, 13 * s, r.me ? '#ffd23a' : '#ffffff', 'left', 500);
-          this.text(String(r.score), 160 * s, fy, 13 * s, r.me ? '#ffd23a' : '#ffffff', 'right', 600);
+          this.text(String(r.rank), mx + 4 * s, fy, 13 * s, r.me ? '#ffd23a' : '#ffffff', 'left', 600);
+          this.text(r.name, mx + 20 * s, fy, 13 * s, r.me ? '#ffd23a' : '#ffffff', 'left', 500);
+          this.text(String(r.score), mx + 140 * s, fy, 13 * s, r.me ? '#ffd23a' : '#ffffff', 'right', 600);
           fy += 16 * s;
         }
       }
       for (const f of this.feed) {
         const a = clamp((5 - f.t) / 0.6, 0, 1);
         c.globalAlpha = a;
-        this.text(f.text, 22 * s, fy, 12 * s, f.color, 'left', 500);
+        this.text(f.text, mx + 2 * s, fy, 12 * s, f.color, 'left', 500);
         c.globalAlpha = 1;
         fy += 15 * s;
       }
       // opponents count
-      if (state.opponentsLabel) this.text(state.opponentsLabel, 38 * s, 380 * s, 17 * s, '#f2efe6', 'left', 500);
+      if (state.opponentsLabel) this.text(state.opponentsLabel, (T ? I.l + 12 * s : 38 * s), T ? fy + 10 * s : 380 * s, 17 * s, '#f2efe6', 'left', 500);
     }
 
     // damage callouts (top center)
@@ -222,9 +240,19 @@ export class HUD {
     }
 
     if (state.minimal) return;
-    this.bottomLeft(s, H, state);
-    this.carousel(s, W, H);
-    this.bars(s, W, H);
+    if (T) {
+      // touch layout: the stick and buttons own the bottom corners, so the gauges move up top
+      const pr = 30 * this.touchU() + 20 * s;
+      const bx = W - I.r - pr - 190 * s, by = I.t + 16 * s;
+      this.bars(s, W, H, bx, by);
+      this.energyBar(bx, by + 40 * s, 170 * s, 5 * s);
+      this.timerBox(s, bx - 98 * s, by - 2 * s, state);
+      this.carousel(s, W, H);
+    } else {
+      this.bottomLeft(s, H, state);
+      this.carousel(s, W, H);
+      this.bars(s, W, H);
+    }
     if (state.respawn) {
       this.text(state.respawn, W / 2, H * 0.7, 26 * s, '#ffffff', 'center', 600);
     }
@@ -450,6 +478,40 @@ export class HUD {
     }
   }
 
+  touchU() {
+    return Math.min(Math.max(Math.min(this.w, this.h) / 390, 0.75), 1.35);
+  }
+  timerBox(s, tx, ty, state) {
+    const c = this.ctx;
+    const tw = 84 * s, th = 28 * s;
+    if (state.timer !== undefined && state.timer !== null) {
+      c.fillStyle = 'rgba(12,10,6,0.85)';
+      roundRect(c, tx, ty, tw, th, 4 * s);
+      c.fill();
+      c.strokeStyle = '#e8a62a';
+      c.lineWidth = 2 * s;
+      c.stroke();
+      const t = Math.max(0, state.timer);
+      const mm = Math.floor(t / 60), ss = Math.floor(t % 60);
+      const str = `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+      seg7(c, str, tx + 8 * s, ty + 5 * s, 18 * s, state.timer < 30 && Math.sin(G.time * 8) > 0 ? '#ff5a2a' : '#f2c22a');
+    }
+  }
+  energyBar(bx, by, bw, bh) {
+    const c = this.ctx;
+    const p = G.player;
+    c.fillStyle = 'rgba(0,0,0,0.6)';
+    c.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+    const eg = c.createLinearGradient(0, by, 0, by + bh);
+    eg.addColorStop(0, '#8ad0ff');
+    eg.addColorStop(1, '#1a6ad8');
+    c.fillStyle = eg;
+    c.fillRect(bx, by, bw * (p.energy / 100), bh);
+    c.strokeStyle = 'rgba(200,230,255,0.6)';
+    c.lineWidth = 1;
+    c.strokeRect(bx, by, bw, bh);
+  }
+
   // ----- bottom-left: timer, energy d-pad, sidearm ammo -----
   bottomLeft(s, H, state) {
     const c = this.ctx;
@@ -506,12 +568,21 @@ export class HUD {
   carousel(s, W, H) {
     const c = this.ctx;
     const p = G.player;
-    const slots = CAROUSEL;
-    const gap = 37 * s;
+    const T = this.touch;
+    const slots = T ? CAROUSEL.filter((k) => k === 'special' || p.weapons[k] > 0) : CAROUSEL;
+    const gap = (T ? 46 : 37) * s;
     const x0 = W / 2 - ((slots.length - 1) * gap) / 2;
-    const y = H - 30 * s;
+    const y = T ? H - this.inset.b - 30 * s : H - 30 * s;
     slots.forEach((k, i) => {
       const x = x0 + i * gap;
+      if (T) {
+        // tap a slot to arm that weapon
+        c.fillStyle = p.selected === k ? 'rgba(168,30,22,0.45)' : 'rgba(10,8,6,0.35)';
+        c.beginPath();
+        c.arc(x, y, 19 * s, 0, Math.PI * 2);
+        c.fill();
+        this.regions.push({ x, y, r: 22 * s, action: () => (p.selected = k) });
+      }
       const sel = p.selected === k;
       let count = k === 'special' ? (p.def.special.fuel ? Math.round(p.fuel) : p.special) : p.weapons[k];
       const has = k === 'special' ? true : count > 0;
@@ -546,12 +617,12 @@ export class HUD {
   }
 
   // ----- health + turbo bars (bottom right) -----
-  bars(s, W, H) {
+  bars(s, W, H, ox, oy) {
     const c = this.ctx;
     const p = G.player;
-    const x = W - 220 * s, w = 170 * s;
-    const hy = H - 60 * s, hh = 13 * s;
-    const ty = H - 37 * s, th = 10 * s;
+    const x = ox ?? W - 220 * s, w = 170 * s;
+    const hy = oy ?? H - 60 * s, hh = 13 * s;
+    const ty = hy + 23 * s, th = 10 * s;
     const hf = p.hpFrac;
     const flash = p.hitFlash > 0 ? p.hitFlash : 0;
     barFrame(c, x, hy, w, hh, s);

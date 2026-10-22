@@ -166,6 +166,20 @@ npx http-server -p 8080   # then visit http://localhost:8080/twisted/
 
 A gamepad works too, with a PS-style layout.
 
+On phones and tablets (landscape) it switches to touch controls:
+
+| Control | Action |
+|---|---|
+| Left thumb, anywhere | Floating stick: touch and steer to drive, pull back to brake or reverse |
+| Right thumb: MG, FIRE | Machine gun and the armed weapon (hold FIRE to charge) |
+| TURBO, ALT, JUMP | Boost, alternate special, jump |
+| FRZ, SHLD, MINE, REAR | Energy moves and rear fire |
+| Weapon icons | Tap one at the bottom to arm it |
+| II | Pause |
+
+Menus are tappable. The first tap asks for fullscreen and a landscape lock, where the
+browser allows it. Phones default to the lighter Performance graphics setting.
+
 Dev URL flags: `#auto=<vehicle>` jumps straight into a match, `#nointro` skips the
 flyover, `#lowq` is a low-cost renderer and `#ts=N` speeds up time.
 
@@ -183,3 +197,4 @@ flyover, `#lowq` is a low-cost renderer and `#ts=N` speeds up time.
 | `twisted/js/fx.js`, `twisted/js/post.js`, `twisted/js/sky.js` | Particles, post-processing, sky |
 | `twisted/js/audio.js` | Synthesized engines, SFX and music |
 | `twisted/js/peds.js` | Pedestrians |
+| `twisted/js/touch.js` | Touch controls for phones and tablets |
