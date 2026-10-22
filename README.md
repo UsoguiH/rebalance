@@ -107,3 +107,79 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+---
+
+# Twisted Metal: Sunsprings (fan remake)
+
+An unofficial browser fan recreation of **Twisted Metal (2012)** car combat, in `twisted/`.
+It's built with three.js (vendored in `twisted/lib/`). Every model, texture, sound and the
+metal soundtrack is generated in code, and there is no build step. Twisted Metal is a
+trademark of Sony Interactive Entertainment; this project is not affiliated with Sony.
+
+Serve the repo folder and open `twisted/index.html`:
+
+```sh
+npx http-server -p 8080   # then visit http://localhost:8080/twisted/
+```
+
+## What's in it
+
+- **Sunsprings, CA:**
+  - Downtown and buildings: a brick main street, the freestanding clock tower roundabout,
+    the county courthouse with its cupola, a gothic church, the water tower and the
+    hospital with its helipad.
+  - Garage: Bruner's Foodsource, with a drive-in health bay.
+  - Rival high schools: Sunsprings High's stadium (drive up the bleachers) and East
+    High's concrete pylons.
+  - On the edges: destructible radar dishes on the ridge, a wind farm on the hills,
+    suburbs, pedestrians and smoke columns.
+  - Atmosphere: an orange smog sky with lightning.
+- **12 vehicles:** Sweet Tooth, Roadkill, Kamikaze, Outlaw, Meat Wagon, Axel, Crimson Fury,
+  Reaper, Darkside, Vermin, Shadow and Junkyard Dog. Each has its own stats, special and
+  alternate special.
+- **Weapons:** machine gun; fire, homing, power and stalker missiles; napalm; ricochet;
+  remote bombs; shotgun; sniper. Energy moves are freeze, shield, drop mine, jump and rear
+  fire. Health and turbo pickups are scattered around town.
+- **Modes:** Death Match, Last Man Standing, Hunted and Endurance against AI drivers.
+- **HUD:** laid out after the PS3 game. It has a rotating minimap, "Opponents: N", damage
+  callouts, the 7-segment timer, the energy d-pad, the weapon carousel, health and turbo
+  bars, the lock-on reticle and off-screen arrows.
+
+## Controls
+
+| Key | Action |
+|---|---|
+| W/S, A/D (or arrows) | Gas, brake/reverse, steer |
+| Shift | Turbo |
+| Space | Tight turn (handbrake) |
+| J / left mouse | Machine gun |
+| K / right mouse | Fire weapon (hold to charge stalker, sniper and some specials) |
+| Q / E | Cycle weapons |
+| L | Alternate special |
+| C | Jump |
+| 1 / 2 / 3 | Freeze / shield / drop mine |
+| R (hold) | Rear fire |
+| V (hold) | Look back |
+| Tab | Scoreboard |
+| Esc / P | Pause |
+
+A gamepad works too, with a PS-style layout.
+
+Dev URL flags: `#auto=<vehicle>` jumps straight into a match, `#nointro` skips the
+flyover, `#lowq` is a low-cost renderer and `#ts=N` speeds up time.
+
+| File | What it does |
+|---|---|
+| `twisted/js/world.js` | Layout, terrain, curbs/platforms, colliders, AI road graph, painted ground, minimap |
+| `twisted/js/town.js` | Buildings and landmarks |
+| `twisted/js/props.js` | Trees, breakable street furniture, parked cars, gas pumps |
+| `twisted/js/vehicles.js` | Roster, stats and procedural models with painted liveries |
+| `twisted/js/car.js` | Vehicle physics, damage, status effects |
+| `twisted/js/weapons.js` | Weapons, specials, targeting, pickups |
+| `twisted/js/ai.js` | AI drivers |
+| `twisted/js/match.js` | Game modes, scoring, respawns, per-car effects |
+| `twisted/js/hud.js`, `twisted/js/ui.js` | HUD and menus |
+| `twisted/js/fx.js`, `twisted/js/post.js`, `twisted/js/sky.js` | Particles, post-processing, sky |
+| `twisted/js/audio.js` | Synthesized engines, SFX and music |
+| `twisted/js/peds.js` | Pedestrians |
