@@ -18,6 +18,17 @@ node tools/render.mjs --cues cues.voice.json --audio audio/voice_padded.wav
 # -> out/reel_voice.mp4
 ```
 
+Optional quiet music bed (synthesized, royalty-free), ducked under the voice:
+
+```sh
+python3 tools/music.py 36.27 audio/music.wav     # length = video duration
+ffmpeg -i out/reel_voice.mp4 -i audio/voice_padded.wav -i audio/music.wav -filter_complex \
+  "[1:a]aformat=sample_rates=48000:channel_layouts=stereo,asplit=2[v][sc];[2:a]volume=-29dB[m];\
+   [m][sc]sidechaincompress=threshold=0.02:ratio=6:attack=40:release=600[md];\
+   [v][md]amix=inputs=2:normalize=0:duration=first,loudnorm=I=-14:TP=-1.5:LRA=11[a]" \
+  -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -shortest out/reel_voice_music.mp4
+```
+
 `retime.py` transcribes the file, matches each word to the script, and writes
 `cues.voice.json`. Every caption, highlight, character action and camera move
 is keyed to a word id, so the whole piece follows the new read.
