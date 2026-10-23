@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: one phone screen in three numbered steps, read top to bottom.
-   1) the bill ring (price in the middle, one colored piece per family, each piece wears its family's letter)
+   1) the bill ring (price in the middle, one colored piece per family)
    2) the families; tap one and its people open in place, tap a person to mark who did not come
    3) a big "final qatta" button that opens a full-screen receipt of everyone, plus WhatsApp. */
 :root {
@@ -92,13 +92,8 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ring { width: 100%; height: 100%; display: block; overflow: visible; }
 .ring-track { fill: none; stroke: rgba(255, 255, 255, .06); stroke-width: 24; }
 .seg { fill: none; stroke-width: 24; stroke-linecap: round; cursor: pointer; transition: stroke-width .35s, opacity .35s; }
-.badge { cursor: pointer; transition: opacity .35s; }
-.badge text { font-family: var(--font); font-size: 15px; font-weight: 700; }
-.badge-in { transform-box: fill-box; transform-origin: center; transition: transform .45s cubic-bezier(.3, 1.6, .5, 1); }
-.ring.focus .seg, .ring.focus .badge { opacity: .25; }
-.ring.focus .seg.on, .ring.focus .badge.on { opacity: 1; }
-.ring.focus .seg.on { stroke-width: 30; }
-.ring.focus .badge.on .badge-in { transform: scale(1.3); }
+.ring.focus .seg { opacity: .25; }
+.ring.focus .seg.on { opacity: 1; stroke-width: 30; }
 .ring-center {
   position: absolute; inset: 17%; border-radius: 50%;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
@@ -161,9 +156,8 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
 .fam-empty { margin: 0; color: var(--faint); font-size: .95rem; }
 .fam-actions { display: flex; gap: .5rem; }
-.fam-actions button { min-height: 3.3rem; border-radius: 999px; font-size: 1rem; font-weight: 700; padding: 0 1.1rem; }
-.btn-all { background: var(--surface-top); }
-.btn-done { flex: 1; background: var(--primary); color: var(--on-primary); }
+.fam-actions button { min-height: 3.4rem; border-radius: 999px; font-size: 1.1rem; font-weight: 700; padding: 0 1.1rem; }
+.btn-done { flex: 1; width: 100%; background: var(--primary); color: var(--on-primary); }
 
 /* ——— step 3 ——— */
 .btn-final {
@@ -351,7 +345,6 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
         <svg class="ring" id="ring" viewBox="0 0 300 300" aria-hidden="true">
           <circle class="ring-track" cx="150" cy="150" r="128"></circle>
           <g class="segs" transform="rotate(-90 150 150)"></g>
-          <g class="badges"></g>
         </svg>
         <button class="ring-center press" id="priceBtn" type="button">
           <span class="rc-empty" id="rcEmpty"><span class="rc-plus" id="rcPlus" data-ic="plus"></span>اضغط هنا</span>
@@ -402,8 +395,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
           <svg class="ring" id="finRing" viewBox="0 0 300 300" aria-hidden="true">
             <circle class="ring-track" cx="150" cy="150" r="128"></circle>
             <g class="segs" transform="rotate(-90 150 150)"></g>
-            <g class="badges"></g>
-          </svg>
+            </svg>
           <div class="ring-center">
             <span class="rc-lbl">على الشخص</span>
             <span class="rc-num"><b class="num" id="finPer">٠</b><small>ريال</small></span>
@@ -467,19 +459,17 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 (() => {
 'use strict';
 
-// ——— العوائل والأسماء (٤٥ فرد في ١٠ عوائل) ———
+// ——— العوائل والأسماء (٤٥ فرد في ٨ عوائل) ———
 // الاسم اللي يبدأ بـ "-" يعني ما حضر.
 const DEFAULT_FAMILIES = [
-  ['الهدلق', ['عبدالله الهدلق', 'عادل الهدلق', 'عبدالاله الهدلق', 'جواهر الجاسر', 'نوره الهدلق', 'هديل الهدلق', 'معتز']],
-  ['سليمان الهدلق', ['سليمان الهدلق', 'روان المعيقل']],
-  ['خالي عمر', ['عمر الجاسر', 'وفاء الصبيحي', 'اديم الجاسر', 'رنا الجاسر', 'ريما الجاسر', 'طلال الجاسر']],
-  ['خالي خالد', ['خالد الجاسر', 'حنان ابا حسين', 'عبدالرحمن الجاسر', 'محمد الجاسر', 'عبدالعزيز الجاسر']],
-  ['وليد الجاسر', ['وليد الجاسر', 'شذا اليابس']],
+  ['الهدلق', ['عبدالله الهدلق', 'عادل الهدلق', 'عبدالاله الهدلق', 'جواهر الجاسر', 'نوره الهدلق', 'هديل الهدلق', 'معتز الزنيتان', 'سليمان الهدلق', 'روان المعيقل']],
+  ['اخوي عمر', ['عمر الجاسر', 'وفاء الصبيحي', 'اديم الجاسر', 'رنا الجاسر', 'ريما الجاسر', 'طلال الجاسر']],
+  ['اخوي خالد', ['خالد الجاسر', 'حنان ابا حسين', 'عبدالرحمن الجاسر', 'محمد الجاسر', 'عبدالعزيز الجاسر', 'وليد الجاسر', 'شذا اليابس']],
   ['الفريح', ['احمد الفريح', 'إيمان الجاسر', 'عبدالعزيز الفريح', 'سلمان الفريح', 'خالد الفريح', 'فرح الفريح', 'ريما الفريح']],
   ['المقحم', ['احمد المقحم', 'إبتسام الجاسر', 'خالد المقحم', 'ريما المقحم', 'عبدالله المقحم', 'راما المقحم', 'ريما النشوان']],
-  ['خالي ياسر', ['ياسر الجاسر', 'فلوه الهاجري', 'سارة الجاسر', 'غالية الجاسر']],
-  ['خالي ابراهيم', ['ابراهيم الجاسر', 'ريما الحضيف', 'عبدالرحمن الجاسر']],
-  ['خالتي نجود', ['نجود الجاسر', 'مصعب القرشي']],
+  ['اخوي ياسر', ['ياسر الجاسر', 'فلوه الهاجري', 'سارة الجاسر', 'غالية الجاسر']],
+  ['اخوي ابراهيم', ['ابراهيم الجاسر', 'ريما الحضيف', 'عبدالرحمن الجاسر']],
+  ['اختي نجود', ['نجود الجاسر', 'مصعب القرشي']],
 ];
 const COLORS = ['#5ccfc4', '#7ee0b0', '#f2dc8c', '#ff9f7a', '#9b6cf0', '#7fb4ff', '#f59ac8', '#c8e07a', '#ffc46b', '#a0a4ff'];
 
@@ -525,7 +515,7 @@ const I = {
 $$('[data-ic]').forEach(el => { el.innerHTML = I[el.dataset.ic]; });
 
 // ——— state ———
-const KEY = 'qatta.v4';
+const KEY = 'qatta.v5';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function makeFamily(name, members) {
@@ -544,7 +534,9 @@ function load() {
       }
     }
   } catch (e) { /* storage unavailable */ }
-  return { total: 0, families: DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m)) };
+  let total = 0;
+  try { total = +JSON.parse(localStorage.getItem('qatta.v4') || '{}').total || 0; } catch (e) { /* ignore */ }
+  return { total, families: DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m)) };
 }
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
@@ -554,7 +546,7 @@ const color = i => COLORS[i % COLORS.length];
 const NF = new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 0 });
 const fmt = n => NF.format(Math.round(+n || 0));
 function initial(name) {
-  let s = String(name).trim().replace(/^(عائلة|عايلة|عائله|بيت|آل|خالي|خالتي|عمي|عمتي)\s+/, '').replace(/^(أبو|ابو|أم|ام)\s+/, '');
+  let s = String(name).trim().replace(/^(عائلة|عايلة|عائله|بيت|آل|خالي|خالتي|عمي|عمتي|اخوي|أخوي|اختي|أختي)\s+/, '').replace(/^(أبو|ابو|أم|ام)\s+/, '');
   if (/^ال/.test(s) && s.length > 3) s = s.slice(2);
   return s[0] || '؟';
 }
@@ -591,10 +583,10 @@ function shake(el) {
   gsap.fromTo(el, { x: 0 }, { keyframes: { x: [0, -10, 9, -6, 4, 0] }, duration: .45, ease: 'none' });
 }
 
-// ——— rings: one piece per family, sized by how many of them came, each piece wears its family's letter ———
-const R = 128, GAP = 4.6, NS = 'http://www.w3.org/2000/svg';
+// ——— rings: one piece per family, sized by how many of them came ———
+const R = 128, GAP = 5, NS = 'http://www.w3.org/2000/svg';
 function makeRing(svgEl) {
-  const segG = $('.segs', svgEl), badgeG = $('.badges', svgEl);
+  const segG = $('.segs', svgEl);
   const segs = new Map();
   function draw(s) {
     const show = s.len > 0.01;
@@ -602,13 +594,9 @@ function makeRing(svgEl) {
     s.el.setAttribute('stroke-dasharray', `${dash} ${100 - dash}`);
     s.el.setAttribute('stroke-dashoffset', -(s.start + GAP / 2));
     s.el.style.visibility = show ? 'visible' : 'hidden';
-    const a = (-90 + (s.start + s.len / 2) * 3.6) * Math.PI / 180;
-    s.badge.setAttribute('transform', `translate(${(150 + R * Math.cos(a)).toFixed(2)} ${(150 + R * Math.sin(a)).toFixed(2)})`);
-    s.badge.style.visibility = show ? 'visible' : 'hidden';
   }
   function build() {
     segG.innerHTML = '';
-    badgeG.innerHTML = '';
     segs.clear();
     state.families.forEach((f, i) => {
       const el = document.createElementNS(NS, 'circle');
@@ -618,12 +606,7 @@ function makeRing(svgEl) {
       el.setAttribute('stroke', color(i));
       el.dataset.id = f.id;
       segG.appendChild(el);
-      const badge = document.createElementNS(NS, 'g');
-      badge.setAttribute('class', 'badge');
-      badge.dataset.id = f.id;
-      badge.innerHTML = `<g class="badge-in"><circle r="16" fill="#131117" stroke="${color(i)}" stroke-width="3"></circle><text text-anchor="middle" dy=".36em" fill="${color(i)}">${esc(initial(f.name))}</text></g>`;
-      badgeG.appendChild(badge);
-      const s = { el, badge, start: 0, len: 0 };
+      const s = { el, start: 0, len: 0 };
       segs.set(f.id, s);
       draw(s);
     });
@@ -644,7 +627,7 @@ function makeRing(svgEl) {
   function zero() { segs.forEach(s => { gsap.killTweensOf(s); s.start = 0; s.len = 0; draw(s); }); }
   function focus(id) {
     svgEl.classList.toggle('focus', !!id);
-    segs.forEach((s, sid) => { s.el.classList.toggle('on', sid === id); s.badge.classList.toggle('on', sid === id); });
+    segs.forEach((s, sid) => s.el.classList.toggle('on', sid === id));
   }
   return { build, update, zero, focus };
 }
@@ -677,7 +660,7 @@ function renderList() {
       ${f.members.length
         ? `<p class="fam-hint">اضغط على اللي ما حضر. الأخضر حاضر.</p><ul class="mems">${f.members.map(memberHTML).join('')}</ul>`
         : '<p class="fam-hint">ما فيه أسماء. أضفها من "العوائل والأسماء" تحت.</p>'}
-      <div class="fam-actions">${f.members.length ? '<button type="button" class="btn-all press">كلهم حضروا</button>' : ''}<button type="button" class="btn-done press">تم</button></div>
+      <div class="fam-actions"><button type="button" class="btn-done press">تم</button></div>
     </div></div>
   </li>`).join('');
   if (!state.families.length) list.innerHTML = '<li class="fam-empty">ما فيه عوائل. اضغط "العوائل والأسماء" تحت وأضف.</li>';
@@ -805,19 +788,6 @@ list.addEventListener('click', e => {
     const amt = $('.fam-amt', li);
     if (!amt.hidden) pop(amt, .85);
     update();
-    return;
-  }
-  if (e.target.closest('.btn-all')) {
-    let i = 0;
-    f.members.forEach(m => {
-      if (m.present) return;
-      m.present = true;
-      const b = $(`.mem[data-mid="${m.id}"]`, li);
-      if (b) syncMember(b, true, true, i * .06);
-      i++;
-    });
-    if (i) { save(); haptic(16); update(); }
-    else pop(e.target.closest('.btn-all'), .9);
     return;
   }
   if (e.target.closest('.btn-done')) closeFamily();
