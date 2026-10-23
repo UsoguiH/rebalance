@@ -7,13 +7,16 @@
 <title>حاسبة القطّة</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#131117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: one screen in three numbered steps, read top to bottom.
+/* Layout: one phone screen in three numbered steps, read top to bottom.
    1) the bill ring (price in the middle, one colored piece per family)
-   2) every family with all its names visible; tap a name to mark who did not come
+   2) the families; tap one and its people open in place, tap a person to mark who did not come
    3) send or listen to the result. Big type and big targets for an elderly user. */
 :root {
   --bg: #131117;
@@ -30,66 +33,66 @@
   --lilac-bg: #3d2f5c;
   --yes: #7ee0a5;
   --yes-ink: #06301a;
+  --no: #ff8f86;
   --wa: #25d366;
   --wa-ink: #05341a;
-  --font: "Readex Pro", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font: "Readex Pro", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", Tahoma, sans-serif;
+  --font-num: "IBM Plex Sans Arabic", "Readex Pro", -apple-system, "Segoe UI", sans-serif;
   color-scheme: dark;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 *, *::before, *::after { box-sizing: border-box; }
-html { font-size: 20px; background: var(--bg); }
-@media (max-width: 360px) { html { font-size: 18px; } }
+html { font-size: 20px; background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+@media (max-width: 374px) { html { font-size: 18px; } }
 body {
   margin: 0; background: var(--bg); color: var(--fg);
   font-family: var(--font); font-size: 1rem; line-height: 1.5;
   -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
-  overflow-x: hidden;
+  overflow-x: hidden; min-height: 100dvh;
 }
-body.locked { overflow: hidden; }
 button, input, textarea { font: inherit; color: inherit; }
-button { background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
-a { color: inherit; text-decoration: none; }
+button { background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+input, textarea { font-size: max(16px, 1rem); }
+a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 :focus-visible { outline: 3px solid var(--lilac); outline-offset: 3px; }
 [hidden] { display: none !important; }
 .ic { width: 1.3rem; height: 1.3rem; flex: none; display: block; }
-.num { font-variant-numeric: tabular-nums; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 
 .glow {
-  position: absolute; inset: 0 0 auto; height: 34rem; z-index: 0; pointer-events: none;
+  position: absolute; inset: 0 0 auto; height: 32rem; z-index: 0; pointer-events: none;
   background:
     radial-gradient(60% 50% at 50% 32%, rgba(124, 92, 190, .28), transparent 70%),
     radial-gradient(40% 40% at 85% 10%, rgba(92, 207, 196, .10), transparent 70%);
 }
 .app {
-  position: relative; z-index: 1; max-width: 30rem; margin: 0 auto;
+  position: relative; z-index: 1; width: 100%; max-width: 30rem; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 1rem 3rem;
-  display: flex; flex-direction: column; gap: 2.4rem;
+  padding-block: .9rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 2.2rem;
 }
 
 /* ——— numbered steps ——— */
-.step { display: flex; flex-direction: column; gap: 1rem; }
-.step-h { margin: 0; display: flex; align-items: center; gap: .7rem; font-size: 1.3rem; font-weight: 700; line-height: 1.35; }
+.step { display: flex; flex-direction: column; gap: .9rem; }
+.step-h { margin: 0; display: flex; align-items: center; gap: .65rem; font-size: 1.25rem; font-weight: 700; line-height: 1.35; }
 .step-n {
-  position: relative; flex: none; width: 2.3rem; height: 2.3rem; border-radius: 50%;
-  display: grid; place-items: center; background: var(--primary); color: var(--on-primary); font-size: 1.1rem; font-weight: 700;
+  flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%;
+  display: grid; place-items: center; background: var(--primary); color: var(--on-primary); font-size: 1.05rem; font-weight: 700;
 }
-.step-n .ic { width: 1.3rem; height: 1.3rem; stroke-width: 3; }
+.step-n .ic { width: 1.25rem; height: 1.25rem; stroke-width: 3; }
 .step-n.done { background: var(--yes); color: var(--yes-ink); }
-.step-p { margin: -.5rem 0 0; color: var(--muted); font-size: 1rem; display: flex; flex-wrap: wrap; gap: .3rem .9rem; }
-.key-dot { display: inline-flex; align-items: center; gap: .35rem; }
-.key-dot i { width: .9rem; height: .9rem; border-radius: 50%; display: inline-block; }
-.key-dot .g { background: var(--yes); }
-.key-dot .x { border: 2px dashed var(--faint); }
+.step-p { margin: -.45rem 0 0; color: var(--muted); font-size: .95rem; }
 
 /* ——— the bill ring ——— */
-.hero { display: flex; flex-direction: column; align-items: center; gap: .8rem; }
-.ring-wrap { position: relative; width: min(82vw, 17rem); aspect-ratio: 1; max-width: 100%; }
+.hero { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+.ring-wrap { position: relative; width: min(78vw, 17rem); aspect-ratio: 1; max-width: 100%; }
 .ring { width: 100%; height: 100%; display: block; overflow: visible; }
 .ring-track { fill: none; stroke: rgba(255, 255, 255, .06); stroke-width: 24; }
-.seg { fill: none; stroke-width: 24; stroke-linecap: round; cursor: pointer; }
+.seg { fill: none; stroke-width: 24; stroke-linecap: round; cursor: pointer; transition: stroke-width .35s, opacity .35s; }
+.ring.focus .seg { opacity: .22; }
+.ring.focus .seg.on { opacity: 1; stroke-width: 30; }
 .ring-center {
   position: absolute; inset: 15%; border-radius: 50%;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
@@ -100,26 +103,27 @@ a { color: inherit; text-decoration: none; }
 .rc-lbl { font-size: .85rem; color: var(--muted); }
 .rc-num { display: flex; align-items: baseline; gap: .3rem; }
 .rc-num b { font-size: clamp(2.1rem, 11vw, 2.6rem); font-weight: 700; line-height: 1.15; }
-.rc-num small { font-size: .9rem; color: var(--muted); }
+.rc-num small { font-size: .85rem; color: var(--muted); }
 .rc-edit { display: inline-flex; align-items: center; gap: .3rem; margin-top: .3rem; padding: .25rem .8rem; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac); font-size: .8rem; }
 .rc-edit .ic { width: .95rem; height: .95rem; }
 .rc-empty { display: flex; flex-direction: column; align-items: center; gap: .45rem; font-size: 1.1rem; font-weight: 700; line-height: 1.35; }
 .rc-plus { width: 3.3rem; height: 3.3rem; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
 .rc-plus .ic { width: 1.7rem; height: 1.7rem; stroke-width: 2.6; }
 .per {
-  display: flex; align-items: baseline; gap: .45rem; padding: .65rem 1.4rem; border-radius: 999px;
+  display: flex; align-items: baseline; gap: .45rem; padding: .6rem 1.4rem; border-radius: 999px;
   background: var(--surface-hi); border: 1px solid rgba(255, 255, 255, .07);
 }
 .per span { color: var(--muted); }
-.per b { font-size: 1.6rem; font-weight: 700; }
+.per b { font-size: 1.65rem; font-weight: 700; line-height: 1.2; }
 .per small { color: var(--muted); font-size: .9rem; }
 .heads { margin: 0; color: var(--muted); }
 .heads b { color: var(--fg); font-weight: 600; }
 
-/* ——— families, always open ——— */
-.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1rem; }
-.fam { border-radius: 1.5rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); padding: 1rem; display: flex; flex-direction: column; gap: .9rem; }
-.fam-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: .8rem; }
+/* ——— families: tap to open in place ——— */
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+.fam { border-radius: 1.5rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); overflow: hidden; transition: background-color .3s, border-color .3s; }
+.fam.open { background: var(--surface-hi); border-color: color-mix(in srgb, var(--c) 50%, transparent); }
+.fam-head { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: .8rem; padding: .9rem 1rem; text-align: start; min-height: 4.8rem; }
 .av {
   grid-row: 1 / 3; width: 2.9rem; height: 2.9rem; border-radius: 50%;
   background: var(--c); color: #16131b; display: grid; place-items: center; font-size: 1.25rem; font-weight: 700;
@@ -127,74 +131,125 @@ a { color: inherit; text-decoration: none; }
 }
 .fam.none .av { filter: grayscale(1) brightness(.6); }
 .fam-name { min-width: 0; font-size: 1.2rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
-.fam-sub { grid-column: 2; font-size: .9rem; color: var(--muted); }
-.fam-amt { grid-column: 3; grid-row: 1 / 3; display: flex; flex-direction: column; align-items: center; padding: .4rem .9rem; border-radius: 1rem; background: var(--surface-top); min-width: 4.6rem; }
-.fam-amt b { font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
-.fam-amt small { font-size: .75rem; color: var(--muted); }
-.mems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+.fam-meta { grid-column: 2 / 4; display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-width: 0; margin-top: .25rem; }
+.fam-sub { font-size: .92rem; color: var(--muted); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fam-amt { flex: none; display: inline-flex; align-items: baseline; gap: .3rem; padding: .3rem .9rem; border-radius: 999px; background: var(--surface-top); }
+.fam-amt b { font-size: 1.3rem; font-weight: 700; line-height: 1.3; }
+.fam-amt small { font-size: .78rem; color: var(--muted); }
+.chev { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: rgba(255, 255, 255, .06); }
+.chev .ic { width: 1.15rem; height: 1.15rem; }
+.fam-body { height: 0; overflow: hidden; }
+.fam-in { padding: 0 .9rem .9rem; display: flex; flex-direction: column; gap: .7rem; }
+.fam-hint { margin: 0; padding-top: .7rem; border-top: 1px solid rgba(255, 255, 255, .07); font-size: .9rem; color: var(--muted); }
+.mems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .mem {
-  width: 100%; min-height: 3.7rem; display: flex; align-items: center; gap: .55rem; padding: .45rem .7rem .45rem .5rem;
+  width: 100%; min-height: 3.6rem; display: flex; align-items: center; gap: .5rem; padding: .4rem .6rem .4rem .45rem;
   border-radius: 1.1rem; text-align: start; border: 2px dashed var(--line); background: transparent; color: var(--faint);
   transition: background-color .25s, border-color .25s, color .25s;
 }
 .mem.on { background: var(--yes); border: 2px solid var(--yes); color: var(--yes-ink); }
-.mk { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
+.mk { flex: none; width: 1.95rem; height: 1.95rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
 .mem.on .mk { background: rgba(6, 48, 26, .14); }
-.mk .ic { width: 1.15rem; height: 1.15rem; stroke-width: 3; }
+.mk .ic { width: 1.1rem; height: 1.1rem; stroke-width: 3; }
 .mt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
-.mn { font-size: 1.1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mn { font-size: 1.05rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
-.ms { font-size: .78rem; font-weight: 500; opacity: .85; }
+.ms { font-size: .75rem; font-weight: 500; opacity: .85; }
 .fam-empty { margin: 0; color: var(--faint); font-size: .95rem; }
+.fam-actions { display: flex; gap: .5rem; }
+.fam-actions button { min-height: 3.3rem; border-radius: 999px; font-size: 1rem; font-weight: 700; padding: 0 1.1rem; }
+.btn-all { background: var(--surface-top); }
+.btn-done { flex: 1; background: var(--primary); color: var(--on-primary); }
 
 /* ——— send ——— */
-.btn { min-height: 3.9rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.15rem; font-weight: 700; padding: 0 1.2rem; text-align: center; }
-.btn .ic { width: 1.5rem; height: 1.5rem; }
+.btn { min-height: 3.8rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.12rem; font-weight: 700; padding: 0 1.2rem; text-align: center; }
+.btn .ic { width: 1.45rem; height: 1.45rem; }
 .btn-wa { background: var(--wa); color: var(--wa-ink); }
 .btn-soft { background: var(--surface-hi); font-weight: 600; }
 .btn-soft.talking { background: var(--lilac-bg); color: var(--lilac); }
-.quiet { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
+.quiet { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
 .quiet button { min-height: 2.8rem; padding: 0 1rem; border-radius: 999px; color: var(--muted); font-size: .9rem; display: inline-flex; align-items: center; gap: .4rem; border: 1px solid rgba(255, 255, 255, .1); }
 .quiet .ic { width: 1.05rem; height: 1.05rem; }
 
 /* ——— sheets ——— */
 .scrim { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .66); }
 .sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 31; max-width: 30rem; margin: 0 auto;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 31; width: 100%; max-width: 30rem; margin: 0 auto;
   border-radius: 1.8rem 1.8rem 0 0; background: #1b191f; border-top: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: 0 -20px 60px -20px rgba(0, 0, 0, .7);
 }
 .sheet-in {
-  max-height: 94dvh; overflow-y: auto; overscroll-behavior: contain;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 1.2rem); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   display: flex; flex-direction: column; gap: .8rem;
 }
+.sheet.tall .sheet-in { height: calc(100dvh - env(safe-area-inset-top, 0px) - 1.2rem); }
 .sheet-in > * { flex-shrink: 0; }
-.sheet-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding-top: 1.1rem; touch-action: none; }
+.sheet-top {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+  padding: 1.1rem 0 .5rem; background: #1b191f; touch-action: none;
+}
 .sheet-top h2 { margin: 0; font-size: 1.25rem; font-weight: 700; }
 .x-btn { min-height: 2.7rem; padding: 0 .95rem; border-radius: 999px; background: var(--surface-hi); display: inline-flex; align-items: center; gap: .35rem; font-size: .9rem; color: var(--muted); }
 .x-btn .ic { width: 1.05rem; height: 1.05rem; }
-.handle { position: absolute; top: .45rem; left: 50%; width: 2.6rem; height: .3rem; margin-left: -1.3rem; border-radius: 9px; background: var(--line); }
+.handle { position: absolute; z-index: 3; top: .45rem; left: 50%; width: 2.6rem; height: .3rem; margin-left: -1.3rem; border-radius: 9px; background: var(--line); }
 .disp { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
 .disp-row { display: flex; align-items: baseline; gap: .5rem; }
-.disp-val { display: flex; direction: ltr; font-size: clamp(2.6rem, 14vw, 3.2rem); font-weight: 700; line-height: 1.15; min-height: 3.8rem; padding: 0 .4rem; border-radius: 1rem; }
+.disp-val { display: flex; direction: ltr; font-size: clamp(2.6rem, 14vw, 3.2rem); font-weight: 700; line-height: 1.2; min-height: 3.9rem; padding: 0 .4rem; border-radius: 1rem; }
 .disp-val span { display: inline-block; }
 .disp-val.ph { color: var(--faint); }
 .disp-val.fresh { background: var(--lilac-bg); }
 .disp-row small { font-size: 1rem; color: var(--muted); }
 .disp-hint { font-size: .95rem; color: var(--lilac); min-height: 1.45rem; }
 .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; direction: ltr; }
-.key { height: 3.6rem; border-radius: 1.2rem; background: var(--surface-hi); font-size: 1.7rem; font-weight: 600; display: grid; place-items: center; }
-.key.fn { background: transparent; border: 2px solid var(--surface-top); font-size: .95rem; color: var(--muted); }
+.key { height: 3.5rem; border-radius: 1.2rem; background: var(--surface-hi); font-size: 1.75rem; font-weight: 600; display: grid; place-items: center; }
+.key.fn { background: transparent; border: 2px solid var(--surface-top); font-family: var(--font); font-size: .95rem; color: var(--muted); }
 .key .ic { width: 1.6rem; height: 1.6rem; }
-.btn-ok { min-height: 3.8rem; border-radius: 999px; background: var(--yes); color: var(--yes-ink); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: .5rem; }
-.btn-ok .ic { width: 1.5rem; height: 1.5rem; stroke-width: 3; }
-.field { display: flex; flex-direction: column; gap: .5rem; }
-.field span { color: var(--muted); font-size: .9rem; }
-.field textarea {
-  width: 100%; min-height: 15rem; resize: vertical; border-radius: 1.2rem; padding: 1rem 1.1rem;
-  background: var(--surface); border: 1px solid var(--line); outline: none; font-size: 1.05rem; line-height: 1.8;
+@media (max-height: 700px) { .key { height: 3rem; } .disp-val { min-height: 3.3rem; } }
+.btn-ok { min-height: 3.7rem; border-radius: 999px; background: var(--yes); color: var(--yes-ink); font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: .5rem; }
+.btn-ok .ic { width: 1.45rem; height: 1.45rem; stroke-width: 3; }
+
+/* ——— family editor ——— */
+.ed-list { display: flex; flex-direction: column; gap: .8rem; }
+.ed-fam { border-radius: 1.4rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .07); padding: .8rem; display: flex; flex-direction: column; gap: .7rem; }
+.ed-row { display: flex; align-items: center; gap: .6rem; }
+.ed-row .av { width: 2.5rem; height: 2.5rem; font-size: 1.05rem; flex: none; }
+.ed-name {
+  flex: 1; min-width: 0; height: 3rem; padding: 0 .9rem; border-radius: .9rem;
+  background: var(--surface-hi); border: 1px solid transparent; outline: none; font-weight: 700;
 }
-.field textarea:focus { border-color: var(--lilac); }
+.ed-name:focus { border-color: var(--lilac); }
+.ed-name::placeholder { color: var(--faint); font-weight: 500; }
+.ed-del { flex: none; width: 3rem; height: 3rem; border-radius: .9rem; display: grid; place-items: center; color: var(--no); background: rgba(255, 143, 134, .1); }
+.ed-del .ic { width: 1.25rem; height: 1.25rem; }
+.ed-mems { display: flex; flex-wrap: wrap; gap: .45rem; }
+.ed-chip { display: inline-flex; align-items: center; gap: .2rem; min-height: 2.6rem; padding: 0 .3rem 0 .85rem; border-radius: 999px; background: var(--surface-top); font-weight: 600; font-size: .95rem; max-width: 100%; }
+.ed-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ed-chip button { flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
+.ed-chip button .ic { width: 1rem; height: 1rem; stroke-width: 2.6; }
+.ed-none { color: var(--faint); font-size: .9rem; }
+.ed-add { display: flex; gap: .45rem; }
+.ed-add input {
+  flex: 1; min-width: 0; height: 3rem; padding: 0 .9rem; border-radius: 999px;
+  background: var(--bg); border: 1.5px dashed var(--line); outline: none;
+}
+.ed-add input:focus { border-style: solid; border-color: var(--lilac); }
+.ed-add input::placeholder { color: var(--faint); }
+.ed-add button { flex: none; height: 3rem; padding: 0 1rem; border-radius: 999px; background: var(--primary); color: var(--on-primary); font-weight: 700; display: inline-flex; align-items: center; gap: .3rem; }
+.ed-add button .ic { width: 1.1rem; height: 1.1rem; stroke-width: 2.8; }
+.btn-addfam { min-height: 3.6rem; border-radius: 1.4rem; border: 2px dashed var(--line); color: var(--fg); font-weight: 700; display: flex; align-items: center; justify-content: center; gap: .5rem; }
+.btn-addfam .ic { width: 1.3rem; height: 1.3rem; stroke-width: 2.6; }
+.paste-link { align-self: center; min-height: 2.6rem; padding: 0 1rem; border-radius: 999px; color: var(--muted); font-size: .9rem; text-decoration: underline; text-underline-offset: 4px; }
+.paste-box { display: flex; flex-direction: column; gap: .5rem; }
+.paste-box span { color: var(--muted); font-size: .9rem; }
+.paste-box textarea {
+  width: 100%; min-height: 10rem; resize: vertical; border-radius: 1.1rem; padding: .9rem 1rem;
+  background: var(--surface); border: 1px solid var(--line); outline: none; line-height: 1.8;
+}
+.paste-box textarea:focus { border-color: var(--lilac); }
+.ed-foot .btn-ok { width: 100%; }
+.ed-foot { position: sticky; bottom: 0; padding-top: .6rem; background: linear-gradient(180deg, transparent, #1b191f 30%); }
+.copy-area { width: 100%; min-height: 14rem; border-radius: 1.1rem; padding: .9rem 1rem; background: var(--surface); border: 1px solid var(--line); line-height: 1.8; }
 
 .toast {
   position: fixed; z-index: 40; left: 0; right: 0; bottom: calc(1.2rem + env(safe-area-inset-bottom, 0px));
@@ -204,6 +259,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 14px 40px -10px rgba(0, 0, 0, .7);
 }
 .toast:not(.has-undo) { padding: .8rem 1.4rem; }
+body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px)); }
 .toast button { min-height: 2.7rem; padding: 0 1.1rem; border-radius: 999px; background: var(--on-primary); color: var(--primary); font-weight: 700; }
 .confetti { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
 .confetti i { position: absolute; display: block; border-radius: 2px; }
@@ -238,8 +294,8 @@ a { color: inherit; text-decoration: none; }
   </section>
 
   <section class="step" id="step2" aria-labelledby="h2">
-    <h2 class="step-h" id="h2"><span class="step-n" id="n2">٢</span>اضغط على اللي ما حضر</h2>
-    <p class="step-p"><span class="key-dot"><i class="g"></i>أخضر: حاضر</span><span class="key-dot"><i class="x"></i>مشطوب: ما حضر</span></p>
+    <h2 class="step-h" id="h2"><span class="step-n" id="n2">٢</span>مين حضر؟</h2>
+    <p class="step-p">اضغط على العائلة عشان تطلع أسماءها</p>
     <ul class="list" id="list"></ul>
   </section>
 
@@ -248,9 +304,9 @@ a { color: inherit; text-decoration: none; }
     <a class="btn btn-wa press" id="waBtn" href="#" target="_blank" rel="noopener"><span data-ic="send"></span>أرسل في واتساب</a>
     <button class="btn btn-soft press" id="speakBtn" type="button" hidden><span data-ic="sound"></span><span id="speakLbl">اسمع الحساب</span></button>
     <div class="quiet">
+      <button id="editBtn" type="button"><span data-ic="users"></span>العوائل والأسماء</button>
       <button id="resetBtn" type="button"><span data-ic="redo"></span>عزيمة جديدة</button>
       <button id="copyBtn" type="button"><span data-ic="copy"></span>انسخ</button>
-      <button id="editBtn" type="button"><span data-ic="edit"></span>عدّل الأسماء</button>
     </div>
   </section>
 </main>
@@ -270,14 +326,19 @@ a { color: inherit; text-decoration: none; }
   </div>
 </div>
 
-<div class="sheet" id="namesSheet" role="dialog" aria-modal="true" aria-labelledby="namesTitle" hidden dir="rtl">
+<div class="sheet tall" id="editSheet" role="dialog" aria-modal="true" aria-labelledby="editTitle" hidden dir="rtl">
   <span class="handle" aria-hidden="true"></span>
-  <div class="sheet-in">
-    <div class="sheet-top"><h2 id="namesTitle">الأسماء</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
-    <label class="field"><span>كل عائلة في سطر: اسم العائلة، بعدها نقطتين، بعدها الأفراد بينهم فاصلة</span>
-      <textarea id="namesText" spellcheck="false"></textarea>
-    </label>
-    <button class="btn-ok press" id="namesOk" type="button"><span data-ic="check"></span>احفظ</button>
+  <div class="sheet-in" id="editScroll">
+    <div class="sheet-top"><h2 id="editTitle">العوائل والأسماء</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
+    <div class="ed-list" id="edList"></div>
+    <button class="btn-addfam press" id="addFamBtn" type="button"><span data-ic="plus"></span>أضف عائلة جديدة</button>
+    <button class="paste-link" id="pasteToggle" type="button">أو الصق قائمة أسماء كاملة</button>
+    <div class="paste-box" id="pasteBox" hidden>
+      <label class="paste-box" for="pasteText"><span>كل عائلة في سطر: اسم العائلة، بعدها نقطتين، بعدها الأفراد بينهم فاصلة. بتنضاف للعوائل الموجودة.</span></label>
+      <textarea id="pasteText" spellcheck="false" placeholder="عائلة عادل: عادل، نورة، محمد&#10;عائلة خالد: خالد، سارة"></textarea>
+      <button class="btn btn-soft press" id="pasteOk" type="button"><span data-ic="plus"></span>أضف هذي الأسماء</button>
+    </div>
+    <div class="ed-foot"><button class="btn-ok press" type="button" data-close><span data-ic="check"></span>تم</button></div>
   </div>
 </div>
 
@@ -285,7 +346,7 @@ a { color: inherit; text-decoration: none; }
   <span class="handle" aria-hidden="true"></span>
   <div class="sheet-in">
     <div class="sheet-top"><h2 id="copyTitle">انسخ الحساب</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
-    <label class="field"><span>حدّد النص وانسخه</span><textarea id="copyText" readonly></textarea></label>
+    <textarea class="copy-area" id="copyText" readonly aria-label="الحساب"></textarea>
   </div>
 </div>
 
@@ -336,12 +397,15 @@ const I = {
   edit: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
   close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
   check: svg('<path class="ck" d="M20 6 9 17l-5-5" pathLength="1"/>'),
+  chev: svg('<path d="m6 9 6 6 6-6"/>'),
   back: svg('<path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m18 9-6 6M12 9l6 6"/>'),
   send: svg('<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>'),
   copy: svg('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
   redo: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'),
   sound: svg('<path d="M11 5 6 9H2v6h4l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),
   stop: svg('<rect x="6" y="6" width="12" height="12" rx="2"/>'),
+  trash: svg('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>'),
+  users: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
 };
 $$('[data-ic]').forEach(el => { el.innerHTML = I[el.dataset.ic]; });
 
@@ -370,6 +434,7 @@ function load() {
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
 const color = i => COLORS[i % COLORS.length];
+const famIndex = id => state.families.findIndex(f => f.id === id);
 
 // ——— numbers: whole riyals only ———
 const NF = new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 0 });
@@ -398,9 +463,13 @@ function setNum(el, to, anim = true) {
 }
 function haptic(ms = 8) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* ignore */ } }
 function pop(el, from = .94) { gsap.fromTo(el, { scale: from }, { scale: 1, duration: .6, ease: 'spring', clearProps: 'scale' }); }
+function shake(el) {
+  haptic(30);
+  gsap.fromTo(el, { x: 0 }, { keyframes: { x: [0, -10, 9, -6, 4, 0] }, duration: .45, ease: 'none' });
+}
 
 // ——— the ring: one piece per family, sized by how many of them came ———
-const segG = $('#segs');
+const segG = $('#segs'), ring = $('#ring');
 const R = 128, GAP = 5.4;
 const segs = new Map();
 function drawSeg(s) {
@@ -440,14 +509,12 @@ function updateRing(c, anim = true, stagger = 0) {
 }
 segG.addEventListener('click', e => {
   const el = e.target.closest('.seg');
-  const li = el && famEl(el.dataset.id);
-  if (!li) return;
-  scrollToEl(li);
-  setTimeout(() => pop(li, .96), 350);
+  if (el) openFamily(el.dataset.id, true);
 });
 
-// ——— the families: every name is visible, one tap flips it ———
+// ——— the families: tap a family, its people open in place ———
 const list = $('#list');
+let openId = null;
 const famEl = id => list.querySelector(`.fam[data-id="${id}"]`);
 const markHTML = on => `<span class="mk">${on ? I.check : I.close}</span>`;
 function memberHTML(m) {
@@ -457,20 +524,34 @@ function memberHTML(m) {
 }
 function renderList() {
   list.innerHTML = state.families.map((f, i) => `<li class="fam" data-id="${f.id}" style="--c:${color(i)}">
-    <div class="fam-head">
+    <button type="button" class="fam-head press" aria-expanded="false">
       <span class="av" aria-hidden="true">${esc(initial(f.name))}</span>
       <span class="fam-name">${esc(f.name)}</span>
-      <span class="fam-sub"></span>
-      <span class="fam-amt"><b class="num"></b><small>ريال</small></span>
-    </div>
-    ${f.members.length ? `<ul class="mems">${f.members.map(memberHTML).join('')}</ul>` : '<p class="fam-empty">ما فيه أسماء. أضفها من "عدّل الأسماء" تحت.</p>'}
+      <span class="chev" aria-hidden="true">${I.chev}</span>
+      <span class="fam-meta"><span class="fam-sub"></span><span class="fam-amt"><b class="num"></b><small>ريال</small></span></span>
+    </button>
+    <div class="fam-body"><div class="fam-in">
+      ${f.members.length
+        ? `<p class="fam-hint">اضغط على اللي ما حضر. الأخضر حاضر.</p><ul class="mems">${f.members.map(memberHTML).join('')}</ul>`
+        : '<p class="fam-hint">ما فيه أسماء. أضفها من "العوائل والأسماء" تحت.</p>'}
+      <div class="fam-actions">${f.members.length ? '<button type="button" class="btn-all press">كلهم حضروا</button>' : ''}<button type="button" class="btn-done press">تم</button></div>
+    </div></div>
   </li>`).join('');
+  if (!state.families.length) list.innerHTML = '<li class="fam-empty">ما فيه عوائل. اضغط "العوائل والأسماء" تحت وأضف.</li>';
+  if (openId && !famEl(openId)) openId = null;
+  if (openId) {
+    const li = famEl(openId);
+    li.classList.add('open');
+    $('.fam-head', li).setAttribute('aria-expanded', 'true');
+    gsap.set($('.fam-body', li), { height: 'auto' });
+    gsap.set($('.chev', li), { rotation: 180 });
+  }
 }
 function famSub(f, n) {
-  if (!f.members.length) return '';
+  if (!f.members.length) return 'ما فيه أسماء';
   if (n === 0) return 'ما حضر أحد';
   if (n === f.members.length) return n === 1 ? 'حاضر' : 'كلهم حاضرين';
-  return `${fmt(n)} من ${fmt(f.members.length)} حاضرين`;
+  return `حضر ${fmt(n)} من ${fmt(f.members.length)}`;
 }
 
 // ——— update everything from state ———
@@ -515,12 +596,48 @@ function update(anim = true) {
     const amt = $('.fam-amt', li);
     amt.hidden = !has;
     if (has) setNum($('b', amt), c.share(f.id), anim);
+    $('.fam-head', li).setAttribute('aria-label', `${f.name}، ${famSub(f, n)}${has ? `، عليهم ${fmt(c.share(f.id))} ريال` : ''}`);
   });
   $('#waBtn').href = 'https://wa.me/?text=' + encodeURIComponent(summary());
   return c;
 }
 
-// ——— tap a name ———
+// ——— open / close a family ———
+function openFamily(id, fromRing = false) {
+  if (openId === id) { if (fromRing) scrollToEl(famEl(id)); else closeFamily(); return; }
+  if (openId) closeFamily(false);
+  const li = famEl(id);
+  if (!li) return;
+  openId = id;
+  haptic(6);
+  li.classList.add('open');
+  $('.fam-head', li).setAttribute('aria-expanded', 'true');
+  const body = $('.fam-body', li);
+  gsap.killTweensOf(body);
+  gsap.to(body, { height: 'auto', duration: .7, ease: 'springOut' });
+  gsap.to($('.chev', li), { rotation: 180, duration: .8, ease: 'spring' });
+  gsap.fromTo($$('.fam-hint, .mems > li, .fam-actions > *', body), { y: 22, opacity: 0, scale: .94 },
+    { y: 0, opacity: 1, scale: 1, duration: .5, stagger: .035, delay: .05, ease: 'springSoft', clearProps: 'transform,opacity' });
+  pop($('.av', li), .7);
+  ring.classList.add('focus');
+  segs.forEach((s, sid) => s.el.classList.toggle('on', sid === id));
+  setTimeout(() => scrollToEl(li), fromRing ? 0 : 140);
+}
+function closeFamily(scroll = true) {
+  const li = openId && famEl(openId);
+  openId = null;
+  ring.classList.remove('focus');
+  segs.forEach(s => s.el.classList.remove('on'));
+  if (!li) return;
+  li.classList.remove('open');
+  $('.fam-head', li).setAttribute('aria-expanded', 'false');
+  const body = $('.fam-body', li);
+  gsap.killTweensOf(body);
+  gsap.to(body, { height: 0, duration: .5, ease: 'springOut' });
+  gsap.to($('.chev', li), { rotation: 0, duration: .8, ease: 'spring' });
+  if (scroll && li.getBoundingClientRect().top < 0) scrollToEl(li);
+}
+
 function syncMember(btn, present, anim = true, delay = 0) {
   btn.classList.toggle('on', present);
   btn.setAttribute('aria-checked', present);
@@ -533,16 +650,35 @@ function syncMember(btn, present, anim = true, delay = 0) {
   if (present) gsap.fromTo($('.ck', mk), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .4, delay: delay + .1, ease: 'springSoft' });
 }
 list.addEventListener('click', e => {
+  const li = e.target.closest('.fam');
+  if (!li || !li.dataset.id) return;
+  const f = state.families.find(x => x.id === li.dataset.id);
+  if (e.target.closest('.fam-head')) { openFamily(f.id); return; }
   const btn = e.target.closest('.mem');
-  if (!btn) return;
-  const f = state.families.find(x => x.id === btn.closest('.fam').dataset.id);
-  const m = f.members.find(x => x.id === btn.dataset.mid);
-  m.present = !m.present;
-  save(); haptic(m.present ? 14 : 8);
-  syncMember(btn, m.present);
-  const amt = $('.fam-amt', btn.closest('.fam'));
-  if (!amt.hidden) pop(amt, .85);
-  update();
+  if (btn) {
+    const m = f.members.find(x => x.id === btn.dataset.mid);
+    m.present = !m.present;
+    save(); haptic(m.present ? 14 : 8);
+    syncMember(btn, m.present);
+    const amt = $('.fam-amt', li);
+    if (!amt.hidden) pop(amt, .85);
+    update();
+    return;
+  }
+  if (e.target.closest('.btn-all')) {
+    let i = 0;
+    f.members.forEach(m => {
+      if (m.present) return;
+      m.present = true;
+      const b = $(`.mem[data-mid="${m.id}"]`, li);
+      if (b) syncMember(b, true, true, i * .06);
+      i++;
+    });
+    if (i) { save(); haptic(16); update(); }
+    else pop(e.target.closest('.btn-all'), .9);
+    return;
+  }
+  if (e.target.closest('.btn-done')) closeFamily();
 });
 
 // ——— price keypad ———
@@ -550,7 +686,7 @@ const pad = { str: '', fresh: false };
 $('#keys').innerHTML = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'].map(k => {
   if (k === 'clear') return '<button type="button" class="key fn press" data-k="clear">مسح</button>';
   if (k === 'back') return `<button type="button" class="key fn press" data-k="back" aria-label="امسح آخر رقم">${I.back}</button>`;
-  return `<button type="button" class="key press" data-k="${k}">${NF.format(+k)}</button>`;
+  return `<button type="button" class="key num press" data-k="${k}">${NF.format(+k)}</button>`;
 }).join('');
 function renderPad(popLast) {
   const el = $('#dispVal');
@@ -564,10 +700,6 @@ function renderPad(popLast) {
   $('#dispHint').textContent = pad.fresh && txt ? 'اكتب الرقم الجديد'
     : !txt ? 'اكتب المبلغ اللي في الفاتورة'
     : c.heads ? `على الشخص ${fmt(Math.ceil(v / c.heads - 1e-9))} ريال` : '';
-}
-function shake(el) {
-  haptic(30);
-  gsap.fromTo(el, { x: 0 }, { keyframes: { x: [0, -10, 9, -6, 4, 0] }, duration: .45, ease: 'none' });
 }
 function press(k) {
   if (pad.fresh) { pad.fresh = false; if (k !== 'back') pad.str = ''; }
@@ -608,32 +740,44 @@ function priceDone() {
 $('#priceBtn').addEventListener('click', openPrice);
 $('#priceOk').addEventListener('click', priceDone);
 
-// ——— sheets ———
+// ——— sheets (scroll lock that also holds on iPhone Safari) ———
 const scrim = $('#scrim');
-let cur = null;
+let cur = null, lockY = 0;
+const onClose = {};
+function lockScroll() {
+  lockY = window.scrollY;
+  Object.assign(document.body.style, { position: 'fixed', top: `-${lockY}px`, left: '0', right: '0', width: '100%' });
+  document.body.classList.add('sheet-open');
+}
+function unlockScroll() {
+  Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
+  document.body.classList.remove('sheet-open');
+  window.scrollTo(0, lockY);
+}
 function openSheet(id) {
   const sh = $('#' + id);
   if (cur && cur !== sh) cur.hidden = true;
+  else if (!cur) lockScroll();
   cur = sh;
   sh.hidden = false; scrim.hidden = false;
-  document.body.classList.add('locked');
   gsap.killTweensOf([sh, scrim]);
   gsap.fromTo(scrim, { opacity: 0 }, { opacity: 1, duration: .3, ease: 'power2.out' });
   gsap.fromTo(sh, { yPercent: 100, y: 0 }, { yPercent: 0, duration: .7, ease: 'springOut' });
-  gsap.fromTo($$('.sheet-in > *:not(.keys), .key', sh), { y: 30, opacity: 0 },
-    { y: 0, opacity: 1, duration: .5, stagger: .018, delay: .05, ease: 'springSoft', clearProps: 'transform,opacity' });
+  gsap.fromTo($$('.sheet-in > *:not(.keys):not(.ed-list), .key, .ed-fam', sh), { y: 30, opacity: 0 },
+    { y: 0, opacity: 1, duration: .5, stagger: .02, delay: .05, ease: 'springSoft', clearProps: 'transform,opacity' });
 }
 function closeSheet() {
   const sh = cur;
   if (!sh) return;
   cur = null;
-  document.body.classList.remove('locked');
   if (document.activeElement && sh.contains(document.activeElement)) document.activeElement.blur();
+  unlockScroll();
   gsap.to(scrim, { opacity: 0, duration: .25, onComplete: () => { if (!cur) scrim.hidden = true; } });
   gsap.to(sh, { yPercent: 100, duration: .35, ease: 'power2.in', onComplete: () => { if (cur !== sh) sh.hidden = true; gsap.set(sh, { y: 0 }); } });
+  if (onClose[sh.id]) onClose[sh.id]();
 }
 scrim.addEventListener('click', closeSheet);
-$$('[data-close]').forEach(b => b.addEventListener('click', closeSheet));
+document.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeSheet(); });
 $$('.sheet').forEach(sh => {
   let y0 = null, dy = 0, t0 = 0;
   sh.addEventListener('pointerdown', e => {
@@ -657,7 +801,7 @@ $$('.sheet').forEach(sh => {
   sh.addEventListener('pointercancel', end);
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && cur) { closeSheet(); return; }
+  if (e.key === 'Escape') { if (cur) closeSheet(); else if (openId) closeFamily(); return; }
   if (cur && cur.id === 'priceSheet') {
     const map = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
     const k = map[e.key] || e.key;
@@ -667,10 +811,115 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ——— names editor ———
+// ——— families & names editor ———
+const edList = $('#edList');
+let edDirty = false;
 function splitNames(s) {
   return String(s).split(/[،,؛;\n]+/).map(t => t.replace(/^[\s\-•*·]+/, '').trim()).filter(Boolean);
 }
+function chipHTML(m) {
+  return `<span class="ed-chip" data-mid="${m.id}"><span>${esc(m.name)}</span><button type="button" class="press" data-act="delm" aria-label="احذف ${esc(m.name)}">${I.close}</button></span>`;
+}
+function edFamHTML(f, i) {
+  return `<div class="ed-fam" data-id="${f.id}" style="--c:${color(i)}">
+    <div class="ed-row">
+      <span class="av" aria-hidden="true">${esc(initial(f.name || '؟'))}</span>
+      <input class="ed-name" value="${esc(f.name)}" placeholder="اسم العائلة" aria-label="اسم العائلة" maxlength="40" enterkeyhint="done" autocomplete="off">
+      <button type="button" class="ed-del press" data-act="delf" aria-label="احذف العائلة">${I.trash}</button>
+    </div>
+    <div class="ed-mems">${f.members.length ? f.members.map(chipHTML).join('') : '<span class="ed-none">ما فيه أفراد للحين</span>'}</div>
+    <form class="ed-add" autocomplete="off">
+      <input placeholder="اسم فرد جديد" aria-label="اسم فرد جديد في ${esc(f.name)}" maxlength="30" enterkeyhint="done">
+      <button type="submit" class="press">${I.plus}أضف</button>
+    </form>
+  </div>`;
+}
+function renderEditor() {
+  edList.innerHTML = state.families.map(edFamHTML).join('');
+}
+function edFam(el) { return state.families.find(f => f.id === el.closest('.ed-fam').dataset.id); }
+function refreshMems(card, f) {
+  $('.ed-mems', card).innerHTML = f.members.length ? f.members.map(chipHTML).join('') : '<span class="ed-none">ما فيه أفراد للحين</span>';
+}
+$('#editBtn').addEventListener('click', () => {
+  edDirty = false;
+  renderEditor();
+  $('#pasteBox').hidden = true;
+  $('#pasteToggle').hidden = false;
+  openSheet('editSheet');
+  $('#editScroll').scrollTop = 0;
+});
+edList.addEventListener('input', e => {
+  if (!e.target.classList.contains('ed-name')) return;
+  const f = edFam(e.target);
+  f.name = e.target.value.trim();
+  $('.av', e.target.closest('.ed-fam')).textContent = initial(f.name || '؟');
+  save(); edDirty = true;
+});
+edList.addEventListener('focusin', e => {
+  if (e.target.matches('input')) setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+});
+edList.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.classList.contains('ed-name')) {
+    e.preventDefault();
+    $('.ed-add input', e.target.closest('.ed-fam')).focus();
+  }
+});
+edList.addEventListener('submit', e => {
+  e.preventDefault();
+  const input = $('input', e.target);
+  const names = splitNames(input.value);
+  if (!names.length) { shake(input); input.focus(); return; }
+  const card = e.target.closest('.ed-fam');
+  const f = edFam(card);
+  const added = names.map(n => ({ id: uid(), name: n, present: true }));
+  f.members.push(...added);
+  save(); edDirty = true; haptic(10);
+  refreshMems(card, f);
+  added.forEach((m, i) => {
+    const chip = $(`.ed-chip[data-mid="${m.id}"]`, card);
+    gsap.fromTo(chip, { scale: .3, opacity: 0 }, { scale: 1, opacity: 1, duration: .6, delay: i * .05, ease: 'spring', clearProps: 'all' });
+  });
+  input.value = '';
+  input.focus();
+});
+edList.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const card = b.closest('.ed-fam');
+  const f = edFam(card);
+  const before = JSON.stringify(state);
+  if (b.dataset.act === 'delm') {
+    const chip = b.closest('.ed-chip');
+    const m = f.members.find(x => x.id === chip.dataset.mid);
+    f.members = f.members.filter(x => x !== m);
+    save(); edDirty = true; haptic(10);
+    gsap.to(chip, { scale: .3, opacity: 0, duration: .25, ease: 'power2.in', onComplete: () => refreshMems(card, f) });
+    toast(`حذفنا ${m.name}`, before, renderEditor);
+  } else if (b.dataset.act === 'delf') {
+    state.families = state.families.filter(x => x !== f);
+    if (openId === f.id) openId = null;
+    save(); edDirty = true; haptic(14);
+    gsap.to(card, { x: 60, opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, marginTop: -12, duration: .4, ease: 'power2.in', onComplete: renderEditor });
+    toast(`حذفنا ${f.name || 'العائلة'}`, before, renderEditor);
+  }
+});
+$('#addFamBtn').addEventListener('click', () => {
+  const f = { id: uid(), name: '', members: [] };
+  state.families.push(f);
+  save(); edDirty = true; haptic(10);
+  edList.insertAdjacentHTML('beforeend', edFamHTML(f, state.families.length - 1));
+  const card = edList.lastElementChild;
+  gsap.fromTo(card, { y: 30, opacity: 0, scale: .95 }, { y: 0, opacity: 1, scale: 1, duration: .6, ease: 'spring', clearProps: 'transform,opacity' });
+  $('.ed-name', card).focus();
+});
+$('#pasteToggle').addEventListener('click', () => {
+  $('#pasteToggle').hidden = true;
+  const box = $('#pasteBox');
+  box.hidden = false;
+  gsap.fromTo(box, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'all' });
+  $('#pasteText').focus();
+});
 function parseNames(text) {
   const out = [];
   let fam = null;
@@ -684,27 +933,34 @@ function parseNames(text) {
   }
   return out.filter(f => f.name);
 }
-$('#editBtn').addEventListener('click', () => {
-  $('#namesText').value = state.families.map(f => `${f.name}: ${f.members.map(m => m.name).join('، ')}`).join('\n');
-  openSheet('namesSheet');
-});
-$('#namesOk').addEventListener('click', () => {
-  const parsed = parseNames($('#namesText').value);
-  if (!parsed.length) { shake($('#namesText')); return; }
+$('#pasteOk').addEventListener('click', () => {
+  const parsed = parseNames($('#pasteText').value);
+  if (!parsed.length) { shake($('#pasteText')); return; }
   const before = JSON.stringify(state);
-  const oldFams = new Map(state.families.map(f => [f.name, f]));
-  state.families = parsed.map(p => {
-    const old = oldFams.get(p.name);
-    const pool = new Map();
-    if (old) old.members.forEach(m => { if (!pool.has(m.name)) pool.set(m.name, []); pool.get(m.name).push(m); });
-    return {
-      id: old ? old.id : uid(), name: p.name,
-      members: p.members.map(n => (pool.get(n) && pool.get(n).shift()) || { id: uid(), name: n, present: true }),
-    };
+  // drop the sample families the first time real names come in
+  if (state.families.every(f => DEFAULT_FAMILIES.some(([n]) => n === f.name))) state.families = [];
+  parsed.forEach(p => {
+    const same = state.families.find(f => f.name === p.name);
+    const members = p.members.map(n => ({ id: uid(), name: n, present: true }));
+    if (same) same.members.push(...members.filter(m => !same.members.some(x => x.name === m.name)));
+    else state.families.push({ id: uid(), name: p.name, members });
   });
-  save(); closeSheet();
-  setTimeout(() => { rebuild(true); toast('حفظنا الأسماء', before); }, 220);
+  save(); edDirty = true;
+  $('#pasteText').value = '';
+  $('#pasteBox').hidden = true;
+  $('#pasteToggle').hidden = false;
+  renderEditor();
+  gsap.fromTo('.ed-fam', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .04, ease: 'springSoft', clearProps: 'transform,opacity' });
+  $('#editScroll').scrollTo({ top: 0, behavior: 'smooth' });
+  toast(`أضفنا ${fmt(parsed.length)} عوائل`, before, renderEditor);
 });
+onClose.editSheet = () => {
+  // tidy: an unnamed family with nobody in it is dropped, an unnamed one with people gets a name
+  state.families = state.families.filter(f => f.name || f.members.length);
+  state.families.forEach(f => { if (!f.name) f.name = 'عائلة بدون اسم'; });
+  save();
+  if (edDirty) setTimeout(() => rebuild(true), 250);
+};
 
 // ——— a new gathering: clear the price and mark everyone present ———
 $('#resetBtn').addEventListener('click', () => {
@@ -713,8 +969,9 @@ $('#resetBtn').addEventListener('click', () => {
   state.families.forEach(f => f.members.forEach(m => { m.present = true; }));
   save();
   $$('.mem', list).forEach((b, i) => { if (!b.classList.contains('on')) syncMember(b, true, true, i * .03); });
+  if (openId) closeFamily(false);
   update();
-  window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' });
+  scrollToY(0);
   toast('بدينا عزيمة جديدة', before);
 });
 
@@ -730,8 +987,8 @@ function summary() {
 }
 function needPrice() {
   toast('اكتب مبلغ الفاتورة أول');
-  window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' });
-  setTimeout(() => shake($('#priceBtn')), 300);
+  scrollToY(0);
+  setTimeout(() => shake($('#priceBtn')), 400);
 }
 $('#waBtn').addEventListener('click', e => { if (!state.total) { e.preventDefault(); needPrice(); } });
 $('#copyBtn').addEventListener('click', () => {
@@ -775,11 +1032,12 @@ $('#speakBtn').addEventListener('click', () => {
 });
 
 // ——— toast with undo ———
-let toastTl = null, undoSnap = null;
-function toast(msg, snap) {
+let toastTl = null, undoSnap = null, undoAfter = null;
+function toast(msg, snap, after) {
   const t = $('#toast'), u = $('#toastUndo');
   $('#toastMsg').textContent = msg;
   undoSnap = snap || null;
+  undoAfter = after || null;
   u.hidden = !snap;
   t.classList.toggle('has-undo', !!snap);
   t.hidden = false;
@@ -793,7 +1051,7 @@ $('#toastUndo').addEventListener('click', () => {
   state = JSON.parse(undoSnap);
   undoSnap = null;
   save();
-  rebuild(false);
+  if (undoAfter) { undoAfter(); edDirty = true; } else rebuild(false);
   toast('رجّعناها مثل ما كانت');
 });
 
@@ -808,11 +1066,11 @@ document.addEventListener('pointerdown', e => {
   };
   addEventListener('pointerup', up); addEventListener('pointercancel', up);
 });
-function scrollToEl(el) {
-  const top = Math.max(0, el.getBoundingClientRect().top + scrollY - 16);
-  const y = { v: scrollY };
-  gsap.to(y, { v: top, duration: .8, ease: 'springOut', onUpdate: () => window.scrollTo(0, y.v) });
+function scrollToY(top) {
+  const y = { v: window.scrollY };
+  gsap.to(y, { v: Math.max(0, top), duration: .8, ease: 'springOut', onUpdate: () => window.scrollTo(0, y.v) });
 }
+function scrollToEl(el) { scrollToY(el.getBoundingClientRect().top + window.scrollY - 16); }
 function burst(x, y, count, spread) {
   const layer = $('#confetti');
   for (let i = 0; i < count; i++) {
@@ -829,9 +1087,14 @@ function burst(x, y, count, spread) {
 
 // ——— boot ———
 function rebuild(anim) {
+  ring.classList.remove('focus');
   buildRing();
   renderList();
   update(false);
+  if (openId) {
+    ring.classList.add('focus');
+    segs.forEach((s, sid) => s.el.classList.toggle('on', sid === openId));
+  }
   if (anim) {
     segs.forEach(s => { s.start = 0; s.len = 0; drawSeg(s); });
     updateRing(compute(), true, .08);
@@ -856,7 +1119,6 @@ function intro() {
     .fromTo(['#perBox', '#headsLine'], { y: 16, opacity: 0, ...blur(6) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .45)
     .fromTo('#step2 > :not(.list)', { y: 24, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .55)
     .fromTo('.fam', { y: 50, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .7, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .62)
-    .fromTo('.mem', { scale: .85, opacity: 0 }, { scale: 1, opacity: 1, duration: .5, stagger: .02, ease: 'springSoft', clearProps: 'transform,opacity' }, .75)
     .fromTo('#step3 > *', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .95);
 }
 buildRing();
