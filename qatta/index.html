@@ -11,17 +11,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: one screen. The bill ring sits on top (price in the middle, one colored piece per family),
-   the families sit under it and open in place to tick who came. Dark on purpose, big type for older eyes. */
+/* Layout: one screen in three numbered steps, read top to bottom.
+   1) the bill ring (price in the middle, one colored piece per family)
+   2) every family with all its names visible; tap a name to mark who did not come
+   3) send or listen to the result. Big type and big targets for an elderly user. */
 :root {
   --bg: #131117;
   --surface: #201d25;
   --surface-hi: #2a272f;
   --surface-top: #35323a;
-  --line: #47434d;
-  --fg: #ebe6ee;
-  --muted: #cbc4cf;
-  --faint: #8f8996;
+  --line: #57525e;
+  --fg: #f1ecf4;
+  --muted: #d0c9d4;
+  --faint: #9a94a1;
   --primary: #f3eef8;
   --on-primary: #1b1620;
   --lilac: #cbb4f1;
@@ -36,7 +38,8 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 *, *::before, *::after { box-sizing: border-box; }
-html { font-size: 18px; background: var(--bg); }
+html { font-size: 20px; background: var(--bg); }
+@media (max-width: 360px) { html { font-size: 18px; } }
 body {
   margin: 0; background: var(--bg); color: var(--fg);
   font-family: var(--font); font-size: 1rem; line-height: 1.5;
@@ -45,164 +48,163 @@ body {
 }
 body.locked { overflow: hidden; }
 button, input, textarea { font: inherit; color: inherit; }
-button { background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+button { background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 3px solid var(--lilac); outline-offset: 3px; }
 [hidden] { display: none !important; }
-.ic { width: 1.4rem; height: 1.4rem; flex: none; display: block; }
+.ic { width: 1.3rem; height: 1.3rem; flex: none; display: block; }
 .num { font-variant-numeric: tabular-nums; }
 
 .glow {
   position: absolute; inset: 0 0 auto; height: 34rem; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(60% 55% at 50% 30%, rgba(124, 92, 190, .30), transparent 70%),
+    radial-gradient(60% 50% at 50% 32%, rgba(124, 92, 190, .28), transparent 70%),
     radial-gradient(40% 40% at 85% 10%, rgba(92, 207, 196, .10), transparent 70%);
 }
 .app {
-  position: relative; z-index: 1; max-width: 32rem; margin: 0 auto;
+  position: relative; z-index: 1; max-width: 30rem; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 1.2rem 3rem;
-  display: flex; flex-direction: column; gap: 1.6rem;
+  padding-block: 1rem 3rem;
+  display: flex; flex-direction: column; gap: 2.4rem;
 }
+
+/* ——— numbered steps ——— */
+.step { display: flex; flex-direction: column; gap: 1rem; }
+.step-h { margin: 0; display: flex; align-items: center; gap: .7rem; font-size: 1.3rem; font-weight: 700; line-height: 1.35; }
+.step-n {
+  position: relative; flex: none; width: 2.3rem; height: 2.3rem; border-radius: 50%;
+  display: grid; place-items: center; background: var(--primary); color: var(--on-primary); font-size: 1.1rem; font-weight: 700;
+}
+.step-n .ic { width: 1.3rem; height: 1.3rem; stroke-width: 3; }
+.step-n.done { background: var(--yes); color: var(--yes-ink); }
+.step-p { margin: -.5rem 0 0; color: var(--muted); font-size: 1rem; display: flex; flex-wrap: wrap; gap: .3rem .9rem; }
+.key-dot { display: inline-flex; align-items: center; gap: .35rem; }
+.key-dot i { width: .9rem; height: .9rem; border-radius: 50%; display: inline-block; }
+.key-dot .g { background: var(--yes); }
+.key-dot .x { border: 2px dashed var(--faint); }
 
 /* ——— the bill ring ——— */
-.hero { display: flex; flex-direction: column; align-items: center; gap: .9rem; }
-.ring-wrap { position: relative; width: min(84vw, 20rem); aspect-ratio: 1; max-width: 100%; }
+.hero { display: flex; flex-direction: column; align-items: center; gap: .8rem; }
+.ring-wrap { position: relative; width: min(82vw, 17rem); aspect-ratio: 1; max-width: 100%; }
 .ring { width: 100%; height: 100%; display: block; overflow: visible; }
 .ring-track { fill: none; stroke: rgba(255, 255, 255, .06); stroke-width: 24; }
-.seg { fill: none; stroke-width: 24; stroke-linecap: round; cursor: pointer; transition: stroke-width .35s, opacity .35s; }
-.ring.focus .seg { opacity: .22; }
-.ring.focus .seg.on { opacity: 1; stroke-width: 30; }
+.seg { fill: none; stroke-width: 24; stroke-linecap: round; cursor: pointer; }
 .ring-center {
-  position: absolute; inset: 17%; border-radius: 50%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; text-align: center;
-  background: radial-gradient(circle at 50% 35%, #2a2631, #1b1920 70%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), 0 20px 50px -20px rgba(0, 0, 0, .8);
+  position: absolute; inset: 15%; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  background: radial-gradient(circle at 50% 35%, #2c2833, #1b1920 70%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07), 0 20px 50px -20px rgba(0, 0, 0, .8);
 }
-.rc-full { display: flex; flex-direction: column; align-items: center; gap: .15rem; }
-.rc-lbl { font-size: .9rem; color: var(--muted); }
-.rc-num { display: flex; align-items: baseline; gap: .35rem; }
-.rc-num b { font-size: clamp(2.3rem, 12vw, 2.9rem); font-weight: 700; line-height: 1.1; letter-spacing: -.5px; }
-.rc-num small { font-size: 1rem; color: var(--muted); }
-.rc-edit { display: inline-flex; align-items: center; gap: .3rem; margin-top: .35rem; padding: .3rem .8rem; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac); font-size: .82rem; }
-.rc-edit .ic { width: 1rem; height: 1rem; }
-.rc-empty { display: flex; flex-direction: column; align-items: center; gap: .5rem; font-size: 1.15rem; font-weight: 600; line-height: 1.4; }
-.rc-plus { width: 3.4rem; height: 3.4rem; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
-.rc-plus .ic { width: 1.8rem; height: 1.8rem; stroke-width: 2.4; }
+.rc-full { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+.rc-lbl { font-size: .85rem; color: var(--muted); }
+.rc-num { display: flex; align-items: baseline; gap: .3rem; }
+.rc-num b { font-size: clamp(2.1rem, 11vw, 2.6rem); font-weight: 700; line-height: 1.15; }
+.rc-num small { font-size: .9rem; color: var(--muted); }
+.rc-edit { display: inline-flex; align-items: center; gap: .3rem; margin-top: .3rem; padding: .25rem .8rem; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac); font-size: .8rem; }
+.rc-edit .ic { width: .95rem; height: .95rem; }
+.rc-empty { display: flex; flex-direction: column; align-items: center; gap: .45rem; font-size: 1.1rem; font-weight: 700; line-height: 1.35; }
+.rc-plus { width: 3.3rem; height: 3.3rem; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
+.rc-plus .ic { width: 1.7rem; height: 1.7rem; stroke-width: 2.6; }
 .per {
-  display: flex; align-items: baseline; gap: .5rem; padding: .7rem 1.4rem; border-radius: 999px;
-  background: var(--surface-hi); border: 1px solid rgba(255, 255, 255, .06);
+  display: flex; align-items: baseline; gap: .45rem; padding: .65rem 1.4rem; border-radius: 999px;
+  background: var(--surface-hi); border: 1px solid rgba(255, 255, 255, .07);
 }
-.per span { color: var(--muted); font-size: 1rem; }
+.per span { color: var(--muted); }
 .per b { font-size: 1.6rem; font-weight: 700; }
 .per small { color: var(--muted); font-size: .9rem; }
-.heads { margin: 0; color: var(--muted); font-size: 1rem; }
+.heads { margin: 0; color: var(--muted); }
 .heads b { color: var(--fg); font-weight: 600; }
 
-/* ——— families ——— */
-.sec-h { display: flex; flex-direction: column; gap: .1rem; }
-.sec-h h2 { margin: 0; font-size: 1.5rem; font-weight: 700; }
-.sec-h p { margin: 0; color: var(--muted); font-size: 1rem; }
-.list { list-style: none; margin: .9rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
-.fam { border-radius: 1.6rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .05); overflow: hidden; transition: background-color .3s, border-color .3s; }
-.fam.open { background: var(--surface-hi); border-color: color-mix(in srgb, var(--c) 45%, transparent); }
-.fam-head { width: 100%; display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: .9rem; row-gap: .35rem; padding: 1rem; text-align: start; }
-.fam-head .av { grid-row: 1 / 3; }
-.fam-meta { grid-column: 2 / 4; display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-width: 0; }
+/* ——— families, always open ——— */
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1rem; }
+.fam { border-radius: 1.5rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); padding: 1rem; display: flex; flex-direction: column; gap: .9rem; }
+.fam-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; column-gap: .8rem; }
 .av {
-  flex: none; width: 3.3rem; height: 3.3rem; border-radius: 50%;
-  background: var(--c); color: #16131b; display: grid; place-items: center; font-size: 1.4rem; font-weight: 700;
+  grid-row: 1 / 3; width: 2.9rem; height: 2.9rem; border-radius: 50%;
+  background: var(--c); color: #16131b; display: grid; place-items: center; font-size: 1.25rem; font-weight: 700;
   transition: filter .3s;
 }
 .fam.none .av { filter: grayscale(1) brightness(.6); }
-.fam-name { min-width: 0; font-size: 1.3rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
-.fam-sub { font-size: 1rem; color: var(--muted); min-width: 0; }
-.fam-amt { flex: none; display: inline-flex; align-items: baseline; gap: .25rem; padding: .45rem 1rem; border-radius: 999px; background: var(--surface-top); }
-.fam-amt b { font-size: 1.25rem; font-weight: 700; }
-.fam-amt small { font-size: .78rem; color: var(--muted); }
-.chev { flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--surface-top); display: grid; place-items: center; color: var(--muted); }
-.fam-body { height: 0; overflow: hidden; }
-.fam-in { padding: 0 .8rem .9rem; display: flex; flex-direction: column; gap: .7rem; }
-.mems { list-style: none; margin: 0; padding: .7rem 0 0; border-top: 1px solid rgba(255, 255, 255, .07); display: flex; flex-direction: column; gap: .5rem; }
+.fam-name { min-width: 0; font-size: 1.2rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.fam-sub { grid-column: 2; font-size: .9rem; color: var(--muted); }
+.fam-amt { grid-column: 3; grid-row: 1 / 3; display: flex; flex-direction: column; align-items: center; padding: .4rem .9rem; border-radius: 1rem; background: var(--surface-top); min-width: 4.6rem; }
+.fam-amt b { font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
+.fam-amt small { font-size: .75rem; color: var(--muted); }
+.mems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
 .mem {
-  width: 100%; min-height: 4rem; display: flex; align-items: center; gap: .8rem; padding: .5rem .55rem .5rem 1rem;
-  border-radius: 1.2rem; background: rgba(255, 255, 255, .04); text-align: start;
-  transition: background-color .3s;
+  width: 100%; min-height: 3.7rem; display: flex; align-items: center; gap: .55rem; padding: .45rem .7rem .45rem .5rem;
+  border-radius: 1.1rem; text-align: start; border: 2px dashed var(--line); background: transparent; color: var(--faint);
+  transition: background-color .25s, border-color .25s, color .25s;
 }
-.mem.on { background: rgba(126, 224, 165, .10); }
-.mem-name { flex: 1; min-width: 0; font-size: 1.2rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s; }
-.mem:not(.on) .mem-name { color: var(--faint); }
-.tag {
-  flex: none; display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
-  min-width: 6.6rem; height: 3rem; padding: 0 1rem; border-radius: 999px;
-  font-size: 1.05rem; font-weight: 600; border: 2px solid var(--line); color: var(--muted);
-  transition: background-color .3s, border-color .3s, color .3s;
-}
-.tag .ic { width: 1.2rem; height: 1.2rem; stroke-width: 2.8; }
-.mem.on .tag { background: var(--yes); border-color: var(--yes); color: var(--yes-ink); }
-.fam-actions { display: flex; gap: .6rem; }
-.fam-actions button { height: 3.4rem; border-radius: 999px; font-size: 1.05rem; font-weight: 600; padding: 0 1.2rem; }
-.btn-all { background: var(--surface-top); }
-.btn-done { flex: 1; background: var(--primary); color: var(--on-primary); }
+.mem.on { background: var(--yes); border: 2px solid var(--yes); color: var(--yes-ink); }
+.mk { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
+.mem.on .mk { background: rgba(6, 48, 26, .14); }
+.mk .ic { width: 1.15rem; height: 1.15rem; stroke-width: 3; }
+.mt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.mn { font-size: 1.1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
+.ms { font-size: .78rem; font-weight: 500; opacity: .85; }
+.fam-empty { margin: 0; color: var(--faint); font-size: .95rem; }
 
-/* ——— send & small actions ——— */
-.end { display: flex; flex-direction: column; gap: .7rem; }
-.btn { height: 3.8rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.15rem; font-weight: 600; }
+/* ——— send ——— */
+.btn { min-height: 3.9rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.15rem; font-weight: 700; padding: 0 1.2rem; text-align: center; }
 .btn .ic { width: 1.5rem; height: 1.5rem; }
 .btn-wa { background: var(--wa); color: var(--wa-ink); }
-.btn-soft { background: var(--surface-hi); }
-.quiet { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; margin-top: .4rem; }
-.quiet button { height: 2.8rem; padding: 0 1rem; border-radius: 999px; color: var(--muted); font-size: .95rem; display: inline-flex; align-items: center; gap: .4rem; }
-.quiet .ic { width: 1.1rem; height: 1.1rem; }
+.btn-soft { background: var(--surface-hi); font-weight: 600; }
+.btn-soft.talking { background: var(--lilac-bg); color: var(--lilac); }
+.quiet { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
+.quiet button { min-height: 2.8rem; padding: 0 1rem; border-radius: 999px; color: var(--muted); font-size: .9rem; display: inline-flex; align-items: center; gap: .4rem; border: 1px solid rgba(255, 255, 255, .1); }
+.quiet .ic { width: 1.05rem; height: 1.05rem; }
 
 /* ——— sheets ——— */
-.scrim { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .62); }
+.scrim { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .66); }
 .sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 31; max-width: 32rem; margin: 0 auto;
-  border-radius: 1.9rem 1.9rem 0 0; background: #1b191f; border-top: 1px solid rgba(255, 255, 255, .07);
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 31; max-width: 30rem; margin: 0 auto;
+  border-radius: 1.8rem 1.8rem 0 0; background: #1b191f; border-top: 1px solid rgba(255, 255, 255, .08);
 }
 .sheet-in {
-  max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain;
-  padding: 0 max(18px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
-  display: flex; flex-direction: column; gap: .9rem;
+  max-height: 94dvh; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  display: flex; flex-direction: column; gap: .8rem;
 }
 .sheet-in > * { flex-shrink: 0; }
 .sheet-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding-top: 1.1rem; touch-action: none; }
-.sheet-top h2 { margin: 0; font-size: 1.3rem; font-weight: 700; }
-.x-btn { height: 2.8rem; padding: 0 1rem; border-radius: 999px; background: var(--surface-hi); display: inline-flex; align-items: center; gap: .35rem; font-size: .95rem; color: var(--muted); }
-.x-btn .ic { width: 1.1rem; height: 1.1rem; }
+.sheet-top h2 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+.x-btn { min-height: 2.7rem; padding: 0 .95rem; border-radius: 999px; background: var(--surface-hi); display: inline-flex; align-items: center; gap: .35rem; font-size: .9rem; color: var(--muted); }
+.x-btn .ic { width: 1.05rem; height: 1.05rem; }
 .handle { position: absolute; top: .45rem; left: 50%; width: 2.6rem; height: .3rem; margin-left: -1.3rem; border-radius: 9px; background: var(--line); }
-.disp { display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .4rem 0; }
+.disp { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
 .disp-row { display: flex; align-items: baseline; gap: .5rem; }
-.disp-val { display: flex; direction: ltr; font-size: clamp(2.8rem, 15vw, 3.6rem); font-weight: 700; line-height: 1.15; min-height: 4.2rem; padding: 0 .4rem; border-radius: 1rem; }
+.disp-val { display: flex; direction: ltr; font-size: clamp(2.6rem, 14vw, 3.2rem); font-weight: 700; line-height: 1.15; min-height: 3.8rem; padding: 0 .4rem; border-radius: 1rem; }
 .disp-val span { display: inline-block; }
 .disp-val.ph { color: var(--faint); }
 .disp-val.fresh { background: var(--lilac-bg); }
-.disp-row small { font-size: 1.1rem; color: var(--muted); }
-.disp-hint { font-size: 1rem; color: var(--lilac); min-height: 1.5rem; }
-.keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; direction: ltr; }
-.key { height: 4.2rem; border-radius: 1.3rem; background: var(--surface-hi); font-size: 1.9rem; font-weight: 600; display: grid; place-items: center; }
-.key.fn { background: transparent; border: 2px solid var(--surface-top); font-size: 1.05rem; color: var(--muted); }
-.key .ic { width: 1.8rem; height: 1.8rem; }
-.btn-ok { height: 4rem; border-radius: 999px; background: var(--primary); color: var(--on-primary); font-size: 1.25rem; font-weight: 700; }
+.disp-row small { font-size: 1rem; color: var(--muted); }
+.disp-hint { font-size: .95rem; color: var(--lilac); min-height: 1.45rem; }
+.keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; direction: ltr; }
+.key { height: 3.6rem; border-radius: 1.2rem; background: var(--surface-hi); font-size: 1.7rem; font-weight: 600; display: grid; place-items: center; }
+.key.fn { background: transparent; border: 2px solid var(--surface-top); font-size: .95rem; color: var(--muted); }
+.key .ic { width: 1.6rem; height: 1.6rem; }
+.btn-ok { min-height: 3.8rem; border-radius: 999px; background: var(--yes); color: var(--yes-ink); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: .5rem; }
+.btn-ok .ic { width: 1.5rem; height: 1.5rem; stroke-width: 3; }
 .field { display: flex; flex-direction: column; gap: .5rem; }
-.field span { color: var(--muted); font-size: .95rem; }
+.field span { color: var(--muted); font-size: .9rem; }
 .field textarea {
-  width: 100%; min-height: 16rem; resize: vertical; border-radius: 1.2rem; padding: 1rem 1.1rem;
-  background: var(--surface); border: 1px solid var(--line); outline: none; font-size: 1.1rem; line-height: 1.8;
+  width: 100%; min-height: 15rem; resize: vertical; border-radius: 1.2rem; padding: 1rem 1.1rem;
+  background: var(--surface); border: 1px solid var(--line); outline: none; font-size: 1.05rem; line-height: 1.8;
 }
 .field textarea:focus { border-color: var(--lilac); }
 
 .toast {
   position: fixed; z-index: 40; left: 0; right: 0; bottom: calc(1.2rem + env(safe-area-inset-bottom, 0px));
   margin: 0 auto; width: fit-content; max-width: calc(100% - 32px);
-  display: flex; align-items: center; gap: .8rem; padding: .6rem .6rem .6rem 1.3rem; border-radius: 999px;
-  background: var(--primary); color: var(--on-primary); font-size: 1rem; font-weight: 500;
+  display: flex; align-items: center; gap: .8rem; padding: .55rem .55rem .55rem 1.2rem; border-radius: 999px;
+  background: var(--primary); color: var(--on-primary); font-size: 1rem; font-weight: 600;
   box-shadow: 0 14px 40px -10px rgba(0, 0, 0, .7);
 }
 .toast:not(.has-undo) { padding: .8rem 1.4rem; }
-.toast button { height: 2.6rem; padding: 0 1.1rem; border-radius: 999px; background: var(--on-primary); color: var(--primary); font-weight: 600; }
+.toast button { min-height: 2.7rem; padding: 0 1.1rem; border-radius: 999px; background: var(--on-primary); color: var(--primary); font-weight: 700; }
 .confetti { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
 .confetti i { position: absolute; display: block; border-radius: 2px; }
 </style>
@@ -212,38 +214,42 @@ a { color: inherit; text-decoration: none; }
 <!--BODY-START-->
 <div class="glow" aria-hidden="true"></div>
 <main class="app" id="app" dir="rtl" lang="ar">
-  <section class="hero" aria-label="الفاتورة">
-    <div class="ring-wrap">
-      <svg class="ring" id="ring" viewBox="0 0 300 300">
-        <circle class="ring-track" cx="150" cy="150" r="128"></circle>
-        <g id="segs" transform="rotate(-90 150 150)"></g>
-      </svg>
-      <button class="ring-center press" id="priceBtn" type="button">
-        <span class="rc-empty" id="rcEmpty"><span class="rc-plus" data-ic="plus"></span>اضغط هنا<br>واكتب المبلغ</span>
-        <span class="rc-full" id="rcFull" hidden>
-          <span class="rc-lbl">مبلغ الفاتورة</span>
-          <span class="rc-num"><b class="num" id="totalVal">٠</b><small>ر.س</small></span>
-          <span class="rc-edit"><span data-ic="edit"></span>غيّر المبلغ</span>
-        </span>
-      </button>
+
+  <section class="step" id="step1" aria-labelledby="h1">
+    <h2 class="step-h" id="h1"><span class="step-n" id="n1">١</span>اكتب مبلغ الفاتورة</h2>
+    <div class="hero">
+      <div class="ring-wrap">
+        <svg class="ring" id="ring" viewBox="0 0 300 300" aria-hidden="true">
+          <circle class="ring-track" cx="150" cy="150" r="128"></circle>
+          <g id="segs" transform="rotate(-90 150 150)"></g>
+        </svg>
+        <button class="ring-center press" id="priceBtn" type="button">
+          <span class="rc-empty" id="rcEmpty"><span class="rc-plus" id="rcPlus" data-ic="plus"></span>اضغط هنا</span>
+          <span class="rc-full" id="rcFull" hidden>
+            <span class="rc-lbl">الفاتورة</span>
+            <span class="rc-num"><b class="num" id="totalVal">٠</b><small>ريال</small></span>
+            <span class="rc-edit"><span data-ic="edit"></span>تغيير</span>
+          </span>
+        </button>
+      </div>
+      <div class="per" id="perBox" hidden><span>على الشخص</span><b class="num" id="perVal">٠</b><small>ريال</small></div>
+      <p class="heads" id="headsLine"></p>
     </div>
-    <div class="per" id="perBox" hidden><span>على الشخص</span><b class="num" id="perVal">٠</b><small>ر.س</small></div>
-    <p class="heads" id="headsLine"></p>
   </section>
 
-  <section class="fams" aria-labelledby="famsTitle">
-    <div class="sec-h">
-      <h2 id="famsTitle">مين حضر؟</h2>
-      <p>اضغط على العائلة وحدد مين جاء</p>
-    </div>
+  <section class="step" id="step2" aria-labelledby="h2">
+    <h2 class="step-h" id="h2"><span class="step-n" id="n2">٢</span>اضغط على اللي ما حضر</h2>
+    <p class="step-p"><span class="key-dot"><i class="g"></i>أخضر: حاضر</span><span class="key-dot"><i class="x"></i>مشطوب: ما حضر</span></p>
     <ul class="list" id="list"></ul>
   </section>
 
-  <section class="end" aria-label="إرسال النتيجة">
-    <a class="btn btn-wa press" id="waBtn" href="#" target="_blank" rel="noopener"><span data-ic="send"></span>أرسل النتيجة في واتساب</a>
-    <button class="btn btn-soft press" id="copyBtn" type="button"><span data-ic="copy"></span>انسخ النتيجة</button>
+  <section class="step" id="step3" aria-labelledby="h3">
+    <h2 class="step-h" id="h3"><span class="step-n" id="n3">٣</span>أرسل الحساب للعائلة</h2>
+    <a class="btn btn-wa press" id="waBtn" href="#" target="_blank" rel="noopener"><span data-ic="send"></span>أرسل في واتساب</a>
+    <button class="btn btn-soft press" id="speakBtn" type="button" hidden><span data-ic="sound"></span><span id="speakLbl">اسمع الحساب</span></button>
     <div class="quiet">
-      <button id="resetBtn" type="button"><span data-ic="redo"></span>الكل حاضر من جديد</button>
+      <button id="resetBtn" type="button"><span data-ic="redo"></span>عزيمة جديدة</button>
+      <button id="copyBtn" type="button"><span data-ic="copy"></span>انسخ</button>
       <button id="editBtn" type="button"><span data-ic="edit"></span>عدّل الأسماء</button>
     </div>
   </section>
@@ -254,13 +260,13 @@ a { color: inherit; text-decoration: none; }
 <div class="sheet" id="priceSheet" role="dialog" aria-modal="true" aria-labelledby="priceTitle" hidden dir="rtl">
   <span class="handle" aria-hidden="true"></span>
   <div class="sheet-in">
-    <div class="sheet-top"><h2 id="priceTitle">كم مبلغ الفاتورة؟</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
+    <div class="sheet-top"><h2 id="priceTitle">كم الفاتورة؟</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
     <div class="disp">
-      <div class="disp-row"><span class="disp-val num" id="dispVal"></span><small>ر.س</small></div>
+      <div class="disp-row"><span class="disp-val num" id="dispVal"></span><small>ريال</small></div>
       <span class="disp-hint" id="dispHint"></span>
     </div>
     <div class="keys" id="keys"></div>
-    <button class="btn-ok press" id="priceOk" type="button">تم</button>
+    <button class="btn-ok press" id="priceOk" type="button"><span data-ic="check"></span>تم</button>
   </div>
 </div>
 
@@ -271,14 +277,14 @@ a { color: inherit; text-decoration: none; }
     <label class="field"><span>كل عائلة في سطر: اسم العائلة، بعدها نقطتين، بعدها الأفراد بينهم فاصلة</span>
       <textarea id="namesText" spellcheck="false"></textarea>
     </label>
-    <button class="btn-ok press" id="namesOk" type="button">احفظ</button>
+    <button class="btn-ok press" id="namesOk" type="button"><span data-ic="check"></span>احفظ</button>
   </div>
 </div>
 
 <div class="sheet" id="copySheet" role="dialog" aria-modal="true" aria-labelledby="copyTitle" hidden dir="rtl">
   <span class="handle" aria-hidden="true"></span>
   <div class="sheet-in">
-    <div class="sheet-top"><h2 id="copyTitle">انسخ النتيجة</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
+    <div class="sheet-top"><h2 id="copyTitle">انسخ الحساب</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
     <label class="field"><span>حدّد النص وانسخه</span><textarea id="copyText" readonly></textarea></label>
   </div>
 </div>
@@ -330,11 +336,12 @@ const I = {
   edit: svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
   close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
   check: svg('<path class="ck" d="M20 6 9 17l-5-5" pathLength="1"/>'),
-  chev: svg('<path d="m6 9 6 6 6-6"/>'),
   back: svg('<path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m18 9-6 6M12 9l6 6"/>'),
   send: svg('<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>'),
   copy: svg('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
   redo: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'),
+  sound: svg('<path d="M11 5 6 9H2v6h4l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),
+  stop: svg('<rect x="6" y="6" width="12" height="12" rx="2"/>'),
 };
 $$('[data-ic]').forEach(el => { el.innerHTML = I[el.dataset.ic]; });
 
@@ -364,10 +371,9 @@ let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
 const color = i => COLORS[i % COLORS.length];
 
-// ——— numbers ———
-const NF = new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 2 });
-const NFI = new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 0 });
-const fmt = n => NF.format(Math.round((+n || 0) * 100) / 100);
+// ——— numbers: whole riyals only ———
+const NF = new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 0 });
+const fmt = n => NF.format(Math.round(+n || 0));
 const initial = name => (String(name).trim().replace(/^(عائلة|عايلة|عائله|بيت|آل)\s+/, '').replace(/^(أبو|ابو|أم|ام)\s+/, '')[0] || '؟');
 function compute() {
   let heads = 0, all = 0;
@@ -377,15 +383,16 @@ function compute() {
     heads += n; all += f.members.length;
     rows.set(f.id, n);
   }
-  const per = heads ? state.total / heads : 0;
-  return { heads, all, per, rows, share: id => Math.round(per * rows.get(id) * 100) / 100 };
+  // each person pays the same whole number of riyals, rounded up so the bill is always covered
+  const per = heads && state.total ? Math.ceil(state.total / heads - 1e-9) : 0;
+  return { heads, all, per, rows, share: id => per * rows.get(id) };
 }
 function setNum(el, to, anim = true) {
   const prev = el.dataset.val;
   const from = prev === undefined || prev === '' ? null : +prev;
   el.dataset.val = to;
   if (el._tw) el._tw.kill();
-  if (!anim || from === null || Math.abs(from - to) < .005) { el.textContent = fmt(to); return; }
+  if (!anim || from === null || from === to) { el.textContent = fmt(to); return; }
   const o = { v: from };
   el._tw = gsap.to(o, { v: to, duration: .8, ease: 'springOut', onUpdate: () => { el.textContent = fmt(o.v); } });
 }
@@ -393,7 +400,7 @@ function haptic(ms = 8) { try { navigator.vibrate && navigator.vibrate(ms); } ca
 function pop(el, from = .94) { gsap.fromTo(el, { scale: from }, { scale: 1, duration: .6, ease: 'spring', clearProps: 'scale' }); }
 
 // ——— the ring: one piece per family, sized by how many of them came ———
-const segG = $('#segs'), ring = $('#ring');
+const segG = $('#segs');
 const R = 128, GAP = 5.4;
 const segs = new Map();
 function drawSeg(s) {
@@ -433,42 +440,41 @@ function updateRing(c, anim = true, stagger = 0) {
 }
 segG.addEventListener('click', e => {
   const el = e.target.closest('.seg');
-  if (el) openFamily(el.dataset.id, true);
+  const li = el && famEl(el.dataset.id);
+  if (!li) return;
+  scrollToEl(li);
+  setTimeout(() => pop(li, .96), 350);
 });
 
-// ——— the families ———
+// ——— the families: every name is visible, one tap flips it ———
 const list = $('#list');
-let openId = null;
 const famEl = id => list.querySelector(`.fam[data-id="${id}"]`);
-const tagHTML = on => `${on ? I.check : ''}<span class="tag-l">${on ? 'حاضر' : 'غايب'}</span>`;
+const markHTML = on => `<span class="mk">${on ? I.check : I.close}</span>`;
 function memberHTML(m) {
   return `<li><button type="button" class="mem press ${m.present ? 'on' : ''}" role="switch" aria-checked="${m.present}" data-mid="${m.id}">
-    <span class="mem-name">${esc(m.name)}</span>
-    <span class="tag">${tagHTML(m.present)}</span>
+    ${markHTML(m.present)}<span class="mt"><span class="mn">${esc(m.name)}</span><span class="ms">${m.present ? 'حاضر' : 'ما حضر'}</span></span>
   </button></li>`;
 }
 function renderList() {
   list.innerHTML = state.families.map((f, i) => `<li class="fam" data-id="${f.id}" style="--c:${color(i)}">
-    <button type="button" class="fam-head press" aria-expanded="false">
+    <div class="fam-head">
       <span class="av" aria-hidden="true">${esc(initial(f.name))}</span>
       <span class="fam-name">${esc(f.name)}</span>
-      <span class="chev" aria-hidden="true">${I.chev}</span>
-      <span class="fam-meta"><span class="fam-sub"></span><span class="fam-amt"><b class="num"></b><small>ر.س</small></span></span>
-    </button>
-    <div class="fam-body"><div class="fam-in">
-      <ul class="mems">${f.members.map(memberHTML).join('')}</ul>
-      <div class="fam-actions"><button type="button" class="btn-all press">كلهم حضروا</button><button type="button" class="btn-done press">تم</button></div>
-    </div></div>
+      <span class="fam-sub"></span>
+      <span class="fam-amt"><b class="num"></b><small>ريال</small></span>
+    </div>
+    ${f.members.length ? `<ul class="mems">${f.members.map(memberHTML).join('')}</ul>` : '<p class="fam-empty">ما فيه أسماء. أضفها من "عدّل الأسماء" تحت.</p>'}
   </li>`).join('');
 }
 function famSub(f, n) {
-  if (!f.members.length) return 'ما فيه أسماء';
+  if (!f.members.length) return '';
   if (n === 0) return 'ما حضر أحد';
-  if (n === f.members.length) return n === 1 ? 'حضر' : 'كلهم حضروا';
-  return `حضر ${fmt(n)} من ${fmt(f.members.length)}`;
+  if (n === f.members.length) return n === 1 ? 'حاضر' : 'كلهم حاضرين';
+  return `${fmt(n)} من ${fmt(f.members.length)} حاضرين`;
 }
 
 // ——— update everything from state ———
+let pulse = null;
 function update(anim = true) {
   const c = compute();
   const has = state.total > 0;
@@ -476,6 +482,16 @@ function update(anim = true) {
   if (full.hidden === has) {
     empty.hidden = has; full.hidden = !has;
     if (anim) gsap.fromTo(has ? full : empty, { opacity: 0, scale: .85 }, { opacity: 1, scale: 1, duration: .7, ease: 'spring', clearProps: 'all' });
+  }
+  // gently breathe the "press here" button until a price is entered
+  if (!has && !pulse && !REDUCED) pulse = gsap.to('#rcPlus', { scale: 1.12, duration: .9, ease: 'sine.inOut', repeat: -1, yoyo: true });
+  if (has && pulse) { pulse.kill(); pulse = null; gsap.set('#rcPlus', { clearProps: 'scale' }); }
+
+  const n1 = $('#n1');
+  if (n1.classList.contains('done') !== has) {
+    n1.classList.toggle('done', has);
+    n1.innerHTML = has ? I.check : '١';
+    if (anim) pop(n1, .5);
   }
   setNum($('#totalVal'), state.total, anim);
   const perBox = $('#perBox');
@@ -486,9 +502,9 @@ function update(anim = true) {
   }
   setNum($('#perVal'), c.per, anim);
   $('#headsLine').innerHTML = c.heads
-    ? `حاضرين <b class="num">${fmt(c.heads)}</b> من <b class="num">${fmt(c.all)}</b>`
-    : 'ما حددت أحد حاضر للحين';
-  $('#priceBtn').setAttribute('aria-label', has ? `مبلغ الفاتورة ${fmt(state.total)} ريال، اضغط للتغيير` : 'اضغط واكتب مبلغ الفاتورة');
+    ? `الحاضرين <b class="num">${fmt(c.heads)}</b> من <b class="num">${fmt(c.all)}</b>`
+    : 'ما فيه أحد حاضر';
+  $('#priceBtn').setAttribute('aria-label', has ? `الفاتورة ${fmt(state.total)} ريال، اضغط للتغيير` : 'اضغط هنا واكتب مبلغ الفاتورة');
   updateRing(c, anim);
   state.families.forEach(f => {
     const li = famEl(f.id);
@@ -499,108 +515,55 @@ function update(anim = true) {
     const amt = $('.fam-amt', li);
     amt.hidden = !has;
     if (has) setNum($('b', amt), c.share(f.id), anim);
-    $('.fam-head', li).setAttribute('aria-label', `${f.name}، ${famSub(f, n)}${has ? `، عليهم ${fmt(c.share(f.id))} ريال` : ''}`);
   });
   $('#waBtn').href = 'https://wa.me/?text=' + encodeURIComponent(summary());
   return c;
 }
 
-// ——— open / close a family in place ———
-function openFamily(id, fromRing = false) {
-  if (openId === id) { if (fromRing) scrollToEl(famEl(id)); else closeFamily(); return; }
-  if (openId) closeFamily(false);
-  const li = famEl(id);
-  if (!li) return;
-  openId = id;
-  haptic(6);
-  li.classList.add('open');
-  $('.fam-head', li).setAttribute('aria-expanded', 'true');
-  const body = $('.fam-body', li);
-  gsap.killTweensOf(body);
-  gsap.to(body, { height: 'auto', duration: .7, ease: 'springOut' });
-  gsap.to($('.chev', li), { rotation: 180, duration: .8, ease: 'spring' });
-  gsap.fromTo($$('.mems > li, .fam-actions > *', body), { y: 24, opacity: 0 },
-    { y: 0, opacity: 1, duration: .5, stagger: .04, delay: .05, ease: 'springSoft', clearProps: 'transform,opacity' });
-  pop($('.av', li), .7);
-  ring.classList.add('focus');
-  segs.forEach((s, sid) => s.el.classList.toggle('on', sid === id));
-  setTimeout(() => scrollToEl(li), fromRing ? 0 : 120);
-}
-function closeFamily(scroll = true) {
-  const li = openId && famEl(openId);
-  openId = null;
-  ring.classList.remove('focus');
-  segs.forEach(s => s.el.classList.remove('on'));
-  if (!li) return;
-  li.classList.remove('open');
-  $('.fam-head', li).setAttribute('aria-expanded', 'false');
-  const body = $('.fam-body', li);
-  gsap.killTweensOf(body);
-  gsap.to(body, { height: 0, duration: .5, ease: 'springOut' });
-  gsap.to($('.chev', li), { rotation: 0, duration: .8, ease: 'spring' });
-  if (scroll && li.getBoundingClientRect().top < 0) scrollToEl(li);
-}
-function scrollToEl(el) {
-  const top = Math.max(0, el.getBoundingClientRect().top + scrollY - 16);
-  const y = { v: scrollY };
-  gsap.to(y, { v: top, duration: .8, ease: 'springOut', onUpdate: () => window.scrollTo(0, y.v) });
-}
-
+// ——— tap a name ———
 function syncMember(btn, present, anim = true, delay = 0) {
   btn.classList.toggle('on', present);
   btn.setAttribute('aria-checked', present);
-  const tag = $('.tag', btn);
-  tag.innerHTML = tagHTML(present);
+  $('.mk', btn).outerHTML = markHTML(present);
+  $('.ms', btn).textContent = present ? 'حاضر' : 'ما حضر';
   if (!anim) return;
-  gsap.fromTo(tag, { scale: .8 }, { scale: 1, duration: .7, delay, ease: 'spring', clearProps: 'scale' });
-  if (present) gsap.fromTo($('.ck', tag), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .4, delay: delay + .08, ease: 'springSoft' });
+  const mk = $('.mk', btn);
+  gsap.fromTo(btn, { scale: .9 }, { scale: 1, duration: .7, delay, ease: 'spring', clearProps: 'scale' });
+  gsap.fromTo(mk, { scale: .3, rotation: present ? -120 : 120 }, { scale: 1, rotation: 0, duration: .8, delay, ease: 'spring' });
+  if (present) gsap.fromTo($('.ck', mk), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .4, delay: delay + .1, ease: 'springSoft' });
 }
 list.addEventListener('click', e => {
-  const li = e.target.closest('.fam');
-  if (!li) return;
-  const f = state.families.find(x => x.id === li.dataset.id);
-  if (e.target.closest('.fam-head')) { openFamily(f.id); return; }
   const btn = e.target.closest('.mem');
-  if (btn) {
-    const m = f.members.find(x => x.id === btn.dataset.mid);
-    m.present = !m.present;
-    save(); haptic(m.present ? 14 : 8);
-    syncMember(btn, m.present);
-    update();
-    return;
-  }
-  if (e.target.closest('.btn-all')) {
-    let i = 0;
-    f.members.forEach(m => {
-      if (m.present) return;
-      m.present = true;
-      const b = $(`.mem[data-mid="${m.id}"]`, li);
-      if (b) syncMember(b, true, true, i * .06);
-      i++;
-    });
-    if (i) { save(); haptic(16); update(); }
-    return;
-  }
-  if (e.target.closest('.btn-done')) closeFamily();
+  if (!btn) return;
+  const f = state.families.find(x => x.id === btn.closest('.fam').dataset.id);
+  const m = f.members.find(x => x.id === btn.dataset.mid);
+  m.present = !m.present;
+  save(); haptic(m.present ? 14 : 8);
+  syncMember(btn, m.present);
+  const amt = $('.fam-amt', btn.closest('.fam'));
+  if (!amt.hidden) pop(amt, .85);
+  update();
 });
 
 // ——— price keypad ———
 const pad = { str: '', fresh: false };
 $('#keys').innerHTML = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'].map(k => {
-  if (k === 'clear') return '<button type="button" class="key fn press" data-k="clear">مسح الكل</button>';
+  if (k === 'clear') return '<button type="button" class="key fn press" data-k="clear">مسح</button>';
   if (k === 'back') return `<button type="button" class="key fn press" data-k="back" aria-label="امسح آخر رقم">${I.back}</button>`;
-  return `<button type="button" class="key press" data-k="${k}">${NFI.format(+k)}</button>`;
+  return `<button type="button" class="key press" data-k="${k}">${NF.format(+k)}</button>`;
 }).join('');
 function renderPad(popLast) {
   const el = $('#dispVal');
-  const txt = pad.str ? NFI.format(+pad.str) : '';
+  const txt = pad.str ? NF.format(+pad.str) : '';
   el.classList.toggle('ph', !txt);
   el.classList.toggle('fresh', pad.fresh && !!txt);
-  el.innerHTML = [...(txt || NFI.format(0))].map(ch => `<span>${esc(ch)}</span>`).join('');
+  el.innerHTML = [...(txt || NF.format(0))].map(ch => `<span>${esc(ch)}</span>`).join('');
   if (popLast && txt) gsap.fromTo(el.lastElementChild, { y: 26, opacity: 0, scale: .5 }, { y: 0, opacity: 1, scale: 1, duration: .6, ease: 'spring' });
   const c = compute();
   const v = +pad.str || 0;
-  $('#dispHint').textContent = pad.fresh && txt ? 'اكتب الرقم الجديد' : v && c.heads ? `يعني على الشخص ${fmt(v / c.heads)} ر.س` : '';
+  $('#dispHint').textContent = pad.fresh && txt ? 'اكتب الرقم الجديد'
+    : !txt ? 'اكتب المبلغ اللي في الفاتورة'
+    : c.heads ? `على الشخص ${fmt(Math.ceil(v / c.heads - 1e-9))} ريال` : '';
 }
 function shake(el) {
   haptic(30);
@@ -638,6 +601,7 @@ function priceDone() {
     if (state.total && state.total !== was) {
       const r = $('#priceBtn').getBoundingClientRect();
       burst(r.left + r.width / 2, r.top + r.height / 2, 28, 170);
+      haptic(25);
     }
   }, 200);
 }
@@ -649,7 +613,7 @@ const scrim = $('#scrim');
 let cur = null;
 function openSheet(id) {
   const sh = $('#' + id);
-  if (cur && cur !== sh) { cur.hidden = true; }
+  if (cur && cur !== sh) cur.hidden = true;
   cur = sh;
   sh.hidden = false; scrim.hidden = false;
   document.body.classList.add('locked');
@@ -693,7 +657,7 @@ $$('.sheet').forEach(sh => {
   sh.addEventListener('pointercancel', end);
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if (cur) closeSheet(); else if (openId) closeFamily(); return; }
+  if (e.key === 'Escape' && cur) { closeSheet(); return; }
   if (cur && cur.id === 'priceSheet') {
     const map = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
     const k = map[e.key] || e.key;
@@ -742,17 +706,19 @@ $('#namesOk').addEventListener('click', () => {
   setTimeout(() => { rebuild(true); toast('حفظنا الأسماء', before); }, 220);
 });
 
-// ——— start over for a new gathering ———
+// ——— a new gathering: clear the price and mark everyone present ———
 $('#resetBtn').addEventListener('click', () => {
   const before = JSON.stringify(state);
+  state.total = 0;
   state.families.forEach(f => f.members.forEach(m => { m.present = true; }));
   save();
-  $$('.mem', list).forEach((b, i) => { if (!b.classList.contains('on')) syncMember(b, true, true, i * .02); });
+  $$('.mem', list).forEach((b, i) => { if (!b.classList.contains('on')) syncMember(b, true, true, i * .03); });
   update();
-  toast('رجّعنا الكل حاضر', before);
+  window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' });
+  toast('بدينا عزيمة جديدة', before);
 });
 
-// ——— send the result ———
+// ——— send / listen ———
 function summary() {
   const c = compute();
   const L = ['حساب القطّة', `الفاتورة: ${fmt(state.total)} ريال`, `الحاضرين: ${fmt(c.heads)}، على الشخص ${fmt(c.per)} ريال`, ''];
@@ -762,19 +728,50 @@ function summary() {
   }
   return L.join('\n');
 }
-$('#waBtn').addEventListener('click', e => {
-  if (!state.total) { e.preventDefault(); toast('اكتب مبلغ الفاتورة أول'); shake($('#priceBtn')); }
-});
+function needPrice() {
+  toast('اكتب مبلغ الفاتورة أول');
+  window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' });
+  setTimeout(() => shake($('#priceBtn')), 300);
+}
+$('#waBtn').addEventListener('click', e => { if (!state.total) { e.preventDefault(); needPrice(); } });
 $('#copyBtn').addEventListener('click', () => {
-  if (!state.total) { toast('اكتب مبلغ الفاتورة أول'); shake($('#priceBtn')); return; }
+  if (!state.total) { needPrice(); return; }
   const text = summary();
   const fallback = () => {
     $('#copyText').value = text;
     openSheet('copySheet');
     setTimeout(() => { const t = $('#copyText'); t.focus(); t.select(); }, 450);
   };
-  try { navigator.clipboard.writeText(text).then(() => { toast('نسخنا النتيجة، الصقها في القروب'); haptic(15); }, fallback); }
+  try { navigator.clipboard.writeText(text).then(() => { toast('نسخنا الحساب'); haptic(15); }, fallback); }
   catch (e) { fallback(); }
+});
+// read the result aloud in Arabic, when the phone has a voice for it
+const synth = window.speechSynthesis;
+if (synth && window.SpeechSynthesisUtterance) $('#speakBtn').hidden = false;
+function setTalking(on) {
+  const b = $('#speakBtn');
+  b.classList.toggle('talking', on);
+  $('.ic', b).outerHTML = on ? I.stop : I.sound;
+  $('#speakLbl').textContent = on ? 'وقّف الصوت' : 'اسمع الحساب';
+}
+$('#speakBtn').addEventListener('click', () => {
+  if (!state.total) { needPrice(); return; }
+  if (synth.speaking) { synth.cancel(); setTalking(false); return; }
+  const c = compute();
+  const parts = [`الفاتورة ${Math.round(state.total)} ريال.`, `على الشخص ${c.per} ريال.`];
+  state.families.forEach(f => {
+    const n = c.rows.get(f.id);
+    parts.push(n ? `${f.name}: ${c.share(f.id)} ريال.` : `${f.name}: ما حضر أحد.`);
+  });
+  const u = new SpeechSynthesisUtterance(parts.join(' '));
+  u.lang = 'ar-SA';
+  u.rate = .85;
+  const v = synth.getVoices().find(x => /^ar/i.test(x.lang));
+  if (v) u.voice = v;
+  u.onend = u.onerror = () => setTalking(false);
+  synth.cancel();
+  synth.speak(u);
+  setTalking(true);
 });
 
 // ——— toast with undo ———
@@ -789,7 +786,7 @@ function toast(msg, snap) {
   if (toastTl) toastTl.kill();
   toastTl = gsap.timeline()
     .fromTo(t, { y: 40, opacity: 0, scale: .9 }, { y: 0, opacity: 1, scale: 1, duration: .7, ease: 'spring' })
-    .to(t, { y: 30, opacity: 0, duration: .3, delay: snap ? 4.5 : 2.2, ease: 'power2.in', onComplete: () => { t.hidden = true; } });
+    .to(t, { y: 30, opacity: 0, duration: .3, delay: snap ? 5 : 2.4, ease: 'power2.in', onComplete: () => { t.hidden = true; } });
 }
 $('#toastUndo').addEventListener('click', () => {
   if (!undoSnap) return;
@@ -800,17 +797,22 @@ $('#toastUndo').addEventListener('click', () => {
   toast('رجّعناها مثل ما كانت');
 });
 
-// ——— press feedback & confetti ———
+// ——— press feedback, scrolling & confetti ———
 document.addEventListener('pointerdown', e => {
   const p = e.target.closest('.press');
   if (!p) return;
-  gsap.to(p, { scale: .96, duration: .15, ease: 'power2.out' });
+  gsap.to(p, { scale: .95, duration: .15, ease: 'power2.out' });
   const up = () => {
     gsap.to(p, { scale: 1, duration: .5, ease: 'springOut', clearProps: 'scale' });
     removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
   };
   addEventListener('pointerup', up); addEventListener('pointercancel', up);
 });
+function scrollToEl(el) {
+  const top = Math.max(0, el.getBoundingClientRect().top + scrollY - 16);
+  const y = { v: scrollY };
+  gsap.to(y, { v: top, duration: .8, ease: 'springOut', onUpdate: () => window.scrollTo(0, y.v) });
+}
 function burst(x, y, count, spread) {
   const layer = $('#confetti');
   for (let i = 0; i < count; i++) {
@@ -827,8 +829,6 @@ function burst(x, y, count, spread) {
 
 // ——— boot ———
 function rebuild(anim) {
-  openId = null;
-  ring.classList.remove('focus');
   buildRing();
   renderList();
   update(false);
@@ -842,7 +842,8 @@ function intro() {
   const blur = px => TOUCH ? {} : { filter: `blur(${px}px)` };
   const c = compute();
   const tl = gsap.timeline();
-  tl.fromTo('.ring-center', { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, ease: 'spring', clearProps: 'all' }, 0)
+  tl.fromTo('#step1 .step-h', { y: 20, opacity: 0, ...blur(6) }, { y: 0, opacity: 1, ...blur(0), duration: .6, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, 0)
+    .fromTo('.ring-center', { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, ease: 'spring', clearProps: 'transform,opacity' }, .05)
     .fromTo('.ring-track', { opacity: 0 }, { opacity: 1, duration: .6 }, 0)
     .add(() => {
       segs.forEach(s => { s.start = 0; s.len = 0; drawSeg(s); });
@@ -852,10 +853,11 @@ function intro() {
       const t = $('#totalVal'); t.dataset.val = 0; setNum(t, state.total);
       const p = $('#perVal'); p.dataset.val = 0; setNum(p, c.per);
     }, .3)
-    .fromTo(['#perBox', '#headsLine'], { y: 16, opacity: 0, ...blur(6) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'all' }, .45)
-    .fromTo('.sec-h > *', { y: 24, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'all' }, .55)
-    .fromTo('.fam', { y: 50, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .7, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .62)
-    .fromTo('.end > *', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'all' }, .9);
+    .fromTo(['#perBox', '#headsLine'], { y: 16, opacity: 0, ...blur(6) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .45)
+    .fromTo('#step2 > :not(.list)', { y: 24, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .55)
+    .fromTo('.fam', { y: 50, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .7, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .62)
+    .fromTo('.mem', { scale: .85, opacity: 0 }, { scale: 1, opacity: 1, duration: .5, stagger: .02, ease: 'springSoft', clearProps: 'transform,opacity' }, .75)
+    .fromTo('#step3 > *', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .95);
 }
 buildRing();
 renderList();
