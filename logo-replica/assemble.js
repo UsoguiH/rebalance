@@ -550,23 +550,25 @@
     // covers only where pieces can reach (scene.paint), within the container,
     // so a tall phone screen does not make it clear and composite empty space.
     let fit = { k: 1, dpr: 1, ox: 0, oy: 0 };
-    let autoHeight = false;   // the container had no height of its own: give it the word's
+    // A container with no height of its own is given the word's proportions
+    // with CSS aspect-ratio (ignored by the browser once it has a real height).
+    let ownRatio = false, ownPosition = false;
     function resize() {
-      if (!container.isConnected) return;   // laid out once it is in the document (ResizeObserver)
+      // not in the document, or hidden: lay out when the ResizeObserver sees it
+      if (!container.isConnected || container.clientWidth === 0) return;
       const cs = getComputedStyle(container);
       // the canvas is positioned against the container
-      if (cs.position === 'static') container.style.position = 'relative';
+      if (cs.position === 'static') { container.style.position = 'relative'; ownPosition = true; }
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const padL = parseFloat(cs.paddingLeft) || 0, padT = parseFloat(cs.paddingTop) || 0;
+      const padV = padT + (parseFloat(cs.paddingBottom) || 0);
       const cw = Math.max(1, container.clientWidth - padL - (parseFloat(cs.paddingRight) || 0));
-      let ch = container.clientHeight - padT - (parseFloat(cs.paddingBottom) || 0);
-      if (scene && (autoHeight || ch < 2)) {
-        autoHeight = true;
-        ch = Math.max(1, Math.round((cw * scene.view.h) / scene.view.w));
-        // min-height counts padding and borders too when the box is border-box
-        const extra = cs.boxSizing === 'border-box'
-          ? padT + (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0) : 0;
-        container.style.minHeight = ch + extra + 'px';
+      let ch = container.clientHeight - padV;
+      if (scene && (ownRatio || (ch < 2 && !container.style.aspectRatio))) {
+        ownRatio = true;
+        const ar = `${scene.view.w.toFixed(2)} / ${scene.view.h.toFixed(2)}`;
+        if (container.style.aspectRatio !== ar) container.style.aspectRatio = ar;
+        ch = container.clientHeight - padV;
       }
       ch = Math.max(1, ch);
       let left = 0, top = 0, dw = cw, dh = ch, k = 1, cx = 0, cy = 0;
@@ -647,7 +649,12 @@
       options: o,
       colors,
       ready: null,
-      destroy() { api.pause(); if (ro) ro.disconnect(); canvas.remove(); },
+      destroy() {
+        api.pause(); if (ro) ro.disconnect(); canvas.remove();
+        // give the container back the styles it had
+        if (ownRatio) container.style.aspectRatio = '';
+        if (ownPosition) container.style.position = '';
+      },
     };
     api.ready = build();
     return api;
