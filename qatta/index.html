@@ -15,9 +15,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: one phone screen in three numbered steps, read top to bottom.
-   1) the bill ring (price in the middle, one colored piece per family)
+   1) the bill ring (price in the middle, one colored piece per family, each piece wears its family's letter)
    2) the families; tap one and its people open in place, tap a person to mark who did not come
-   3) send or listen to the result. Big type and big targets for an elderly user. */
+   3) a big "final qatta" button that opens a full-screen receipt of everyone, plus WhatsApp. */
 :root {
   --bg: #131117;
   --surface: #201d25;
@@ -34,6 +34,7 @@
   --yes: #7ee0a5;
   --yes-ink: #06301a;
   --no: #ff8f86;
+  --gold: #f2dc8c;
   --wa: #25d366;
   --wa-ink: #05341a;
   --font: "Readex Pro", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", Tahoma, sans-serif;
@@ -85,29 +86,34 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .step-n.done { background: var(--yes); color: var(--yes-ink); }
 .step-p { margin: -.45rem 0 0; color: var(--muted); font-size: .95rem; }
 
-/* ——— the bill ring ——— */
+/* ——— rings ——— */
 .hero { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
-.ring-wrap { position: relative; width: min(78vw, 17rem); aspect-ratio: 1; max-width: 100%; }
+.ring-wrap { position: relative; width: min(80vw, 17.5rem); aspect-ratio: 1; max-width: 100%; }
 .ring { width: 100%; height: 100%; display: block; overflow: visible; }
 .ring-track { fill: none; stroke: rgba(255, 255, 255, .06); stroke-width: 24; }
 .seg { fill: none; stroke-width: 24; stroke-linecap: round; cursor: pointer; transition: stroke-width .35s, opacity .35s; }
-.ring.focus .seg { opacity: .22; }
-.ring.focus .seg.on { opacity: 1; stroke-width: 30; }
+.badge { cursor: pointer; transition: opacity .35s; }
+.badge text { font-family: var(--font); font-size: 15px; font-weight: 700; }
+.badge-in { transform-box: fill-box; transform-origin: center; transition: transform .45s cubic-bezier(.3, 1.6, .5, 1); }
+.ring.focus .seg, .ring.focus .badge { opacity: .25; }
+.ring.focus .seg.on, .ring.focus .badge.on { opacity: 1; }
+.ring.focus .seg.on { stroke-width: 30; }
+.ring.focus .badge.on .badge-in { transform: scale(1.3); }
 .ring-center {
-  position: absolute; inset: 15%; border-radius: 50%;
+  position: absolute; inset: 17%; border-radius: 50%;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
   background: radial-gradient(circle at 50% 35%, #2c2833, #1b1920 70%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07), 0 20px 50px -20px rgba(0, 0, 0, .8);
 }
 .rc-full { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
-.rc-lbl { font-size: .85rem; color: var(--muted); }
+.rc-lbl { font-size: .8rem; color: var(--muted); }
 .rc-num { display: flex; align-items: baseline; gap: .3rem; }
-.rc-num b { font-size: clamp(2.1rem, 11vw, 2.6rem); font-weight: 700; line-height: 1.15; }
-.rc-num small { font-size: .85rem; color: var(--muted); }
-.rc-edit { display: inline-flex; align-items: center; gap: .3rem; margin-top: .3rem; padding: .25rem .8rem; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac); font-size: .8rem; }
+.rc-num b { font-size: clamp(1.9rem, 10vw, 2.4rem); font-weight: 700; line-height: 1.15; }
+.rc-num small { font-size: .8rem; color: var(--muted); }
+.rc-edit { display: inline-flex; align-items: center; gap: .3rem; margin-top: .3rem; padding: .25rem .8rem; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac); font-size: .78rem; }
 .rc-edit .ic { width: .95rem; height: .95rem; }
-.rc-empty { display: flex; flex-direction: column; align-items: center; gap: .45rem; font-size: 1.1rem; font-weight: 700; line-height: 1.35; }
-.rc-plus { width: 3.3rem; height: 3.3rem; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
+.rc-empty { display: flex; flex-direction: column; align-items: center; gap: .45rem; font-size: 1.05rem; font-weight: 700; line-height: 1.35; }
+.rc-plus { width: 3.2rem; height: 3.2rem; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
 .rc-plus .ic { width: 1.7rem; height: 1.7rem; stroke-width: 2.6; }
 .per {
   display: flex; align-items: baseline; gap: .45rem; padding: .6rem 1.4rem; border-radius: 999px;
@@ -123,7 +129,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
 .fam { border-radius: 1.5rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); overflow: hidden; transition: background-color .3s, border-color .3s; }
 .fam.open { background: var(--surface-hi); border-color: color-mix(in srgb, var(--c) 50%, transparent); }
-.fam-head { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: .8rem; padding: .9rem 1rem; text-align: start; min-height: 4.8rem; }
+.fam-head { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: .8rem; padding: .9rem 1rem; text-align: start; }
 .av {
   grid-row: 1 / 3; width: 2.9rem; height: 2.9rem; border-radius: 50%;
   background: var(--c); color: #16131b; display: grid; place-items: center; font-size: 1.25rem; font-weight: 700;
@@ -131,45 +137,114 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 }
 .fam.none .av { filter: grayscale(1) brightness(.6); }
 .fam-name { min-width: 0; font-size: 1.2rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.chev { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: rgba(255, 255, 255, .06); }
+.chev .ic { width: 1.15rem; height: 1.15rem; }
 .fam-meta { grid-column: 2 / 4; display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-width: 0; margin-top: .25rem; }
 .fam-sub { font-size: .92rem; color: var(--muted); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fam-amt { flex: none; display: inline-flex; align-items: baseline; gap: .3rem; padding: .3rem .9rem; border-radius: 999px; background: var(--surface-top); }
 .fam-amt b { font-size: 1.3rem; font-weight: 700; line-height: 1.3; }
 .fam-amt small { font-size: .78rem; color: var(--muted); }
-.chev { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: rgba(255, 255, 255, .06); }
-.chev .ic { width: 1.15rem; height: 1.15rem; }
 .fam-body { height: 0; overflow: hidden; }
 .fam-in { padding: 0 .9rem .9rem; display: flex; flex-direction: column; gap: .7rem; }
 .fam-hint { margin: 0; padding-top: .7rem; border-top: 1px solid rgba(255, 255, 255, .07); font-size: .9rem; color: var(--muted); }
 .mems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .mem {
-  width: 100%; min-height: 3.6rem; display: flex; align-items: center; gap: .5rem; padding: .4rem .6rem .4rem .45rem;
+  width: 100%; height: 100%; min-height: 3.5rem; display: flex; align-items: center; gap: .5rem; padding: .45rem .6rem .45rem .45rem;
   border-radius: 1.1rem; text-align: start; border: 2px dashed var(--line); background: transparent; color: var(--faint);
   transition: background-color .25s, border-color .25s, color .25s;
 }
 .mem.on { background: var(--yes); border: 2px solid var(--yes); color: var(--yes-ink); }
-.mk { flex: none; width: 1.95rem; height: 1.95rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
+.mk { flex: none; width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
 .mem.on .mk { background: rgba(6, 48, 26, .14); }
-.mk .ic { width: 1.1rem; height: 1.1rem; stroke-width: 3; }
-.mt { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
-.mn { font-size: 1.05rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk .ic { width: 1.05rem; height: 1.05rem; stroke-width: 3; }
+.mn { flex: 1; min-width: 0; font-size: .95rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
 .mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
-.ms { font-size: .75rem; font-weight: 500; opacity: .85; }
 .fam-empty { margin: 0; color: var(--faint); font-size: .95rem; }
 .fam-actions { display: flex; gap: .5rem; }
 .fam-actions button { min-height: 3.3rem; border-radius: 999px; font-size: 1rem; font-weight: 700; padding: 0 1.1rem; }
 .btn-all { background: var(--surface-top); }
 .btn-done { flex: 1; background: var(--primary); color: var(--on-primary); }
 
-/* ——— send ——— */
-.btn { min-height: 3.8rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.12rem; font-weight: 700; padding: 0 1.2rem; text-align: center; }
+/* ——— step 3 ——— */
+.btn-final {
+  position: relative; overflow: hidden; width: 100%; min-height: 5rem; border-radius: 1.6rem; padding: .8rem 1rem;
+  display: flex; align-items: center; gap: .9rem; text-align: start;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(135deg, #2e2843, #3a2d58) padding-box,
+    linear-gradient(90deg, #5ccfc4, #7ee0b0, #f2dc8c, #ff9f7a, #9b6cf0, #7fb4ff) border-box;
+  box-shadow: 0 18px 40px -18px rgba(155, 108, 240, .6);
+}
+.bf-ic { flex: none; width: 3.2rem; height: 3.2rem; border-radius: 1rem; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
+.bf-ic .ic { width: 1.7rem; height: 1.7rem; }
+.bf-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bf-txt b { font-size: 1.3rem; font-weight: 700; line-height: 1.3; }
+.bf-txt small { font-size: .88rem; color: var(--lilac); }
+.bf-go { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; background: rgba(255, 255, 255, .1); display: grid; place-items: center; }
+.bf-go .ic { width: 1.3rem; height: 1.3rem; stroke-width: 2.6; }
+.shine { position: absolute; inset: -20% auto -20% 0; width: 35%; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .16), transparent); transform: translateX(-150%) skewX(-18deg); }
+.btn { min-height: 3.8rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.12rem; font-weight: 700; padding: 0 1.2rem; text-align: center; width: 100%; }
 .btn .ic { width: 1.45rem; height: 1.45rem; }
-.btn-wa { background: var(--wa); color: var(--wa-ink); }
+.btn .wa-logo { width: 1.7rem; height: 1.7rem; }
+.btn-wa { background: var(--wa); color: #fff; }
 .btn-soft { background: var(--surface-hi); font-weight: 600; }
 .btn-soft.talking { background: var(--lilac-bg); color: var(--lilac); }
-.quiet { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; margin-top: .5rem; }
-.quiet button { min-height: 2.8rem; padding: 0 1rem; border-radius: 999px; color: var(--muted); font-size: .9rem; display: inline-flex; align-items: center; gap: .4rem; border: 1px solid rgba(255, 255, 255, .1); }
-.quiet .ic { width: 1.05rem; height: 1.05rem; }
+.quiet { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; margin-top: .3rem; }
+.quiet button { min-height: 2.9rem; padding: 0 1.1rem; border-radius: 999px; color: var(--muted); font-size: .92rem; display: inline-flex; align-items: center; gap: .45rem; border: 1px solid rgba(255, 255, 255, .12); }
+.quiet .ic { width: 1.1rem; height: 1.1rem; }
+
+/* ——— the final qatta, full screen ——— */
+.final { position: fixed; inset: 0; z-index: 35; background: var(--bg); }
+.final .glow { position: absolute; }
+.fin-scroll {
+  position: relative; z-index: 1; height: 100%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  padding: calc(env(safe-area-inset-top, 0px) + .8rem) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 1.6rem) max(16px, env(safe-area-inset-left, 0px));
+}
+.fin-in { max-width: 30rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.2rem; }
+.fin-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.fin-date { color: var(--muted); font-size: .85rem; text-align: left; }
+.fin-title { margin: 0; font-size: 1.7rem; font-weight: 700; line-height: 1.25; }
+.fin-title small { display: block; font-size: .95rem; font-weight: 500; color: var(--muted); }
+.fin-hero { display: flex; flex-direction: column; align-items: center; gap: .6rem; }
+.fin-ring { width: min(70vw, 15rem); }
+.fin-ring .ring-center { inset: 18%; gap: 0; }
+.fin-bill { display: flex; align-items: baseline; gap: .4rem; color: var(--muted); }
+.fin-bill b { color: var(--fg); font-size: 1.3rem; }
+.fin-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.fs { border-radius: 1.2rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); padding: .7rem .5rem; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.fs b { font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+.fs span { font-size: .82rem; color: var(--muted); }
+.fs.yes b { color: var(--yes); }
+.fs.no b { color: var(--no); }
+.fin-list { display: flex; flex-direction: column; gap: .8rem; perspective: 900px; }
+.fc { position: relative; border-radius: 1.4rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); overflow: hidden; }
+.fc::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--c); }
+.fc-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: .7rem; padding: 1rem .9rem .5rem; }
+.fc-head .av { width: 2.6rem; height: 2.6rem; font-size: 1.1rem; }
+.fc-name { font-size: 1.15rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.fc-sub { grid-column: 2; font-size: .85rem; color: var(--muted); }
+.fc-amt { grid-column: 3; grid-row: 1 / 3; display: flex; flex-direction: column; align-items: center; }
+.fc-amt b { font-size: 1.6rem; font-weight: 700; line-height: 1.15; color: var(--c); }
+.fc-amt small { font-size: .75rem; color: var(--muted); }
+.fc-mems { list-style: none; margin: 0; padding: .2rem .9rem .9rem; display: flex; flex-direction: column; }
+.fc-mems li { display: flex; align-items: center; gap: .6rem; padding: .5rem 0; border-top: 1px solid rgba(255, 255, 255, .06); font-size: 1rem; font-weight: 600; }
+.fc-mems .mk2 { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; background: var(--yes); color: var(--yes-ink); }
+.fc-mems .mk2 .ic { width: .9rem; height: .9rem; stroke-width: 3.2; }
+.fc-mems .off { color: var(--faint); }
+.fc-mems .off .mk2 { background: rgba(255, 143, 134, .15); color: var(--no); }
+.fc-mems .off .nm { text-decoration: line-through; }
+.fc-mems .nm { flex: 1; min-width: 0; }
+.fc-mems .tagx { font-size: .78rem; color: var(--no); font-weight: 500; }
+.fc-mems .pp { font-size: .9rem; color: var(--muted); }
+.fc.none { opacity: .6; }
+.fin-sum { border-radius: 1.4rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); padding: .4rem 1rem; }
+.fin-sum div { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; padding: .65rem 0; border-top: 1px solid rgba(255, 255, 255, .06); }
+.fin-sum div:first-child { border-top: 0; }
+.fin-sum span { color: var(--muted); }
+.fin-sum b { font-size: 1.15rem; }
+.fin-sum .big b { font-size: 1.5rem; color: var(--yes); }
+.fin-note { margin: 0; font-size: .85rem; color: var(--faint); text-align: center; }
+.fin-actions { display: flex; flex-direction: column; gap: .6rem; }
 
 /* ——— sheets ——— */
 .scrim { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .66); }
@@ -206,7 +281,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .key.fn { background: transparent; border: 2px solid var(--surface-top); font-family: var(--font); font-size: .95rem; color: var(--muted); }
 .key .ic { width: 1.6rem; height: 1.6rem; }
 @media (max-height: 700px) { .key { height: 3rem; } .disp-val { min-height: 3.3rem; } }
-.btn-ok { min-height: 3.7rem; border-radius: 999px; background: var(--yes); color: var(--yes-ink); font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: .5rem; }
+.btn-ok { width: 100%; min-height: 3.7rem; border-radius: 999px; background: var(--yes); color: var(--yes-ink); font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: .5rem; }
 .btn-ok .ic { width: 1.45rem; height: 1.45rem; stroke-width: 3; }
 
 /* ——— family editor ——— */
@@ -247,9 +322,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
   background: var(--surface); border: 1px solid var(--line); outline: none; line-height: 1.8;
 }
 .paste-box textarea:focus { border-color: var(--lilac); }
-.ed-foot .btn-ok { width: 100%; }
 .ed-foot { position: sticky; bottom: 0; padding-top: .6rem; background: linear-gradient(180deg, transparent, #1b191f 30%); }
-.copy-area { width: 100%; min-height: 14rem; border-radius: 1.1rem; padding: .9rem 1rem; background: var(--surface); border: 1px solid var(--line); line-height: 1.8; }
 
 .toast {
   position: fixed; z-index: 40; left: 0; right: 0; bottom: calc(1.2rem + env(safe-area-inset-bottom, 0px));
@@ -277,7 +350,8 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
       <div class="ring-wrap">
         <svg class="ring" id="ring" viewBox="0 0 300 300" aria-hidden="true">
           <circle class="ring-track" cx="150" cy="150" r="128"></circle>
-          <g id="segs" transform="rotate(-90 150 150)"></g>
+          <g class="segs" transform="rotate(-90 150 150)"></g>
+          <g class="badges"></g>
         </svg>
         <button class="ring-center press" id="priceBtn" type="button">
           <span class="rc-empty" id="rcEmpty"><span class="rc-plus" id="rcPlus" data-ic="plus"></span>اضغط هنا</span>
@@ -300,16 +374,59 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
   </section>
 
   <section class="step" id="step3" aria-labelledby="h3">
-    <h2 class="step-h" id="h3"><span class="step-n" id="n3">٣</span>أرسل الحساب للعائلة</h2>
-    <a class="btn btn-wa press" id="waBtn" href="#" target="_blank" rel="noopener"><span data-ic="send"></span>أرسل في واتساب</a>
-    <button class="btn btn-soft press" id="speakBtn" type="button" hidden><span data-ic="sound"></span><span id="speakLbl">اسمع الحساب</span></button>
+    <h2 class="step-h" id="h3"><span class="step-n" id="n3">٣</span>شوف الحساب وأرسله</h2>
+    <button class="btn-final press" id="finalBtn" type="button">
+      <span class="bf-ic" data-ic="receipt"></span>
+      <span class="bf-txt"><b>القطّة النهائية</b><small>كل الأسماء والمبالغ</small></span>
+      <span class="bf-go" data-ic="arrow"></span>
+      <span class="shine" aria-hidden="true"></span>
+    </button>
+    <a class="btn btn-wa press" id="waBtn" href="#" target="_blank" rel="noopener"><span data-ic="wa"></span>أرسل في واتساب</a>
     <div class="quiet">
       <button id="editBtn" type="button"><span data-ic="users"></span>العوائل والأسماء</button>
-      <button id="resetBtn" type="button"><span data-ic="redo"></span>عزيمة جديدة</button>
-      <button id="copyBtn" type="button"><span data-ic="copy"></span>انسخ</button>
     </div>
   </section>
 </main>
+
+<div class="final" id="final" role="dialog" aria-modal="true" aria-labelledby="finTitle" hidden dir="rtl">
+  <div class="glow" aria-hidden="true"></div>
+  <div class="fin-scroll" id="finScroll">
+    <div class="fin-in">
+      <div class="fin-top">
+        <button class="x-btn press" id="finClose" type="button"><span data-ic="back2"></span>رجوع</button>
+        <span class="fin-date" id="finDate"></span>
+      </div>
+      <h2 class="fin-title" id="finTitle">القطّة النهائية<small>حساب كل عائلة بالتفصيل</small></h2>
+      <div class="fin-hero">
+        <div class="ring-wrap fin-ring">
+          <svg class="ring" id="finRing" viewBox="0 0 300 300" aria-hidden="true">
+            <circle class="ring-track" cx="150" cy="150" r="128"></circle>
+            <g class="segs" transform="rotate(-90 150 150)"></g>
+            <g class="badges"></g>
+          </svg>
+          <div class="ring-center">
+            <span class="rc-lbl">على الشخص</span>
+            <span class="rc-num"><b class="num" id="finPer">٠</b><small>ريال</small></span>
+          </div>
+        </div>
+        <div class="fin-bill">الفاتورة <b class="num" id="finTotal">٠</b> ريال</div>
+      </div>
+      <div class="fin-stats">
+        <div class="fs yes"><b class="num" id="fsYes">٠</b><span>حضروا</span></div>
+        <div class="fs no"><b class="num" id="fsNo">٠</b><span>ما حضروا</span></div>
+        <div class="fs"><b class="num" id="fsFam">٠</b><span>عوائل</span></div>
+      </div>
+      <div class="fin-list" id="finList"></div>
+      <div class="fin-sum" id="finSum"></div>
+      <p class="fin-note" id="finNote"></p>
+      <div class="fin-actions">
+        <a class="btn btn-wa press" id="finWa" href="#" target="_blank" rel="noopener"><span data-ic="wa"></span>أرسل في واتساب</a>
+        <button class="btn btn-soft press" id="speakBtn" type="button" hidden><span data-ic="sound"></span><span id="speakLbl">اسمع الحساب</span></button>
+        <button class="btn btn-soft press" id="finBack" type="button"><span data-ic="back2"></span>رجوع</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="scrim" id="scrim" hidden></div>
 
@@ -334,19 +451,11 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
     <button class="btn-addfam press" id="addFamBtn" type="button"><span data-ic="plus"></span>أضف عائلة جديدة</button>
     <button class="paste-link" id="pasteToggle" type="button">أو الصق قائمة أسماء كاملة</button>
     <div class="paste-box" id="pasteBox" hidden>
-      <label class="paste-box" for="pasteText"><span>كل عائلة في سطر: اسم العائلة، بعدها نقطتين، بعدها الأفراد بينهم فاصلة. بتنضاف للعوائل الموجودة.</span></label>
+      <label for="pasteText"><span>كل عائلة في سطر: اسم العائلة، بعدها نقطتين، بعدها الأفراد بينهم فاصلة. بتنضاف للعوائل الموجودة.</span></label>
       <textarea id="pasteText" spellcheck="false" placeholder="عائلة عادل: عادل، نورة، محمد&#10;عائلة خالد: خالد، سارة"></textarea>
       <button class="btn btn-soft press" id="pasteOk" type="button"><span data-ic="plus"></span>أضف هذي الأسماء</button>
     </div>
     <div class="ed-foot"><button class="btn-ok press" type="button" data-close><span data-ic="check"></span>تم</button></div>
-  </div>
-</div>
-
-<div class="sheet" id="copySheet" role="dialog" aria-modal="true" aria-labelledby="copyTitle" hidden dir="rtl">
-  <span class="handle" aria-hidden="true"></span>
-  <div class="sheet-in">
-    <div class="sheet-top"><h2 id="copyTitle">انسخ الحساب</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
-    <textarea class="copy-area" id="copyText" readonly aria-label="الحساب"></textarea>
   </div>
 </div>
 
@@ -358,14 +467,19 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 (() => {
 'use strict';
 
-// ——— الأسماء (تجريبية). بدّلها بأسماء العوائل الحقيقية ———
+// ——— العوائل والأسماء (٤٥ فرد في ١٠ عوائل) ———
 // الاسم اللي يبدأ بـ "-" يعني ما حضر.
 const DEFAULT_FAMILIES = [
-  ['عائلة عادل', ['عادل', 'نورة', 'محمد', '-ريم', 'فهد']],
-  ['عائلة خالد', ['خالد', 'سارة', 'عبدالله', 'لمى']],
-  ['عائلة فيصل', ['فيصل', 'هيا', 'تركي']],
-  ['عائلة ناصر', ['ناصر', 'منيرة', 'سلطان', 'جود', 'العنود', '-يوسف']],
-  ['عائلة ماجد', ['ماجد', 'دانة']],
+  ['الهدلق', ['عبدالله الهدلق', 'عادل الهدلق', 'عبدالاله الهدلق', 'جواهر الجاسر', 'نوره الهدلق', 'هديل الهدلق', 'معتز']],
+  ['سليمان الهدلق', ['سليمان الهدلق', 'روان المعيقل']],
+  ['خالي عمر', ['عمر الجاسر', 'وفاء الصبيحي', 'اديم الجاسر', 'رنا الجاسر', 'ريما الجاسر', 'طلال الجاسر']],
+  ['خالي خالد', ['خالد الجاسر', 'حنان ابا حسين', 'عبدالرحمن الجاسر', 'محمد الجاسر', 'عبدالعزيز الجاسر']],
+  ['وليد الجاسر', ['وليد الجاسر', 'شذا اليابس']],
+  ['الفريح', ['احمد الفريح', 'إيمان الجاسر', 'عبدالعزيز الفريح', 'سلمان الفريح', 'خالد الفريح', 'فرح الفريح', 'ريما الفريح']],
+  ['المقحم', ['احمد المقحم', 'إبتسام الجاسر', 'خالد المقحم', 'ريما المقحم', 'عبدالله المقحم', 'راما المقحم', 'ريما النشوان']],
+  ['خالي ياسر', ['ياسر الجاسر', 'فلوه الهاجري', 'سارة الجاسر', 'غالية الجاسر']],
+  ['خالي ابراهيم', ['ابراهيم الجاسر', 'ريما الحضيف', 'عبدالرحمن الجاسر']],
+  ['خالتي نجود', ['نجود الجاسر', 'مصعب القرشي']],
 ];
 const COLORS = ['#5ccfc4', '#7ee0b0', '#f2dc8c', '#ff9f7a', '#9b6cf0', '#7fb4ff', '#f59ac8', '#c8e07a', '#ffc46b', '#a0a4ff'];
 
@@ -398,19 +512,20 @@ const I = {
   close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
   check: svg('<path class="ck" d="M20 6 9 17l-5-5" pathLength="1"/>'),
   chev: svg('<path d="m6 9 6 6 6-6"/>'),
+  arrow: svg('<path d="M19 12H5M12 19l-7-7 7-7"/>'),
+  back2: svg('<path d="M5 12h14M12 5l7 7-7 7"/>'),
   back: svg('<path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="m18 9-6 6M12 9l6 6"/>'),
-  send: svg('<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>'),
-  copy: svg('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
-  redo: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'),
   sound: svg('<path d="M11 5 6 9H2v6h4l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),
   stop: svg('<rect x="6" y="6" width="12" height="12" rx="2"/>'),
   trash: svg('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>'),
   users: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  receipt: svg('<path d="M5 2v20l2.5-1.5L10 22l2-1.5 2 1.5 2.5-1.5L19 22V2l-2.5 1.5L14 2l-2 1.5L10 2 7.5 3.5Z"/><path d="M9 8h6M9 12h6M9 16h3"/>'),
+  wa: '<svg class="ic wa-logo" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>',
 };
 $$('[data-ic]').forEach(el => { el.innerHTML = I[el.dataset.ic]; });
 
 // ——— state ———
-const KEY = 'qatta.v3';
+const KEY = 'qatta.v4';
 const uid = () => Math.random().toString(36).slice(2, 10);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function makeFamily(name, members) {
@@ -418,7 +533,7 @@ function makeFamily(name, members) {
 }
 function load() {
   try {
-    const raw = localStorage.getItem(KEY) || localStorage.getItem('qatta.v1');
+    const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw);
       if (s && Array.isArray(s.families)) {
@@ -429,17 +544,20 @@ function load() {
       }
     }
   } catch (e) { /* storage unavailable */ }
-  return { total: 1250, families: DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m)) };
+  return { total: 0, families: DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m)) };
 }
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
 const color = i => COLORS[i % COLORS.length];
-const famIndex = id => state.families.findIndex(f => f.id === id);
 
 // ——— numbers: whole riyals only ———
 const NF = new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 0 });
 const fmt = n => NF.format(Math.round(+n || 0));
-const initial = name => (String(name).trim().replace(/^(عائلة|عايلة|عائله|بيت|آل)\s+/, '').replace(/^(أبو|ابو|أم|ام)\s+/, '')[0] || '؟');
+function initial(name) {
+  let s = String(name).trim().replace(/^(عائلة|عايلة|عائله|بيت|آل|خالي|خالتي|عمي|عمتي)\s+/, '').replace(/^(أبو|ابو|أم|ام)\s+/, '');
+  if (/^ال/.test(s) && s.length > 3) s = s.slice(2);
+  return s[0] || '؟';
+}
 function compute() {
   let heads = 0, all = 0;
   const rows = new Map();
@@ -450,16 +568,21 @@ function compute() {
   }
   // each person pays the same whole number of riyals, rounded up so the bill is always covered
   const per = heads && state.total ? Math.ceil(state.total / heads - 1e-9) : 0;
-  return { heads, all, per, rows, share: id => per * rows.get(id) };
+  return { heads, all, per, rows, share: id => per * rows.get(id), collected: per * heads };
 }
-function setNum(el, to, anim = true) {
+function setNum(el, to, anim = true, dur = .8) {
   const prev = el.dataset.val;
   const from = prev === undefined || prev === '' ? null : +prev;
   el.dataset.val = to;
   if (el._tw) el._tw.kill();
   if (!anim || from === null || from === to) { el.textContent = fmt(to); return; }
   const o = { v: from };
-  el._tw = gsap.to(o, { v: to, duration: .8, ease: 'springOut', onUpdate: () => { el.textContent = fmt(o.v); } });
+  el._tw = gsap.to(o, { v: to, duration: dur, ease: 'springOut', onUpdate: () => { el.textContent = fmt(o.v); } });
+}
+function countUp(el, to, delay = 0, dur = 1.1) {
+  el.dataset.val = 0;
+  el.textContent = fmt(0);
+  gsap.delayedCall(delay, () => setNum(el, to, true, dur));
 }
 function haptic(ms = 8) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* ignore */ } }
 function pop(el, from = .94) { gsap.fromTo(el, { scale: from }, { scale: 1, duration: .6, ease: 'spring', clearProps: 'scale' }); }
@@ -468,48 +591,68 @@ function shake(el) {
   gsap.fromTo(el, { x: 0 }, { keyframes: { x: [0, -10, 9, -6, 4, 0] }, duration: .45, ease: 'none' });
 }
 
-// ——— the ring: one piece per family, sized by how many of them came ———
-const segG = $('#segs'), ring = $('#ring');
-const R = 128, GAP = 5.4;
-const segs = new Map();
-function drawSeg(s) {
-  const dash = s.len > 0.01 ? Math.max(.001, s.len - GAP) : 0;
-  s.el.setAttribute('stroke-dasharray', `${dash} ${100 - dash}`);
-  s.el.setAttribute('stroke-dashoffset', -(s.start + GAP / 2));
-  s.el.style.visibility = s.len > 0.01 ? 'visible' : 'hidden';
+// ——— rings: one piece per family, sized by how many of them came, each piece wears its family's letter ———
+const R = 128, GAP = 4.6, NS = 'http://www.w3.org/2000/svg';
+function makeRing(svgEl) {
+  const segG = $('.segs', svgEl), badgeG = $('.badges', svgEl);
+  const segs = new Map();
+  function draw(s) {
+    const show = s.len > 0.01;
+    const dash = show ? Math.max(.001, s.len - GAP) : 0;
+    s.el.setAttribute('stroke-dasharray', `${dash} ${100 - dash}`);
+    s.el.setAttribute('stroke-dashoffset', -(s.start + GAP / 2));
+    s.el.style.visibility = show ? 'visible' : 'hidden';
+    const a = (-90 + (s.start + s.len / 2) * 3.6) * Math.PI / 180;
+    s.badge.setAttribute('transform', `translate(${(150 + R * Math.cos(a)).toFixed(2)} ${(150 + R * Math.sin(a)).toFixed(2)})`);
+    s.badge.style.visibility = show ? 'visible' : 'hidden';
+  }
+  function build() {
+    segG.innerHTML = '';
+    badgeG.innerHTML = '';
+    segs.clear();
+    state.families.forEach((f, i) => {
+      const el = document.createElementNS(NS, 'circle');
+      el.setAttribute('class', 'seg');
+      el.setAttribute('cx', 150); el.setAttribute('cy', 150); el.setAttribute('r', R);
+      el.setAttribute('pathLength', 100);
+      el.setAttribute('stroke', color(i));
+      el.dataset.id = f.id;
+      segG.appendChild(el);
+      const badge = document.createElementNS(NS, 'g');
+      badge.setAttribute('class', 'badge');
+      badge.dataset.id = f.id;
+      badge.innerHTML = `<g class="badge-in"><circle r="16" fill="#131117" stroke="${color(i)}" stroke-width="3"></circle><text text-anchor="middle" dy=".36em" fill="${color(i)}">${esc(initial(f.name))}</text></g>`;
+      badgeG.appendChild(badge);
+      const s = { el, badge, start: 0, len: 0 };
+      segs.set(f.id, s);
+      draw(s);
+    });
+  }
+  function update(c, anim = true, stagger = 0) {
+    let acc = 0;
+    state.families.forEach((f, i) => {
+      const s = segs.get(f.id);
+      const len = c.heads ? (c.rows.get(f.id) / c.heads) * 100 : 0;
+      const start = acc;
+      acc += len;
+      if (!s) return;
+      gsap.killTweensOf(s);
+      if (!anim) { s.start = start; s.len = len; draw(s); return; }
+      gsap.to(s, { start, len, duration: 1.1, delay: i * stagger, ease: 'spring', onUpdate: () => draw(s) });
+    });
+  }
+  function zero() { segs.forEach(s => { gsap.killTweensOf(s); s.start = 0; s.len = 0; draw(s); }); }
+  function focus(id) {
+    svgEl.classList.toggle('focus', !!id);
+    segs.forEach((s, sid) => { s.el.classList.toggle('on', sid === id); s.badge.classList.toggle('on', sid === id); });
+  }
+  return { build, update, zero, focus };
 }
-function buildRing() {
-  segG.innerHTML = '';
-  segs.clear();
-  state.families.forEach((f, i) => {
-    const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    el.setAttribute('class', 'seg');
-    el.setAttribute('cx', 150); el.setAttribute('cy', 150); el.setAttribute('r', R);
-    el.setAttribute('pathLength', 100);
-    el.setAttribute('stroke', color(i));
-    el.dataset.id = f.id;
-    segG.appendChild(el);
-    const s = { el, start: 0, len: 0 };
-    segs.set(f.id, s);
-    drawSeg(s);
-  });
-}
-function updateRing(c, anim = true, stagger = 0) {
-  let acc = 0;
-  state.families.forEach((f, i) => {
-    const s = segs.get(f.id);
-    const len = c.heads ? (c.rows.get(f.id) / c.heads) * 100 : 0;
-    const start = acc;
-    acc += len;
-    if (!s) return;
-    gsap.killTweensOf(s);
-    if (!anim) { s.start = start; s.len = len; drawSeg(s); return; }
-    gsap.to(s, { start, len, duration: 1, delay: i * stagger, ease: 'spring', onUpdate: () => drawSeg(s) });
-  });
-}
-segG.addEventListener('click', e => {
-  const el = e.target.closest('.seg');
-  if (el) openFamily(el.dataset.id, true);
+const ring = makeRing($('#ring'));
+const finRing = makeRing($('#finRing'));
+$('#ring').addEventListener('click', e => {
+  const t = e.target.closest('[data-id]');
+  if (t) openFamily(t.dataset.id, true);
 });
 
 // ——— the families: tap a family, its people open in place ———
@@ -519,7 +662,7 @@ const famEl = id => list.querySelector(`.fam[data-id="${id}"]`);
 const markHTML = on => `<span class="mk">${on ? I.check : I.close}</span>`;
 function memberHTML(m) {
   return `<li><button type="button" class="mem press ${m.present ? 'on' : ''}" role="switch" aria-checked="${m.present}" data-mid="${m.id}">
-    ${markHTML(m.present)}<span class="mt"><span class="mn">${esc(m.name)}</span><span class="ms">${m.present ? 'حاضر' : 'ما حضر'}</span></span>
+    ${markHTML(m.present)}<span class="mn">${esc(m.name)}</span>
   </button></li>`;
 }
 function renderList() {
@@ -586,7 +729,7 @@ function update(anim = true) {
     ? `الحاضرين <b class="num">${fmt(c.heads)}</b> من <b class="num">${fmt(c.all)}</b>`
     : 'ما فيه أحد حاضر';
   $('#priceBtn').setAttribute('aria-label', has ? `الفاتورة ${fmt(state.total)} ريال، اضغط للتغيير` : 'اضغط هنا واكتب مبلغ الفاتورة');
-  updateRing(c, anim);
+  ring.update(c, anim);
   state.families.forEach(f => {
     const li = famEl(f.id);
     if (!li) return;
@@ -598,7 +741,9 @@ function update(anim = true) {
     if (has) setNum($('b', amt), c.share(f.id), anim);
     $('.fam-head', li).setAttribute('aria-label', `${f.name}، ${famSub(f, n)}${has ? `، عليهم ${fmt(c.share(f.id))} ريال` : ''}`);
   });
-  $('#waBtn').href = 'https://wa.me/?text=' + encodeURIComponent(summary());
+  const wa = 'https://wa.me/?text=' + encodeURIComponent(summary());
+  $('#waBtn').href = wa;
+  $('#finWa').href = wa;
   return c;
 }
 
@@ -616,18 +761,16 @@ function openFamily(id, fromRing = false) {
   gsap.killTweensOf(body);
   gsap.to(body, { height: 'auto', duration: .7, ease: 'springOut' });
   gsap.to($('.chev', li), { rotation: 180, duration: .8, ease: 'spring' });
-  gsap.fromTo($$('.fam-hint, .mems > li, .fam-actions > *', body), { y: 22, opacity: 0, scale: .94 },
-    { y: 0, opacity: 1, scale: 1, duration: .5, stagger: .035, delay: .05, ease: 'springSoft', clearProps: 'transform,opacity' });
+  gsap.fromTo($$('.fam-hint, .mems > li, .fam-actions > *', body), { y: 22, opacity: 0, scale: .9 },
+    { y: 0, opacity: 1, scale: 1, duration: .55, stagger: .04, delay: .05, ease: 'spring', clearProps: 'transform,opacity' });
   pop($('.av', li), .7);
-  ring.classList.add('focus');
-  segs.forEach((s, sid) => s.el.classList.toggle('on', sid === id));
+  ring.focus(id);
   setTimeout(() => scrollToEl(li), fromRing ? 0 : 140);
 }
 function closeFamily(scroll = true) {
   const li = openId && famEl(openId);
   openId = null;
-  ring.classList.remove('focus');
-  segs.forEach(s => s.el.classList.remove('on'));
+  ring.focus(null);
   if (!li) return;
   li.classList.remove('open');
   $('.fam-head', li).setAttribute('aria-expanded', 'false');
@@ -642,7 +785,6 @@ function syncMember(btn, present, anim = true, delay = 0) {
   btn.classList.toggle('on', present);
   btn.setAttribute('aria-checked', present);
   $('.mk', btn).outerHTML = markHTML(present);
-  $('.ms', btn).textContent = present ? 'حاضر' : 'ما حضر';
   if (!anim) return;
   const mk = $('.mk', btn);
   gsap.fromTo(btn, { scale: .9 }, { scale: 1, duration: .7, delay, ease: 'spring', clearProps: 'scale' });
@@ -740,20 +882,25 @@ function priceDone() {
 $('#priceBtn').addEventListener('click', openPrice);
 $('#priceOk').addEventListener('click', priceDone);
 
-// ——— sheets (scroll lock that also holds on iPhone Safari) ———
-const scrim = $('#scrim');
-let cur = null, lockY = 0;
-const onClose = {};
+// ——— scroll lock that also holds on iPhone Safari ———
+let lockY = 0, locks = 0;
 function lockScroll() {
+  if (locks++) return;
   lockY = window.scrollY;
   Object.assign(document.body.style, { position: 'fixed', top: `-${lockY}px`, left: '0', right: '0', width: '100%' });
   document.body.classList.add('sheet-open');
 }
 function unlockScroll() {
+  if (!locks || --locks) return;
   Object.assign(document.body.style, { position: '', top: '', left: '', right: '', width: '' });
   document.body.classList.remove('sheet-open');
   window.scrollTo(0, lockY);
 }
+
+// ——— sheets ———
+const scrim = $('#scrim');
+let cur = null;
+const onClose = {};
 function openSheet(id) {
   const sh = $('#' + id);
   if (cur && cur !== sh) cur.hidden = true;
@@ -801,7 +948,7 @@ $$('.sheet').forEach(sh => {
   sh.addEventListener('pointercancel', end);
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { if (cur) closeSheet(); else if (openId) closeFamily(); return; }
+  if (e.key === 'Escape') { if (cur) closeSheet(); else if (finalOpen) closeFinal(); else if (openId) closeFamily(); return; }
   if (cur && cur.id === 'priceSheet') {
     const map = { '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9' };
     const k = map[e.key] || e.key;
@@ -810,6 +957,103 @@ document.addEventListener('keydown', e => {
     else if (k === 'Enter') { e.preventDefault(); priceDone(); }
   }
 });
+
+// ——— the final qatta: a full-screen receipt that grows out of the button ———
+const final = $('#final');
+let finalOpen = false, finOrigin = { x: innerWidth / 2, y: innerHeight / 2 }, finPushed = false, skipPop = false;
+const tick = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ck" d="M20 6 9 17l-5-5" pathLength="1"/></svg>';
+function renderFinal(c) {
+  const absent = c.all - c.heads;
+  $('#finList').innerHTML = state.families.map((f, i) => {
+    const n = c.rows.get(f.id);
+    return `<article class="fc ${n ? '' : 'none'}" style="--c:${color(i)}">
+      <div class="fc-head">
+        <span class="av" aria-hidden="true">${esc(initial(f.name))}</span>
+        <span class="fc-name">${esc(f.name)}</span>
+        <span class="fc-sub">${n ? `${fmt(n)} × ${fmt(c.per)} ريال` : 'ما حضر أحد'}</span>
+        <span class="fc-amt"><b class="num" data-to="${c.share(f.id)}">٠</b><small>ريال</small></span>
+      </div>
+      <ul class="fc-mems">${f.members.map(m => `<li class="${m.present ? 'on' : 'off'}">
+        <span class="mk2">${m.present ? tick : I.close}</span><span class="nm">${esc(m.name)}</span>
+        ${m.present ? `<span class="pp num">${fmt(c.per)}</span>` : '<span class="tagx">ما حضر</span>'}
+      </li>`).join('')}</ul>
+    </article>`;
+  }).join('');
+  const extra = c.collected - state.total;
+  $('#finSum').innerHTML = `
+    <div><span>الفاتورة</span><b class="num">${fmt(state.total)} ريال</b></div>
+    <div><span>عدد الحاضرين</span><b class="num">${fmt(c.heads)} شخص</b></div>
+    <div><span>على الشخص</span><b class="num">${fmt(c.per)} ريال</b></div>
+    <div class="big"><span>اللي بينجمع</span><b class="num">${fmt(c.collected)} ريال</b></div>`;
+  $('#finNote').textContent = extra > 0
+    ? `قرّبنا اللي على الشخص لأقرب ريال، فبينجمع ${fmt(extra)} ريال زيادة عن الفاتورة.`
+    : 'المبلغ ينقسم بالتساوي بدون زيادة.';
+  $('#finNote').hidden = false;
+  try {
+    $('#finDate').textContent = new Intl.DateTimeFormat('ar-SA-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+  } catch (e) { $('#finDate').textContent = ''; }
+  return absent;
+}
+function openFinal() {
+  if (!state.total) { needPrice(); return; }
+  const c = compute();
+  if (!c.heads) { toast('ما فيه أحد حاضر'); return; }
+  const absent = renderFinal(c);
+  const r = $('#finalBtn').getBoundingClientRect();
+  finOrigin = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  const maxR = Math.hypot(Math.max(finOrigin.x, innerWidth - finOrigin.x), Math.max(finOrigin.y, innerHeight - finOrigin.y)) + 20;
+  finalOpen = true;
+  haptic(20);
+  lockScroll();
+  final.hidden = false;
+  $('#finScroll').scrollTop = 0;
+  try { history.pushState({ qattaFinal: 1 }, ''); finPushed = true; } catch (e) { finPushed = false; }
+  finRing.build();
+  finRing.zero();
+  const at = `${finOrigin.x}px ${finOrigin.y}px`;
+  const tl = gsap.timeline();
+  tl.fromTo(final, { clipPath: `circle(0px at ${at})` }, { clipPath: `circle(${maxR}px at ${at})`, duration: .85, ease: 'springOut', onComplete: () => gsap.set(final, { clearProps: 'clipPath' }) })
+    .fromTo('.fin-top > *, .fin-title', { y: -24, opacity: 0 }, { y: 0, opacity: 1, duration: .55, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .2)
+    .fromTo('.fin-ring', { scale: .5, opacity: 0, rotation: -40 }, { scale: 1, opacity: 1, rotation: 0, duration: 1.1, ease: 'spring', clearProps: 'transform,opacity' }, .25)
+    .add(() => finRing.update(c, true, .07), .35)
+    .add(() => { countUp($('#finPer'), c.per, 0, 1.2); countUp($('#finTotal'), state.total, .1, 1.2); }, .35)
+    .fromTo('.fin-bill', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
+    .fromTo('.fs', { y: 30, opacity: 0, scale: .8 }, { y: 0, opacity: 1, scale: 1, duration: .8, stagger: .08, ease: 'spring', clearProps: 'transform,opacity' }, .55)
+    .add(() => { countUp($('#fsYes'), c.heads, 0, .9); countUp($('#fsNo'), absent, .08, .9); countUp($('#fsFam'), c.activeFams || state.families.filter(f => c.rows.get(f.id)).length, .16, .9); }, .6);
+  // every family card rises in turn, then its people cascade in one by one and their ticks draw
+  $$('.fc').forEach((card, i) => {
+    const t0 = .75 + i * .12;
+    tl.fromTo(card, { y: 70, opacity: 0, rotationX: -25, transformOrigin: '50% 0%' }, { y: 0, opacity: 1, rotationX: 0, duration: .9, ease: 'springOut', clearProps: 'transform,opacity' }, t0)
+      .fromTo($$('.fc-mems li', card), { x: 28, opacity: 0 }, { x: 0, opacity: 1, duration: .5, stagger: .045, ease: 'springSoft', clearProps: 'transform,opacity' }, t0 + .2)
+      .fromTo($$('.mk2', card), { scale: 0 }, { scale: 1, duration: .6, stagger: .045, ease: 'spring', clearProps: 'transform' }, t0 + .25)
+      .fromTo($$('.ck', card), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .35, stagger: .045, ease: 'springSoft' }, t0 + .35)
+      .add(() => { const b = $('.fc-amt b', card); countUp(b, +b.dataset.to, 0, 1); }, t0 + .2);
+  });
+  tl.fromTo(['#finSum', '#finNote', '.fin-actions > *'], { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity' }, .9 + state.families.length * .12)
+    .add(() => burst(innerWidth / 2, innerHeight * .25, 40, 220), .9);
+}
+function closeFinal() {
+  if (!finalOpen) return;
+  finalOpen = false;
+  if (synth && synth.speaking) { synth.cancel(); setTalking(false); }
+  if (finPushed) { finPushed = false; skipPop = true; try { history.back(); } catch (e) { skipPop = false; } }
+  const r = $('#finalBtn').getBoundingClientRect();
+  const at = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
+  const maxR = Math.hypot(innerWidth, innerHeight);
+  gsap.fromTo(final, { clipPath: `circle(${maxR}px at ${at})` }, {
+    clipPath: `circle(0px at ${at})`, duration: .55, ease: 'power3.in',
+    onComplete: () => { final.hidden = true; gsap.set(final, { clearProps: 'clipPath' }); unlockScroll(); pop($('#finalBtn'), .92); },
+  });
+}
+addEventListener('popstate', () => {
+  if (skipPop) { skipPop = false; return; }
+  if (finalOpen) { finPushed = false; closeFinal(); }
+});
+$('#finalBtn').addEventListener('click', openFinal);
+$('#finClose').addEventListener('click', closeFinal);
+$('#finBack').addEventListener('click', closeFinal);
+// a soft shine sweeps across the final button now and then, so it is easy to spot
+if (!REDUCED) gsap.timeline({ repeat: -1, repeatDelay: 2.6, delay: 2 }).fromTo('.shine', { xPercent: -150 }, { xPercent: 420, duration: 1.2, ease: 'power2.inOut' });
 
 // ——— families & names editor ———
 const edList = $('#edList');
@@ -834,9 +1078,7 @@ function edFamHTML(f, i) {
     </form>
   </div>`;
 }
-function renderEditor() {
-  edList.innerHTML = state.families.map(edFamHTML).join('');
-}
+function renderEditor() { edList.innerHTML = state.families.map(edFamHTML).join(''); }
 function edFam(el) { return state.families.find(f => f.id === el.closest('.ed-fam').dataset.id); }
 function refreshMems(card, f) {
   $('.ed-mems', card).innerHTML = f.members.length ? f.members.map(chipHTML).join('') : '<span class="ed-none">ما فيه أفراد للحين</span>';
@@ -878,7 +1120,7 @@ edList.addEventListener('submit', e => {
   refreshMems(card, f);
   added.forEach((m, i) => {
     const chip = $(`.ed-chip[data-mid="${m.id}"]`, card);
-    gsap.fromTo(chip, { scale: .3, opacity: 0 }, { scale: 1, opacity: 1, duration: .6, delay: i * .05, ease: 'spring', clearProps: 'all' });
+    gsap.fromTo(chip, { scale: .3, opacity: 0 }, { scale: 1, opacity: 1, duration: .6, delay: i * .05, ease: 'spring', clearProps: 'transform,opacity' });
   });
   input.value = '';
   input.focus();
@@ -917,19 +1159,19 @@ $('#pasteToggle').addEventListener('click', () => {
   $('#pasteToggle').hidden = true;
   const box = $('#pasteBox');
   box.hidden = false;
-  gsap.fromTo(box, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'all' });
+  gsap.fromTo(box, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'transform,opacity' });
   $('#pasteText').focus();
 });
 function parseNames(text) {
   const out = [];
   let fam = null;
   for (const raw of String(text).split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line) { fam = null; continue; }
+    const line = raw.trim().replace(/^[‌‏‎]+/, '');
+    if (!line || /^[\d٠-٩]+\s*(فرد|افراد|أفراد)/.test(line)) { if (!line) fam = null; continue; }
     const m = line.match(/^(.+?)\s*[:：]\s*(.*)$/);
     if (m) { fam = { name: m[1].replace(/^[\s\-•*·]+/, '').trim(), members: splitNames(m[2]) }; out.push(fam); }
     else if (fam) fam.members.push(...splitNames(line));
-    else { fam = { name: line, members: [] }; out.push(fam); }
+    else { fam = { name: line, members: [line] }; out.push(fam); }
   }
   return out.filter(f => f.name);
 }
@@ -937,8 +1179,6 @@ $('#pasteOk').addEventListener('click', () => {
   const parsed = parseNames($('#pasteText').value);
   if (!parsed.length) { shake($('#pasteText')); return; }
   const before = JSON.stringify(state);
-  // drop the sample families the first time real names come in
-  if (state.families.every(f => DEFAULT_FAMILIES.some(([n]) => n === f.name))) state.families = [];
   parsed.forEach(p => {
     const same = state.families.find(f => f.name === p.name);
     const members = p.members.map(n => ({ id: uid(), name: n, present: true }));
@@ -962,27 +1202,16 @@ onClose.editSheet = () => {
   if (edDirty) setTimeout(() => rebuild(true), 250);
 };
 
-// ——— a new gathering: clear the price and mark everyone present ———
-$('#resetBtn').addEventListener('click', () => {
-  const before = JSON.stringify(state);
-  state.total = 0;
-  state.families.forEach(f => f.members.forEach(m => { m.present = true; }));
-  save();
-  $$('.mem', list).forEach((b, i) => { if (!b.classList.contains('on')) syncMember(b, true, true, i * .03); });
-  if (openId) closeFamily(false);
-  update();
-  scrollToY(0);
-  toast('بدينا عزيمة جديدة', before);
-});
-
 // ——— send / listen ———
 function summary() {
   const c = compute();
-  const L = ['حساب القطّة', `الفاتورة: ${fmt(state.total)} ريال`, `الحاضرين: ${fmt(c.heads)}، على الشخص ${fmt(c.per)} ريال`, ''];
+  const L = ['حساب القطّة', `الفاتورة: ${fmt(state.total)} ريال`, `الحاضرين: ${fmt(c.heads)} من ${fmt(c.all)}`, `على الشخص: ${fmt(c.per)} ريال`, ''];
   for (const f of state.families) {
     const n = c.rows.get(f.id);
     L.push(n ? `${f.name} (${fmt(n)}): ${fmt(c.share(f.id))} ريال` : `${f.name}: ما حضر أحد`);
   }
+  const absent = state.families.flatMap(f => f.members.filter(m => !m.present).map(m => m.name));
+  if (absent.length) L.push('', `ما حضروا: ${absent.join('، ')}`);
   return L.join('\n');
 }
 function needPrice() {
@@ -991,17 +1220,6 @@ function needPrice() {
   setTimeout(() => shake($('#priceBtn')), 400);
 }
 $('#waBtn').addEventListener('click', e => { if (!state.total) { e.preventDefault(); needPrice(); } });
-$('#copyBtn').addEventListener('click', () => {
-  if (!state.total) { needPrice(); return; }
-  const text = summary();
-  const fallback = () => {
-    $('#copyText').value = text;
-    openSheet('copySheet');
-    setTimeout(() => { const t = $('#copyText'); t.focus(); t.select(); }, 450);
-  };
-  try { navigator.clipboard.writeText(text).then(() => { toast('نسخنا الحساب'); haptic(15); }, fallback); }
-  catch (e) { fallback(); }
-});
 // read the result aloud in Arabic, when the phone has a voice for it
 const synth = window.speechSynthesis;
 if (synth && window.SpeechSynthesisUtterance) $('#speakBtn').hidden = false;
@@ -1012,7 +1230,6 @@ function setTalking(on) {
   $('#speakLbl').textContent = on ? 'وقّف الصوت' : 'اسمع الحساب';
 }
 $('#speakBtn').addEventListener('click', () => {
-  if (!state.total) { needPrice(); return; }
   if (synth.speaking) { synth.cancel(); setTalking(false); return; }
   const c = compute();
   const parts = [`الفاتورة ${Math.round(state.total)} ريال.`, `على الشخص ${c.per} ريال.`];
@@ -1087,17 +1304,13 @@ function burst(x, y, count, spread) {
 
 // ——— boot ———
 function rebuild(anim) {
-  ring.classList.remove('focus');
-  buildRing();
+  ring.build();
   renderList();
   update(false);
-  if (openId) {
-    ring.classList.add('focus');
-    segs.forEach((s, sid) => s.el.classList.toggle('on', sid === openId));
-  }
+  ring.focus(openId);
   if (anim) {
-    segs.forEach(s => { s.start = 0; s.len = 0; drawSeg(s); });
-    updateRing(compute(), true, .08);
+    ring.zero();
+    ring.update(compute(), true, .07);
     gsap.fromTo('.fam', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .05, ease: 'springSoft', clearProps: 'transform,opacity' });
   }
 }
@@ -1106,22 +1319,19 @@ function intro() {
   const c = compute();
   const tl = gsap.timeline();
   tl.fromTo('#step1 .step-h', { y: 20, opacity: 0, ...blur(6) }, { y: 0, opacity: 1, ...blur(0), duration: .6, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, 0)
-    .fromTo('.ring-center', { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, ease: 'spring', clearProps: 'transform,opacity' }, .05)
-    .fromTo('.ring-track', { opacity: 0 }, { opacity: 1, duration: .6 }, 0)
-    .add(() => {
-      segs.forEach(s => { s.start = 0; s.len = 0; drawSeg(s); });
-      updateRing(c, true, .09);
-    }, .15)
+    .fromTo('#step1 .ring-center', { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, ease: 'spring', clearProps: 'transform,opacity' }, .05)
+    .fromTo('#ring .ring-track', { opacity: 0 }, { opacity: 1, duration: .6 }, 0)
+    .add(() => { ring.zero(); ring.update(c, true, .08); }, .15)
     .add(() => {
       const t = $('#totalVal'); t.dataset.val = 0; setNum(t, state.total);
       const p = $('#perVal'); p.dataset.val = 0; setNum(p, c.per);
     }, .3)
     .fromTo(['#perBox', '#headsLine'], { y: 16, opacity: 0, ...blur(6) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .45)
     .fromTo('#step2 > :not(.list)', { y: 24, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .55)
-    .fromTo('.fam', { y: 50, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .7, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .62)
+    .fromTo('.fam', { y: 50, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .7, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .62)
     .fromTo('#step3 > *', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .95);
 }
-buildRing();
+ring.build();
 renderList();
 update(false);
 intro();
