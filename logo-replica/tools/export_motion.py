@@ -27,7 +27,9 @@ for i in range(1,58):
         th,s,tx,ty=p['prm']; cls={'h':0,'g':1,'c':2}[p['cls']]
         a=min(1,p['alpha']) if cls else min(0.85,p['alpha'])
         rr=runs(p['bins'])
-        if i>=45 and cls==2: rr=[[0,360]]   # finished letters: no slivers missing
+        if i>=45:
+            if p['area']<600: continue        # stray fragments once the word has settled
+            if cls==2: rr=[[0,360]]          # finished letters: no slivers missing
         fr.append([cls,p['letter'],round(th,1),round(s,3),round(tx*DS/XH,4),round(ty*DS/XH,4),round(a,2),rr]); kept+=1
     fr.sort(key=lambda q:q[0]); frames.append(fr)
 src=open(target).read(); M=json.loads(src[src.index('=')+1:src.rindex(';')])

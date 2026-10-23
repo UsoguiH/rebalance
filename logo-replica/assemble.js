@@ -139,7 +139,46 @@
       });
     }
 
+    // The original word in its own letterforms plays the frame-exact vector trace
+    // of the source video (slaace.frames.js), when that file is on the page.
+    function composeTrace(L) {
+      const T = root.SLAACE;
+      const last = L.letters[L.letters.length - 1];
+      const x1 = last.x + last.r, xh = L.xh;
+      svg.setAttribute('viewBox', `${-xh * 0.55} ${-xh * 1.98} ${x1 + xh * 1.4} ${xh * 3.05}`);
+      const inks = [colors.green, colors.cream];
+      const groups = T.frames.map((layers) => {
+        const g = el('g', { transform: 'translate(-354 -416)' });
+        layers.forEach((levels, ink) => levels.forEach(([op, d]) => {
+          const p = el('path', { d, fill: inks[ink], 'fill-rule': 'evenodd' }, g);
+          if (op < 1) p.setAttribute('fill-opacity', op);
+        }));
+        return g;
+      });
+      for (let f = 0; f < FRAMES; f++) {
+        const g = el('g', {}, svg);
+        g.style.display = 'none';
+        g.appendChild(groups[T.sequence[Math.min(f, T.sequence.length - 1)]].cloneNode(true));
+        drawMark(g, f, x1, xh);
+        frames.push(g);
+      }
+    }
+
+    function drawMark(g, f, x1, xh) {
+      if (!o.registered) return;
+      const R = data.registered, op = R.opacity[Math.min(R.opacity.length - 1, f)];
+      if (op <= 0.01) return;
+      const r = R.r * xh, mx = x1 + R.x * xh, my = R.y * xh;
+      const m = el('g', { fill: 'none', stroke: colors.cream, opacity: op.toFixed(3) }, g);
+      el('circle', { cx: mx, cy: my, r, 'stroke-width': r * 0.24 }, m);
+      el('path', {
+        d: `M${mx - r * 0.36} ${my + r * 0.52}v${-r * 1.04}h${r * 0.45}a${r * 0.31} ${r * 0.31} 0 0 1 0 ${r * 0.62}h${-r * 0.45}M${mx + r * 0.02} ${my - r * 0.1}l${r * 0.36} ${r * 0.62}`,
+        'stroke-width': r * 0.2, 'stroke-linejoin': 'round',
+      }, m);
+    }
+
     function compose(L) {
+      if (L.original && root.SLAACE && L.letters.map((q) => q.ch).join('') === 'slaace') return composeTrace(L);
       const { letters, xh } = L;
       const x0 = Math.min(...letters.map((q) => q.x + q.l));
       const x1 = Math.max(...letters.map((q) => q.x + q.r));
@@ -224,18 +263,7 @@
             'stroke-width': data.wave.width * xh, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
           }, g);
         }
-        if (o.registered) {
-          const R = data.registered, op = R.opacity[Math.min(R.opacity.length - 1, f)];
-          if (op > 0.01) {
-            const r = R.r * xh, mx = x1 + R.x * xh, my = R.y * xh;
-            const m = el('g', { fill: 'none', stroke: colors.cream, opacity: op.toFixed(3) }, g);
-            el('circle', { cx: mx, cy: my, r, 'stroke-width': r * 0.24 }, m);
-            el('path', {
-              d: `M${mx - r * 0.36} ${my + r * 0.52}v${-r * 1.04}h${r * 0.45}a${r * 0.31} ${r * 0.31} 0 0 1 0 ${r * 0.62}h${-r * 0.45}M${mx + r * 0.02} ${my - r * 0.1}l${r * 0.36} ${r * 0.62}`,
-              'stroke-width': r * 0.2, 'stroke-linejoin': 'round',
-            }, m);
-          }
-        }
+        drawMark(g, f, x1, xh);
         frames.push(g);
       }
     }

@@ -54,36 +54,46 @@ to top.
 
 ## Any word
 
-`any-word.html` plays the same animation for any word you type. It is a rebuild
-of the motion, not a trace, so it works with any text. `assemble.js` holds the
-generator, and every timing in it comes from measuring the original frames:
+`any-word.html` plays the animation for any word you type.
 
-- **Chunks.** Each letter is cut into two or three chunks by circles, so the cut
-  edges are curved like the original's. The chunks rise from below (now and then
-  from above) while rotating and flipping, and fade up to half-opacity cream. The
-  odd chunk arrives solid green. A letter sets off at frame `-1 + 15c`, where `c`
-  is its centre as a fraction of the word's width, and flies for 9 frames.
-- **Colour.** At frame `2 + 20c` two growing circles lay down green patches, and
-  three more sweep cream over the letter. Each cream circle is sized to cover the
-  whole letter from its own centre, so every letter ends fully cream. This gives
-  the original's green and cream patchwork, which lasts until about frame 35.
-- **Wave.** A sine stroke: amplitude 0.24 x-heights, wavelength 1.54 x-heights,
-  thickness 0.107 x-heights, green at 80% opacity, round ends. Its head and tail
-  follow keyframes measured from the original, as fractions of the word width.
-  Its crests drift left, slowing exponentially (time constant 2.75 frames), and
-  past the last letter it bends down and fades.
-- **Loop.** The loop is 57 frames at 25 fps (2.28 s), as in the original. The ®
-  fades in over frames 25 to 42.
+- **The word "slaace"** in the original letterforms plays the frame-exact vector
+  trace above, so it matches the source to within about 1% per pixel.
+- **Any other word** replays the original's measured motion. `motion.data.js`
+  holds a rotoscope of the source: in each of the 57 frames, every coloured
+  piece was matched to a copy of one of the six letters, moved by a rotation,
+  scale and shift, and clipped to the angular slices around the copy's centre
+  where the piece shows. There are faint cream ghosts, green copies and cream
+  copies, painted in that order, as in the original.
+  - Each letter of the typed word takes the pieces of the original letter
+    nearest to it in position.
+  - It is shifted in time by 20.8 frames per word width, which is how the
+    original staggers its letters.
+  - Shifts and sizes are stored in x-heights, so the motion scales to any font.
+- **The wave** is a sine stroke fitted to every frame of the source. Its height,
+  amplitude and wavelength are in x-heights; its start, end and crest are
+  relative to the word's width.
+- **Letterforms:** words made only of s, l, a, c and e use the original
+  letterforms, taken from the trace of the final frame. Other words use a
+  Google Font, Anybody by default.
 
-The cuts are seeded from the word, so a word always plays the same way. Shuffle
-picks new cuts. The slaace typeface is custom, so the closest Google Font is the
-default: Anybody, semi-expanded, weight 880. Four other fonts are offered.
+How close the replay is, measured on "slaace" against the source frames (mean
+error out of 255; a blank frame scores 8 at frame 10 and 32 when finished):
+4.1 at frame 10, 4.9 at frame 20, 4.3 at frame 30 and 2.9 once the word has
+settled. The settled error is edge anti-aliasing. The first 15 frames match
+least well, because their faint pieces are the hardest to rotoscope. On other
+words the build-up also looks more fragmented, because the slices were measured
+on the original's letter shapes.
+
+The tools that produced the data are in `tools/`: `rotoscope.py` (the piece
+fits), `fit_wave.py` (the wave) and `export_motion.py` (writes `motion.data.js`).
 
 ```html
 <div id="logo" style="width:800px;height:300px"></div>
+<script src="slaace.frames.js"></script>   <!-- optional: exact playback of "slaace" -->
+<script src="motion.data.js"></script>
 <script src="assemble.js"></script>
 <script>
-  const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'matcha' });
+  const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'lace' });
   anim.ready.then(() => anim.play());   // also: pause(), replay(), seek(frame), set({...})
 </script>
 ```
