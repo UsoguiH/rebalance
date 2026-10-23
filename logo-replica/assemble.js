@@ -254,6 +254,13 @@
     // (the container must be able to shrink, or the resize never comes).
     canvas.style.cssText = 'display:block;position:absolute';
     container.appendChild(canvas);
+    // An empty in-flow block 300 px wide (at most the available width) gives
+    // a container that takes its width from its content the old canvas's
+    // width. A width the author sets on the container wins over it.
+    const sizer = document.createElement('div');
+    sizer.setAttribute('aria-hidden', 'true');
+    sizer.style.cssText = 'width:300px;max-width:100%;height:0;margin:0;padding:0;border:0;visibility:hidden;pointer-events:none';
+    container.appendChild(sizer);
     const ctx = canvas.getContext('2d');
 
     let scene = null, frame = 0, playing = false, last = 0, token = 0;
@@ -552,14 +559,11 @@
     let fit = { k: 1, dpr: 1, ox: 0, oy: 0, ready: false };
     // A container with no height of its own is given the word's proportions
     // with CSS aspect-ratio (ignored by the browser once it has a real height).
-    let ownRatio = false, ownPosition = false, ownWidth = false;
+    let ownRatio = false, ownPosition = false;
     function resize() {
       // not in the document, or hidden: lay out when the ResizeObserver sees it
       if (!container.isConnected || !container.getClientRects().length) return;
-      // a container that takes its width from its content (inline-block, a
-      // flex item, absolute without a width) gets the old canvas's 300 px
-      if (container.clientWidth === 0) { container.style.minWidth = '300px'; ownWidth = true; }
-      if (container.clientWidth === 0) return;
+      if (container.clientWidth === 0) return;   // zero width (a collapsed panel): wait for a width
       if (!scene && ownRatio) { container.style.aspectRatio = ''; ownRatio = false; }
       const cs = getComputedStyle(container);
       // the canvas is positioned against the container
@@ -659,7 +663,7 @@
         // give the container back the styles it had
         if (ownRatio) container.style.aspectRatio = '';
         if (ownPosition) container.style.position = '';
-        if (ownWidth) container.style.minWidth = '';
+        sizer.remove();
       },
     };
     api.ready = build();
