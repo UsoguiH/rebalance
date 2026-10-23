@@ -87,8 +87,8 @@
 
   // ------------------------------------------------------------------ layout
   // Gaps between ink boxes in the original logo, measured by fitting each
-  // letter to the trace's last frame (to a quarter unit).
-  const ORIGINAL_GAP = { sl: -12.8, la: 1.75, aa: 4.25, ac: 3, ce: 2.5 };
+  // letter to the trace's last frame (to a hundredth of a unit).
+  const ORIGINAL_GAP = { sl: -12.9, la: 1.9, aa: 4.21, ac: 3.09, ce: 2.5 };
 
   // Spacing between two glyphs of the built font: the original's own gaps
   // between its letters (3 units for pairs it does not have), otherwise as
@@ -253,11 +253,14 @@
     // Positioned absolutely, so its fixed size never holds the container open
     // (the container must be able to shrink, or the resize never comes).
     canvas.style.cssText = 'display:block;position:absolute';
-    if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.appendChild(canvas);
     const ctx = canvas.getContext('2d');
 
-    let scene = null, frame = 0, playing = false, last = 0, token = 0, lastShow = 0;
+    let scene = null, frame = 0, playing = false, last = 0, token = 0;
+    // A capped player draws once per time slot, offset from the others' slots,
+    // so players take turns even after a long frame (they never fall in step).
+    const phase = instances++ * 7;
+    let slot = -1;
     let drawn = -1;   // frame last drawn, or -1 when the canvas must be redrawn
     let drawnLook = '';   // colours and options the last drawing used
 
@@ -483,7 +486,7 @@
       } else if (scene.trace) {
         const fi = Math.min(FRAMES - 1, Math.floor(frame));
         const layers = scene.trace[scene.traceSeq[fi]];
-        ctx.save(); ctx.translate(-354.25, -416);   // the s's ink edge and the baseline in the trace
+        ctx.save(); ctx.translate(-354.2, -416);   // the s's ink edge and the baseline in the trace
         layers.forEach((levels, ink) => {
           ctx.fillStyle = ink ? colors.cream : colors.green;
           for (const [op, p] of levels) { ctx.globalAlpha = op; ctx.fill(p, 'evenodd'); }
@@ -547,9 +550,25 @@
     // covers only where pieces can reach (scene.paint), within the container,
     // so a tall phone screen does not make it clear and composite empty space.
     let fit = { k: 1, dpr: 1, ox: 0, oy: 0 };
+    let autoHeight = false;   // the container had no height of its own: give it the word's
     function resize() {
+      if (!container.isConnected) return;   // laid out once it is in the document (ResizeObserver)
+      const cs = getComputedStyle(container);
+      // the canvas is positioned against the container
+      if (cs.position === 'static') container.style.position = 'relative';
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const cw = Math.max(1, container.clientWidth), ch = Math.max(1, container.clientHeight);
+      const padL = parseFloat(cs.paddingLeft) || 0, padT = parseFloat(cs.paddingTop) || 0;
+      const cw = Math.max(1, container.clientWidth - padL - (parseFloat(cs.paddingRight) || 0));
+      let ch = container.clientHeight - padT - (parseFloat(cs.paddingBottom) || 0);
+      if (scene && (autoHeight || ch < 2)) {
+        autoHeight = true;
+        ch = Math.max(1, Math.round((cw * scene.view.h) / scene.view.w));
+        // min-height counts padding and borders too when the box is border-box
+        const extra = cs.boxSizing === 'border-box'
+          ? padT + (parseFloat(cs.paddingBottom) || 0) + (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0) : 0;
+        container.style.minHeight = ch + extra + 'px';
+      }
+      ch = Math.max(1, ch);
       let left = 0, top = 0, dw = cw, dh = ch, k = 1, cx = 0, cy = 0;
       if (scene) {
         const v = scene.view, P = scene.paint;
@@ -563,7 +582,7 @@
       const w = Math.round(dw * dpr), h = Math.round(dh * dpr);
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
       const st = canvas.style;
-      st.width = dw + 'px'; st.height = dh + 'px'; st.left = left + 'px'; st.top = top + 'px';
+      st.width = dw + 'px'; st.height = dh + 'px'; st.left = left + padL + 'px'; st.top = top + padT + 'px';
       render();
     }
     let ro = null;
@@ -586,8 +605,11 @@
         if (!o.loop) { show(n); playing = false; stopTicking(tick); return; }
         f %= n;
       }
-      if (o.maxFps && now - lastShow < 1000 / o.maxFps - 4) { frame = f; return; }
-      lastShow = now;
+      if (o.maxFps) {
+        const iv = 1000 / o.maxFps, s = Math.floor((now - (phase % iv)) / iv + 0.15);
+        if (s === slot) { frame = f; return; }
+        slot = s;
+      }
       show(f);
     }
 
@@ -595,9 +617,7 @@
       play() {
         if (playing) return api;
         if (frame >= api.frames) frame = 0;
-        playing = true; last = performance.now();
-        // spread capped instances over the refreshes instead of drawing all at once
-        lastShow = last - (o.maxFps ? (instances++ * 7) % (1000 / o.maxFps) : 0);
+        playing = true; last = performance.now(); slot = -1;
         startTicking(tick);
         return api;
       },
@@ -611,8 +631,13 @@
         drawn = -1;
         // colours and playback settings only need a redraw, not a new scene
         const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady'];
-        if (scene && Object.keys(opts).every((k) => light.includes(k))) { render(); return Promise.resolve(api); }
-        return build();
+        const keys = Object.keys(opts);
+        if (scene && keys.length && keys.every((k) => light.includes(k))) {
+          render();
+          if (o.onReady) o.onReady(api);
+          return Promise.resolve(api);
+        }
+        return build();   // anything else, or set() with no options: lay the word out again
       },
       get frame() { return frame; },
       get frames() { return scene ? scene.frames : FRAMES; },

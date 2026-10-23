@@ -142,6 +142,12 @@ settled. The settled error is edge anti-aliasing. The first 15 frames match
 least well, because their faint pieces are the hardest to rotoscope. Every glyph
 of the font, alone and doubled, ends exactly on its still letterform.
 
+The original letters keep the logo's spacing, measured by fitting each letter to
+the trace's last frame to a hundredth of a unit. So the built "slaace" lies on
+the trace, and switching **Exact slaace** does not move it. The one difference
+left is the second "a": the logo's two a's are drawn slightly differently, and
+the font has a single "a".
+
 The tools that produced the data are in `tools/`: `rotoscope.py` (the piece
 fits), `fit_wave.py` (the wave) and `export_motion.py` (writes `motion.data.js`).
 
@@ -154,6 +160,6 @@ fits), `fit_wave.py` (the wave) and `export_motion.py` (writes `motion.data.js`)
 <script>
   const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'hello' });
   anim.ready.then(() => anim.play());   // also: pause(), replay(), seek(frame), set({...}), frames
-  // Change colours and options through set(): a settled word is not redrawn otherwise.
+  // The container sets the size; without a height it takes the word's own proportions.
 </script>
 ```
