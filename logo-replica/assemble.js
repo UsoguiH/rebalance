@@ -474,7 +474,7 @@
       const w = canvas.width, h = canvas.height;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      if (!scene) return;
+      if (!scene || !fit.ready) return;   // nothing until resize() has placed the word
       const F = fit;
       ctx.setTransform(F.k * F.dpr, 0, 0, F.k * F.dpr, F.ox * F.dpr, F.oy * F.dpr);
       const { xh, x1 } = scene;
@@ -549,13 +549,18 @@
     // The word is scaled to fit its view box in the container. The canvas
     // covers only where pieces can reach (scene.paint), within the container,
     // so a tall phone screen does not make it clear and composite empty space.
-    let fit = { k: 1, dpr: 1, ox: 0, oy: 0 };
+    let fit = { k: 1, dpr: 1, ox: 0, oy: 0, ready: false };
     // A container with no height of its own is given the word's proportions
     // with CSS aspect-ratio (ignored by the browser once it has a real height).
-    let ownRatio = false, ownPosition = false;
+    let ownRatio = false, ownPosition = false, ownWidth = false;
     function resize() {
       // not in the document, or hidden: lay out when the ResizeObserver sees it
-      if (!container.isConnected || container.clientWidth === 0) return;
+      if (!container.isConnected || !container.getClientRects().length) return;
+      // a container that takes its width from its content (inline-block, a
+      // flex item, absolute without a width) gets the old canvas's 300 px
+      if (container.clientWidth === 0) { container.style.minWidth = '300px'; ownWidth = true; }
+      if (container.clientWidth === 0) return;
+      if (!scene && ownRatio) { container.style.aspectRatio = ''; ownRatio = false; }
       const cs = getComputedStyle(container);
       // the canvas is positioned against the container
       if (cs.position === 'static') { container.style.position = 'relative'; ownPosition = true; }
@@ -580,7 +585,7 @@
         dw = Math.max(1, Math.min(cw, Math.ceil(P.r * k + cx)) - left);
         dh = Math.max(1, Math.min(ch, Math.ceil(P.b * k + cy)) - top);
       }
-      fit = { k, dpr, ox: cx - left, oy: cy - top };
+      fit = { k, dpr, ox: cx - left, oy: cy - top, ready: true };
       const w = Math.round(dw * dpr), h = Math.round(dh * dpr);
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
       const st = canvas.style;
@@ -654,6 +659,7 @@
         // give the container back the styles it had
         if (ownRatio) container.style.aspectRatio = '';
         if (ownPosition) container.style.position = '';
+        if (ownWidth) container.style.minWidth = '';
       },
     };
     api.ready = build();

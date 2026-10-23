@@ -160,6 +160,7 @@ fits), `fit_wave.py` (the wave) and `export_motion.py` (writes `motion.data.js`)
 <script>
   const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'hello' });
   anim.ready.then(() => anim.play());   // also: pause(), replay(), seek(frame), set({...}), frames
-  // The container sets the size; without a height it takes the word's own proportions.
+  // The container sets the size. Without a height it takes the word's proportions;
+  // without a width (inline-block, a flex item) it is 300 px wide.
 </script>
 ```
