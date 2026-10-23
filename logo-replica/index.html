@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--replica:head-->
+<title>Slaace Logo Replica</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* One screen: the animation fills the page on its own background; a small
+   transport bar sits at the bottom and fades back when idle. */
+:root {
+  --bg: #022713;
+  --ink: #CDE4B1;
+  --green: #18C76B;
+  --bar: rgba(205, 228, 177, 0.08);
+  --bar-line: rgba(205, 228, 177, 0.16);
+  --muted: rgba(205, 228, 177, 0.62);
+  --f-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 var(--f-ui);
+  display: grid; grid-template-rows: 1fr auto; overflow: hidden;
+}
+.stage { position: relative; min-height: 0; display: grid; place-items: center; }
+.stage svg { width: min(92vw, 1100px); height: auto; max-height: 100%; display: block; }
+.bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center;
+  padding-block: 12px calc(14px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  transition: opacity .4s;
+}
+body.idle .bar { opacity: 0.12; }
+.bar:hover, .bar:focus-within { opacity: 1 !important; }
+button {
+  font: inherit; color: var(--ink); background: var(--bar); border: 1px solid var(--bar-line);
+  border-radius: 999px; height: 34px; min-width: 34px; padding: 0 12px; cursor: pointer;
+  display: inline-grid; place-items: center;
+}
+button:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+button svg { width: 14px; height: 14px; display: block; }
+input[type="range"] { accent-color: var(--green); }
+#scrub { width: min(46vw, 420px); }
+.read { font: 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 9.5em; text-align: center; }
+select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--bar-line); border-radius: 999px; height: 34px; padding: 0 10px; }
+@media (max-width: 560px) { #scrub { width: 100%; order: 10; } }
+</style>
+<!--/replica:head-->
+</head>
+<body>
+<!--replica:body-->
+<main class="stage" id="stage" aria-label="Logo animation"></main>
+<div class="bar" role="toolbar" aria-label="Playback">
+  <button id="play" type="button" aria-label="Pause"><svg viewBox="0 0 14 14" id="play-ic"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></button>
+  <button id="prev" type="button" aria-label="Previous frame"><svg viewBox="0 0 14 14"><path d="M3 2h2v10H3zM12 2v10L6 7z" fill="currentColor"/></svg></button>
+  <button id="next" type="button" aria-label="Next frame"><svg viewBox="0 0 14 14"><path d="M9 2h2v10H9zM2 2v10l6-5z" fill="currentColor"/></svg></button>
+  <input id="scrub" type="range" min="0" max="56" value="0" step="1" aria-label="Frame">
+  <span class="read" id="read">frame 1 / 57 · 0.00 s</span>
+  <select id="speed" aria-label="Speed">
+    <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
+  </select>
+  <button id="loop" type="button" aria-pressed="true">Loop</button>
+</div>
+<!--/replica:body-->
+<script src="slaace.frames.js"></script>
+<!--replica:script-->
+<script>
+(function () {
+  const D = window.SLAACE;
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = (id) => document.getElementById(id);
+  const N = D.sequence.length;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Frame the logo with the same breathing room it has in the source video.
+  const [vx, vy, vw, vh] = D.viewBox;
+  const svg = document.createElementNS(NS, 'svg');
+  const padX = vw * 0.06, padY = vh * 0.18;
+  svg.setAttribute('viewBox', `${vx - padX} ${vy - padY} ${vw + padX * 2} ${vh + padY * 2}`);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Animated slaace wordmark');
+  $('stage').appendChild(svg);
+
+  // One group per traced frame; playback only toggles which one shows.
+  const groups = D.frames.map((layers) => {
+    const g = document.createElementNS(NS, 'g');
+    g.style.display = 'none';
+    layers.forEach((levels, ink) => levels.forEach(([op, d]) => {
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('fill', D.inks[ink]);
+      if (op < 1) p.setAttribute('fill-opacity', op);
+      p.setAttribute('fill-rule', 'evenodd');
+      g.appendChild(p);
+    }));
+    svg.appendChild(g);
+    return g;
+  });
+
+  // The registered mark is too fine to trace; it is drawn and faded per frame.
+  let mark = null;
+  if (D.detail) {
+    const [x0, y0, x1, y1] = D.detail.box, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    mark = document.createElementNS(NS, 'g');
+    mark.setAttribute('fill', D.inks[D.detail.ink]);
+    mark.innerHTML =
+      `<circle cx="${cx}" cy="${cy}" r="4.1" fill="none" stroke="${D.inks[D.detail.ink]}" stroke-width="1"/>` +
+      `<path d="M${cx - 1.5} ${cy + 2.2}v-4.4h1.9a1.3 1.3 0 0 1 0 2.6h-1.9M${cx + 0.1} ${cy - 0.5}l1.5 2.7" fill="none" stroke="${D.inks[D.detail.ink]}" stroke-width="0.85" stroke-linejoin="round"/>`;
+    svg.appendChild(mark);
+  }
+
+  let shown = -1, frame = 0, playing = false, last = 0, acc = 0, speed = 1, loop = true;
+  function show(i) {
+    frame = Math.max(0, Math.min(N - 1, i));
+    const u = D.sequence[frame];
+    if (u !== shown) {
+      if (shown >= 0) groups[shown].style.display = 'none';
+      groups[u].style.display = '';
+      shown = u;
+    }
+    if (mark) mark.setAttribute('opacity', D.detail.opacity[frame]);
+    $('scrub').value = frame;
+    $('read').textContent = `frame ${frame + 1} / ${N} · ${(frame / D.fps).toFixed(2)} s`;
+  }
+
+  function tick(now) {
+    if (!playing) return;
+    acc += ((now - last) / 1000) * speed;
+    last = now;
+    const step = 1 / D.fps;
+    while (acc >= step) {
+      acc -= step;
+      if (frame + 1 >= N) {
+        if (!loop) { show(N - 1); setPlaying(false); return; }
+        show(0);
+      } else show(frame + 1);
+    }
+    requestAnimationFrame(tick);
+  }
+  function setPlaying(on) {
+    playing = on;
+    $('play').setAttribute('aria-label', on ? 'Pause' : 'Play');
+    $('play-ic').innerHTML = on
+      ? '<path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/>'
+      : '<path d="M3 2l9 5-9 5z" fill="currentColor"/>';
+    if (on) {
+      if (!loop && frame >= N - 1) show(0);
+      last = performance.now(); acc = 0;
+      requestAnimationFrame(tick);
+    }
+  }
+
+  $('play').addEventListener('click', () => setPlaying(!playing));
+  $('prev').addEventListener('click', () => { setPlaying(false); show(frame - 1 < 0 ? N - 1 : frame - 1); });
+  $('next').addEventListener('click', () => { setPlaying(false); show((frame + 1) % N); });
+  $('scrub').addEventListener('input', (e) => { setPlaying(false); show(+e.target.value); });
+  $('speed').addEventListener('change', (e) => { speed = +e.target.value; });
+  $('loop').addEventListener('click', (e) => {
+    loop = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', loop);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
+    if (e.code === 'ArrowLeft') $('prev').click();
+    if (e.code === 'ArrowRight') $('next').click();
+  });
+
+  // Fade the bar back when the pointer is idle.
+  let idleT = 0;
+  const wake = () => { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add('idle'), 2200); };
+  ['pointermove', 'pointerdown', 'keydown'].forEach((ev) => addEventListener(ev, wake));
+  wake();
+
+  if (reduce) { show(N - 1); setPlaying(false); }
+  else { show(0); setPlaying(true); }
+})();
+</script>
+<!--/replica:script-->
+</body>
+</html>
