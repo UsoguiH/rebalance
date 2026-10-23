@@ -72,6 +72,19 @@ to top.
 - **The wave** is a sine stroke fitted to every frame of the source. Its height,
   amplitude and wavelength are in x-heights; its start, end and crest are
   relative to the word's width.
+- **Playback** draws on one `<canvas>`. Each piece is linked to the piece it
+  becomes in the next frame, so the player interpolates between the original's
+  25 frames per second and runs at the screen's refresh rate. A draw takes well
+  under a millisecond. The exact "slaace" trace keeps the original's 25 frames
+  per second, since there is nothing to interpolate between traced frames.
+- **Clean-ups for other letters:**
+  - A piece that lands on another letter's place is given to that letter; the
+    fit sometimes explained the second "a" with the first one moved over.
+  - Angles where the original letter has no ink (most of the "l") take the
+    state of the nearest inked angle, so wide letters are not left half hidden.
+  - From the frame each original letter is fully green, and later fully cream,
+    the typed letter gets a base of that colour under its moving copies. In the
+    original those gaps are already filled.
 - **Letterforms:** words made only of s, l, a, c and e use the original
   letterforms, taken from the trace of the final frame. Other words use a
   Google Font, Anybody by default.

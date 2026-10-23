@@ -4,24 +4,28 @@
  * The motion is not invented. motion.data.js holds a rotoscope of the original
  * 25 fps animation: in every one of its 57 frames, each coloured piece was
  * matched to a copy of one of the six letters, moved by a similarity transform
- * (rotation, scale, shift) and clipped to the angular sectors around the copy's
+ * (rotation, scale, shift) and clipped to the angular slices around the copy's
  * centre where the piece is visible. Pieces are faint cream ghosts, green
- * copies or cream copies, painted in that order. The wave is the centreline
- * traced from each frame.
+ * copies or cream copies, painted in that order. Each piece is linked to the
+ * piece it becomes in the next frame, so playback interpolates between the
+ * original's frames and runs at the screen's refresh rate. The wave is a sine
+ * stroke fitted to every frame.
  *
  * A typed word reuses that data. Each of its letters takes the pieces of the
  * original letter nearest to it in the word (by position), shifted in time by
  * 20.8 frames per word width, which is how the original's letters are staggered.
  * Shifts and sizes are in x-heights, so the motion scales to any font.
+ *
+ * Everything is drawn on one <canvas>.
  */
 (function (root) {
   'use strict';
 
-  const NS = 'http://www.w3.org/2000/svg';
   const FPS = 25;
   const FRAMES = 57;
   const STAGGER = 20.8;   // frames per word width between the first and last letter
   const COLORS = { bg: '#022713', cream: '#CDE4B1', green: '#18C76B' };
+  const DEG = Math.PI / 180;
 
   const FONTS = {
     original: { label: 'Original letterforms (s l a c e)', original: true },
@@ -33,13 +37,11 @@
     syne: { label: 'Syne', family: 'Syne', weight: 800, stretch: 'normal', css: 'Syne:wght@800' },
   };
 
-  const el = (name, attrs, parent) => {
-    const e = document.createElementNS(NS, name);
-    for (const k in attrs) e.setAttribute(k, attrs[k]);
-    if (parent) parent.appendChild(e);
-    return e;
-  };
-  const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  function fontString(f, size) {
+    return `${f.stretch && f.stretch !== 'normal' ? f.stretch + ' ' : ''}${f.weight} ${size}px "${f.family}"`;
+  }
 
   function loadFont(font, text) {
     if (font.original || !font.css) return Promise.resolve();
@@ -50,7 +52,7 @@
       l.href = `https://fonts.googleapis.com/css2?family=${font.css}&display=block`;
       document.head.appendChild(l);
     }
-    const spec = `${font.stretch !== 'normal' ? font.stretch + ' ' : ''}${font.weight} 200px "${font.family}"`;
+    const spec = fontString(font, 200);
     const tryLoad = () => (document.fonts ? document.fonts.load(spec, text || 'abc') : Promise.resolve([1]));
     return tryLoad()
       .then((r) => (r && r.length ? r : new Promise((ok) => setTimeout(ok, 350)).then(tryLoad)))
@@ -70,7 +72,7 @@
       for (const ch0 of chars) {
         const ch = ch0.toLowerCase(), g = G.letters[ch];
         if (prev) x += (G.kern[prev + ch] != null ? G.kern[prev + ch] : G.gap);
-        letters.push({ ch, kind: 'path', d: g.d, x, l: 0, r: g.w, t: g.t, b: g.b });
+        letters.push({ ch, path: new Path2D(g.d), x, l: 0, r: g.w, t: g.t, b: g.b });
         x += g.w; prev = ch;
       }
       return { letters, xh: G.xh, original: true };
@@ -78,8 +80,7 @@
     const f = font.original ? FONTS.anybody : font;
     const c = document.createElement('canvas').getContext('2d');
     const size = 200;
-    c.font = `${f.weight} ${size}px "${f.family}"`;
-    try { c.fontStretch = f.stretch; } catch (e) { /* older browsers */ }
+    c.font = fontString(f, size);
     const xh = c.measureText('x').actualBoundingBoxAscent || size * 0.52;
     const all = Array.from(word);
     all.forEach((ch, i) => {
@@ -87,7 +88,7 @@
       const before = c.measureText(all.slice(0, i).join('')).width;
       const m = c.measureText(ch);
       letters.push({
-        ch, kind: 'text', font: f, size, x: before,
+        ch, font: fontString(f, size), x: before,
         l: -m.actualBoundingBoxLeft, r: m.actualBoundingBoxRight,
         t: -m.actualBoundingBoxAscent, b: m.actualBoundingBoxDescent,
       });
@@ -95,18 +96,16 @@
     return { letters, xh, original: false };
   }
 
-  function wedgePath(runs, cx, cy, R) {
-    let d = '';
-    for (const [a0, a1] of runs) {
-      if (a1 - a0 >= 360) return null;
-      d += `M${cx} ${cy}`;
-      for (let a = a0; a <= a1 + 1e-6; a += 5) {
-        const r = (a * Math.PI) / 180;
-        d += `L${(cx + R * Math.cos(r)).toFixed(1)} ${(cy + R * Math.sin(r)).toFixed(1)}`;
-      }
-      d += 'Z';
-    }
-    return d;
+  // Interpolate one piece's slices toward its next-frame form. Runs are only
+  // blended when both frames have the same number of them; otherwise switch half way.
+  function blendRuns(a, b, u) {
+    if (!b || a.length !== b.length) return u < 0.5 ? a : b || a;
+    return a.map(([a0, a1], i) => {
+      let [b0, b1] = b[i];
+      while (b0 - a0 > 180) { b0 -= 360; b1 -= 360; }
+      while (a0 - b0 > 180) { b0 += 360; b1 += 360; }
+      return [lerp(a0, b0, u), lerp(a1, b1, u)];
+    });
   }
 
   function create(container, options) {
@@ -118,172 +117,209 @@
     const data = root.SLAACE_MOTION;
     if (!data) throw new Error('LogoAssemble needs motion.data.js');
 
-    const svg = el('svg', { role: 'img', 'aria-label': 'Animated wordmark', preserveAspectRatio: 'xMidYMid meet' });
-    svg.style.cssText = 'display:block;width:100%;height:100%;overflow:visible';
-    container.appendChild(svg);
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', 'Animated wordmark');
+    canvas.style.cssText = 'display:block;width:100%;height:100%';
+    container.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
 
-    let frames = [], shown = -1, frame = 0, playing = false, raf = 0, last = 0, acc = 0, token = 0;
+    let scene = null, frame = 0, playing = false, raf = 0, last = 0, token = 0;
 
     function build() {
       const my = ++token;
       const font = FONTS[o.font] || FONTS.original;
       return loadFont(font.original ? FONTS.anybody : font, o.word).then(() => {
         if (my !== token) return;
-        svg.innerHTML = '';
-        frames = []; shown = -1;
         const L = layout(o.word, font, data);
-        if (!L.letters.length) { if (o.onUpdate) o.onUpdate(frame, FRAMES); return; }
-        compose(L);
-        show(frame);
+        scene = L.letters.length ? prepare(L) : null;
+        resize();
         if (o.onReady) o.onReady(api);
       });
     }
 
-    // The original word in its own letterforms plays the frame-exact vector trace
-    // of the source video (slaace.frames.js), when that file is on the page.
-    function composeTrace(L) {
-      const T = root.SLAACE;
-      const last = L.letters[L.letters.length - 1];
-      const x1 = last.x + last.r, xh = L.xh;
-      svg.setAttribute('viewBox', `${-xh * 0.55} ${-xh * 1.98} ${x1 + xh * 1.4} ${xh * 3.05}`);
-      const inks = [colors.green, colors.cream];
-      const groups = T.frames.map((layers) => {
-        const g = el('g', { transform: 'translate(-354 -416)' });
-        layers.forEach((levels, ink) => levels.forEach(([op, d]) => {
-          const p = el('path', { d, fill: inks[ink], 'fill-rule': 'evenodd' }, g);
-          if (op < 1) p.setAttribute('fill-opacity', op);
-        }));
-        return g;
-      });
-      for (let f = 0; f < FRAMES; f++) {
-        const g = el('g', {}, svg);
-        g.style.display = 'none';
-        g.appendChild(groups[T.sequence[Math.min(f, T.sequence.length - 1)]].cloneNode(true));
-        drawMark(g, f, x1, xh);
-        frames.push(g);
-      }
-    }
-
-    function drawMark(g, f, x1, xh) {
-      if (!o.registered) return;
-      const R = data.registered, op = R.opacity[Math.min(R.opacity.length - 1, f)];
-      if (op <= 0.01) return;
-      const r = R.r * xh, mx = x1 + R.x * xh, my = R.y * xh;
-      const m = el('g', { fill: 'none', stroke: colors.cream, opacity: op.toFixed(3) }, g);
-      el('circle', { cx: mx, cy: my, r, 'stroke-width': r * 0.24 }, m);
-      el('path', {
-        d: `M${mx - r * 0.36} ${my + r * 0.52}v${-r * 1.04}h${r * 0.45}a${r * 0.31} ${r * 0.31} 0 0 1 0 ${r * 0.62}h${-r * 0.45}M${mx + r * 0.02} ${my - r * 0.1}l${r * 0.36} ${r * 0.62}`,
-        'stroke-width': r * 0.2, 'stroke-linejoin': 'round',
-      }, m);
-    }
-
-    function compose(L) {
-      if (L.original && root.SLAACE && L.letters.map((q) => q.ch).join('') === 'slaace') return composeTrace(L);
+    function prepare(L) {
       const { letters, xh } = L;
       const x0 = Math.min(...letters.map((q) => q.x + q.l));
       const x1 = Math.max(...letters.map((q) => q.x + q.r));
       const top = Math.min(...letters.map((q) => q.t)), bot = Math.max(...letters.map((q) => q.b));
       const W = x1 - x0;
-      const padX = xh * 0.55;
-      svg.setAttribute('viewBox', `${x0 - padX} ${top - xh * 0.7} ${W + padX * 2 + xh * 0.3} ${bot - top + xh * 1.6}`);
-      const defs = el('defs', {}, svg);
-
-      // glyph symbols, positioned in word space
-      letters.forEach((q, j) => {
-        q.id = `la-g${token}-${j}`;
-        if (q.kind === 'path') el('path', { id: q.id, d: q.d, transform: `translate(${q.x} 0)` }, defs);
-        else {
-          const t = el('text', { id: q.id, x: q.x, y: 0 }, defs);
-          t.setAttribute('style', `font-family:"${q.font.family}";font-weight:${q.font.weight};font-stretch:${q.font.stretch};font-size:${q.size}px;font-kerning:none`);
-          t.textContent = q.ch;
-        }
+      letters.forEach((q) => {
         q.cx = q.x + (q.l + q.r) / 2; q.cy = (q.t + q.b) / 2;
         q.pos = W > 0 ? (q.cx - x0) / W : 0.5;
-        // the original letter whose motion this one replays
         let k = 0, best = 1e9;
         data.letters.forEach((s, i) => { const dd = Math.abs(s.pos - q.pos); if (dd < best) { best = dd; k = i; } });
         q.src = k;
         q.shift = (q.pos - data.letters[k].pos) * STAGGER;
       });
-
-      const clipCache = new Map();
-      const clipFor = (q, runs) => {
-        const key = q.id + '|' + JSON.stringify(runs);
-        if (clipCache.has(key)) return clipCache.get(key);
-        const d = wedgePath(runs, q.cx, q.cy, xh * 4);
-        let id = null;
-        if (d) {
-          id = `la-c${token}-${clipCache.size}`;
-          el('path', { d }, el('clipPath', { id }, defs));
-        }
-        clipCache.set(key, id);
-        return id;
+      const S = {
+        letters, xh, x0, x1, W,
+        view: { x: x0 - xh * 0.55, y: top - xh * 0.7, w: W + xh * 1.4, h: bot - top + xh * 1.6 },
+        trace: null, wedges: new Map(),
       };
+      // the original word in its own letterforms plays the frame-exact trace
+      const T = root.SLAACE;
+      if (L.original && T && letters.map((q) => q.ch).join('') === 'slaace') {
+        S.trace = T.frames.map((layers) => layers.map((levels) => levels.map(([op, d]) => [op, new Path2D(d)])));
+        S.traceSeq = T.sequence;
+      }
+      return S;
+    }
 
-      const fill = [colors.cream, colors.green, colors.cream];
-      for (let f = 0; f < FRAMES; f++) {
-        const g = el('g', {}, svg);
-        g.style.display = 'none';
-        // all ghosts first, then green, then cream, as in the original
-        const items = [];
-        letters.forEach((q) => {
-          let fs = Math.round(f - q.shift);
-          if (fs < 0) return;
-          if (fs > FRAMES - 1) fs = FRAMES - 1;
-          for (const p of data.frames[fs]) {
-            if (p[1] === q.src) items.push([p, q]);
-          }
+    function wedge(q, runs) {
+      if (runs.length === 1 && runs[0][1] - runs[0][0] >= 359.5) return null;
+      const key = q.cx + ',' + q.cy + '|' + runs.map((r) => r[0].toFixed(1) + '-' + r[1].toFixed(1)).join(',');
+      let p = scene.wedges.get(key);
+      if (p) return p;
+      p = new Path2D();
+      const R = scene.xh * 4;
+      for (const [a0, a1] of runs) {
+        p.moveTo(q.cx, q.cy);
+        const n = Math.max(2, Math.ceil((a1 - a0) / 5));
+        for (let i = 0; i <= n; i++) {
+          const a = (a0 + ((a1 - a0) * i) / n) * DEG;
+          p.lineTo(q.cx + R * Math.cos(a), q.cy + R * Math.sin(a));
+        }
+        p.closePath();
+      }
+      if (scene.wedges.size > 4000) scene.wedges.clear();
+      scene.wedges.set(key, p);
+      return p;
+    }
+
+    function drawGlyph(q) {
+      if (q.path) { ctx.translate(q.x, 0); ctx.fill(q.path); ctx.translate(-q.x, 0); }
+      else { ctx.font = q.font; ctx.fillText(q.ch, q.x, 0); }
+    }
+
+    // Pieces of one original letter at fractional source time fs.
+    function piecesAt(src, fs) {
+      const out = [];
+      if (fs < 0) return out;
+      if (fs >= FRAMES - 1) {
+        for (const p of data.frames[FRAMES - 1]) if (p[1] === src) out.push(p);
+        return out;
+      }
+      const f0 = Math.floor(fs), u = fs - f0;
+      const A = data.frames[f0], B = data.frames[f0 + 1];
+      const targeted = new Set();
+      for (const p of A) {
+        if (p[8] >= 0) targeted.add(p[8]);
+        if (p[1] !== src) continue;
+        if (p[8] >= 0) {
+          const q = B[p[8]];
+          const dth = ((q[2] - p[2] + 540) % 360) - 180;
+          out.push([p[0], src, p[2] + dth * u, lerp(p[3], q[3], u), lerp(p[4], q[4], u), lerp(p[5], q[5], u),
+            lerp(p[6], q[6], u), blendRuns(p[7], q[7], u)]);
+        } else if (u < 0.5) out.push(p);
+      }
+      if (u >= 0.5) B.forEach((q, i) => { if (q[1] === src && !targeted.has(i)) out.push(q); });
+      return out;
+    }
+
+    function render() {
+      const w = canvas.width, h = canvas.height;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      if (!scene) return;
+      const v = scene.view, k = Math.min(w / v.w, h / v.h);
+      ctx.setTransform(k, 0, 0, k, (w - v.w * k) / 2 - v.x * k, (h - v.h * k) / 2 - v.y * k);
+      const { xh, x0, x1, W } = scene;
+
+      if (scene.trace) {
+        const fi = Math.min(FRAMES - 1, Math.floor(frame));
+        const layers = scene.trace[scene.traceSeq[fi]];
+        ctx.save(); ctx.translate(-354, -416);
+        layers.forEach((levels, ink) => {
+          ctx.fillStyle = ink ? colors.cream : colors.green;
+          for (const [op, p] of levels) { ctx.globalAlpha = op; ctx.fill(p, 'evenodd'); }
         });
+        ctx.restore(); ctx.globalAlpha = 1;
+      } else {
+        // Once the original letter is fully green (later fully cream) underneath its moving
+        // copies, draw that as a base, so no background shows through between slices.
+        scene.letters.forEach((q) => {
+          const fs = frame - q.shift, s = data.letters[q.src];
+          const base = fs >= s.creamFull + 2 ? colors.cream : fs >= s.greenFull ? colors.green : null;
+          if (base) { ctx.fillStyle = base; drawGlyph(q); }
+        });
+        const items = [];
+        scene.letters.forEach((q) => { for (const p of piecesAt(q.src, frame - q.shift)) items.push([p, q]); });
         items.sort((a, b) => a[0][0] - b[0][0]);
+        const fill = [colors.cream, colors.green, colors.cream];
         for (const [p, q] of items) {
           const [cls, , th, s, tx, ty, alpha, runs] = p;
-          const outer = el('g', {
-            transform: `translate(${(q.cx + tx * xh).toFixed(2)} ${(q.cy + ty * xh).toFixed(2)}) rotate(${th}) scale(${s}) translate(${(-q.cx).toFixed(2)} ${(-q.cy).toFixed(2)})`,
-          }, g);
-          const clip = clipFor(q, runs);
-          const use = el('use', { href: '#' + q.id, fill: fill[cls] }, outer);
-          if (clip) use.setAttribute('clip-path', `url(#${clip})`);
-          if (alpha < 0.99) use.setAttribute('fill-opacity', alpha);
+          ctx.save();
+          ctx.translate(q.cx + tx * xh, q.cy + ty * xh);
+          ctx.rotate(th * DEG);
+          ctx.scale(s, s);
+          ctx.translate(-q.cx, -q.cy);
+          const clip = wedge(q, runs);
+          if (clip) ctx.clip(clip);
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = fill[cls];
+          drawGlyph(q);
+          ctx.restore();
         }
-        // the wave: a sine stroke fitted to every frame of the original. Its shape is in
-        // x-heights; where it starts, ends and crests is relative to the word's width.
-        const wv = data.wave.frames[f];
-        if (wv) {
-          const [yc, amp, lam, crest, xa, xb, op] = wv;
-          const ax = x0 + xa * W, bx = x0 + xb * W, cx = x0 + crest * W;
-          const n = Math.max(8, Math.ceil((bx - ax) / (xh * 0.05)));
-          let d = '';
-          for (let i = 0; i <= n; i++) {
-            const x = ax + ((bx - ax) * i) / n;
-            const y = (yc - amp * Math.cos((2 * Math.PI * (x - cx)) / (lam * xh))) * xh;
-            d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
-          }
-          el('path', {
-            d, fill: 'none', stroke: colors.green, 'stroke-opacity': op,
-            'stroke-width': data.wave.width * xh, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
-          }, g);
+        ctx.globalAlpha = 1;
+      }
+
+      // wave, interpolated between the fitted frames
+      const f0 = Math.floor(frame), u = frame - f0;
+      const a = data.wave.frames[f0], b = data.wave.frames[Math.min(FRAMES - 1, f0 + 1)];
+      const wv = a && b ? a.map((x, i) => lerp(x, b[i], u)) : (u < 0.5 ? a : b);
+      if (wv) {
+        const [yc, amp, lam, crest, xa, xb, op] = wv;
+        const ax = x0 + xa * W, bx = x0 + xb * W, cx = x0 + crest * W;
+        const n = Math.max(8, Math.ceil((bx - ax) / (xh * 0.05)));
+        ctx.beginPath();
+        for (let i = 0; i <= n; i++) {
+          const x = ax + ((bx - ax) * i) / n;
+          const y = (yc - amp * Math.cos((2 * Math.PI * (x - cx)) / (lam * xh))) * xh;
+          i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
         }
-        drawMark(g, f, x1, xh);
-        frames.push(g);
+        ctx.globalAlpha = op; ctx.strokeStyle = colors.green; ctx.lineWidth = data.wave.width * xh;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(); ctx.globalAlpha = 1;
+      }
+
+      // registered mark
+      if (o.registered) {
+        const R = data.registered, ro = R.opacity;
+        const op = lerp(ro[Math.min(ro.length - 1, f0)], ro[Math.min(ro.length - 1, f0 + 1)], u);
+        if (op > 0.01) {
+          const r = R.r * xh, mx = x1 + R.x * xh, my = R.y * xh;
+          ctx.globalAlpha = op; ctx.strokeStyle = colors.cream; ctx.lineJoin = 'round';
+          ctx.lineWidth = r * 0.24; ctx.beginPath(); ctx.arc(mx, my, r, 0, Math.PI * 2); ctx.stroke();
+          ctx.lineWidth = r * 0.2; ctx.beginPath();
+          ctx.moveTo(mx - r * 0.36, my + r * 0.52); ctx.lineTo(mx - r * 0.36, my - r * 0.52); ctx.lineTo(mx + r * 0.09, my - r * 0.52);
+          ctx.arc(mx + r * 0.09, my - r * 0.21, r * 0.31, -Math.PI / 2, Math.PI / 2);
+          ctx.lineTo(mx - r * 0.36, my + r * 0.1);
+          ctx.moveTo(mx + r * 0.02, my - r * 0.1); ctx.lineTo(mx + r * 0.38, my + r * 0.52);
+          ctx.stroke(); ctx.globalAlpha = 1;
+        }
       }
     }
 
+    function resize() {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.max(1, Math.round(container.clientWidth * dpr)), h = Math.max(1, Math.round(container.clientHeight * dpr));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+      render();
+    }
+    let ro = null;
+    if (root.ResizeObserver) { ro = new ResizeObserver(resize); ro.observe(container); }
+
     function show(f) {
       frame = Math.max(0, Math.min(FRAMES, f));
-      const k = Math.min(FRAMES - 1, Math.floor(frame));
-      if (k !== shown && frames.length) {
-        if (shown >= 0 && frames[shown]) frames[shown].style.display = 'none';
-        frames[k].style.display = '';
-        shown = k;
-      }
+      render();
       if (o.onUpdate) o.onUpdate(frame, FRAMES);
     }
 
     function tick(now) {
       if (!playing) return;
-      acc = (now - last) / 1000 * FPS * o.speed;
+      const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      let f = frame + acc;
+      let f = frame + dt * FPS * o.speed;
       if (f >= FRAMES) {
         if (!o.loop) { show(FRAMES); playing = false; if (o.onUpdate) o.onUpdate(frame, FRAMES); return; }
         f %= FRAMES;
@@ -306,10 +342,11 @@
       get frames() { return FRAMES; },
       get fps() { return FPS; },
       get playing() { return playing; },
-      get svg() { return svg; },
+      get canvas() { return canvas; },
       options: o,
       colors,
       ready: null,
+      destroy() { api.pause(); if (ro) ro.disconnect(); canvas.remove(); },
     };
     api.ready = build();
     return api;
