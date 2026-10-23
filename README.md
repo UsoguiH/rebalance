@@ -107,3 +107,9 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+## Also in this repo: WordMotion
+
+`wordmotion/` is a separate, self-contained board: type a word and it is drawn
+stroke by stroke as a looped, pen-written wordmark inside an animated hero page.
+Open `wordmotion/index.html`. See `wordmotion/README.md`.

@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--board:head-->
+<title>WordMotion Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a proof board. Controls on the left, the phone proof in the middle,
+   the stroke timeline on the right, and the type specimen underneath. */
+:root {
+  --bg: #EDF1E8;
+  --panel: #F8FAF5;
+  --fg: #162116;
+  --muted: #5B6A58;
+  --line: #D2DACB;
+  --accent: #1E4A1A;
+  --accent-fg: #F4F8F0;
+  --matcha: #AEC49B;
+  --bar: #9DB98A;
+  --bar-hot: #1E4A1A;
+  --focus: #2F7A28;
+  --f-ui: 'Barlow', 'Segoe UI', system-ui, sans-serif;
+  --f-cond: 'Barlow Semi Condensed', 'Arial Narrow', sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101510; --panel: #172017; --fg: #E2EADD; --muted: #95A391; --line: #2A362A;
+    --accent: #BFDDA5; --accent-fg: #102010; --matcha: #3B5634; --bar: #4E6E45; --bar-hot: #BFDDA5;
+    --focus: #9BD27F; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101510; --panel: #172017; --fg: #E2EADD; --muted: #95A391; --line: #2A362A;
+  --accent: #BFDDA5; --accent-fg: #102010; --matcha: #3B5634; --bar: #4E6E45; --bar-hot: #BFDDA5;
+  --focus: #9BD27F; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 var(--f-ui);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.top { display: flex; align-items: end; justify-content: space-between; gap: 16px; flex-wrap: wrap; max-width: 1480px; margin: 0 auto 18px; }
+.brand { display: flex; align-items: end; gap: 14px; }
+.brand svg { height: 46px; width: auto; display: block; overflow: visible; }
+.brand p { margin: 0 0 4px; color: var(--muted); font-size: 14px; }
+.top .meta { font: 12px/1.4 var(--f-mono); color: var(--muted); text-align: right; }
+
+.board {
+  display: grid; gap: 18px; max-width: 1480px; margin: 0 auto;
+  grid-template-columns: minmax(260px, 310px) minmax(0, 1fr) minmax(280px, 340px);
+  align-items: start;
+}
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.stack { display: grid; gap: 18px; min-width: 0; }
+h2 { font: 600 12px/1.2 var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+.field { display: grid; gap: 6px; margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field > label, .lbl { font-size: 13px; font-weight: 500; }
+.hint { font-size: 12px; color: var(--muted); }
+
+.wordin {
+  width: 100%; font: 500 30px/1.1 var(--f-ui); padding: 10px 12px; border-radius: 10px;
+  border: 1.5px solid var(--line); background: var(--bg); letter-spacing: -.01em;
+}
+.wordin:focus { border-color: var(--accent); outline: none; }
+input[type="text"], textarea { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); }
+textarea { resize: vertical; min-height: 64px; font-family: var(--f-cond); font-weight: 700; letter-spacing: .02em; }
+
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; padding: 6px 0; cursor: pointer; }
+.switch input { appearance: none; width: 38px; height: 22px; border-radius: 11px; background: var(--line); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--panel); transition: transform .15s; }
+.switch input:checked { background: var(--accent); }
+.switch input:checked::after { transform: translateX(16px); background: var(--accent-fg); }
+
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; background: var(--bg); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { text-align: center; padding: 7px 6px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.seg input:checked + label { background: var(--accent); color: var(--accent-fg); }
+.seg input:focus-visible + label { outline: 2px solid var(--focus); }
+
+.swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.sw { aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; padding: 0; cursor: pointer; position: relative; overflow: hidden; }
+.sw::after { content: ""; position: absolute; inset: 28%; border-radius: 50%; background: var(--ink); }
+.sw[aria-pressed="true"] { border-color: var(--fg); }
+.colors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.colors label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+input[type="color"] { width: 34px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+
+.rng { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; margin-bottom: 10px; }
+.rng label { font-size: 13px; }
+.rng output { font: 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.rng input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+.stagecol { display: grid; justify-items: center; gap: 12px; min-width: 0; }
+.phone {
+  height: min(78vh, 760px); aspect-ratio: 1156 / 2054; max-width: 100%;
+  border-radius: 34px; padding: 10px; background: #0E120E; box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 40px -18px rgba(10, 30, 10, .45);
+}
+.screen { width: 100%; height: 100%; border-radius: 25px; overflow: hidden; position: relative; background: #AEC49B; }
+.transport { width: min(100%, 520px); display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 10px; align-items: center; }
+.icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); display: grid; place-items: center; cursor: pointer; }
+.icon.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.icon svg { width: 18px; height: 18px; }
+.scrub { width: 100%; accent-color: var(--accent); }
+.time { font: 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 88px; text-align: right; }
+.pill { font: 500 12px var(--f-ui); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; background: var(--panel); cursor: pointer; }
+.pill[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.tl { position: relative; display: grid; gap: 5px; user-select: none; cursor: pointer; }
+.tl-row { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 8px; font-size: 12px; }
+.tl-row .nm { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-row .nm b { font: 600 15px var(--f-ui); color: var(--fg); margin-right: 6px; }
+.tl-track { position: relative; height: 14px; border-radius: 4px; background: var(--bg); }
+.tl-bar { position: absolute; top: 2px; bottom: 2px; border-radius: 3px; background: var(--bar); }
+.tl-bar.on { background: var(--bar-hot); }
+.tl-head { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--fg); left: 100px; pointer-events: none; }
+.tl-axis { display: grid; grid-template-columns: 92px 1fr; gap: 8px; font: 11px var(--f-mono); color: var(--muted); margin-top: 4px; }
+.tl-axis div:last-child { display: flex; justify-content: space-between; }
+.facts { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 14px 0 0; font-size: 13px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font: 12px var(--f-mono); text-align: right; font-variant-numeric: tabular-nums; }
+
+.exp { display: grid; gap: 8px; }
+.exp .row button { flex: 1 1 auto; }
+.btn { border: 1px solid var(--line); background: var(--bg); border-radius: 9px; padding: 8px 10px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.out { width: 100%; height: 118px; font: 11px/1.45 var(--f-mono); white-space: pre; overflow: auto; resize: vertical; letter-spacing: 0; font-weight: 400; }
+.status { font-size: 12px; color: var(--muted); min-height: 1.2em; }
+
+.specimen { max-width: 1480px; margin: 22px auto 0; display: grid; gap: 18px; }
+.spec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.spec-head h2 { margin: 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.tiles.lc { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+.tile { position: relative; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 0; aspect-ratio: 1; cursor: pointer; color: var(--fg); overflow: hidden; }
+.tile:hover, .tile:focus-visible { border-color: var(--accent); }
+.tile svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tile span { position: absolute; left: 7px; top: 5px; font: 11px var(--f-mono); color: var(--muted); }
+.lc .tile { aspect-ratio: 4 / 5; }
+
+@media (max-width: 1220px) {
+  .board { grid-template-columns: minmax(260px, 310px) minmax(0, 1fr); }
+  .side { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 760px) {
+  .board { grid-template-columns: minmax(0, 1fr); }
+  .stagecol { order: -1; }
+  .side { grid-template-columns: minmax(0, 1fr); }
+  .phone { height: auto; width: min(100%, 360px); border-radius: 28px; padding: 8px; }
+  .screen { border-radius: 21px; }
+  .top .meta { text-align: left; }
+  .brand { flex-wrap: wrap; gap: 6px; }
+  .brand svg { height: 38px; }
+  .brand p { flex-basis: 100%; }
+}
+</style>
+<!--/board:head-->
+</head>
+<body>
+<!--board:body-->
+<header class="top">
+  <div class="brand">
+    <svg id="logo" viewBox="-20 -340 1700 380" role="img" aria-label="WordMotion"><defs></defs></svg>
+    <p>Type a word. It gets drawn with a pen, stroke by stroke.</p>
+  </div>
+  <div class="meta">Stroke 52 · x-height 206 · stage 1156 × 2054<br>Timing fitted to the reference recording</div>
+</header>
+
+<main class="board">
+  <div class="stack">
+    <section class="card" aria-labelledby="h-word">
+      <h2 id="h-word">Word</h2>
+      <div class="field">
+        <input id="word" class="wordin" type="text" value="More" maxlength="18" spellcheck="false" autocomplete="off" aria-describedby="word-hint">
+        <span id="word-hint" class="hint">Letters a–z, figures and . , ! ? - &amp; '. Enter replays.</span>
+      </div>
+      <label class="switch" for="swash"><span>Swash first letter</span><input id="swash" type="checkbox" checked></label>
+      <div class="field" style="margin-top:8px">
+        <span class="lbl" id="l-mode">Scene</span>
+        <div class="seg" role="radiogroup" aria-labelledby="l-mode">
+          <input type="radio" name="mode" id="mode-hero" value="hero" checked><label for="mode-hero">Hero page</label>
+          <input type="radio" name="mode" id="mode-word" value="word"><label for="mode-word">Wordmark only</label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-color">
+      <h2 id="h-color">Colour</h2>
+      <div class="swatches" id="swatches"></div>
+      <div class="colors">
+        <label><input type="color" id="c-bg" value="#AEC49B"> Background</label>
+        <label><input type="color" id="c-ink" value="#1E4A1A"> Ink</label>
+      </div>
+    </section>
+
+    <section class="card" id="hero-fields" aria-labelledby="h-page">
+      <h2 id="h-page">Page</h2>
+      <div class="field"><label for="btn">Button</label><input id="btn" type="text" value="Buy now" maxlength="16"></div>
+      <div class="field"><label for="shop">Top-right link</label><input id="shop" type="text" value="Shop all" maxlength="14"></div>
+      <div class="field"><label for="label">Product label</label><textarea id="label" rows="3">PLANT
+PROTEIN
+BLEND</textarea></div>
+      <label class="switch" for="product"><span>Product and ring</span><input id="product" type="checkbox" checked></label>
+      <label class="switch" for="nav"><span>Nav and button</span><input id="nav" type="checkbox" checked></label>
+    </section>
+
+    <section class="card" aria-labelledby="h-time">
+      <h2 id="h-time">Timing</h2>
+      <div class="rng"><label for="speed">Playback speed</label><output id="o-speed" for="speed">1.00×</output><input id="speed" type="range" min="0.1" max="2" step="0.05" value="1"></div>
+      <div class="rng"><label for="stagger">Letter stagger</label><output id="o-stagger" for="stagger">126 ms</output><input id="stagger" type="range" min="30" max="300" step="2" value="126"></div>
+      <div class="rng"><label for="ldur">Letter duration</label><output id="o-ldur" for="ldur">712 ms</output><input id="ldur" type="range" min="250" max="1600" step="2" value="712"></div>
+      <div class="rng"><label for="hold">Hold before rise</label><output id="o-hold" for="hold">0 ms</output><input id="hold" type="range" min="0" max="1500" step="10" value="0"></div>
+      <button class="linkbtn" id="reset-time" type="button">Use the recorded timing</button>
+    </section>
+  </div>
+
+  <div class="stagecol">
+    <div class="phone"><div class="screen" id="screen"></div></div>
+    <div class="transport">
+      <button class="icon primary" id="play" type="button" aria-label="Pause"><svg viewBox="0 0 20 20" id="play-ic"><path d="M6 4h3v12H6zM11 4h3v12h-3z" fill="currentColor"/></svg></button>
+      <button class="icon" id="replay" type="button" aria-label="Replay from start"><svg viewBox="0 0 20 20"><path d="M4.5 10a5.5 5.5 0 1 0 1.8-4.1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 3v4.5H8" fill="none" stroke="currentColor" stroke-width="2"/></svg></button>
+      <input class="scrub" id="scrub" type="range" min="0" max="1000" value="0" aria-label="Timeline position">
+      <span class="time" id="time">0.00 / 0.00 s</span>
+      <button class="pill" id="loop" type="button" aria-pressed="false">Loop</button>
+    </div>
+  </div>
+
+  <div class="stack side">
+    <section class="card" aria-labelledby="h-tl">
+      <h2 id="h-tl">Strokes</h2>
+      <div class="tl" id="tl" aria-label="Timeline of letters and scene events. Click to seek."></div>
+      <div class="tl-axis"><div></div><div><span>0 s</span><span id="tl-end">0 s</span></div></div>
+      <dl class="facts">
+        <dt>Letters</dt><dd id="f-letters">4</dd>
+        <dt>Pen strokes</dt><dd id="f-strokes">0</dd>
+        <dt>Ink path length</dt><dd id="f-length">0</dd>
+        <dt>Draw time</dt><dd id="f-draw">0 s</dd>
+      </dl>
+    </section>
+    <section class="card exp" aria-labelledby="h-exp">
+      <h2 id="h-exp">Export</h2>
+      <div class="row">
+        <button class="btn" id="x-anim" type="button">Animated SVG</button>
+        <button class="btn" id="x-static" type="button">Static SVG</button>
+        <button class="btn" id="x-embed" type="button">Embed code</button>
+      </div>
+      <textarea class="out" id="out" readonly aria-label="Export output" spellcheck="false"></textarea>
+      <div class="row" style="justify-content:space-between"><button class="btn" id="copy" type="button">Copy</button><span class="status" id="status" role="status"></span></div>
+    </section>
+  </div>
+</main>
+
+<section class="specimen">
+  <div class="card">
+    <div class="spec-head"><h2>First-letter swashes</h2><span class="hint">Hover to draw. Click to start your word with it.</span></div>
+    <div class="tiles" id="caps"></div>
+  </div>
+  <div class="card">
+    <div class="spec-head"><h2>Lowercase and figures</h2><span class="hint">Hover to draw. Click to add it to the word.</span></div>
+    <div class="tiles lc" id="lower"></div>
+  </div>
+</section>
+<!--/board:body-->
+<script src="wordmotion.js"></script>
+<!--board:script-->
+<script>
+(function () {
+  const WM = window.WordMotion;
+  const $ = (id) => document.getElementById(id);
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('wm:' + k); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('wm:' + k, v); } catch (e) { /* storage off */ } },
+  };
+  const NS = 'http://www.w3.org/2000/svg';
+  const REC = { stagger: 126, ldur: 712, hold: 0 };
+  let scrubbing = false, heads = null, bars = [];
+
+  // ---- logo: the library drawing its own name
+  const logoSvg = $('logo');
+  const logoG = document.createElementNS(NS, 'g');
+  logoSvg.appendChild(logoG);
+  const logo = WM.wordmark(logoG, { word: 'Wordmotion', color: 'currentColor', stagger: 0.07 });
+  logoSvg.setAttribute('viewBox', `-20 -340 ${logo.width + 40} 380`);
+  logoSvg.style.color = 'var(--accent)';
+  animate(logo, 0.2);
+
+  function animate(handle, delay) {
+    if (reduce) { handle.seek(99); return; }
+    const t0 = performance.now() + (delay || 0) * 1000;
+    let raf = 0;
+    const step = (now) => {
+      const t = (now - t0) / 1000;
+      handle.seek(t);
+      if (t < handle.duration + 0.05) raf = requestAnimationFrame(step);
+    };
+    handle.seek(0);
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }
+
+  // ---- hero stage
+  const state = {
+    word: store.get('word', 'More'),
+    theme: store.get('theme', 'matcha'),
+    custom: null,
+    mode: 'hero',
+  };
+  $('word').value = state.word;
+
+  let hero = null;
+  hero = WM.hero($('screen'), {
+    word: state.word, theme: state.theme, onUpdate: onTime,
+  });
+
+  function colorsNow() { return Object.assign({}, WM.THEMES[state.theme] || WM.THEMES.matcha, state.custom || {}); }
+
+  function opts() {
+    return {
+      word: $('word').value || ' ',
+      swash: $('swash').checked,
+      mode: state.mode,
+      theme: state.theme,
+      colors: state.custom,
+      button: $('btn').value,
+      shop: $('shop').value,
+      label: $('label').value,
+      product: $('product').checked,
+      nav: $('nav').checked,
+      stagger: +$('stagger').value / 1000,
+      letterDuration: +$('ldur').value / 1000,
+      hold: +$('hold').value / 1000,
+    };
+  }
+
+  function apply(replay) {
+    hero.set(opts());
+    $('hero-fields').hidden = state.mode !== 'hero';
+    $('screen').style.background = colorsNow().bg;
+    drawTimeline();
+    if (replay) start();
+  }
+
+  function start() {
+    if (reduce) { hero.pause(); hero.seek(hero.duration); return; }
+    hero.replay();
+    setPlayIcon();
+  }
+
+  // ---- transport
+  function setPlayIcon() {
+    const playing = hero.playing;
+    $('play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    $('play-ic').innerHTML = playing
+      ? '<path d="M6 4h3v12H6zM11 4h3v12h-3z" fill="currentColor"/>'
+      : '<path d="M6 4l10 6-10 6z" fill="currentColor"/>';
+  }
+  function onTime(t, d) {
+    if (!scrubbing) $('scrub').value = d ? Math.round((t / d) * 1000) : 0;
+    $('time').textContent = `${t.toFixed(2)} / ${d.toFixed(2)} s`;
+    moveHead(t, d);
+    if (hero && !hero.playing) setTimeout(setPlayIcon, 0);
+  }
+  $('play').addEventListener('click', () => { hero.playing ? hero.pause() : hero.play(); setPlayIcon(); });
+  $('replay').addEventListener('click', () => { hero.replay(); setPlayIcon(); });
+  $('scrub').addEventListener('input', (e) => { scrubbing = true; hero.pause(); hero.seek((e.target.value / 1000) * hero.duration); setPlayIcon(); });
+  $('scrub').addEventListener('change', () => { scrubbing = false; });
+  $('loop').addEventListener('click', (e) => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', on);
+    hero.options.loop = on;
+    if (on && !hero.playing) { hero.play(); setPlayIcon(); }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space' || /INPUT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) return;
+    e.preventDefault(); $('play').click();
+  });
+
+  // ---- inputs
+  let deb = 0;
+  $('word').addEventListener('input', () => {
+    clearTimeout(deb);
+    deb = setTimeout(() => { store.set('word', $('word').value); apply(true); }, 260);
+  });
+  $('word').addEventListener('keydown', (e) => { if (e.key === 'Enter') { clearTimeout(deb); apply(true); } });
+  ['swash', 'product', 'nav'].forEach((id) => $(id).addEventListener('change', () => { apply(true); buildTiles(); }));
+  ['btn', 'shop', 'label'].forEach((id) => $(id).addEventListener('input', () => {
+    clearTimeout(deb); deb = setTimeout(() => apply(false), 200);
+  }));
+  document.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener('change', (e) => {
+    state.mode = e.target.value; apply(true);
+  }));
+
+  const ranges = {
+    speed: (v) => `${(+v).toFixed(2)}×`, stagger: (v) => `${v} ms`, ldur: (v) => `${v} ms`, hold: (v) => `${v} ms`,
+  };
+  Object.keys(ranges).forEach((id) => {
+    const el = $(id);
+    const show = () => { $('o-' + id).textContent = ranges[id](el.value); };
+    show();
+    el.addEventListener('input', () => {
+      show();
+      if (id === 'speed') { hero.options.speed = +el.value; return; }
+      apply(false);
+    });
+    el.addEventListener('change', () => { if (id !== 'speed') start(); });
+  });
+  $('reset-time').addEventListener('click', () => {
+    $('stagger').value = REC.stagger; $('ldur').value = REC.ldur; $('hold').value = REC.hold; $('speed').value = 1;
+    hero.options.speed = 1;
+    Object.keys(ranges).forEach((id) => { $('o-' + id).textContent = ranges[id]($(id).value); });
+    apply(true);
+  });
+
+  // ---- colour
+  const sw = $('swatches');
+  const names = { matcha: 'Matcha (reference)', berry: 'Berry', ocean: 'Ocean', citrus: 'Citrus', night: 'Night', paper: 'Paper' };
+  Object.keys(WM.THEMES).forEach((k) => {
+    const th = WM.THEMES[k];
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'sw'; b.title = names[k] || k;
+    b.setAttribute('aria-label', names[k] || k);
+    b.style.background = th.bg; b.style.setProperty('--ink', th.ink);
+    b.setAttribute('aria-pressed', k === state.theme);
+    b.addEventListener('click', () => {
+      state.theme = k; state.custom = null; store.set('theme', k);
+      sw.querySelectorAll('.sw').forEach((x) => x.setAttribute('aria-pressed', x === b));
+      $('c-bg').value = th.bg; $('c-ink').value = th.ink;
+      apply(true);
+    });
+    sw.appendChild(b);
+  });
+  $('c-bg').value = colorsNow().bg; $('c-ink').value = colorsNow().ink;
+  const onColor = () => {
+    state.custom = { bg: $('c-bg').value, ink: $('c-ink').value };
+    sw.querySelectorAll('.sw').forEach((x) => x.setAttribute('aria-pressed', false));
+    apply(false);
+  };
+  $('c-bg').addEventListener('input', onColor);
+  $('c-ink').addEventListener('input', onColor);
+
+  // ---- timeline
+  function drawTimeline() {
+    const tl = hero.timeline();
+    const box = $('tl');
+    box.innerHTML = '';
+    bars = [];
+    const D = tl.duration || 1;
+    const row = (label, item, cls) => {
+      const r = document.createElement('div');
+      r.className = 'tl-row';
+      r.innerHTML = `<div class="nm">${label}</div><div class="tl-track"><div class="tl-bar ${cls || ''}"></div></div>`;
+      const bar = r.querySelector('.tl-bar');
+      bar.style.left = (item.start / D * 100) + '%';
+      bar.style.width = Math.max(0.6, (item.end - item.start) / D * 100) + '%';
+      bars.push({ bar, item });
+      box.appendChild(r);
+    };
+    tl.letters.forEach((l, i) => row(`<b>${escapeHTML(l.ch)}</b>${l.swash ? 'swash' : 'letter ' + (i + 1)}`, l));
+    tl.events.forEach((ev) => row(ev.name, ev));
+    heads = document.createElement('div');
+    heads.className = 'tl-head';
+    box.appendChild(heads);
+    $('tl-end').textContent = D.toFixed(2) + ' s';
+    // facts
+    const paths = $('screen').querySelectorAll('.wm-word path');
+    let len = 0; paths.forEach((p) => { len += p.getTotalLength(); });
+    $('f-letters').textContent = tl.letters.length;
+    $('f-strokes').textContent = paths.length;
+    $('f-length').textContent = Math.round(len).toLocaleString() + ' px';
+    const last = tl.letters[tl.letters.length - 1];
+    $('f-draw').textContent = (last ? last.end : 0).toFixed(2) + ' s';
+    moveHead(hero.time, hero.duration);
+  }
+  function moveHead(t, d) {
+    if (!heads) return;
+    const box = $('tl');
+    const track = box.querySelector('.tl-track');
+    if (!track) return;
+    const x0 = track.offsetLeft, w = track.offsetWidth;
+    heads.style.left = (x0 + (d ? t / d : 0) * w - 1) + 'px';
+    for (const b of bars) b.bar.classList.toggle('on', t >= b.item.start);
+  }
+  $('tl').addEventListener('pointerdown', (e) => {
+    const track = $('tl').querySelector('.tl-track');
+    if (!track) return;
+    const seekTo = (ev) => {
+      const r = track.getBoundingClientRect();
+      const f = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width));
+      hero.pause(); hero.seek(f * hero.duration); setPlayIcon();
+    };
+    seekTo(e);
+    const mv = (ev) => seekTo(ev);
+    const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up);
+  });
+  addEventListener('resize', () => moveHead(hero.time, hero.duration));
+
+  // ---- export
+  let lastExport = 'anim';
+  function exportText(kind) {
+    const o = opts(), c = colorsNow();
+    if (kind === 'anim') return WM.animatedSVG(o.word, { swash: o.swash, color: c.ink, stagger: o.stagger, letterDuration: o.letterDuration });
+    if (kind === 'static') {
+      const sv = WM.staticSVG(o.word, { swash: o.swash });
+      const w = Math.ceil(sv.width + 80);
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -340 ${w} 480" width="${w}" height="480"><defs>${sv.defs}</defs>` +
+        `<g fill="none" stroke="${c.ink}" stroke-width="52" stroke-linecap="butt">${sv.body}</g></svg>`;
+    }
+    const cfg = { word: o.word, swash: o.swash, mode: o.mode, theme: o.theme };
+    if (state.custom) cfg.colors = state.custom;
+    if (o.mode === 'hero') Object.assign(cfg, { button: o.button, shop: o.shop, label: o.label, product: o.product, nav: o.nav });
+    if (+$('stagger').value !== REC.stagger) cfg.stagger = o.stagger;
+    if (+$('ldur').value !== REC.ldur) cfg.letterDuration = o.letterDuration;
+    if (+$('hold').value !== REC.hold) cfg.hold = o.hold;
+    return `<!-- WordMotion: needs wordmotion.js next to the page -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;700&display=swap">
+<div id="wordmotion" style="width:390px;aspect-ratio:1156/2054;position:relative"></div>
+<script src="wordmotion.js"><\/script>
+<script>
+  WordMotion.hero(document.getElementById('wordmotion'), ${JSON.stringify(cfg, null, 2).replace(/\n/g, '\n  ')}).play();
+<\/script>`;
+  }
+  function showExport(kind) {
+    lastExport = kind;
+    $('out').value = exportText(kind);
+    $('status').textContent = { anim: 'Animated SVG, plays once with CSS only.', static: 'Static SVG of the finished word.', embed: 'HTML snippet for the full hero.' }[kind];
+  }
+  $('x-anim').addEventListener('click', () => showExport('anim'));
+  $('x-static').addEventListener('click', () => showExport('static'));
+  $('x-embed').addEventListener('click', () => showExport('embed'));
+  $('copy').addEventListener('click', () => {
+    const text = $('out').value || exportText(lastExport);
+    $('out').value = text;
+    const fallback = () => { $('out').focus(); $('out').select(); $('status').textContent = 'Selected. Press Ctrl+C or ⌘C to copy.'; };
+    try {
+      navigator.clipboard.writeText(text).then(() => { $('status').textContent = 'Copied.'; }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  // ---- specimen tiles
+  function tile(parent, ch, swash, onPick) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tile';
+    b.setAttribute('aria-label', (swash ? 'Swash ' : '') + ch);
+    const svg = document.createElementNS(NS, 'svg');
+    const g = document.createElementNS(NS, 'g');
+    svg.appendChild(document.createElementNS(NS, 'defs'));
+    svg.appendChild(g);
+    b.appendChild(svg);
+    const tag = document.createElement('span');
+    tag.textContent = ch;
+    b.appendChild(tag);
+    parent.appendChild(b);
+    const h = WM.wordmark(g, { word: ch, swash, color: 'currentColor' });
+    const w = Math.max(h.width, 10);
+    const top = swash ? -350 : -330, hgt = swash ? 480 : 460;
+    const side = Math.max(w + 70, hgt * (swash ? 1 : 0.8));
+    svg.setAttribute('viewBox', `${(w - side) / 2} ${top} ${side} ${swash ? side : side / 0.8}`);
+    h.seek(99);
+    let stop = null;
+    const play = () => { if (stop) stop(); stop = animate(h, 0); };
+    b.addEventListener('mouseenter', play);
+    b.addEventListener('focus', play);
+    b.addEventListener('click', () => { play(); onPick(ch); });
+  }
+  function buildTiles() {
+    const caps = $('caps'), low = $('lower');
+    caps.innerHTML = ''; low.innerHTML = '';
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach((c) => tile(caps, c, true, (ch) => {
+      const v = $('word').value;
+      const i = v.search(/[a-z]/i);
+      $('word').value = i < 0 ? ch + v : v.slice(0, i) + ch + v.slice(i + 1);
+      $('swash').checked = true;
+      store.set('word', $('word').value);
+      apply(true);
+    }));
+    'abcdefghijklmnopqrstuvwxyz0123456789.,!?-&'.split('').forEach((c) => tile(low, c, false, (ch) => {
+      if ($('word').value.length >= 18) return;
+      $('word').value += ch;
+      store.set('word', $('word').value);
+      apply(true);
+    }));
+  }
+
+  function escapeHTML(s) { return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+
+  buildTiles();
+  apply(false);
+  showExport('anim');
+  // let the condensed face load before the first run so the pills do not reflow mid-animation
+  const go = () => start();
+  if (document.fonts && document.fonts.ready) Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1200))]).then(go);
+  else go();
+})();
+</script>
+<!--/board:script-->
+</body>
+</html>
