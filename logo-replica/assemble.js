@@ -86,12 +86,17 @@
   }
 
   // ------------------------------------------------------------------ layout
-  // Spacing between two glyphs of the built font: the original's own rule for
-  // its letters, otherwise as close as their ink allows with a 3-unit gap,
-  // never wider than the ink boxes plus 3 and never more than 14 units tighter.
+  // Gaps between ink boxes in the original logo, measured by fitting each
+  // letter to the trace's last frame (to a quarter unit).
+  const ORIGINAL_GAP = { sl: -12.8, la: 1.75, aa: 4.25, ac: 3, ce: 2.5 };
+
+  // Spacing between two glyphs of the built font: the original's own gaps
+  // between its letters (3 units for pairs it does not have), otherwise as
+  // close as their ink allows with a 3-unit gap, never wider than the ink
+  // boxes plus 3 and never more than 14 units tighter.
   function advance(F, a, b) {
     const A = F.glyphs[a], B = F.glyphs[b];
-    if ('slace'.includes(a) && 'slace'.includes(b)) return A.w + 3 + (a + b === 'sl' ? -12.8 : 0);
+    if ('slace'.includes(a) && 'slace'.includes(b)) return A.w + (ORIGINAL_GAP[a + b] != null ? ORIGINAL_GAP[a + b] : 3);
     let m = -1e9;
     for (let i = 0; i < A.pr.length; i++) {
       if (A.pr[i] == null) continue;
@@ -214,8 +219,12 @@
   let rafId = 0;
   function loop(now) {
     rafId = 0;
-    for (const fn of Array.from(ticking)) fn(now);
-    if (ticking.size) rafId = requestAnimationFrame(loop);
+    for (const fn of Array.from(ticking)) {
+      // one failing callback must not stop the others, or the loop itself
+      try { fn(now); } catch (e) { setTimeout(() => { throw e; }); }
+    }
+    // a callback may have started the loop again already (play() in onUpdate)
+    if (ticking.size && !rafId) rafId = requestAnimationFrame(loop);
   }
   function startTicking(fn) { ticking.add(fn); if (!rafId) rafId = requestAnimationFrame(loop); }
   function stopTicking(fn) { ticking.delete(fn); }
@@ -241,12 +250,16 @@
     const canvas = document.createElement('canvas');
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', 'Animated wordmark');
-    canvas.style.cssText = 'display:block;position:relative';
+    // Positioned absolutely, so its fixed size never holds the container open
+    // (the container must be able to shrink, or the resize never comes).
+    canvas.style.cssText = 'display:block;position:absolute';
+    if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
     container.appendChild(canvas);
     const ctx = canvas.getContext('2d');
 
     let scene = null, frame = 0, playing = false, last = 0, token = 0, lastShow = 0;
     let drawn = -1;   // frame last drawn, or -1 when the canvas must be redrawn
+    let drawnLook = '';   // colours and options the last drawing used
 
     function build() {
       const my = ++token;
@@ -310,16 +323,29 @@
       return S;
     }
 
-    // The box every piece of the word's clips stays inside (each piece is its
-    // letter, scaled and moved, and lies within the slice radius round its
-    // centre), together with the word itself and the wave and ® around it.
+    // The box every piece of the word's clips stays inside, together with the
+    // word itself and the wave and ® around it. A piece is its letter clipped
+    // to slices of radius q.rad round the letter's centre, then rotated,
+    // scaled and moved, so it lies within those sectors turned by its rotation
+    // and scaled by its scale. (Interpolated frames lie between two such
+    // pieces; the 4% margin covers the sweep between them.)
     function reach(letters, xh, box) {
       let x = box.x - xh * 0.6, y = Math.min(box.y, -xh * 1.4), r = box.r + xh * 1.1, b = box.b + xh * 0.2;
+      const add = (px, py) => { x = Math.min(x, px); r = Math.max(r, px); y = Math.min(y, py); b = Math.max(b, py); };
       for (const q of letters) {
         for (const fr of q.clip.frames) {
           for (const p of fr) {
-            const px = q.cx + (q.mirror ? -p[3] : p[3]) * xh, py = q.cy + p[4] * xh, e = q.rad * p[2];
-            x = Math.min(x, px - e); r = Math.max(r, px + e); y = Math.min(y, py - e); b = Math.max(b, py + e);
+            const th = q.mirror ? -p[1] : p[1], R = q.rad * p[2] * 1.04;
+            const px = q.cx + (q.mirror ? -p[3] : p[3]) * xh, py = q.cy + p[4] * xh;
+            add(px, py);
+            for (let [a0, a1] of p[6]) {
+              if (a1 - a0 >= 359.5) { a0 = 0; a1 = 360; }
+              if (q.mirror) [a0, a1] = [180 - a1, 180 - a0];
+              // sector ends, every 10 degrees, and the axis directions inside it
+              const angles = [a0, a1];
+              for (let a = Math.ceil(a0 / 10) * 10; a < a1; a += 10) angles.push(a);
+              for (const a of angles) add(px + R * Math.cos((a + th) * DEG), py + R * Math.sin((a + th) * DEG));
+            }
           }
         }
       }
@@ -438,8 +464,10 @@
       strokeWave(pts, op);
     }
 
+    const look = () => `${colors.green}|${colors.cream}|${o.registered}|${o.still}`;
+
     function render() {
-      drawn = frame;
+      drawn = frame; drawnLook = look();
       const w = canvas.width, h = canvas.height;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, w, h);
@@ -455,7 +483,7 @@
       } else if (scene.trace) {
         const fi = Math.min(FRAMES - 1, Math.floor(frame));
         const layers = scene.trace[scene.traceSeq[fi]];
-        ctx.save(); ctx.translate(-354, -416);
+        ctx.save(); ctx.translate(-354.25, -416);   // the s's ink edge and the baseline in the trace
         layers.forEach((levels, ink) => {
           ctx.fillStyle = ink ? colors.cream : colors.green;
           for (const [op, p] of levels) { ctx.globalAlpha = op; ctx.fill(p, 'evenodd'); }
@@ -503,7 +531,7 @@
         const op = lerp(at(f0), at(f0 + 1), u);
         if (op > 0.01) {
           const r = R.r * xh, mx = x1 + R.x * xh, my = R.y * xh;
-          ctx.globalAlpha = op; ctx.strokeStyle = colors.cream; ctx.lineJoin = 'round';
+          ctx.globalAlpha = op; ctx.strokeStyle = colors.cream; ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
           ctx.lineWidth = r * 0.24; ctx.beginPath(); ctx.arc(mx, my, r, 0, Math.PI * 2); ctx.stroke();
           ctx.lineWidth = r * 0.2; ctx.beginPath();
           ctx.moveTo(mx - r * 0.36, my + r * 0.52); ctx.lineTo(mx - r * 0.36, my - r * 0.52); ctx.lineTo(mx + r * 0.09, my - r * 0.52);
@@ -544,7 +572,7 @@
     function show(f) {
       frame = Math.max(0, Math.min(api.frames, f));
       // nothing moves after scene.still: keep what is on the canvas
-      if (!(scene && drawn >= 0 && drawn >= scene.still && frame >= scene.still)) render();
+      if (!(scene && drawn >= 0 && drawn >= scene.still && frame >= scene.still && drawnLook === look())) render();
       if (o.onUpdate) o.onUpdate(frame, api.frames);
     }
 
@@ -577,9 +605,13 @@
       replay() { api.pause(); show(0); return api.play(); },
       seek(f) { show(f); return api; },
       set(opts) {
-        Object.assign(o, opts || {});
-        if (opts && opts.colors) Object.assign(colors, opts.colors);
+        opts = opts || {};
+        Object.assign(o, opts);
+        if (opts.colors) Object.assign(colors, opts.colors);
         drawn = -1;
+        // colours and playback settings only need a redraw, not a new scene
+        const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady'];
+        if (scene && Object.keys(opts).every((k) => light.includes(k))) { render(); return Promise.resolve(api); }
         return build();
       },
       get frame() { return frame; },

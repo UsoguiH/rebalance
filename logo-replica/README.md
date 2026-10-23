@@ -107,12 +107,22 @@ python3 font/build_font.py motion.data.js font.data.js   # needs numpy, scipy, s
     and the head stays ahead of it.
   - On a shorter word, the sweep is compressed to fit.
 - **All letters** shows every glyph of the font at once, each looping its own
-  animation.
+  animation. To stay smooth on phones, these small players redraw 30 times a
+  second (the `maxFps` option), take turns rather than all drawing on the same
+  refresh, and pause while scrolled out of view.
 - **Playback** draws on one `<canvas>`. Each piece is linked to the piece it
   becomes in the next frame, so the player interpolates between the original's
-  25 frames per second and runs at the screen's refresh rate. A draw takes well
-  under a millisecond. The exact "slaace" trace keeps the original's 25 frames
-  per second, since there is nothing to interpolate between traced frames.
+  25 frames per second and redraws on every screen refresh (unless `maxFps` caps
+  it). The exact "slaace" trace keeps the original's 25 frames per second, since
+  there is nothing to interpolate between traced frames.
+- **Kept light for phones:**
+  - The canvas covers only the box the word's pieces can reach, not the whole
+    container.
+  - Each piece's slice clip only reaches the corners of its own letter.
+  - Nothing is redrawn once the word has settled.
+  - All players on a page share one animation loop.
+  - With the CPU slowed 6× at phone size, "hello world" drops 2 frames in 300,
+    where the previous version dropped 32 in 267.
 - **Clean-ups for other letters:**
   - A piece that lands on another letter's place is given to that letter; the
     fit sometimes explained the second "a" with the first one moved over.
@@ -144,5 +154,6 @@ fits), `fit_wave.py` (the wave) and `export_motion.py` (writes `motion.data.js`)
 <script>
   const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'hello' });
   anim.ready.then(() => anim.play());   // also: pause(), replay(), seek(frame), set({...}), frames
+  // Change colours and options through set(): a settled word is not redrawn otherwise.
 </script>
 ```
