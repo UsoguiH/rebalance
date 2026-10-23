@@ -2,7 +2,7 @@
  * WordMotion: type a word, get a pen-drawn wordmark animation.
  *
  * Every letter is a monoline centreline drawn with flat (butt) ends and
- * revealed with stroke-dashoffset, the way the "More" hero does it. The first
+ * revealed with stroke-dashoffset, the way the "More" intro does it. The first
  * letter of a word is swapped for a tall looped "swash" capital, like the
  * looped M of the original.
  *
@@ -478,12 +478,9 @@
       return fy(t);
     };
   }
-  // Curves fitted to the recording.
+  // Curve fitted to the recording.
   const EASE = {
     draw: bezier(0.207, 0.225, 0.223, 1),   // per letter
-    rise: bezier(0.334, 0.706, 0.027, 0.978),
-    expoOut: bezier(0.16, 1, 0.3, 1),
-    out: bezier(0.25, 0.6, 0.3, 1),
     linear: (x) => x,
   };
   const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -603,8 +600,6 @@
       top: Math.max(minY, -340),
       bottom: Math.min(maxY, 140),
       duration: total,
-      // when the last letter is as far along as the recording's e when the word starts to rise
-      settle: letters.length ? letters[letters.length - 1].start + 0.553 : 0,
       seek(t) {
         for (const s of strokes) {
           // one pen motion per letter; each stroke owns a slice [a, b] of it
@@ -682,24 +677,16 @@
   }
 
   // ---------------------------------------------------------------------
-  // Hero scene: the full recording (draw, rise, nav, button, product).
-  // Stage is 1156 x 2054, the web viewport of the recording.
+  // Player: the word on a background, drawn on a clock you can play,
+  // pause, scrub and loop. It fills its container and keeps the word centred.
   // ---------------------------------------------------------------------
-  const STAGE_W = 1156, STAGE_H = 2054;
   const THEMES = {
-    matcha: { bg: '#AEC49B', ink: '#1E4A1A', pill: '#E7EDE3', pillInk: '#2B5A27', btnInk: '#FFFFFF', tub: '#9AA06A', tubDark: '#737A4A', label: '#E6E8E1', ring: '#FFFFFF' },
-    berry: { bg: '#F2B8C6', ink: '#5B1230', pill: '#FBE6EC', pillInk: '#6B1A3A', btnInk: '#FFFFFF', tub: '#C9708A', tubDark: '#93465E', label: '#FFF4F7', ring: '#FFFFFF' },
-    ocean: { bg: '#A9CFE0', ink: '#0E3550', pill: '#E4F1F7', pillInk: '#164563', btnInk: '#FFFFFF', tub: '#5E93AE', tubDark: '#3C6A82', label: '#F2F8FB', ring: '#FFFFFF' },
-    citrus: { bg: '#F4D35E', ink: '#3A2A05', pill: '#FBF0C6', pillInk: '#4A3608', btnInk: '#FFF8E1', tub: '#D9A62E', tubDark: '#A87A14', label: '#FFFBEA', ring: '#FFFFFF' },
-    night: { bg: '#1D2420', ink: '#C9E6B0', pill: '#2C3630', pillInk: '#C9E6B0', btnInk: '#1D2420', tub: '#4A5A45', tubDark: '#2E3A2B', label: '#DDEFD0', ring: '#C9E6B0' },
-    paper: { bg: '#EFE9DE', ink: '#1B1B1B', pill: '#FFFFFF', pillInk: '#1B1B1B', btnInk: '#FFFFFF', tub: '#B7AE9C', tubDark: '#857C6A', label: '#FFFFFF', ring: '#FFFFFF' },
-  };
-
-  const ICONS = {
-    instagram: '<rect x="-21" y="-21" width="42" height="42" rx="12" fill="none" stroke="currentColor" stroke-width="5.5"/><circle r="10" fill="none" stroke="currentColor" stroke-width="5.5"/><circle cx="12.5" cy="-12.5" r="3.2" fill="currentColor"/>',
-    tiktok: '<path d="M2 -24v31a9.5 9.5 0 1 1 -9.5 -9.5" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><path d="M2 -21c2 9 8 14 17 15" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/>',
-    youtube: '<rect x="-26" y="-18" width="52" height="36" rx="10" fill="currentColor"/><path d="M-6 -9l15 9l-15 9z" fill="var(--wm-pill)"/>',
-    arrow: '<path d="M-9 9L9 -9M-6 -9H9V6" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="square"/>',
+    matcha: { bg: '#AEC49B', ink: '#1E4A1A' },
+    berry: { bg: '#F2B8C6', ink: '#5B1230' },
+    ocean: { bg: '#A9CFE0', ink: '#0E3550' },
+    citrus: { bg: '#F4D35E', ink: '#3A2A05' },
+    night: { bg: '#1D2420', ink: '#C9E6B0' },
+    paper: { bg: '#EFE9DE', ink: '#1B1B1B' },
   };
 
   function noiseURL() {
@@ -718,202 +705,52 @@
     } catch (e) { return ''; }
   }
 
-  function injectCSS() {
-    if (document.getElementById('wm-css')) return;
-    const st = document.createElement('style');
-    st.id = 'wm-css';
-    st.textContent = `
-.wm-stage{position:absolute;left:0;top:0;width:${STAGE_W}px;height:${STAGE_H}px;overflow:hidden;transform-origin:0 0;background:var(--wm-bg);font-family:'Barlow Semi Condensed','Roboto Condensed','Arial Narrow',sans-serif;}
-.wm-stage *{box-sizing:border-box}
-.wm-layer{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.wm-grain{position:absolute;inset:0;opacity:.055;mix-blend-mode:multiply;pointer-events:none;background-size:160px 160px}
-.wm-nav{position:absolute;left:0;top:0;width:100%;height:330px;pointer-events:none}
-.wm-circle{position:absolute;width:117px;height:117px;border-radius:50%;background:var(--wm-pill);color:var(--wm-pillink);display:flex;align-items:center;justify-content:center}
-.wm-pillbtn{position:absolute;height:117px;border-radius:59px;background:var(--wm-pill);color:var(--wm-pillink);display:flex;align-items:center;justify-content:center;padding:0 46px 6px;font-weight:500;font-size:86px;letter-spacing:-0.035em;white-space:nowrap;line-height:1}
-.wm-btn{position:absolute;top:883px;left:0;width:100%;height:117px;display:flex;justify-content:center;gap:2px;pointer-events:none}
-.wm-btn .wm-circle,.wm-btn .wm-pillbtn{position:relative;background:var(--wm-ink);color:var(--wm-btnink)}
-.wm-btn .wm-pillbtn{padding:0 44px 6px 44px}
-`;
-    document.head.appendChild(st);
-  }
+  // Vertical frame shared by every word, so swashes and descenders never crop
+  // and the baseline does not jump when the word changes.
+  const FRAME_TOP = -470, FRAME_H = 620;
 
-  function hero(container, options) {
-    injectCSS();
+  function player(container, options) {
     const o = merge({
-      word: 'More', theme: 'matcha', swash: true, mode: 'hero',
-      button: 'Buy now', shop: 'Shop all', product: true, nav: true, label: 'PLANT\nPROTEIN\nBLEND', hold: 0,
+      word: 'More', theme: 'matcha', swash: true, grain: true,
+      tail: 0.6,            // seconds the finished word is held before a loop restarts
+      padding: 0.08,        // side margin as a fraction of the word width
       speed: 1, loop: false, onUpdate: null,
     }, options);
     const colors = merge(THEMES[o.theme] || THEMES.matcha, o.colors);
 
-    container.style.position = container.style.position || 'relative';
+    if (!container.style.position) container.style.position = 'relative';
     container.style.overflow = 'hidden';
     const stage = document.createElement('div');
-    stage.className = 'wm-stage';
+    stage.style.cssText = 'position:absolute;inset:0;';
     container.appendChild(stage);
-
-    const ringSVG = el('svg', { class: 'wm-layer', viewBox: `0 0 ${STAGE_W} ${STAGE_H}` });
-    const tubSVG = el('svg', { class: 'wm-layer', viewBox: `0 0 ${STAGE_W} ${STAGE_H}` });
-    const wordSVG = el('svg', { class: 'wm-layer', viewBox: `0 0 ${STAGE_W} ${STAGE_H}` });
-    stage.appendChild(ringSVG); stage.appendChild(tubSVG); stage.appendChild(wordSVG);
-    el('defs', {}, wordSVG);
-
-    const nav = document.createElement('div');
-    nav.className = 'wm-nav';
-    nav.innerHTML =
-      ['instagram', 'tiktok', 'youtube'].map((k, i) =>
-        `<div class="wm-circle" style="left:${60 + i * 133.5}px;top:106px"><svg width="70" height="70" viewBox="-35 -35 70 70">${ICONS[k]}</svg></div>`).join('') +
-      `<div class="wm-circle" style="left:655px;top:106px"><svg width="40" height="40" viewBox="-20 -20 40 40">${ICONS.arrow}</svg></div>` +
-      `<div class="wm-pillbtn wm-shop" style="right:60px;top:106px"></div>`;
-    stage.appendChild(nav);
-    const btn = document.createElement('div');
-    btn.className = 'wm-btn';
-    btn.innerHTML = `<div class="wm-circle"><svg width="40" height="40" viewBox="-20 -20 40 40">${ICONS.arrow}</svg></div><div class="wm-pillbtn wm-buy"></div>`;
-    stage.appendChild(btn);
+    const svg = el('svg', { preserveAspectRatio: 'xMidYMid meet', style: 'position:absolute;inset:0;width:100%;height:100%;display:block' });
+    stage.appendChild(svg);
+    el('defs', {}, svg);
     const grain = document.createElement('div');
-    grain.className = 'wm-grain';
+    grain.style.cssText = 'position:absolute;inset:0;opacity:.055;mix-blend-mode:multiply;pointer-events:none;background-size:160px 160px';
     const nz = noiseURL();
     if (nz) grain.style.backgroundImage = `url(${nz})`;
     stage.appendChild(grain);
 
-    let word = null, wordG = null, tl = [], events = [], duration = 0, t = 0, playing = false, raf = 0, last = 0;
-    let ring = null, ringLen = 0, tubG = null, tubInner = null;
-
-    function applyColors() {
-      stage.style.setProperty('--wm-bg', colors.bg);
-      stage.style.setProperty('--wm-ink', colors.ink);
-      stage.style.setProperty('--wm-pill', colors.pill);
-      stage.style.setProperty('--wm-pillink', colors.pillInk);
-      stage.style.setProperty('--wm-btnink', colors.btnInk);
-    }
-
-    function buildTub() {
-      tubSVG.innerHTML = ''; ringSVG.innerHTML = '';
-      if (!o.product || o.mode !== 'hero') { ring = null; tubG = null; return; }
-      ring = el('path', {
-        d: P().A(650, 2036, 682, 682, 168, 334).toString(),
-        fill: 'none', stroke: colors.ring, 'stroke-width': 33, 'stroke-linecap': 'butt',
-      }, ringSVG);
-      ringLen = ring.getTotalLength();
-      ring.style.strokeDasharray = `${ringLen} ${ringLen}`;
-
-      const id = 'wmt' + (++uid);
-      const BODY = 'M-282 112C-282 64 282 64 282 112L392 1400H-392Z';
-      const LID = 'M-292 0C-292 -50 292 -50 292 0L294 118C294 70 -294 70 -294 118Z';
-      const defs = el('defs', {}, tubSVG);
-      defs.innerHTML = `
-<linearGradient id="${id}b" x1="-400" x2="400" y1="0" y2="0" gradientUnits="userSpaceOnUse">
-  <stop offset="0" stop-color="${colors.tubDark}"/><stop offset=".18" stop-color="${colors.tub}"/>
-  <stop offset=".55" stop-color="${colors.tub}"/><stop offset=".82" stop-color="${colors.tub}"/><stop offset="1" stop-color="${colors.tubDark}"/>
-</linearGradient>
-<linearGradient id="${id}s" x1="-400" x2="400" y1="0" y2="0" gradientUnits="userSpaceOnUse">
-  <stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".12" stop-color="#000" stop-opacity="0"/>
-  <stop offset=".3" stop-color="#fff" stop-opacity=".16"/><stop offset=".42" stop-color="#fff" stop-opacity="0"/>
-  <stop offset=".86" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/>
-</linearGradient>
-<linearGradient id="${id}l" x1="0" x2="1" y1="0" y2="0">
-  <stop offset="0" stop-color="#cfd0cc"/><stop offset=".25" stop-color="#f6f6f4"/><stop offset=".6" stop-color="#ffffff"/><stop offset="1" stop-color="#bcbdb8"/>
-</linearGradient>
-<linearGradient id="${id}lt" x1="0" x2="0" y1="0" y2="1">
-  <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e2e3df"/>
-</linearGradient>
-<clipPath id="${id}c"><path d="${BODY}"/></clipPath>`;
-      // Seen slightly from below, so every rim is an upward arc and the top face is hidden.
-      // Local units: origin at the lid's top centre, y down; the body widens towards the bottom.
-      tubG = el('g', {}, tubSVG);
-      const inner = el('g', {}, tubG);
-      tubInner = inner;
-      el('path', { d: BODY, fill: `url(#${id}b)` }, inner);
-      const sv = staticSVG(o.word, { swash: o.swash });
-      const sc = Math.min(560 / Math.max(sv.width, 1), 0.6);
-      const lab = el('g', { 'clip-path': `url(#${id}c)` }, inner);
-      const lw = el('g', {
-        transform: `translate(${-sv.width * sc / 2 + 6} ${206 + 324 * sc}) scale(${sc})`,
-        fill: 'none', stroke: colors.label, 'stroke-width': SW, 'stroke-linecap': 'butt',
-      }, lab);
-      lw.innerHTML = `<defs>${sv.defs}</defs>${sv.body}`;
-      const lines = String(o.label || '').split('\n').filter(Boolean).slice(0, 3);
-      const y0 = 206 + 324 * sc + 70;
-      lines.forEach((ln, i) => {
-        const tx = el('text', {
-          x: -262, y: y0 + (i ? 30 + i * 76 : 0), fill: colors.label, 'font-size': i ? 86 : 52, 'font-weight': 700,
-          'font-family': "'Barlow Semi Condensed','Arial Narrow',sans-serif", 'letter-spacing': '-1.5',
-          transform: 'skewX(-4)',
-        }, lab);
-        tx.textContent = ln;
-      });
-      el('path', { d: BODY, fill: `url(#${id}s)` }, inner);
-      el('path', { d: LID, fill: `url(#${id}l)` }, inner);
-      el('path', { d: 'M-292 86C-292 40 292 40 292 86', fill: 'none', stroke: '#000', 'stroke-opacity': '.08', 'stroke-width': 5 }, inner);
-      el('path', { d: 'M-288 6C-288 -38 288 -38 288 6', fill: 'none', stroke: '#fff', 'stroke-opacity': '.9', 'stroke-width': 6 }, inner);
-    }
+    let word = null, wordG = null, duration = 0, t = 0, playing = false, raf = 0, last = 0;
 
     function build() {
-      applyColors();
-      stage.querySelector('.wm-shop').textContent = o.shop;
-      stage.querySelector('.wm-buy').textContent = o.button;
+      stage.style.background = colors.bg;
+      grain.style.display = o.grain ? '' : 'none';
       if (word) word.remove();
       if (wordG) wordG.remove();
-      wordG = el('g', {}, wordSVG);
+      wordG = el('g', {}, svg);
       word = wordmark(wordG, { word: o.word, swash: o.swash, color: colors.ink, stagger: o.stagger, letterDuration: o.letterDuration });
-      // fit: the reference word is 988 wide (84 px margins)
-      const s = Math.min(1, 988 / Math.max(word.width, 1));
-      const x = (STAGE_W - word.width * s) / 2;
-      const hero = o.mode === 'hero';
-      const base = hero ? 1363 : STAGE_H / 2 + 150 * s;
-      wordG.setAttribute('data-x', x);
-      wordG.setAttribute('data-s', s);
-      wordG.setAttribute('transform', `translate(${x} ${base}) scale(${s})`);
-      buildTub();
-      nav.style.display = hero && o.nav ? '' : 'none';
-      btn.style.display = hero && o.nav ? '' : 'none';
-
-      const R = word.settle + o.hold;
-      tl = [];
-      events = [];
-      tl.push((tt) => word.seek(tt));
-      if (hero) {
-        tl.push((tt) => {
-          const p = EASE.rise(clamp01((tt - R) / 0.55));
-          wordG.setAttribute('transform', `translate(${x} ${base - 626 * p}) scale(${s})`);
-        });
-        tl.push((tt) => {
-          const p = EASE.out(clamp01((tt - R - 0.12) / 0.3));
-          nav.style.opacity = p;
-        });
-        tl.push((tt) => {
-          const a = clamp01((tt - R - 0.16) / 0.2);
-          const p = EASE.expoOut(clamp01((tt - R - 0.16) / 0.62));
-          btn.style.opacity = a;
-          btn.style.transform = `translateY(${140 * (1 - p)}px)`;
-        });
-        if (ring) {
-          tl.push((tt) => {
-            const p = EASE.out(clamp01((tt - R - 0.32) / 0.3));
-            ring.style.strokeDashoffset = ringLen * (1 - p);
-            ring.style.visibility = p > 0 ? 'visible' : 'hidden';
-            const q = EASE.expoOut(clamp01((tt - R - 0.3) / 0.9));
-            tubG.style.visibility = tt > R + 0.3 ? 'visible' : 'hidden';
-            tubInner.setAttribute('transform',
-              `translate(${672 - 140 * (1 - q)} ${1243 + 1000 * (1 - q)}) rotate(${13 + 9 * (1 - q)})`);
-          });
-        }
-        events.push({ name: 'Word rises', start: R, end: R + 0.55 });
-        if (o.nav) {
-          events.push({ name: 'Nav fades in', start: R + 0.12, end: R + 0.42 });
-          events.push({ name: 'Button rises', start: R + 0.16, end: R + 0.78 });
-        }
-        if (ring) events.push({ name: 'Product + ring', start: R + 0.3, end: R + 1.2 });
-        duration = R + 1.25;
-      } else {
-        duration = word.duration + 0.6;
-      }
+      const w = Math.max(word.width, 300);
+      const pad = w * o.padding + 60;
+      svg.setAttribute('viewBox', `${(word.width - w) / 2 - pad} ${FRAME_TOP} ${w + pad * 2} ${FRAME_H}`);
+      duration = word.duration + o.tail;
       seek(t > duration ? duration : t);
     }
 
     function seek(tt) {
       t = Math.max(0, Math.min(duration, tt));
-      for (const f of tl) f(t);
+      word.seek(t);
       if (o.onUpdate) o.onUpdate(t, duration);
     }
 
@@ -923,22 +760,13 @@
       last = now;
       let nt = t + dt * o.speed;
       if (nt >= duration) {
-        if (!o.loop) { seek(duration); playing = false; if (o.onUpdate) o.onUpdate(t, duration); return; }
+        if (!o.loop) { playing = false; seek(duration); return; }
         nt = 0;
       }
       seek(nt);
       raf = requestAnimationFrame(frame);
     }
 
-    function fit() {
-      const w = container.clientWidth, h = container.clientHeight;
-      const s = Math.min(w / STAGE_W, h / STAGE_H);
-      stage.style.transform = `translate(${(w - STAGE_W * s) / 2}px, ${(h - STAGE_H * s) / 2}px) scale(${s})`;
-    }
-    let ro = null;
-    if (root.ResizeObserver) { ro = new ResizeObserver(fit); ro.observe(container); }
-    fit();
-    t = 0;
     build();
 
     const api = {
@@ -962,19 +790,18 @@
         build();
         return api;
       },
-      timeline() { return { letters: word.letters.slice(), events: events.slice(), duration }; },
+      timeline() { return { letters: word.letters.slice(), duration }; },
       options: o,
       colors,
       stage,
-      fit,
-      destroy() { api.pause(); if (ro) ro.disconnect(); stage.remove(); },
+      destroy() { api.pause(); stage.remove(); },
     };
     return api;
   }
 
   root.WordMotion = {
-    wordmark, hero, layout, staticSVG, animatedSVG, THEMES, EASE, bezier,
+    wordmark, player, layout, staticSVG, animatedSVG, THEMES, EASE, bezier,
     glyphs: { lower: LC, swash: SC },
-    metrics: { SW, XH, ASC, DSC, STAGE_W, STAGE_H },
+    metrics: { SW, XH, ASC, DSC },
   };
 })(typeof window !== 'undefined' ? window : this);

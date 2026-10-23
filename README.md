@@ -111,5 +111,5 @@ Progress saves automatically to `localStorage`.
 ## Also in this repo: WordMotion
 
 `wordmotion/` is a separate, self-contained board: type a word and it is drawn
-stroke by stroke as a looped, pen-written wordmark inside an animated hero page.
+stroke by stroke as a looped, pen-written wordmark.
 Open `wordmotion/index.html`. See `wordmotion/README.md`.
