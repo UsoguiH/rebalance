@@ -52,26 +52,63 @@ Needs ffmpeg, numpy, scipy and scikit-image. The same command works for other
 flat-colour logo animations: pass the background colour and the inks from bottom
 to top.
 
+## The font
+
+`font.data.js` is a complete font in the logo's style: a to z, 0 to 9 and
+`. , : ; ! ? - '`. Capitals are drawn as lowercase, as in the logo.
+
+- **s, l, a, c and e** are the letterforms traced from the logo's last frame,
+  unchanged.
+- **Every other glyph** is built from their parts by `font/build_font.py`:
+  - the bowls and counters measured on c and e (rounded squares, with 33-unit
+    stems and 24-unit horizontal strokes on a 106-unit x-height);
+  - the l's leaf top and flared foot (b, d, h, k, t, f, 1);
+  - the c's upper terminal (r);
+  - the a's arch and spur (2, 3, ?);
+  - the s's spur tail (g, j, y, 3, 5, 9).
+- **Spacing:** letters of the logo keep its own spacing. Other pairs sit as close
+  as their ink allows with a 3-unit gap, within 14 units of their boxes.
+
+The shapes are combined with shapely and fitted with smooth cubic Béziers that keep
+spur tips and slit points sharp.
+
+```sh
+python3 font/build_font.py motion.data.js font.data.js   # needs numpy, scipy, shapely
+```
+
 ## Any word
 
 `any-word.html` plays the animation for any word you type.
 
 - **The word "slaace"** in the original letterforms plays the frame-exact vector
   trace above, so it matches the source to within about 1% per pixel.
-- **Any other word** replays the original's measured motion. `motion.data.js`
-  holds a rotoscope of the source: in each of the 57 frames, every coloured
-  piece was matched to a copy of one of the six letters, moved by a rotation,
-  scale and shift, and clipped to the angular slices around the copy's centre
-  where the piece shows. There are faint cream ghosts, green copies and cream
-  copies, painted in that order, as in the original.
-  - Each letter of the typed word takes the pieces of the original letter
-    nearest to it in position.
-  - It is shifted in time by 20.8 frames per word width, which is how the
-    original staggers its letters.
+- **Any other word** is built letter by letter, and every letter has its own
+  animation. `motion.data.js` holds a rotoscope of the source: in each of the
+  57 frames, every coloured piece was matched to a copy of one of the six letters,
+  moved by a rotation, scale and shift, and clipped to the angular slices around
+  the copy's centre where the piece shows. There are faint cream ghosts, green
+  copies and cream copies, painted in that order, as in the original.
+  - **Clips.** Each of the six original letters (s, l, both a's, c, e) gives a
+    clip: its own pieces from the frame it first appears until its cream copy
+    has settled. 28 of the 485 pieces, which the fit pushed to the edge of its range, are
+    left out.
+  - **Which clip a letter plays.** Each glyph is assigned a clip, mirrored or
+    not and played up to 10% faster or slower (`CLIP_OF` in `assemble.js`). So
+    an "o" always builds the same way, wherever it stands. A letter repeated
+    straight after itself plays an alternate, as the two a's of "slaace" do.
+  - **Stagger.** Each letter starts 3.94 frames per x-height after the first
+    one. That is the original's stagger of 20.8 frames per word width. Each clip
+    keeps its own lead in front of that slot, so "slaace" built letter by letter
+    keeps the original's timing (the **Exact slaace** button switches between
+    that and the trace). A long word just takes longer.
   - Shifts and sizes are stored in x-heights, so the motion scales to any font.
 - **The wave** is a sine stroke fitted to every frame of the source. Its height,
-  amplitude and wavelength are in x-heights; its start, end and crest are
-  relative to the word's width.
+  amplitude, wavelength, start and end are in x-heights from the start of the word.
+  - On a longer word, the tail keeps sweeping right at the letters' stagger speed,
+    and the head stays ahead of it.
+  - On a shorter word, the sweep is compressed to fit.
+- **All letters** shows every glyph of the font at once, each looping its own
+  animation.
 - **Playback** draws on one `<canvas>`. Each piece is linked to the piece it
   becomes in the next frame, so the player interpolates between the original's
   25 frames per second and runs at the screen's refresh rate. A draw takes well
@@ -85,17 +122,15 @@ to top.
   - From the frame each original letter is fully green, and later fully cream,
     the typed letter gets a base of that colour under its moving copies. In the
     original those gaps are already filled.
-- **Letterforms:** words made only of s, l, a, c and e use the original
-  letterforms, taken from the trace of the final frame. Other words use a
-  Google Font, Anybody by default.
+- **Letterforms:** the font above by default. Four Google Fonts are offered
+  too; they play the same per-letter animation.
 
 How close the replay is, measured on "slaace" against the source frames (mean
 error out of 255; a blank frame scores 8 at frame 10 and 32 when finished):
 4.1 at frame 10, 4.9 at frame 20, 4.3 at frame 30 and 2.9 once the word has
 settled. The settled error is edge anti-aliasing. The first 15 frames match
-least well, because their faint pieces are the hardest to rotoscope. On other
-words the build-up also looks more fragmented, because the slices were measured
-on the original's letter shapes.
+least well, because their faint pieces are the hardest to rotoscope. Every glyph
+of the font, alone and doubled, ends exactly on its still letterform.
 
 The tools that produced the data are in `tools/`: `rotoscope.py` (the piece
 fits), `fit_wave.py` (the wave) and `export_motion.py` (writes `motion.data.js`).
@@ -104,9 +139,10 @@ fits), `fit_wave.py` (the wave) and `export_motion.py` (writes `motion.data.js`)
 <div id="logo" style="width:800px;height:300px"></div>
 <script src="slaace.frames.js"></script>   <!-- optional: exact playback of "slaace" -->
 <script src="motion.data.js"></script>
+<script src="font.data.js"></script>
 <script src="assemble.js"></script>
 <script>
-  const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'lace' });
-  anim.ready.then(() => anim.play());   // also: pause(), replay(), seek(frame), set({...})
+  const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'hello' });
+  anim.ready.then(() => anim.play());   // also: pause(), replay(), seek(frame), set({...}), frames
 </script>
 ```

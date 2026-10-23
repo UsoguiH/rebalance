@@ -30,6 +30,15 @@ body {
 }
 .stage { position: relative; min-height: 0; display: grid; place-items: center; padding: 3vh max(16px, 4vw) 0; }
 #art { width: min(100%, 1180px); height: min(100%, 62vh); }
+#grid {
+  display: none; width: min(100%, 1180px); max-height: 100%; overflow-y: auto; align-self: start;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; padding-bottom: 8px;
+}
+body.letters #art { display: none; }
+body.letters #grid { display: grid; }
+body.letters .word-only { display: none; }
+.cell { aspect-ratio: 1; border: 1px solid var(--line); border-radius: 10px; position: relative; overflow: hidden; }
+.cell span { position: absolute; left: 7px; top: 4px; font: 11px var(--f-mono); color: var(--muted); }
 .empty { color: var(--muted); }
 .bar {
   display: grid; gap: 10px; justify-items: center;
@@ -64,13 +73,14 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
 </head>
 <body>
 <!--any:body-->
-<main class="stage"><div id="art" aria-live="polite"></div></main>
+<main class="stage"><div id="art" aria-live="polite"></div><div id="grid" aria-label="Every letter with its own animation"></div></main>
 <div class="bar">
   <div class="row">
     <input id="word" type="text" value="slaace" maxlength="16" spellcheck="false" autocomplete="off" aria-label="Word">
     <select id="font" aria-label="Typeface"></select>
+    <button id="view" type="button" aria-pressed="false" title="Every letter of the font, each with its own animation">All letters</button>
   </div>
-  <div class="row play" role="toolbar" aria-label="Playback">
+  <div class="row play word-only" role="toolbar" aria-label="Playback">
     <button id="play" type="button" aria-label="Pause"><svg viewBox="0 0 14 14" id="play-ic"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></button>
     <button id="prev" type="button" aria-label="Previous frame"><svg viewBox="0 0 14 14"><path d="M3 2h2v10H3zM12 2v10L6 7z" fill="currentColor"/></svg></button>
     <button id="next" type="button" aria-label="Next frame"><svg viewBox="0 0 14 14"><path d="M9 2h2v10H9zM2 2v10l6-5z" fill="currentColor"/></svg></button>
@@ -81,6 +91,7 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
     </select>
     <button id="loop" type="button" aria-pressed="true">Loop</button>
     <button id="reg" type="button" aria-pressed="true" title="Registered mark">®</button>
+    <button id="exact" type="button" aria-pressed="true" title="Play the traced recording for the word slaace">Exact slaace</button>
     <label class="sw"><input type="color" id="c-bg" value="#022713" aria-label="Background colour"></label>
     <label class="sw"><input type="color" id="c-green" value="#18C76B" aria-label="Green colour"></label>
     <label class="sw"><input type="color" id="c-cream" value="#CDE4B1" aria-label="Letter colour"></label>
@@ -89,6 +100,7 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
 <!--/any:body-->
 <script src="slaace.frames.js"></script>
 <script src="motion.data.js"></script>
+<script src="font.data.js"></script>
 <script src="assemble.js"></script>
 <!--any:script-->
 <script>
@@ -97,19 +109,21 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
   const $ = (id) => document.getElementById(id);
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const store = {
-    get(k, d) { try { const v = localStorage.getItem('la2:' + k); return v == null ? d : v; } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem('la2:' + k, v); } catch (e) { /* storage off */ } },
+    get(k, d) { try { const v = localStorage.getItem('la3:' + k); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('la3:' + k, v); } catch (e) { /* storage off */ } },
   };
 
   Object.entries(LA.FONTS).forEach(([k, f]) => {
     const op = document.createElement('option'); op.value = k; op.textContent = f.label; $('font').appendChild(op);
   });
   $('word').value = store.get('word', 'slaace');
-  $('font').value = store.get('font', 'original');
+  $('font').value = store.get('font', 'slaace');
+  if (!$('font').value) $('font').value = 'slaace';
 
   const anim = LA.create($('art'), {
     word: $('word').value, font: $('font').value,
     onUpdate(f, n) {
+      $('scrub').max = n;
       $('scrub').value = f;
       $('read').textContent = `frame ${Math.floor(f)} / ${n} · ${(f / LA.FPS).toFixed(2)} s`;
     },
@@ -123,7 +137,7 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
       : '<path d="M3 2l9 5-9 5z" fill="currentColor"/>';
   }
   function restart() {
-    if (reduce) { anim.pause(); anim.seek(LA.FRAMES); setPlay(false); return; }
+    if (reduce) { anim.pause(); anim.seek(anim.frames); setPlay(false); return; }
     anim.seek(0); setPlay(true);
   }
 
@@ -137,7 +151,7 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
 
   $('play').addEventListener('click', () => setPlay(!anim.playing));
   $('prev').addEventListener('click', () => { setPlay(false); anim.seek(Math.max(0, Math.round(anim.frame) - 1)); });
-  $('next').addEventListener('click', () => { setPlay(false); anim.seek(Math.min(LA.FRAMES, Math.round(anim.frame) + 1)); });
+  $('next').addEventListener('click', () => { setPlay(false); anim.seek(Math.min(anim.frames, Math.round(anim.frame) + 1)); });
   $('scrub').addEventListener('input', (e) => { setPlay(false); anim.seek(+e.target.value); });
   $('speed').addEventListener('change', (e) => { anim.options.speed = +e.target.value; });
   $('loop').addEventListener('click', (e) => {
@@ -149,6 +163,10 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
     const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
     e.currentTarget.setAttribute('aria-pressed', on); anim.set({ registered: on });
   });
+  $('exact').addEventListener('click', (e) => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', on); anim.set({ exact: on }).then(restart);
+  });
   const colour = () => {
     document.documentElement.style.setProperty('--bg', $('c-bg').value);
     anim.set({ colors: { bg: $('c-bg').value, green: $('c-green').value, cream: $('c-cream').value } });
@@ -159,6 +177,31 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
     if (e.code === 'Space') { e.preventDefault(); $('play').click(); }
     if (e.code === 'ArrowLeft') $('prev').click();
     if (e.code === 'ArrowRight') $('next').click();
+  });
+
+  // All letters: every glyph of the font, each looping its own animation.
+  let cells = [];
+  $('view').addEventListener('click', (e) => {
+    const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+    e.currentTarget.setAttribute('aria-pressed', on);
+    document.body.classList.toggle('letters', on);
+    if (on) {
+      setPlay(false);
+      const G = window.SLAACE_FONT.glyphs, order = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      const chars = Object.keys(G).sort((x, y) => (order.indexOf(x) + 1 || 99) - (order.indexOf(y) + 1 || 99));
+      cells = chars.map((ch, i) => {
+        const cell = document.createElement('div'); cell.className = 'cell';
+        cell.innerHTML = `<span>${ch === '<' ? '&lt;' : ch}</span>`;
+        $('grid').appendChild(cell);
+        const a = LA.create(cell, { word: ch, registered: false, exact: false, font: 'slaace',
+          colors: { bg: $('c-bg').value, green: $('c-green').value, cream: $('c-cream').value } });
+        a.ready.then(() => { if (reduce) a.seek(a.frames); else { a.seek((i * 7) % a.frames); a.play(); } });
+        return a;
+      });
+    } else {
+      cells.forEach((a) => a.destroy()); cells = []; $('grid').innerHTML = '';
+      restart();
+    }
   });
 
   anim.ready.then(restart);
