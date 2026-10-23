@@ -49,6 +49,8 @@ button svg { width: 14px; height: 14px; display: block; }
 input[type="range"] { accent-color: var(--green); }
 #scrub { width: min(46vw, 420px); }
 .read { font: 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 9.5em; text-align: center; }
+a.link { color: var(--muted); font-size: 13px; text-underline-offset: 3px; }
+a.link:hover { color: var(--ink); }
 select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--bar-line); border-radius: 999px; height: 34px; padding: 0 10px; }
 @media (max-width: 560px) { #scrub { width: 100%; order: 10; } }
 </style>
@@ -67,6 +69,7 @@ select { font: inherit; color: var(--ink); background: var(--bg); border: 1px so
     <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
   </select>
   <button id="loop" type="button" aria-pressed="true">Loop</button>
+  <a class="link" href="any-word.html">Try any word →</a>
 </div>
 <!--/replica:body-->
 <script src="slaace.frames.js"></script>

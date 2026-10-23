@@ -51,3 +51,39 @@ python3 tools/trace_video.py slaace.mp4 slaace.frames.js --name SLAACE \
 Needs ffmpeg, numpy, scipy and scikit-image. The same command works for other
 flat-colour logo animations: pass the background colour and the inks from bottom
 to top.
+
+## Any word
+
+`any-word.html` plays the same animation for any word you type. It is a rebuild
+of the motion, not a trace, so it works with any text. `assemble.js` holds the
+generator, and every timing in it comes from measuring the original frames:
+
+- **Chunks.** Each letter is cut into two or three chunks by circles, so the cut
+  edges are curved like the original's. The chunks rise from below (now and then
+  from above) while rotating and flipping, and fade up to half-opacity cream. The
+  odd chunk arrives solid green. A letter sets off at frame `-1 + 15c`, where `c`
+  is its centre as a fraction of the word's width, and flies for 9 frames.
+- **Colour.** At frame `2 + 20c` two growing circles lay down green patches, and
+  three more sweep cream over the letter. Each cream circle is sized to cover the
+  whole letter from its own centre, so every letter ends fully cream. This gives
+  the original's green and cream patchwork, which lasts until about frame 35.
+- **Wave.** A sine stroke: amplitude 0.24 x-heights, wavelength 1.54 x-heights,
+  thickness 0.107 x-heights, green at 80% opacity, round ends. Its head and tail
+  follow keyframes measured from the original, as fractions of the word width.
+  Its crests drift left, slowing exponentially (time constant 2.75 frames), and
+  past the last letter it bends down and fades.
+- **Loop.** The loop is 57 frames at 25 fps (2.28 s), as in the original. The ®
+  fades in over frames 25 to 42.
+
+The cuts are seeded from the word, so a word always plays the same way. Shuffle
+picks new cuts. The slaace typeface is custom, so the closest Google Font is the
+default: Anybody, semi-expanded, weight 880. Four other fonts are offered.
+
+```html
+<div id="logo" style="width:800px;height:300px"></div>
+<script src="assemble.js"></script>
+<script>
+  const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'matcha' });
+  anim.ready.then(() => anim.play());   // also: pause(), replay(), seek(frame), set({...})
+</script>
+```
