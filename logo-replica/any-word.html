@@ -120,12 +120,17 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
   $('font').value = store.get('font', 'slaace');
   if (!$('font').value) $('font').value = 'slaace';
 
+  let shownRead = '';
   const anim = LA.create($('art'), {
     word: $('word').value, font: $('font').value,
+    // Touch the controls only when what they show changes, so playback
+    // does not restyle the page on every screen refresh.
     onUpdate(f, n) {
-      $('scrub').max = n;
-      $('scrub').value = f;
-      $('read').textContent = `frame ${Math.floor(f)} / ${n} · ${(f / LA.FPS).toFixed(2)} s`;
+      const sc = $('scrub');
+      if (+sc.max !== n) sc.max = n;
+      if (Math.abs(sc.value - f) >= 0.25 || f === 0 || f === n) sc.value = f;
+      const txt = `frame ${Math.floor(f)} / ${n} · ${(Math.floor(f) / LA.FPS).toFixed(2)} s`;
+      if (txt !== shownRead) { $('read').textContent = txt; shownRead = txt; }
     },
   });
 
@@ -181,6 +186,13 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
 
   // All letters: every glyph of the font, each looping its own animation.
   let cells = [];
+  // Only letters on screen play; the rest wait where they are.
+  const seen = new IntersectionObserver((entries) => entries.forEach((en) => {
+    const cell = en.target;
+    cell.seen = en.isIntersecting;
+    if (!cell.anim || reduce) return;
+    cell.seen ? cell.anim.play() : cell.anim.pause();
+  }));
   $('view').addEventListener('click', (e) => {
     const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
     e.currentTarget.setAttribute('aria-pressed', on);
@@ -193,12 +205,15 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
         const cell = document.createElement('div'); cell.className = 'cell';
         cell.innerHTML = `<span>${ch === '<' ? '&lt;' : ch}</span>`;
         $('grid').appendChild(cell);
-        const a = LA.create(cell, { word: ch, registered: false, exact: false, font: 'slaace',
+        const a = LA.create(cell, { word: ch, registered: false, exact: false, font: 'slaace', maxFps: 30,
           colors: { bg: $('c-bg').value, green: $('c-green').value, cream: $('c-cream').value } });
-        a.ready.then(() => { if (reduce) a.seek(a.frames); else { a.seek((i * 7) % a.frames); a.play(); } });
+        a.ready.then(() => { a.seek(reduce ? a.frames : (i * 7) % a.frames); if (!reduce && cell.seen) a.play(); });
+        cell.anim = a;
+        seen.observe(cell);
         return a;
       });
     } else {
+      seen.disconnect();
       cells.forEach((a) => a.destroy()); cells = []; $('grid').innerHTML = '';
       restart();
     }

@@ -140,19 +140,17 @@
 
   // ------------------------------------------------------------------- clips
   // One clip per original letter: its pieces from its first frame on, linked
-  // frame to frame. A few fits squeezed to the smallest scale far from the
-  // letter, or thrown more than 1.3 x-heights away, are left out.
+  // frame to frame. Pieces more than 1.2 x-heights from the letter are left
+  // out: they are half-size copies the fit threw onto another letter's place
+  // (up to 2.5 x-heights away), which on a typed word fly off past its ends.
+  // Leaving them out changes the replay of "slaace" by 0.04 levels in 255.
   // `lead` is how many frames the clip starts before the letter's place in
   // the stagger (its time origin), so a word whose letters sit where the
   // original's did replays the original's timing exactly.
   function buildClips(M) {
     const s0 = M.letters[0].pos;
     return M.letters.map((L, k) => {
-      const keep = (p) => {
-        if (p[1] !== k) return false;
-        const d = Math.hypot(p[4], p[5]);
-        return d < 1.3 && !(p[3] <= 0.51 && d > 0.6);
-      };
+      const keep = (p) => p[1] === k && Math.hypot(p[4], p[5]) < 1.2;
       let on = M.frames.findIndex((fr) => fr.some(keep));
       if (on < 0) on = 0;
       const local = M.frames.map((fr) => {
@@ -172,7 +170,7 @@
       // the clip ends once the cream copy's spring has died down
       const creamFull = L.creamFull - on;
       const len = Math.min(frames.length - 1, Math.ceil(creamFull) + 16);
-      return { ch: L.ch, on, lead: origin - on, frames, len, greenFull: L.greenFull - on, creamFull };
+      return { ch: L.ch, on, lead: origin - on, frames, len, creamFull };
     });
   }
 
@@ -210,6 +208,18 @@
     return out;
   }
 
+  // One requestAnimationFrame loop drives every playing instance on the page.
+  const ticking = new Set();
+  let instances = 0;
+  let rafId = 0;
+  function loop(now) {
+    rafId = 0;
+    for (const fn of Array.from(ticking)) fn(now);
+    if (ticking.size) rafId = requestAnimationFrame(loop);
+  }
+  function startTicking(fn) { ticking.add(fn); if (!rafId) rafId = requestAnimationFrame(loop); }
+  function stopTicking(fn) { ticking.delete(fn); }
+
   function hashPick(ch) {
     const keys = 'abcdefghijklmnopqrstuvwxyz';
     let h = 0;
@@ -220,6 +230,7 @@
   function create(container, options) {
     const o = Object.assign({
       word: 'slaace', font: 'slaace', registered: true, speed: 1, loop: true, exact: true, still: false,
+      maxFps: 0,   // redraw at most this often (0: every screen refresh)
       colors: {}, onUpdate: null, onReady: null,
     }, options || {});
     const colors = Object.assign({}, COLORS, o.colors);
@@ -230,11 +241,12 @@
     const canvas = document.createElement('canvas');
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', 'Animated wordmark');
-    canvas.style.cssText = 'display:block;width:100%;height:100%';
+    canvas.style.cssText = 'display:block;position:relative';
     container.appendChild(canvas);
     const ctx = canvas.getContext('2d');
 
-    let scene = null, frame = 0, playing = false, raf = 0, last = 0, token = 0;
+    let scene = null, frame = 0, playing = false, last = 0, token = 0, lastShow = 0;
+    let drawn = -1;   // frame last drawn, or -1 when the canvas must be redrawn
 
     function build() {
       const my = ++token;
@@ -256,8 +268,11 @@
       const top = Math.min(-xh * 1.3, ...letters.map((q) => q.t)), bot = Math.max(0, ...letters.map((q) => q.b));
       const W = x1 - x0;
       let prev = null, end = 0, first = Infinity;
-      letters.forEach((q) => {
+      letters.forEach((q, i) => {
+        q.i = i;
         q.cx = q.x + (q.l + q.r) / 2; q.cy = (q.t + q.b) / 2;
+        // slices only need to reach the corners of the letter's own box
+        q.rad = Math.hypot((q.r - q.l) / 2, (q.b - q.t) / 2) * 1.05 + xh * 0.05;
         let [src, mirror, speed] = (prev === q.ch && ALT[q.ch]) || CLIP_OF[q.ch] || CLIP_OF[hashPick(q.ch)];
         if (prev === q.ch && !ALT[q.ch]) mirror = 1 - mirror;
         q.clip = clips[SRC[src]]; q.mirror = mirror; q.speed = speed;
@@ -281,7 +296,8 @@
       const S = {
         letters, xh, x0, x1, W, t0, frames: Math.ceil(end),
         view: { x: x0 - xh * 0.55, y: top - xh * 0.35, w: W + xh * 1.4, h: bot - top + xh * 0.85 },
-        trace: null, wedges: new Map(),
+        paint: reach(letters, xh, { x: x0, y: top, r: x1, b: bot }),
+        trace: null,
       };
       // The original word in the original letterforms plays the frame-exact trace.
       const T = root.SLAACE;
@@ -290,29 +306,62 @@
         S.traceSeq = T.sequence;
         S.frames = FRAMES;
       }
+      S.still = stillFrom(S);
       return S;
     }
 
-    function wedge(q, runs, mirror) {
-      if (runs.length === 1 && runs[0][1] - runs[0][0] >= 359.5) return null;
-      const key = q.cx + ',' + q.cy + ',' + mirror + '|' + runs.map((r) => r[0].toFixed(1) + '-' + r[1].toFixed(1)).join(',');
-      let p = scene.wedges.get(key);
-      if (p) return p;
-      p = new Path2D();
-      const R = scene.xh * 4;
+    // The box every piece of the word's clips stays inside (each piece is its
+    // letter, scaled and moved, and lies within the slice radius round its
+    // centre), together with the word itself and the wave and ® around it.
+    function reach(letters, xh, box) {
+      let x = box.x - xh * 0.6, y = Math.min(box.y, -xh * 1.4), r = box.r + xh * 1.1, b = box.b + xh * 0.2;
+      for (const q of letters) {
+        for (const fr of q.clip.frames) {
+          for (const p of fr) {
+            const px = q.cx + (q.mirror ? -p[3] : p[3]) * xh, py = q.cy + p[4] * xh, e = q.rad * p[2];
+            x = Math.min(x, px - e); r = Math.max(r, px + e); y = Math.min(y, py - e); b = Math.max(b, py + e);
+          }
+        }
+      }
+      return { x, y, r, b };
+    }
+
+    // The first frame from which nothing on the canvas changes any more: every
+    // clip has ended, the wave has gone and the registered mark is fully in.
+    // Playback stops redrawing from there until the loop starts again.
+    function stillFrom(S) {
+      const ro = data.registered.opacity;
+      let reg = 0;
+      for (let i = ro.length - 1; i > 0; i--) if (ro[i] !== ro[i - 1]) { reg = i + 1; break; }
+      let t = S.frames - FRAMES + reg;
+      if (S.trace) {
+        let i = S.traceSeq.length - 1;
+        while (i > 0 && S.traceSeq[i - 1] === S.traceSeq[i]) i--;
+        const wl = data.wave.frames.reduce((m, w, k) => (w ? k : m), 0) + 1;
+        return Math.max(t, i, wl);
+      }
+      S.letters.forEach((q) => { t = Math.max(t, q.start + q.clip.len / q.speed); });
+      for (let f = S.frames; f > 0; f -= 0.25) if (waveAt(S, f - S.t0)) { t = Math.max(t, f + 0.25); break; }
+      return Math.min(S.frames, Math.ceil(t));
+    }
+
+    // Clip to the angular slices of one piece, around the letter's centre.
+    // The path is built in place each time: it is a handful of points.
+    function clipSlices(q, runs, mirror) {
+      if (runs.length === 1 && runs[0][1] - runs[0][0] >= 359.5) return;
+      const R = q.rad;
+      ctx.beginPath();
       for (let [a0, a1] of runs) {
         if (mirror) [a0, a1] = [180 - a1, 180 - a0];
-        p.moveTo(q.cx, q.cy);
-        const n = Math.max(2, Math.ceil((a1 - a0) / 5));
+        ctx.moveTo(q.cx, q.cy);
+        const n = Math.max(2, Math.ceil((a1 - a0) / 10));
         for (let i = 0; i <= n; i++) {
           const a = (a0 + ((a1 - a0) * i) / n) * DEG;
-          p.lineTo(q.cx + R * Math.cos(a), q.cy + R * Math.sin(a));
+          ctx.lineTo(q.cx + R * Math.cos(a), q.cy + R * Math.sin(a));
         }
-        p.closePath();
+        ctx.closePath();
       }
-      if (scene.wedges.size > 4000) scene.wedges.clear();
-      scene.wedges.set(key, p);
-      return p;
+      ctx.clip();
     }
 
     function drawGlyph(q) {
@@ -333,7 +382,12 @@
     // stagger speed and the head stays ahead of it; on a shorter one the
     // sweep is compressed to the word.
     function drawWave(t) {
-      const { xh, x0, x1, W } = scene;
+      const w = waveAt(scene, t);
+      if (w) strokeWave(w.pts, w.op);
+    }
+
+    function waveAt(S, t) {
+      const { xh, x0, x1, W } = S;
       const wf = data.wave.frames, wx = data.width_xh;
       const last = wf.reduce((m, w, i) => (w ? i : m), 0);
       const at = (f) => {
@@ -341,7 +395,7 @@
         const a = wf[f0] || wf[f1], b = wf[f1] || a;
         return a.map((x, i) => lerp(x, b[i], u));
       };
-      if (t < 0) return;
+      if (t < 0) return null;
       const fit = Math.min(1, W / (wx * xh));
       const settle = 20, v = 1 / STAGGER;             // x-heights per frame after the original's sweep
       let [yc, amp, lam, crest, xa, xb, op] = at(Math.min(t, last));
@@ -355,15 +409,15 @@
       head = Math.min(head, end);
       op *= clamp01((head - tail) / 0.35);
       if (t > last && fit < 1) op = 0;
-      if (head <= tail || op <= 0.01) return;
+      if (head <= tail || op <= 0.01) return null;
       const cx = x0 + crest * wx * fit * xh;
-      const n = Math.max(8, Math.ceil((head - tail) / 0.05));
+      const n = Math.max(8, Math.ceil((head - tail) / 0.08));
       const pts = [];
       for (let i = 0; i <= n; i++) {
         const x = x0 + (tail + ((head - tail) * i) / n) * xh;
         pts.push([x, (yc - amp * Math.cos((2 * Math.PI * (x - cx)) / (lam * xh))) * xh]);
       }
-      strokeWave(pts, op);
+      return { pts, op };
     }
 
     // The original's wave, fitted frame by frame, for the exact "slaace".
@@ -385,12 +439,13 @@
     }
 
     function render() {
+      drawn = frame;
       const w = canvas.width, h = canvas.height;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, w, h);
       if (!scene) return;
-      const v = scene.view, k = Math.min(w / v.w, h / v.h);
-      ctx.setTransform(k, 0, 0, k, (w - v.w * k) / 2 - v.x * k, (h - v.h * k) / 2 - v.y * k);
+      const F = fit;
+      ctx.setTransform(F.k * F.dpr, 0, 0, F.k * F.dpr, F.ox * F.dpr, F.oy * F.dpr);
       const { xh, x1 } = scene;
 
       if (o.still) {
@@ -408,12 +463,12 @@
         ctx.restore(); ctx.globalAlpha = 1;
         drawTraceWave(frame);
       } else {
-        // Once a letter is fully green (later fully cream) under its moving
-        // copies, draw that as a base, so no background shows between slices.
+        // Once a letter is fully cream under its settling copies, draw it as a
+        // base, so no background shows between slices. (A green base before
+        // that would show as green rims round the springing cream copy, which
+        // the original does not have.)
         scene.letters.forEach((q) => {
-          const fs = (frame - q.start) * q.speed, c = q.clip;
-          const base = fs >= c.creamFull + 2 ? colors.cream : fs >= c.greenFull ? colors.green : null;
-          if (base) { ctx.fillStyle = base; drawGlyph(q); }
+          if ((frame - q.start) * q.speed >= q.clip.creamFull + 2) { ctx.fillStyle = colors.cream; drawGlyph(q); }
         });
         const items = [];
         scene.letters.forEach((q) => {
@@ -429,8 +484,7 @@
           ctx.rotate(th * DEG);
           ctx.scale(s, s);
           ctx.translate(-q.cx, -q.cy);
-          const clip = wedge(q, runs, q.mirror);
-          if (clip) ctx.clip(clip);
+          clipSlices(q, runs, q.mirror);
           ctx.globalAlpha = alpha;
           ctx.fillStyle = fill[cls];
           drawGlyph(q);
@@ -461,10 +515,27 @@
       }
     }
 
+    // The word is scaled to fit its view box in the container. The canvas
+    // covers only where pieces can reach (scene.paint), within the container,
+    // so a tall phone screen does not make it clear and composite empty space.
+    let fit = { k: 1, dpr: 1, ox: 0, oy: 0 };
     function resize() {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const w = Math.max(1, Math.round(container.clientWidth * dpr)), h = Math.max(1, Math.round(container.clientHeight * dpr));
+      const cw = Math.max(1, container.clientWidth), ch = Math.max(1, container.clientHeight);
+      let left = 0, top = 0, dw = cw, dh = ch, k = 1, cx = 0, cy = 0;
+      if (scene) {
+        const v = scene.view, P = scene.paint;
+        k = Math.min(cw / v.w, ch / v.h);
+        cx = (cw - v.w * k) / 2 - v.x * k; cy = (ch - v.h * k) / 2 - v.y * k;   // unit 0 in container px
+        left = Math.max(0, Math.floor(P.x * k + cx)); top = Math.max(0, Math.floor(P.y * k + cy));
+        dw = Math.max(1, Math.min(cw, Math.ceil(P.r * k + cx)) - left);
+        dh = Math.max(1, Math.min(ch, Math.ceil(P.b * k + cy)) - top);
+      }
+      fit = { k, dpr, ox: cx - left, oy: cy - top };
+      const w = Math.round(dw * dpr), h = Math.round(dh * dpr);
       if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+      const st = canvas.style;
+      st.width = dw + 'px'; st.height = dh + 'px'; st.left = left + 'px'; st.top = top + 'px';
       render();
     }
     let ro = null;
@@ -472,32 +543,43 @@
 
     function show(f) {
       frame = Math.max(0, Math.min(api.frames, f));
-      render();
+      // nothing moves after scene.still: keep what is on the canvas
+      if (!(scene && drawn >= 0 && drawn >= scene.still && frame >= scene.still)) render();
       if (o.onUpdate) o.onUpdate(frame, api.frames);
     }
 
     function tick(now) {
-      if (!playing) return;
-      const dt = Math.min(0.1, (now - last) / 1000);
+      if (!playing) { stopTicking(tick); return; }
+      const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
       last = now;
       const n = api.frames;
       let f = frame + dt * FPS * o.speed;
       if (f >= n) {
-        if (!o.loop) { show(n); playing = false; return; }
+        if (!o.loop) { show(n); playing = false; stopTicking(tick); return; }
         f %= n;
       }
+      if (o.maxFps && now - lastShow < 1000 / o.maxFps - 4) { frame = f; return; }
+      lastShow = now;
       show(f);
-      raf = requestAnimationFrame(tick);
     }
 
     const api = {
-      play() { if (playing) return api; if (frame >= api.frames) frame = 0; playing = true; last = performance.now(); raf = requestAnimationFrame(tick); return api; },
-      pause() { playing = false; cancelAnimationFrame(raf); return api; },
+      play() {
+        if (playing) return api;
+        if (frame >= api.frames) frame = 0;
+        playing = true; last = performance.now();
+        // spread capped instances over the refreshes instead of drawing all at once
+        lastShow = last - (o.maxFps ? (instances++ * 7) % (1000 / o.maxFps) : 0);
+        startTicking(tick);
+        return api;
+      },
+      pause() { playing = false; stopTicking(tick); return api; },
       replay() { api.pause(); show(0); return api.play(); },
       seek(f) { show(f); return api; },
       set(opts) {
         Object.assign(o, opts || {});
         if (opts && opts.colors) Object.assign(colors, opts.colors);
+        drawn = -1;
         return build();
       },
       get frame() { return frame; },

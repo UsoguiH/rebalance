@@ -89,9 +89,8 @@ python3 font/build_font.py motion.data.js font.data.js   # needs numpy, scipy, s
   the copy's centre where the piece shows. There are faint cream ghosts, green
   copies and cream copies, painted in that order, as in the original.
   - **Clips.** Each of the six original letters (s, l, both a's, c, e) gives a
-    clip: its own pieces from the frame it first appears until its cream copy
-    has settled. 28 of the 485 pieces, which the fit pushed to the edge of its range, are
-    left out.
+    clip: all of its own pieces, from the frame it first appears until its cream
+    copy has settled.
   - **Which clip a letter plays.** Each glyph is assigned a clip, mirrored or
     not and played up to 10% faster or slower (`CLIP_OF` in `assemble.js`). So
     an "o" always builds the same way, wherever it stands. A letter repeated
@@ -119,9 +118,10 @@ python3 font/build_font.py motion.data.js font.data.js   # needs numpy, scipy, s
     fit sometimes explained the second "a" with the first one moved over.
   - Angles where the original letter has no ink (most of the "l") take the
     state of the nearest inked angle, so wide letters are not left half hidden.
-  - From the frame each original letter is fully green, and later fully cream,
-    the typed letter gets a base of that colour under its moving copies. In the
-    original those gaps are already filled.
+  - From the frame each original letter is fully cream, the typed letter gets
+    a cream base under its settling copies. In the original those gaps are
+    already filled. There is no green base: it would show as green rims round
+    the springing cream copy, which the original does not have.
 - **Letterforms:** the font above by default. Four Google Fonts are offered
   too; they play the same per-letter animation.
 
