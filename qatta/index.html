@@ -60,9 +60,12 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ic { width: 1.3rem; height: 1.3rem; flex: none; display: block; }
 .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 
-/* the wallpaper: soft colour blobs painted once into a single fixed layer (see paintWall), dimmed so white text stays readable */
-.wall { position: fixed; inset: -8%; z-index: 0; pointer-events: none; background: linear-gradient(180deg, #14120e 0%, #2b2623 18%, #6e6470 38%, #ada0b3 54%, #a3a98b 74%, #6f7c57 100%); }
-.wall::after { content: ""; position: absolute; inset: 0; background: rgba(12, 10, 14, .38); }
+.glow {
+  position: absolute; inset: 0 0 auto; height: 32rem; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 50% 32%, rgba(124, 92, 190, .28), transparent 70%),
+    radial-gradient(40% 40% at 85% 10%, rgba(92, 207, 196, .10), transparent 70%);
+}
 .app {
   position: relative; z-index: 1; width: 100%; max-width: 30rem; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -73,7 +76,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 
 /* ——— numbered steps ——— */
 .step { display: flex; flex-direction: column; gap: .9rem; }
-.step-h { margin: 0; display: flex; align-items: center; gap: .65rem; font-size: 1.25rem; font-weight: 700; line-height: 1.35; text-shadow: 0 1px 12px rgba(0, 0, 0, .45); }
+.step-h { margin: 0; display: flex; align-items: center; gap: .65rem; font-size: 1.25rem; font-weight: 700; line-height: 1.35; }
 .step-n {
   flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%;
   display: grid; place-items: center; background: var(--primary); color: var(--on-primary); font-size: 1.05rem; font-weight: 700;
@@ -130,7 +133,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .per span { color: var(--muted); }
 .per b { font-size: 1.65rem; font-weight: 700; line-height: 1.2; }
 .per small { color: var(--muted); font-size: .9rem; }
-.heads { margin: 0; color: var(--muted); text-shadow: 0 1px 10px rgba(0, 0, 0, .5); }
+.heads { margin: 0; color: var(--muted); }
 .heads b { color: var(--fg); font-weight: 600; }
 
 /* ——— families: tap to open in place ——— */
@@ -390,7 +393,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 </head>
 <body>
 <!--BODY-START-->
-<div class="wall" aria-hidden="true"></div>
+<div class="glow" aria-hidden="true"></div>
 <main class="app" id="app" dir="rtl" lang="ar">
 
   <section class="step" id="step1" aria-labelledby="h1">
@@ -1156,28 +1159,6 @@ $('#finRows').addEventListener('click', e => {
 });
 $('#finClose').addEventListener('click', closeFinal);
 $('#finBack').addEventListener('click', closeFinal);
-// ——— the wallpaper: colour blobs, a light leak and a vignette, all one painted layer (same look as the rate app) ———
-const WALL_COLORS = ['#0c0b09', '#2e2528', '#9d7fb0', '#8d7f5a', '#4c7a63', '#e9d5c0', '#5d3f55', '#d89a5a'];
-const WALL_BLOBS = [
-  { w: 84, h: 66, x: -28, y: -22, o: .95 }, { w: 66, h: 60, x: -24, y: -12, o: .95, r: true }, { w: 72, h: 66, x: -22, y: 28, o: .95 }, { w: 66, h: 66, x: -26, y: 38, o: .95, r: true },
-  { w: 90, h: 60, x: 2, y: -26, o: .95, b: true }, { w: 48, h: 48, x: 28, y: 18, o: .45 }, { w: 42, h: 42, x: 8, y: 20, o: .6, r: true }, { w: 36, h: 36, x: 22, y: 58, o: .45, r: true },
-];
-(function paintWall() {
-  const rnd = (a, b) => a + Math.random() * (b - a);
-  const blobs = WALL_BLOBS.map((b, i) => {
-    const dx = Math.round(rnd(-40, 40)), dy = Math.round(rnd(-30, 30)), k = rnd(.94, 1.08), c = WALL_COLORS[i];
-    const rw = (b.w * k / 2).toFixed(1), rh = (b.h * k / 2).toFixed(1);
-    const cx = b.r ? `calc(100% - ${b.x + b.w / 2}vmax + ${dx}px)` : `calc(${b.x + b.w / 2}vmax + ${dx}px)`;
-    const cy = b.b ? `calc(100% - ${b.y + b.h / 2}vmax + ${dy}px)` : `calc(${b.y + b.h / 2}vmax + ${dy}px)`;
-    return `radial-gradient(${rw}vmax ${rh}vmax at ${cx} ${cy}, color-mix(in srgb, ${c} ${Math.round(b.o * 100)}%, transparent) 0%, color-mix(in srgb, ${c} ${Math.round(b.o * 70)}%, transparent) 40%, transparent 100%)`;
-  });
-  $('.wall').style.backgroundImage = [
-    'radial-gradient(120% 90% at 50% 40%, transparent 50%, rgba(10, 8, 10, .62) 100%)',
-    'linear-gradient(112deg, transparent 42%, rgba(255, 240, 215, .1) 50%, transparent 58%)',
-    ...blobs,
-    'linear-gradient(180deg, #14120e 0%, #2b2623 18%, #6e6470 38%, #ada0b3 54%, #a3a98b 74%, #6f7c57 100%)',
-  ].join(', ');
-})();
 // a soft shine sweeps across the final button now and then, so it is easy to spot, and its paper bill sways gently
 if (!REDUCED) gsap.to('.bf-ic .art', { rotation: 6, y: -2, duration: 1.6, ease: 'sine.inOut', repeat: -1, yoyo: true });
 if (!REDUCED) gsap.timeline({ repeat: -1, repeatDelay: 3, delay: 2.5 }).fromTo('.shine', { xPercent: -150 }, { xPercent: 420, duration: 1.1, ease: 'power2.inOut' });
