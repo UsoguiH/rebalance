@@ -252,7 +252,7 @@
     canvas.setAttribute('aria-label', 'Animated wordmark');
     // Positioned absolutely, so its fixed size never holds the container open
     // (the container must be able to shrink, or the resize never comes).
-    canvas.style.cssText = 'display:block;position:absolute';
+    canvas.style.cssText = 'display:block;position:absolute;pointer-events:none';
     container.appendChild(canvas);
     // An empty in-flow block 300 px wide (at most the available width) gives
     // a container that takes its width from its content the old canvas's
@@ -582,12 +582,26 @@
       ch = Math.max(1, ch);
       let left = 0, top = 0, dw = cw, dh = ch, k = 1, cx = 0, cy = 0;
       if (scene) {
+        // The word is centred in the container and scaled so that every piece
+        // stays visible: across, within the container (on a phone, the
+        // screen's edges); above and below, within the container plus the
+        // room the screen has beyond it, up to a quarter of its height (none
+        // when the container clips what overflows it).
         const v = scene.view, P = scene.paint;
-        k = Math.min(cw / v.w, ch / v.h);
-        cx = (cw - v.w * k) / 2 - v.x * k; cy = (ch - v.h * k) / 2 - v.y * k;   // unit 0 in container px
-        left = Math.max(0, Math.floor(P.x * k + cx)); top = Math.max(0, Math.floor(P.y * k + cy));
+        const vcx = v.x + v.w / 2, vcy = v.y + v.h / 2;
+        const across = 2 * Math.max(vcx - P.x, P.r - vcx);
+        let up = 0, down = 0;
+        if (cs.overflowY === 'visible' && cs.overflowX === 'visible') {
+          const r = container.getBoundingClientRect(), vh = window.innerHeight || 0, cap = ch / 4;
+          const onScreen = r.top >= 0 && r.bottom <= vh;
+          up = onScreen ? Math.min(cap, r.top) : cap;
+          down = onScreen ? Math.min(cap, vh - r.bottom) : cap;
+        }
+        k = Math.min(cw / across, ch / v.h, (ch / 2 + up) / (vcy - P.y), (ch / 2 + down) / (P.b - vcy));
+        cx = cw / 2 - vcx * k; cy = ch / 2 - vcy * k;   // unit 0 in container px
+        left = Math.max(0, Math.floor(P.x * k + cx)); top = Math.floor(P.y * k + cy);
         dw = Math.max(1, Math.min(cw, Math.ceil(P.r * k + cx)) - left);
-        dh = Math.max(1, Math.min(ch, Math.ceil(P.b * k + cy)) - top);
+        dh = Math.max(1, Math.ceil(P.b * k + cy) - top);
       }
       fit = { k, dpr, ox: cx - left, oy: cy - top, ready: true };
       const w = Math.round(dw * dpr), h = Math.round(dh * dpr);
@@ -598,6 +612,8 @@
     }
     let ro = null;
     if (root.ResizeObserver) { ro = new ResizeObserver(resize); ro.observe(container); }
+    // the room on screen above and below the container changes with the window too
+    root.addEventListener('resize', resize);
 
     function show(f) {
       frame = Math.max(0, Math.min(api.frames, f));
@@ -659,7 +675,7 @@
       colors,
       ready: null,
       destroy() {
-        api.pause(); if (ro) ro.disconnect(); canvas.remove();
+        api.pause(); if (ro) ro.disconnect(); root.removeEventListener('resize', resize); canvas.remove();
         // give the container back the styles it had
         if (ownRatio) container.style.aspectRatio = '';
         if (ownPosition) container.style.position = '';

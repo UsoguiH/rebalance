@@ -160,7 +160,10 @@ fits), `fit_wave.py` (the wave) and `export_motion.py` (writes `motion.data.js`)
 <script>
   const anim = LogoAssemble.create(document.getElementById('logo'), { word: 'hello' });
   anim.ready.then(() => anim.play());   // also: pause(), replay(), seek(frame), set({...}), frames
-  // The container sets the size. Without a height it takes the word's proportions;
+  // The container sets the size. The word is fitted so that no flying piece is
+  // cut: across, pieces stay inside the container; above and below, they may
+  // spill out by up to a quarter of its height, into room the screen has
+  // there (none if the container clips its overflow). Without a height it takes the word's proportions;
   // without a width (inline-block, a flex item) it is 300 px wide. Use a block or
   // inline-block element, not an inline one such as a bare <span>, and give the
   // player the container to itself.

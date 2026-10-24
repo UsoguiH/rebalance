@@ -41,6 +41,7 @@ body.letters .word-only { display: none; }
 .cell span { position: absolute; left: 7px; top: 4px; font: 11px var(--f-mono); color: var(--muted); }
 .empty { color: var(--muted); }
 .bar {
+  position: relative; z-index: 1;   /* controls stay above pieces flying past the stage */
   display: grid; gap: 10px; justify-items: center;
   padding-block: 12px calc(16px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
