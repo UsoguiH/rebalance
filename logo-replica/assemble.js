@@ -6,9 +6,10 @@
  * matched to a copy of one of the six letters, moved by a similarity transform
  * (rotation, scale, shift) and clipped to the angular slices around the copy's
  * centre where the piece is visible. Pieces are faint cream ghosts, green
- * copies or cream copies, painted in that order. Each piece is linked to the
- * piece it becomes in the next frame, so playback interpolates between the
- * original's frames and runs at the screen's refresh rate.
+ * copies or cream copies, painted in that order. Playback draws each of
+ * those frames once and shows the blend of the two either side of the
+ * current time, so on a 60 Hz (or faster) screen the picture changes evenly
+ * on every refresh, and on whole frames it is the original frame.
  *
  * Every letter has its own animation. The six original letters (s, l, the two
  * a's, c, e) each give one clip: that letter's pieces from the frame it first
@@ -179,40 +180,6 @@
     });
   }
 
-  // Interpolate one piece's slices toward its next-frame form. Runs are only
-  // blended when both frames have the same number of them; otherwise switch half way.
-  function blendRuns(a, b, u) {
-    if (!b || a.length !== b.length) return u < 0.5 ? a : b || a;
-    return a.map(([a0, a1], i) => {
-      let [b0, b1] = b[i];
-      while (b0 - a0 > 180) { b0 -= 360; b1 -= 360; }
-      while (a0 - b0 > 180) { b0 += 360; b1 += 360; }
-      return [lerp(a0, b0, u), lerp(a1, b1, u)];
-    });
-  }
-
-  // Pieces of a clip at fractional clip time fs: [class, rotation, scale, dx, dy, opacity, runs].
-  function piecesAt(clip, fs) {
-    const out = [];
-    if (fs < 0) return out;
-    const F = clip.frames;
-    if (fs >= clip.len) return out;   // settled: the cream base is the letter
-    const f0 = Math.floor(fs), u = fs - f0;
-    const A = F[f0], B = F[f0 + 1];
-    const targeted = new Set();
-    for (const p of A) {
-      if (p[7] >= 0) {
-        targeted.add(p[7]);
-        const q = B[p[7]];
-        const dth = ((q[1] - p[1] + 540) % 360) - 180;
-        out.push([p[0], p[1] + dth * u, lerp(p[2], q[2], u), lerp(p[3], q[3], u), lerp(p[4], q[4], u),
-          lerp(p[5], q[5], u), blendRuns(p[6], q[6], u)]);
-      } else if (u < 0.5) out.push(p);
-    }
-    if (u >= 0.5) B.forEach((q, i) => { if (!targeted.has(i)) out.push(q); });
-    return out;
-  }
-
   // One requestAnimationFrame loop drives every playing instance on the page.
   const ticking = new Set();
   let instances = 0;
@@ -242,6 +209,7 @@
       maxFps: 0,   // redraw at most this often (0: every screen refresh)
       frame: null,   // { w, h } in x-heights: fit this box instead of the word (players that should match)
       fitPieces: true,   // shrink the word so no flying piece is cut (false: let the container clip them)
+      blend: true,   // blend the original's frames on every refresh (false: show the nearest one)
       colors: {}, onUpdate: null, onReady: null,
     }, options || {});
     const colors = Object.assign({}, COLORS, o.colors);
@@ -264,6 +232,7 @@
     sizer.style.cssText = 'width:300px;max-width:100%;height:0;margin:0;padding:0;border:0;visibility:hidden;pointer-events:none';
     container.appendChild(sizer);
     const ctx = canvas.getContext('2d');
+    let dc = ctx;   // the context the drawing helpers draw on
 
     let scene = null, frame = 0, playing = false, last = 0, token = 0;
     // A capped player draws once per time slot, offset from the others' slots,
@@ -387,7 +356,7 @@
     // The path is built in place each time: it is a handful of points.
     function clipSlices(q, runs, mirror) {
       if (runs.length === 1 && runs[0][1] - runs[0][0] >= 359.5) return;
-      const R = q.rad;
+      const R = q.rad, ctx = dc;
       ctx.beginPath();
       for (let [a0, a1] of runs) {
         if (mirror) [a0, a1] = [180 - a1, 180 - a0];
@@ -403,8 +372,84 @@
     }
 
     function drawGlyph(q) {
+      const ctx = dc;
       if (q.path) { ctx.translate(q.x, 0); ctx.fill(q.path, 'evenodd'); ctx.translate(-q.x, 0); }
       else { ctx.font = q.font; ctx.fillText(q.glyph, q.x, 0); }
+    }
+
+    // The original's frame n of this word, drawn once into an offscreen canvas
+    // the size of the visible one. Two are kept: the frames either side of now.
+    function frameImage(n) {
+      const key = scene.trace ? 't' + scene.traceSeq[Math.min(FRAMES - 1, n)] : n;
+      const look = `${canvas.width}x${canvas.height}|${fit.k}|${fit.ox}|${fit.oy}|${colors.green}|${colors.cream}`;
+      const C = scene.cache || (scene.cache = { look: '', list: [] });
+      if (C.look !== look) { C.look = look; C.list.forEach((e) => { e.key = null; }); }
+      let e = C.list.find((x) => x.key === key);
+      if (e) { C.list.splice(C.list.indexOf(e), 1); C.list.push(e); return e; }
+      e = C.list.length < 2 ? { c: document.createElement('canvas').getContext('2d') } : C.list.shift();
+      C.list.push(e);
+      e.key = key;
+      const c = e.c;
+      if (c.canvas.width !== canvas.width || c.canvas.height !== canvas.height) { c.canvas.width = canvas.width; c.canvas.height = canvas.height; }
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, c.canvas.width, c.canvas.height);
+      c.setTransform(fit.k * fit.dpr, 0, 0, fit.k * fit.dpr, fit.ox * fit.dpr, fit.oy * fit.dpr);
+      const W = c.canvas.width, H = c.canvas.height;
+      if (scene.trace) { drawTrace(c, scene.traceSeq[Math.min(FRAMES - 1, n)]); e.box = [0, 0, W, H]; }
+      else {
+        const b = drawPieces(c, n), m = fit.k * fit.dpr;   // drawn region, in word units -> canvas px
+        e.box = b ? [Math.max(0, Math.floor(b[0] * m + fit.ox * fit.dpr) - 2), Math.max(0, Math.floor(b[1] * m + fit.oy * fit.dpr) - 2),
+          Math.min(W, Math.ceil(b[2] * m + fit.ox * fit.dpr) + 2), Math.min(H, Math.ceil(b[3] * m + fit.oy * fit.dpr) + 2)] : [0, 0, 0, 0];
+      }
+      return e;
+    }
+
+    // The word at whole frame n: each letter at its own clip's frame, its
+    // pieces painted ghosts first, then green, then cream, over the cream
+    // letter once it is fully cream (so no background shows between slices;
+    // a green base before that would show as green rims round the springing
+    // cream copy, which the original does not have).
+    function drawPieces(c, n) {
+      const xh = scene.xh, items = [];
+      let box = null;   // the region drawn on, in word units
+      const grow = (x0, y0, x1, y1) => {
+        box = box ? [Math.min(box[0], x0), Math.min(box[1], y0), Math.max(box[2], x1), Math.max(box[3], y1)] : [x0, y0, x1, y1];
+      };
+      dc = c;
+      scene.letters.forEach((q) => {
+        // the clip frame nearest this moment (letters start between whole frames)
+        const fs = Math.round((n - q.start) * q.speed);
+        if (fs >= q.clip.creamFull + 2) { c.fillStyle = colors.cream; drawGlyph(q); grow(q.x + q.l, q.t, q.x + q.r, q.b); }
+        if (fs >= 0 && fs < q.clip.len) for (const p of q.clip.frames[fs]) items.push([p, q]);
+      });
+      items.sort((a, b) => a[0][0] - b[0][0]);
+      const fill = [colors.cream, colors.green, colors.cream];
+      for (const [p, q] of items) {
+        const [cls, th0, s, tx0, ty, alpha, runs] = p;
+        const th = q.mirror ? -th0 : th0, tx = q.mirror ? -tx0 : tx0;
+        const px = q.cx + tx * xh, py = q.cy + ty * xh, e = q.rad * s;   // within its slices' circle
+        grow(px - e, py - e, px + e, py + e);
+        c.save();
+        c.translate(q.cx + tx * xh, q.cy + ty * xh);
+        c.rotate(th * DEG);
+        c.scale(s, s);
+        c.translate(-q.cx, -q.cy);
+        clipSlices(q, runs, q.mirror);
+        c.globalAlpha = alpha;
+        c.fillStyle = fill[cls];
+        drawGlyph(q);
+        c.restore();
+      }
+      dc = ctx;
+      return box;
+    }
+
+    function drawTrace(c, i) {
+      c.save(); c.translate(-354.2, -416);   // the s's ink edge and the baseline in the trace
+      scene.trace[i].forEach((levels, ink) => {
+        c.fillStyle = ink ? colors.cream : colors.green;
+        for (const [op, p] of levels) { c.globalAlpha = op; c.fill(p, 'evenodd'); }
+      });
+      c.restore();
     }
 
     function strokeWave(pts, op) {
@@ -492,46 +537,39 @@
         // the finished wordmark, without motion
         ctx.fillStyle = colors.cream;
         scene.letters.forEach(drawGlyph);
-      } else if (scene.trace) {
-        const fi = Math.min(FRAMES - 1, Math.floor(frame));
-        const layers = scene.trace[scene.traceSeq[fi]];
-        ctx.save(); ctx.translate(-354.2, -416);   // the s's ink edge and the baseline in the trace
-        layers.forEach((levels, ink) => {
-          ctx.fillStyle = ink ? colors.cream : colors.green;
-          for (const [op, p] of levels) { ctx.globalAlpha = op; ctx.fill(p, 'evenodd'); }
-        });
-        ctx.restore(); ctx.globalAlpha = 1;
-        drawTraceWave(frame);
       } else {
-        // Once a letter is fully cream under its settling copies, draw it as a
-        // base, so no background shows between slices. (A green base before
-        // that would show as green rims round the springing cream copy, which
-        // the original does not have.)
-        scene.letters.forEach((q) => {
-          if ((frame - q.start) * q.speed >= q.clip.creamFull + 2) { ctx.fillStyle = colors.cream; drawGlyph(q); }
-        });
-        const items = [];
-        scene.letters.forEach((q) => {
-          for (const p of piecesAt(q.clip, (frame - q.start) * q.speed)) items.push([p, q]);
-        });
-        items.sort((a, b) => a[0][0] - b[0][0]);
-        const fill = [colors.cream, colors.green, colors.cream];
-        for (const [p, q] of items) {
-          const [cls, th0, s, tx0, ty, alpha, runs] = p;
-          const th = q.mirror ? -th0 : th0, tx = q.mirror ? -tx0 : tx0;
-          ctx.save();
-          ctx.translate(q.cx + tx * xh, q.cy + ty * xh);
-          ctx.rotate(th * DEG);
-          ctx.scale(s, s);
-          ctx.translate(-q.cx, -q.cy);
-          clipSlices(q, runs, q.mirror);
-          ctx.globalAlpha = alpha;
-          ctx.fillStyle = fill[cls];
-          drawGlyph(q);
-          ctx.restore();
+        // Each of the original's frames is drawn once, as it is, and the
+        // screen shows the blend of the two either side of the current time
+        // (A·(1−u) + B·u, exactly). On whole frames that is the original
+        // frame; between them it changes evenly on every refresh. (Switching
+        // frames instead lands 25 changes a second 2 or 3 refreshes apart on
+        // a 60 Hz screen, unevenly, which reads as stutter.)
+        const n = scene.frames, f0 = Math.max(0, Math.min(n, Math.floor(frame))), u = frame - f0;
+        // Without blending, or once the word has settled (from scene.still on
+        // every frame is the same), the frame is drawn straight onto the canvas.
+        const direct = !o.blend || f0 >= scene.still;
+        if (direct) {
+          const f = o.blend ? f0 : Math.max(0, Math.min(n, Math.round(frame)));
+          if (scene.trace) drawTrace(ctx, scene.traceSeq[Math.min(FRAMES - 1, f)]); else drawPieces(ctx, f);
         }
-        ctx.globalAlpha = 1;
-        drawWave(frame - scene.t0);
+        const A = direct ? null : frameImage(f0);
+        const B = A && u > 0.001 && f0 < n ? frameImage(f0 + 1) : A;
+        // only the part of the canvas either frame drew on is copied
+        const ba = A ? A.box : [0, 0, 0, 0], bb = B ? B.box : ba;
+        const x0 = Math.min(ba[0], bb[0]), y0 = Math.min(ba[1], bb[1]);
+        const bw = Math.max(ba[2], bb[2]) - x0, bh = Math.max(ba[3], bb[3]) - y0;
+        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+        if (A && bw > 0 && bh > 0) {
+          if (B === A) ctx.drawImage(A.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
+          else {
+            ctx.globalAlpha = 1 - u; ctx.drawImage(A.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
+            ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = u;
+            ctx.drawImage(B.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
+          }
+        }
+        ctx.restore();
+        // the wave and the registered mark are smooth curves: drawn live
+        if (scene.trace) drawTraceWave(frame); else drawWave(frame - scene.t0);
       }
 
       // registered mark: fades in as the last letter settles, as in the original
@@ -678,8 +716,19 @@
       if (o.onUpdate) o.onUpdate(frame, api.frames);
     }
 
+    // If blending frames is more than this device can draw in time (more than
+    // 6 of the last 60 refreshes late), show the nearest frame instead.
+    const late = [];
+    function watchPace(ms) {
+      if (!o.blend || !scene || ms > 250 || frame >= scene.still) return;
+      late.push(ms > 25 ? 1 : 0);
+      if (late.length > 60) late.shift();
+      if (late.length === 60 && late.reduce((a, b) => a + b, 0) > 6) { o.blend = false; drawn = -1; }
+    }
+
     function tick(now) {
       if (!playing) { stopTicking(tick); return; }
+      watchPace(now - last);
       const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
       last = now;
       const n = api.frames;
@@ -700,7 +749,7 @@
       play() {
         if (playing) return api;
         if (frame >= api.frames) frame = 0;
-        playing = true; last = performance.now(); slot = -1;
+        playing = true; last = performance.now(); slot = -1; late.length = 0;
         startTicking(tick);
         return api;
       },
@@ -713,7 +762,7 @@
         if (opts.colors) Object.assign(colors, opts.colors);
         drawn = -1;
         // colours and playback settings only need a redraw, not a new scene
-        const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady', 'frame', 'fitPieces'];
+        const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady', 'frame', 'fitPieces', 'blend'];
         const keys = Object.keys(opts);
         if (scene && keys.length && keys.every((k) => light.includes(k))) {
           if (keys.includes('frame') || keys.includes('fitPieces')) resize(); else render();

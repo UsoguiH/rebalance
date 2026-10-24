@@ -110,11 +110,19 @@ python3 font/build_font.py motion.data.js font.data.js   # needs numpy, scipy, s
   animation. To stay smooth on phones, these small players redraw 30 times a
   second (the `maxFps` option), take turns rather than all drawing on the same
   refresh, and pause while scrolled out of view.
-- **Playback** draws on one `<canvas>`. Each piece is linked to the piece it
-  becomes in the next frame, so the player interpolates between the original's
-  25 frames per second and redraws on every screen refresh (unless `maxFps` caps
-  it). The exact "slaace" trace keeps the original's 25 frames per second, since
-  there is nothing to interpolate between traced frames.
+- **Playback** draws on one `<canvas>`.
+  - **Smooth motion:** each of the original's 25 frames a second is drawn once,
+    offscreen, and on every screen refresh the player shows the blend of the two
+    frames either side of the moment. On whole frames that is exactly the
+    original frame, and the picture changes evenly on every refresh.
+  - **Why blend:** switching frames instead puts the 25 changes a second 2 or 3
+    refreshes apart on a 60 Hz screen, unevenly, which reads as stutter. The
+    wave and the ® are drawn live.
+  - **Measured:** the frame-to-frame unevenness of the picture dropped from
+    0.6–1.2 to 0.12–0.19.
+  - **Slow devices:** if a device draws too slowly to blend (more than 6 of 60
+    refreshes late), the player shows the nearest frame instead. `blend: false`
+    does that from the start; the All letters grid uses it.
 - **Kept light for phones:**
   - The canvas covers only the box the word's pieces can reach, not the whole
     container.

@@ -209,7 +209,7 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
         // Every cell fits the same box (the largest glyph's), so all letters
         // share one scale; the cell's edge cuts pieces that fly past it.
         const a = LA.create(cell, { word: ch, registered: false, exact: false, font: 'slaace', maxFps: 30,
-          frame: { w: 2.9, h: 2.65 }, fitPieces: false,
+          frame: { w: 2.9, h: 2.65 }, fitPieces: false, blend: false,
           colors: { bg: $('c-bg').value, green: $('c-green').value, cream: $('c-cream').value } });
         a.ready.then(() => { a.seek(reduce ? a.frames : (i * 7) % a.frames); if (!reduce && cell.seen) a.play(); });
         cell.anim = a;
