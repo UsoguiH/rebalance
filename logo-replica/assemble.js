@@ -633,8 +633,14 @@
         }
         cx = cw / 2 - vcx * k; cy = ch / 2 - vcy * k;   // unit 0 in container px
         left = Math.floor(P.x * k + cx); top = Math.floor(P.y * k + cy);
-        dw = Math.max(1, Math.ceil(P.r * k + cx) - left);
-        dh = Math.max(1, Math.ceil(P.b * k + cy) - top);
+        let right = Math.ceil(P.r * k + cx), bottom = Math.ceil(P.b * k + cy);
+        if (!o.fitPieces) {   // the container clips: draw no further than it shows
+          left = Math.max(left, -padL); top = Math.max(top, -padT);
+          right = Math.min(right, cw + (parseFloat(cs.paddingRight) || 0));
+          bottom = Math.min(bottom, ch + (parseFloat(cs.paddingBottom) || 0));
+        }
+        dw = Math.max(1, right - left);
+        dh = Math.max(1, bottom - top);
       }
       fit = { k, dpr, ox: cx - left, oy: cy - top, ready: true };
       const w = Math.round(dw * dpr), h = Math.round(dh * dpr);
