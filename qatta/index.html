@@ -194,45 +194,32 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .btn-done { width: 100%; min-height: 3.4rem; border-radius: 999px; font-size: 1.1rem; font-weight: 700; background: var(--primary); color: var(--on-primary); }
 
 /* ——— step 3 ——— */
-/* the final button is a little receipt printer: tap anywhere on it. The bill feeds out of the slot when the page opens
-   and again whenever the amount changes, then stays still and fully readable. */
-.printer { position: relative; display: block; width: 100%; text-align: start; }
-.pr-head {
-  position: relative; z-index: 2; display: block; height: 3.1rem; border-radius: 1.2rem 1.2rem 1rem 1rem;
-  background: linear-gradient(180deg, #403a4a 0%, #2b2731 48%, #1c1921 100%);
-  box-shadow: 0 12px 20px -10px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 -1px 0 rgba(0, 0, 0, .6);
-  will-change: transform;
+/* the final button is the restaurant check: a flat cream bill with a rounded top and a torn bottom edge.
+   Tap anywhere on it. Its lines write in when it first comes into view, and the total spins in like a counter. */
+.check {
+  display: flex; flex-direction: column; align-items: stretch; gap: .15rem; width: 100%; padding: 1rem 1.1rem 1.35rem; text-align: center;
+  border-radius: 1.3rem 1.3rem 0 0; background: var(--paper); color: var(--on-primary);
+  --z: .45rem; -webkit-mask: conic-gradient(from -45deg at bottom, #0000 1deg, #000 2deg 88deg, #0000 89deg) 50% 0 / calc(2 * var(--z)) calc(100% + 2px); mask: conic-gradient(from -45deg at bottom, #0000 1deg, #000 2deg 88deg, #0000 89deg) 50% 0 / calc(2 * var(--z)) calc(100% + 2px);
 }
-.pr-status { position: absolute; top: .6rem; right: 1.1rem; display: inline-flex; align-items: center; gap: .4rem; font-size: .74rem; font-weight: 600; line-height: 1; color: rgba(241, 236, 244, .7); }
-.pr-led { width: .5rem; height: .5rem; border-radius: 50%; background: var(--yes); box-shadow: 0 0 0 2px rgba(126, 224, 165, .18), 0 0 10px rgba(126, 224, 165, .85); transition: background-color .25s, box-shadow .25s; }
-.printer.printing .pr-led { background: #ffb36b; box-shadow: 0 0 0 2px rgba(255, 179, 107, .2), 0 0 10px rgba(255, 179, 107, .9); animation: pr-blink .5s steps(2) infinite; }
-@keyframes pr-blink { 50% { opacity: .35; } }
-.pr-vents { position: absolute; top: .55rem; left: 1.2rem; display: flex; gap: .25rem; }
-.pr-vents i { width: .22rem; height: .6rem; border-radius: 9px; background: #121016; box-shadow: 0 1px 0 rgba(255, 255, 255, .1); }
-.pr-slot { position: absolute; left: .75rem; right: .75rem; bottom: .5rem; height: .55rem; border-radius: 999px; background: #070609; box-shadow: inset 0 2px 3px rgba(0, 0, 0, .95), 0 1px 0 rgba(255, 255, 255, .1); }
-.pr-out { position: relative; z-index: 1; display: block; margin: -.8rem 1rem 0; padding: .8rem 0 .9rem; overflow: hidden; filter: drop-shadow(0 10px 10px rgba(0, 0, 0, .45)); }
-/* the metal tear-off edge the paper comes out under */
-.pr-out::before {
-  content: ""; position: absolute; z-index: 2; top: .8rem; left: -.2rem; right: -.2rem; height: .38rem;
-  background: linear-gradient(180deg, #e4e6ea, #9a9ea6);
-  --t: .3rem; -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--t)) 100%; mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--t)) 100%;
+.ck-hd { font-size: 1.02rem; font-weight: 700; line-height: 1.4; }
+.ck-date { font-size: .8rem; color: #7a7262; }
+.ck-rule { height: 0; margin-block: .45rem; border-top: 2px dashed #d8cfbd; transform-origin: 100% 50%; }
+.ck-ln { display: flex; justify-content: space-between; gap: .6rem; font-size: .9rem; color: #7a7262; }
+.ck-ln b { font-weight: 700; color: var(--on-primary); }
+.ck-cap { font-size: .85rem; color: #7a7262; }
+.ck-big { display: flex; align-items: baseline; justify-content: center; gap: .4rem; min-height: 2.5rem; }
+.ck-big small { font-size: .95rem; font-weight: 600; color: #7a7262; }
+.check.empty .ck-big { align-items: center; font-size: .92rem; font-weight: 600; color: #a0937a; }
+.odo { display: inline-flex; direction: ltr; font-size: 2.15rem; font-weight: 700; line-height: 1.15; }
+.odo .col { display: inline-block; height: 1.15em; overflow: hidden; }
+.odo .reel { display: flex; flex-direction: column; will-change: transform; }
+.odo .reel i { display: block; height: 1.15em; font-style: normal; text-align: center; }
+.ck-pill {
+  align-self: center; display: inline-flex; align-items: center; gap: .6rem; min-height: 2.7rem; margin-top: .55rem; padding-inline: 1.25rem .4rem;
+  border-radius: 999px; background: var(--on-primary); color: var(--paper); font-size: 1rem; font-weight: 700; will-change: transform;
 }
-.pr-paper {
-  display: flex; flex-direction: column; gap: .6rem; padding: 1.2rem 1.15rem 1.55rem; color: var(--on-primary);
-  background: linear-gradient(180deg, #e2dac8 0, #fbf8f0 1rem, #f5efe2 70%, #ede5d4);
-  --z: .55rem; -webkit-mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--z)) 100%; mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / calc(2 * var(--z)) 100%;
-  will-change: transform;
-}
-.pr-top { display: flex; align-items: center; gap: .9rem; }
-.pr-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.pr-txt b { font-size: 1.38rem; font-weight: 700; line-height: 1.3; }
-.pr-txt small { font-size: .9rem; color: #6b6458; }
-.pr-go { flex: none; width: 2.9rem; height: 2.9rem; border-radius: 50%; display: grid; place-items: center; background: var(--on-primary); color: #f5efe2; }
-.pr-go .ic { width: 1.35rem; height: 1.35rem; stroke-width: 2.6; }
-.pr-tot { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; padding-top: .6rem; border-top: 2px dashed #d6ccb7; font-size: .92rem; color: #6b6458; }
-.pr-tot b { font-size: 1.18rem; font-weight: 700; color: var(--on-primary); }
-.printer.empty .pr-tot b { font-family: var(--font); font-size: .92rem; font-weight: 600; color: #a0937a; }
-@media (prefers-reduced-motion: reduce) { .printer.printing .pr-led { animation: none; } }
+.ck-arr { flex: none; width: 1.95rem; height: 1.95rem; border-radius: 50%; display: grid; place-items: center; background: var(--paper); color: var(--on-primary); will-change: transform; }
+.ck-arr .ic { width: 1.05rem; height: 1.05rem; stroke-width: 2.8; }
 .btn { min-height: 3.8rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.12rem; font-weight: 700; padding: 0 1.2rem; text-align: center; width: 100%; }
 .btn .ic { width: 1.45rem; height: 1.45rem; }
 .btn .wa-logo { width: 1.7rem; height: 1.7rem; }
@@ -440,18 +427,16 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 
   <section class="step" id="step3" aria-labelledby="h3">
     <h2 class="step-h" id="h3"><span class="step-n" id="n3">٣</span>شوف الحساب وأرسله</h2>
-    <button class="printer press" id="finalBtn" type="button">
-      <span class="pr-head" aria-hidden="true">
-        <span class="pr-status"><i class="pr-led"></i><span id="prState">جاهزة</span></span>
-        <span class="pr-vents"><i></i><i></i><i></i><i></i></span>
-        <span class="pr-slot"></span>
-      </span>
-      <span class="pr-out">
-        <span class="pr-paper">
-          <span class="pr-top"><span class="pr-txt"><b>القطّة النهائية</b><small>كم على كل عائلة</small></span><span class="pr-go" data-ic="arrow"></span></span>
-          <span class="pr-tot"><span>الفاتورة</span><b class="num" id="prSum"></b></span>
-        </span>
-      </span>
+    <button class="check press" id="finalBtn" type="button">
+      <span class="ck-hd">حساب العزيمة</span>
+      <span class="ck-date" id="ckDate"></span>
+      <span class="ck-rule" aria-hidden="true"></span>
+      <span class="ck-ln"><span>الحاضرين</span><b class="num" id="ckHeads"></b></span>
+      <span class="ck-ln"><span>على الشخص</span><b class="num" id="ckPer"></b></span>
+      <span class="ck-rule" aria-hidden="true"></span>
+      <span class="ck-cap">المجموع</span>
+      <span class="ck-big" id="ckBig"><span class="odo num" id="ckSum"></span><small>ريال</small></span>
+      <span class="ck-pill">القطّة النهائية<span class="ck-arr" data-ic="arrow"></span></span>
     </button>
     <a class="btn btn-wa press" id="waBtn" href="#" target="_blank" rel="noopener"><span data-ic="wa"></span>أرسل في واتساب</a>
     <div class="quiet">
@@ -871,7 +856,7 @@ function update(anim = true) {
   const wa = 'https://wa.me/?text=' + encodeURIComponent(summary());
   $('#waBtn').href = wa;
   $('#finWa').href = wa;
-  syncPrinter();
+  syncCheck(c);
   return c;
 }
 
@@ -1177,48 +1162,58 @@ $('#finRows').addEventListener('click', e => {
 $('#finClose').addEventListener('click', closeFinal);
 $('#finBack').addEventListener('click', closeFinal);
 
-// ——— the receipt printer on the final button ———
-// The bill feeds out in short smooth steps like a real thermal printer while the light blinks "تطبع…",
-// settles with a little sway as if just torn off, and then stays still. It prints when the button first
-// comes into view and again whenever the bill amount changes.
-const printer = $('#finalBtn'), prPaper = $('.pr-paper', printer), prHead = $('.pr-head', printer);
-let printTl = null, printedTotal = null, printerSeen = false;
-gsap.set(prPaper, { transformOrigin: '50% 0' });
-function printBill(fast = false) {
-  if (printTl) printTl.kill();
-  const done = () => { printer.classList.remove('printing'); $('#prState').textContent = 'جاهزة'; gsap.set(prHead, { x: 0 }); };
-  printedTotal = state.total;
-  if (REDUCED) { gsap.set(prPaper, { yPercent: 0, rotation: 0 }); done(); return; }
-  printer.classList.add('printing');
-  $('#prState').textContent = 'تطبع…';
-  const steps = fast ? 5 : 8, step = .12, rest = .05;
-  printTl = gsap.timeline({ onComplete: done });
-  printTl.set(prPaper, { yPercent: -100, rotation: 0 });
-  for (let i = 1; i <= steps; i++) printTl.to(prPaper, { yPercent: -100 + (100 * i) / steps, duration: step, ease: 'power1.out' }).to({}, { duration: rest });
-  printTl.fromTo(prHead, { x: -.6 }, { x: .6, duration: .05, ease: 'none', yoyo: true, repeat: Math.round((steps * (step + rest)) / .05) }, 0)
-    .set(prHead, { x: 0 })
-    .fromTo(prPaper, { rotation: 1.2 }, { rotation: 0, duration: 1, ease: 'elastic.out(1, .35)' });
+// ——— the restaurant check on the final button ———
+const check = $('#finalBtn');
+const DIG = '٠١٢٣٤٥٦٧٨٩';
+let checkSeen = false, shownTotal = null, odoTw = null;
+try { $('#ckDate').textContent = new Intl.DateTimeFormat('ar-SA-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date()); } catch (e) { $('#ckDate').hidden = true; }
+// the total spins in like a counter: each digit makes one full turn and lands, then it is plain text again
+function spinTotal(value) {
+  const el = $('#ckSum'), s = fmt(value);
+  if (odoTw) odoTw.kill();
+  if (REDUCED) { el.textContent = s; return; }
+  el.innerHTML = [...s].map(ch => DIG.includes(ch)
+    ? `<span class="col"><span class="reel">${(DIG + DIG).split('').map(d => `<i>${d}</i>`).join('')}</span></span>`
+    : `<span>${ch}</span>`).join('');
+  const digits = [...s].filter(ch => DIG.includes(ch)).map(ch => DIG.indexOf(ch));
+  odoTw = gsap.fromTo($$('.reel', el), { yPercent: 0 }, { yPercent: i => -((10 + digits[i]) * 100) / 20, duration: 1.4, stagger: .12, ease: 'power4.out', onComplete: () => { el.textContent = s; } });
 }
-function syncPrinter() {
+function syncCheck(c) {
   const has = state.total > 0;
-  printer.classList.toggle('empty', !has);
-  $('#prSum').textContent = has ? `${fmt(state.total)} ريال` : 'اكتب مبلغ الفاتورة فوق';
-  printer.setAttribute('aria-label', has ? `القطّة النهائية، الفاتورة ${fmt(state.total)} ريال. اضغط وشوف كم على كل عائلة` : 'القطّة النهائية. اكتب مبلغ الفاتورة فوق أول');
-  if (printerSeen && printedTotal !== null && state.total !== printedTotal) printBill(true);
+  check.classList.toggle('empty', !has);
+  $('#ckHeads').textContent = c.heads ? `${fmt(c.heads)} من ${fmt(c.all)}` : 'ما فيه أحد';
+  $('#ckPer').textContent = has && c.heads ? `${fmt1(c.per)} ريال` : '—';
+  const big = $('#ckBig');
+  if (!has) { big.textContent = 'اكتب مبلغ الفاتورة فوق'; shownTotal = 0; }
+  else if (shownTotal !== state.total) {
+    if (!$('#ckSum')) big.innerHTML = '<span class="odo num" id="ckSum"></span><small>ريال</small>';
+    if (checkSeen && shownTotal !== null) spinTotal(state.total); else $('#ckSum').textContent = fmt(state.total);
+    shownTotal = state.total;
+  }
+  check.setAttribute('aria-label', has ? `القطّة النهائية. المجموع ${fmt(state.total)} ريال، الحاضرين ${fmt(c.heads)}. اضغط وشوف كم على كل عائلة` : 'القطّة النهائية. اكتب مبلغ الفاتورة فوق أول');
 }
-// the first print waits until the button is on screen, so nobody misses it
+// the first time the check comes into view its lines write in one by one, the dashed rules draw, the total spins
+function writeCheck() {
+  checkSeen = true;
+  const tl = gsap.timeline();
+  tl.fromTo($$('.ck-hd, .ck-date, .ck-ln, .ck-cap', check), { x: 16, opacity: 0 }, { x: 0, opacity: 1, duration: .4, stagger: .1, ease: 'power2.out', clearProps: 'transform,opacity' })
+    .fromTo($$('.ck-rule', check), { scaleX: 0 }, { scaleX: 1, duration: .5, stagger: .25, ease: 'power2.inOut', clearProps: 'transform' }, .15);
+  if (state.total) tl.add(() => spinTotal(state.total), .55);
+  tl.fromTo($('.ck-pill', check), { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: .7, ease: 'elastic.out(1, .55)', clearProps: 'transform,opacity' }, 1.1)
+    .fromTo($('.ck-arr', check), { x: 12, opacity: 0 }, { x: 0, opacity: 1, duration: .45, ease: 'back.out(2.5)', clearProps: 'transform,opacity' }, 1.3)
+    // then the arrow nudges forward now and then, so it is clear where to tap
+    .add(() => gsap.timeline({ repeat: -1, repeatDelay: 3 }).to($('.ck-arr', check), { x: -5, duration: .22, ease: 'power2.out', yoyo: true, repeat: 3 }), 2.2);
+}
 if (!REDUCED && 'IntersectionObserver' in window) {
-  gsap.set(prPaper, { yPercent: -100 });
+  gsap.set($$('.ck-hd, .ck-date, .ck-ln, .ck-cap, .ck-pill', check), { opacity: 0 });
+  gsap.set($$('.ck-rule', check), { scaleX: 0 });
   const io = new IntersectionObserver(entries => {
     if (!entries.some(e => e.isIntersecting)) return;
     io.disconnect();
-    printerSeen = true;
-    setTimeout(() => printBill(false), 250);
-  }, { threshold: .5 });
-  io.observe(printer);
-} else { printerSeen = true; printedTotal = state.total; }
-// a tap tugs the bill, like tearing it off, before the final qatta slides up
-printer.addEventListener('pointerdown', () => { if (!printer.classList.contains('printing')) gsap.fromTo(prPaper, { y: 0 }, { y: 5, duration: .12, ease: 'power2.out', yoyo: true, repeat: 1 }); });
+    writeCheck();
+  }, { threshold: .45 });
+  io.observe(check);
+} else checkSeen = true;
 
 // ——— families & names editor ———
 const edList = $('#edList');
