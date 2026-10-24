@@ -244,7 +244,7 @@
       frame: null,   // { w, h } in x-heights: fit this box instead of the word (players that should match)
       fitPieces: true,   // shrink the word so no flying piece is cut (false: let the container clip them)
       // How the original's 25 frames a second meet the screen's refresh:
-      //   'frames' shows each frame as it is for its 40 ms, like the video;
+      //   'frames' shows each frame's pieces as they are for its 40 ms, like the video;
       //   'blend'  blends the two frames either side of the moment on every refresh;
       //   'tween'  moves linked pieces between frames and switches the rest half way.
       motion: 'frames',
@@ -612,10 +612,9 @@
           }
           ctx.restore();
         }
-        // the wave and the registered mark: at the moment drawn ('frames'), else live
-        const tw = motion === 'frames' ? f0 : frame;
-        regTime = tw;
-        if (scene.trace) drawTraceWave(tw); else drawWave(tw - scene.t0);
+        // the wave and the registered mark are smooth curves: drawn live in every mode
+        regTime = frame;
+        if (scene.trace) drawTraceWave(frame); else drawWave(frame - scene.t0);
       }
 
       // registered mark: fades in as the last letter settles, as in the original
@@ -757,12 +756,8 @@
 
     function show(f) {
       frame = Math.max(0, Math.min(api.frames, f));
-      // nothing moves after scene.still, nor within a frame shown frame by
-      // frame: keep what is on the canvas
-      const same = scene && drawn >= 0 && drawnLook === look() &&
-        ((drawn >= scene.still && frame >= scene.still) ||
-         ((paceFallback || o.motion === 'frames') && Math.floor(drawn) === Math.floor(frame)));
-      if (!same) render();
+      // nothing moves after scene.still: keep what is on the canvas
+      if (!(scene && drawn >= 0 && drawn >= scene.still && frame >= scene.still && drawnLook === look())) render();
       if (o.onUpdate) o.onUpdate(frame, api.frames);
     }
 
@@ -819,7 +814,10 @@
         // colours and playback settings only need a redraw, not a new scene
         const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady', 'frame', 'fitPieces', 'motion'];
         const keys = Object.keys(opts);
-        if (scene && keys.includes('motion') && o.motion !== 'blend') scene.cache = null;   // its two images are not needed
+        if (keys.includes('motion')) {
+          paceFallback = false; pace.length = 0;   // a chosen motion applies at once
+          if (scene && o.motion !== 'blend') scene.cache = null;   // its two images are not needed
+        }
         if (scene && keys.length && keys.every((k) => light.includes(k))) {
           if (keys.includes('frame') || keys.includes('fitPieces')) resize(); else render();
           if (o.onReady) o.onReady(api);

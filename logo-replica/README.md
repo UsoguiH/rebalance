@@ -113,9 +113,8 @@ python3 font/build_font.py motion.data.js font.data.js   # needs numpy, scipy, s
 - **Playback** draws on one `<canvas>`. The original runs at 25 frames a second, which
   does not divide a 60 Hz screen's refresh. The **Motion** setting (`motion` option)
   picks how its frames meet the screen:
-  - **Frame by frame** (`'frames'`, the default) shows each original frame as it is
-    for its 40 ms, as the video does, and redraws only when the frame changes. It is
-    the lightest mode.
+  - **Frame by frame** (`'frames'`, the default) shows the pieces of each original
+    frame as they are for its 40 ms, as the video does. It is the lightest mode.
   - **Smooth blend** (`'blend'`) draws each frame once offscreen and shows, on every
     refresh, the exact blend of the two frames either side. The picture changes
     evenly (unevenness from refresh to refresh 0.12–0.19, against 0.6–1.2 for
@@ -125,6 +124,7 @@ python3 font/build_font.py motion.data.js font.data.js   # needs numpy, scipy, s
   - **In-between motion** (`'tween'`) moves each piece linked to the next frame
     there, and switches the rest half way. Those switches land 2 or 3 refreshes
     apart, unevenly.
+  - In every mode the wave and the ® are smooth curves, drawn live on each refresh.
   - The All letters grid always shows frame by frame.
 - **Kept light for phones:**
   - The canvas covers only the box the word's pieces can reach, not the whole
