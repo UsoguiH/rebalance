@@ -172,7 +172,34 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 @media (max-width: 389px) { .fam-in { padding-inline: .55rem; } .mems { gap: .4rem; } .mem { padding-inline: .3rem .4rem; gap: .3rem; } }
 @media (max-width: 359px) { .mems { grid-template-columns: 1fr; } }
 .mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
-.fam-empty { margin: 0; color: var(--faint); font-size: .95rem; }
+/* no families yet: one big "add a family" card and a one-tap restore of the family's names */
+.fam-empty { display: flex; flex-direction: column; gap: .8rem; }
+.ea-wrap { position: relative; }
+.ea-halo { position: absolute; inset: 0; border-radius: 1.7rem; border: 2px solid rgba(255, 255, 255, .55); pointer-events: none; opacity: 0; will-change: transform, opacity; }
+.ea-add {
+  position: relative; overflow: hidden; isolation: isolate; width: 100%; min-height: 5.6rem; border-radius: 1.7rem; padding: .9rem 1.1rem;
+  display: flex; align-items: center; gap: 1rem; text-align: start; background: #fff; color: #17131c;
+  box-shadow: 0 14px 34px -14px rgba(203, 180, 241, .55);
+}
+/* a little stack of family faces, the same colored circles the families get in the list */
+.ea-stack { flex: none; display: flex; align-items: center; padding-inline-start: .15rem; }
+.ea-stack i {
+  width: 2.75rem; height: 2.75rem; border-radius: 50%; display: grid; place-items: center; font-style: normal;
+  font-size: 1.05rem; font-weight: 700; color: #17131c; background: var(--c); border: 3px solid #fff; margin-inline-start: -.85rem;
+  box-shadow: 0 4px 10px -4px rgba(23, 19, 28, .35);
+}
+.ea-stack i:first-child { margin-inline-start: 0; }
+@media (max-width: 389px) { .ea-add { gap: .7rem; padding-inline: .9rem; } .ea-stack i { width: 2.3rem; height: 2.3rem; font-size: .9rem; margin-inline-start: -.75rem; } }
+.ea-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ea-txt b { font-size: 1.35rem; font-weight: 700; line-height: 1.3; }
+.ea-txt small { font-size: .9rem; color: #5f5868; line-height: 1.45; }
+.ea-add .shine { background: linear-gradient(90deg, transparent, rgba(155, 108, 240, .2), transparent); }
+.ea-restore {
+  width: 100%; min-height: 4.2rem; border-radius: 1.4rem; padding: .6rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; border: 1.5px solid rgba(255, 255, 255, .2);
+}
+.ea-restore b { font-size: 1.08rem; font-weight: 700; line-height: 1.35; }
+.ea-restore small { color: var(--lilac); font-size: .86rem; }
 .btn-done { width: 100%; min-height: 3.4rem; border-radius: 999px; font-size: 1.1rem; font-weight: 700; background: var(--primary); color: var(--on-primary); }
 
 /* ——— step 3 ——— */
@@ -196,6 +223,8 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .btn .ic { width: 1.45rem; height: 1.45rem; }
 .btn .wa-logo { width: 1.7rem; height: 1.7rem; }
 .btn-wa { background: var(--wa); color: #fff; }
+.btn-stc { background: linear-gradient(135deg, #4f008c, #7b2fd6); color: #fff; }
+.btn-stc .ic { width: 1.55rem; height: 1.55rem; }
 .btn-soft { background: var(--surface-hi); font-weight: 600; }
 .quiet { display: flex; justify-content: center; gap: .4rem; flex-wrap: wrap; margin-top: .3rem; }
 .quiet button { min-height: 2.9rem; padding: 0 1.1rem; border-radius: 999px; color: var(--muted); font-size: .92rem; display: inline-flex; align-items: center; gap: .45rem; border: 1px solid rgba(255, 255, 255, .12); }
@@ -393,7 +422,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 
   <section class="step" id="step2" aria-labelledby="h2">
     <h2 class="step-h" id="h2"><span class="step-n" id="n2">٢</span>مين حضر؟</h2>
-    <p class="step-p">اضغط على العائلة عشان تطلع أسماءها</p>
+    <p class="step-p" id="step2p">اضغط على العائلة عشان تطلع أسماءها</p>
     <ul class="list" id="list"></ul>
   </section>
 
@@ -406,6 +435,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
       <span class="shine" aria-hidden="true"></span>
     </button>
     <a class="btn btn-wa press" id="waBtn" href="#" target="_blank" rel="noopener"><span data-ic="wa"></span>أرسل في واتساب</a>
+    <a class="btn btn-stc press stc-go" id="stcBtn" href="https://stcbank.com.sa/" target="_blank" rel="noopener noreferrer"><span data-ic="stc"></span>سوّ القطّة في STC Bank</a>
     <div class="quiet">
       <button id="editBtn" type="button"><span data-ic="users"></span>العوائل والأسماء</button>
     </div>
@@ -433,6 +463,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
       <p class="fin-note" id="finNote"></p>
       <div class="fin-actions">
         <a class="btn btn-wa press" id="finWa" href="#" target="_blank" rel="noopener"><span data-ic="wa"></span>أرسل في واتساب</a>
+        <a class="btn btn-stc press stc-go" id="finStc" href="https://stcbank.com.sa/" target="_blank" rel="noopener noreferrer"><span data-ic="stc"></span>سوّ القطّة في STC Bank</a>
         <button class="btn btn-soft press" id="finBack" type="button"><span data-ic="back2"></span>رجوع</button>
       </div>
     </div>
@@ -462,6 +493,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
     <div class="ed-list" id="edList"></div>
     <button class="btn-addfam press" id="addFamBtn" type="button"><span data-ic="plus"></span>أضف عائلة جديدة</button>
     <button class="paste-link" id="pasteToggle" type="button">أو الصق قائمة أسماء كاملة</button>
+    <button class="paste-link" id="restoreBtn" type="button">رجّع أسماء العائلة الأصلية</button>
     <div class="paste-box" id="pasteBox" hidden>
       <label for="pasteText"><span>كل عائلة في سطر: اسم العائلة، بعدها نقطتين، بعدها الأفراد بينهم فاصلة. بتنضاف للعوائل الموجودة.</span></label>
       <textarea id="pasteText" spellcheck="false" placeholder="عائلة عادل: عادل، نورة، محمد&#10;عائلة خالد: خالد، سارة"></textarea>
@@ -491,6 +523,7 @@ const DEFAULT_FAMILIES = [
   ['اخوي ابراهيم', ['ابراهيم الجاسر', 'ريما الحضيف', 'عبدالرحمن الجاسر']],
   ['اختي نجود', ['نجود الجاسر', 'مصعب القرشي']],
 ];
+const DEFAULT_HEADS = DEFAULT_FAMILIES.reduce((n, [, m]) => n + m.length, 0);
 const COLORS = ['#5ccfc4', '#7ee0b0', '#f2dc8c', '#ff9f7a', '#9b6cf0', '#7fb4ff', '#f59ac8', '#c8e07a', '#ffc46b', '#a0a4ff'];
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -533,6 +566,7 @@ const I = {
   artGroup: '<svg class="art" viewBox="0 0 48 48" aria-hidden="true"><circle cx="12" cy="17" r="5.5" fill="#7ee0b0"/><path d="M2 38c0-6 4.5-10.5 10-10.5S22 32 22 38z" fill="#7ee0b0"/><circle cx="36" cy="17" r="5.5" fill="#9b6cf0"/><path d="M26 38c0-6 4.5-10.5 10-10.5S46 32 46 38z" fill="#9b6cf0"/><circle cx="24" cy="14" r="7" fill="#5ccfc4" stroke="#201d25" stroke-width="2"/><path d="M11 42c0-7.5 5.8-13.5 13-13.5S37 34.5 37 42z" fill="#5ccfc4" stroke="#201d25" stroke-width="2"/></svg>',
   user: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>'),
   users: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  stc: svg('<rect x="5.5" y="2" width="13" height="20" rx="3"/><path d="M10.5 18.6h3"/><circle cx="12" cy="10" r="4"/><path d="M12 6v4l2.9 2.8"/>'),
   receipt: svg('<path d="M5 2v20l2.5-1.5L10 22l2-1.5 2 1.5 2.5-1.5L19 22V2l-2.5 1.5L14 2l-2 1.5L10 2 7.5 3.5Z"/><path d="M9 8h6M9 12h6M9 16h3"/>'),
   wa: '<svg class="ic wa-logo" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>',
 };
@@ -746,7 +780,19 @@ function renderList() {
       <button type="button" class="btn-done press">تم</button>
     </div></div>
   </li>`).join('');
-  if (!state.families.length) list.innerHTML = '<li class="fam-empty">ما فيه عوائل. اضغط "العوائل والأسماء" تحت وأضف.</li>';
+  emptyLoop.forEach(t => t.kill());
+  emptyLoop = [];
+  const none = !state.families.length;
+  $('#step2p').hidden = none;
+  if (none) {
+    list.innerHTML = `<li class="fam-empty">
+      <div class="ea-wrap"><span class="ea-halo" aria-hidden="true"></span><button type="button" class="ea-add press" id="emptyAdd">
+        <span class="ea-stack" aria-hidden="true">${DEFAULT_FAMILIES.slice(0, 3).map(([n], k) => `<i style="--c:${COLORS[[0, 2, 4][k]]};z-index:${3 - k}">${esc(initial(n))}</i>`).join('')}</span><span class="ea-txt"><b>أضف عائلة</b><small>ما فيه عوائل للحين</small></span><span class="shine" aria-hidden="true"></span>
+      </button></div>
+      <button type="button" class="ea-restore press" id="emptyRestore"><b>رجّع أسماء العائلة</b><small><span class="num">${fmt(DEFAULT_FAMILIES.length)}</span> عوائل و<span class="num">${fmt(DEFAULT_HEADS)}</span> فرد</small></button>
+    </li>`;
+    animateEmpty();
+  }
   if (openId && !famEl(openId)) openId = null;
   if (openId) {
     const li = famEl(openId);
@@ -755,6 +801,32 @@ function renderList() {
     gsap.set($('.fam-body', li), { height: 'auto' });
     gsap.set($('.chev', li), { rotation: 180 });
   }
+}
+// the empty card comes alive: the white button springs in, the family faces pop in one by one, then it keeps gently calling
+let emptyLoop = [];
+function animateEmpty() {
+  const card = $('.fam-empty', list);
+  const btn = $('.ea-add', card), faces = $$('.ea-stack i', card), halo = $('.ea-halo', card), shine = $('.shine', btn);
+  if (REDUCED) return;
+  const tl = gsap.timeline({ delay: .1 });
+  tl.fromTo(btn, { y: 34, opacity: 0, scale: .86 }, { y: 0, opacity: 1, scale: 1, duration: .9, ease: 'spring', clearProps: 'transform,opacity' }, 0)
+    .fromTo(faces, { scale: 0, x: 26, rotation: -60 }, { scale: 1, x: 0, rotation: 0, duration: .9, stagger: .12, ease: 'spring' }, .2)
+    .fromTo($$('.ea-txt > *', card), { x: -18, opacity: 0 }, { x: 0, opacity: 1, duration: .7, stagger: .09, ease: 'springSoft', clearProps: 'transform,opacity' }, .3)
+    .fromTo($('.ea-restore', card), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .7, ease: 'springSoft', clearProps: 'transform,opacity' }, .55);
+  emptyLoop.push(tl,
+    // a soft ripple leaves the button, the faces hop up one after another like a wave, and light sweeps across it
+    gsap.timeline({ delay: 1.5, repeat: -1, repeatDelay: 1.3 })
+      .fromTo(halo, { scaleX: 1, scaleY: 1, opacity: .7 }, { scaleX: 1.04, scaleY: 1.22, opacity: 0, duration: 1.3, ease: 'power2.out' }, 0)
+      .to(faces, { y: -7, scale: 1.08, duration: .22, stagger: .1, ease: 'power2.out' }, 0)
+      .to(faces, { y: 0, scale: 1, duration: .8, stagger: .1, ease: 'spring' }, .22)
+      .fromTo(shine, { xPercent: -150 }, { xPercent: 420, duration: 1.1, ease: 'power2.inOut' }, .15));
+}
+function restoreFamilies() {
+  const before = JSON.stringify(state);
+  state.families = DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m));
+  openId = null;
+  save(); haptic(18);
+  return { before };
 }
 function famSub(f, n) {
   if (!f.members.length) return 'ما فيه أسماء';
@@ -853,6 +925,22 @@ function syncMember(btn, present, anim = true) {
   if (present) gsap.fromTo($('.ck', mk), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .35, delay: .08, ease: 'springSoft' });
 }
 list.addEventListener('click', e => {
+  if (e.target.closest('#emptyAdd')) {
+    haptic(10);
+    $('#editBtn').click();
+    setTimeout(() => $('#addFamBtn').click(), 380);
+    return;
+  }
+  const rb = e.target.closest('#emptyRestore');
+  if (rb) {
+    const r = rb.getBoundingClientRect(), card = $('.fam-empty', list);
+    emptyLoop.forEach(t => t.kill());
+    const { before } = restoreFamilies();
+    burst(r.left + r.width / 2, r.top + r.height / 2, 40, 180);
+    gsap.to(card, { scale: .9, opacity: 0, y: -10, duration: .3, ease: 'power2.in', onComplete: () => { scrollToY(0); rebuild(true); } });
+    toast(`رجّعنا ${fmt(DEFAULT_FAMILIES.length)} عوائل، ${fmt(DEFAULT_HEADS)} فرد`, before);
+    return;
+  }
   const li = e.target.closest('.fam');
   if (!li || !li.dataset.id) return;
   const f = state.families.find(x => x.id === li.dataset.id);
@@ -1209,6 +1297,14 @@ $('#addFamBtn').addEventListener('click', () => {
   gsap.fromTo(card, { y: 30, opacity: 0, scale: .95 }, { y: 0, opacity: 1, scale: 1, duration: .6, ease: 'spring', clearProps: 'transform,opacity' });
   $('.ed-name', card).focus();
 });
+$('#restoreBtn').addEventListener('click', () => {
+  const { before } = restoreFamilies();
+  edDirty = true;
+  renderEditor();
+  gsap.fromTo('.ed-fam', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .04, ease: 'springSoft', clearProps: 'transform,opacity' });
+  $('#editScroll').scrollTo({ top: 0, behavior: 'smooth' });
+  toast(`رجّعنا الأسماء الأصلية: ${fmt(DEFAULT_HEADS)} فرد`, before, renderEditor);
+});
 $('#pasteToggle').addEventListener('click', () => {
   $('#pasteToggle').hidden = true;
   const box = $('#pasteBox');
@@ -1279,6 +1375,30 @@ function needPrice() {
   setTimeout(() => shake($('#priceBtn')), 400);
 }
 $('#waBtn').addEventListener('click', e => { if (!state.total) { e.preventDefault(); needPrice(); } });
+
+// ——— STC Bank: open the official app so the qatta is made there; nothing about money is handled here ———
+// STC Bank has no public link that opens its qatta screen, so the best a web page can do is open the app itself.
+// Android: try the app, and if Chrome can't open it go to its Play Store page (which shows "Open" when installed).
+// iPhone: the App Store page, which shows "Open" when installed. Computers: the bank's own site.
+const STC = {
+  play: 'https://play.google.com/store/apps/details?id=sa.com.stcbank',
+  ios: 'https://apps.apple.com/sa/app/stc-bank/id6458546150',
+  web: 'https://stcbank.com.sa/',
+};
+const isAndroid = /Android/i.test(navigator.userAgent);
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const stcHref = isAndroid ? `intent://open#Intent;scheme=stcbank;package=sa.com.stcbank;S.browser_fallback_url=${encodeURIComponent(STC.play)};end`
+  : isIOS ? STC.ios : STC.web;
+$$('.stc-go').forEach(a => {
+  a.href = stcHref;
+  a.addEventListener('click', e => {
+    if (!state.total) { e.preventDefault(); if (final.hidden) needPrice(); else toast('اكتب مبلغ الفاتورة أول'); return; }
+    haptic(12);
+    // the bill amount is ready to paste in the app's qatta screen
+    try { navigator.clipboard.writeText(String(state.total)).catch(() => {}); } catch (err) { /* ignore */ }
+    toast(`نفتح لك STC Bank. مبلغ الفاتورة ${fmt(state.total)} منسوخ`);
+  });
+});
 
 // ——— toast with undo ———
 let toastTl = null, undoSnap = null, undoAfter = null;
