@@ -253,7 +253,8 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ft-foot { background: rgba(126, 224, 165, .08); }
 .ft-foot .ft-name b { font-size: 1.1rem; }
 .ft-foot .ft-amt b { color: var(--yes); background: rgba(126, 224, 165, .15); }
-.fin-note { margin: 0; font-size: .88rem; color: var(--muted); text-align: center; line-height: 1.6; }
+.fin-note { margin: 0; font-size: .88rem; color: var(--muted); text-align: center; line-height: 1.7; }
+.fin-diff { display: inline-block; margin-top: .45rem; padding: .35rem .9rem; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac); font-size: .95rem; font-weight: 700; }
 .fin-actions { display: flex; flex-direction: column; gap: .6rem; }
 
 /* ——— sheets ——— */
@@ -568,6 +569,8 @@ const color = i => COLORS[i % COLORS.length];
 // ——— numbers: whole riyals only ———
 const NF = new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 0 });
 const fmt = n => NF.format(Math.round(+n || 0));
+const NF1 = new Intl.NumberFormat('ar-SA-u-nu-arab', { maximumFractionDigits: 1 });
+const fmt1 = n => NF1.format(Math.round((+n || 0) * 10) / 10);
 function initial(name) {
   let s = String(name).trim().replace(/^(عائلة|عايلة|عائله|بيت|آل|خالي|خالتي|عمي|عمتي|اخوي|أخوي|اختي|أختي)\s+/, '').replace(/^(أبو|ابو|أم|ام)\s+/, '');
   if (/^ال/.test(s) && s.length > 3) s = s.slice(2);
@@ -594,25 +597,36 @@ function compute() {
     heads += n; all += f.members.length;
     rows.set(f.id, n);
   }
-  // each person pays the same whole number of riyals, rounded up so the bill is always covered
-  const per = heads && state.total ? Math.ceil(state.total / heads - 1e-9) : 0;
-  return { heads, all, per, rows, share: id => per * rows.get(id), collected: per * heads };
+  // the bill is split exactly per person (e.g. 3600 ÷ 39 = 92.3); each family's share is then rounded
+  // to the nearest riyal, and the small difference left over goes to صاحب القطّة
+  const per = heads && state.total ? state.total / heads : 0;
+  const share = id => Math.round(per * rows.get(id));
+  let collected = 0;
+  for (const f of state.families) collected += share(f.id);
+  return { heads, all, per, rows, share, collected, diff: state.total - collected };
 }
-function setNum(el, to, anim = true, dur = .8) {
+function setNum(el, to, anim = true, dur = .8, dec = 0) {
+  const f = dec ? fmt1 : fmt;
   const prev = el.dataset.val;
   const from = prev === undefined || prev === '' ? null : +prev;
   el.dataset.val = to;
   if (el._tw) el._tw.kill();
-  if (!anim || from === null || from === to) { el.textContent = fmt(to); return; }
+  if (!anim || from === null || from === to) { el.textContent = f(to); return; }
   const o = { v: from };
   let last = null;
-  // only touch the DOM when the shown whole number actually changes
-  el._tw = gsap.to(o, { v: to, duration: dur, ease: 'power3.out', onUpdate: () => { const r = Math.round(o.v); if (r !== last) { last = r; el.textContent = fmt(r); } } });
+  // only touch the DOM when the shown number actually changes
+  el._tw = gsap.to(o, { v: to, duration: dur, ease: 'power3.out', onUpdate: () => { const t = f(o.v); if (t !== last) { last = t; el.textContent = t; } } });
 }
-function countUp(el, to, delay = 0, dur = 1) {
+function countUp(el, to, delay = 0, dur = 1, dec = 0) {
   el.dataset.val = 0;
   el.textContent = fmt(0);
-  gsap.delayedCall(delay, () => setNum(el, to, true, dur));
+  gsap.delayedCall(delay, () => setNum(el, to, true, dur, dec));
+}
+// what happens to the few riyals left after rounding each family's share
+function diffText(c) {
+  if (c.diff > 0) return `الباقي ${fmt(c.diff)} ريال يدفعه صاحب القطّة`;
+  if (c.diff < 0) return `الزيادة ${fmt(-c.diff)} ريال لصاحب القطّة`;
+  return 'المجموع مضبوط على الفاتورة بالضبط';
 }
 function haptic(ms = 8) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* ignore */ } }
 function pop(el, from = .94) { gsap.fromTo(el, { scale: from }, { scale: 1, duration: .6, ease: 'spring', clearProps: 'scale' }); }
@@ -758,7 +772,7 @@ function update(anim = true) {
   }
   setNum($('#totalVal'), state.total, anim);
   $('#rcPer').hidden = !c.heads;
-  setNum($('#perVal'), c.per, anim);
+  setNum($('#perVal'), c.per, anim, .8, 1);
   $('#headsLine').innerHTML = c.heads
     ? `الحاضرين <b class="num">${fmt(c.heads)}</b> من <b class="num">${fmt(c.all)}</b>`
     : 'ما فيه أحد حاضر';
@@ -862,7 +876,7 @@ function renderPad(popLast) {
   const v = +pad.str || 0;
   $('#dispHint').textContent = pad.fresh && txt ? 'اكتب الرقم الجديد'
     : !txt ? 'اكتب المبلغ اللي في الفاتورة'
-    : c.heads ? `على الشخص ${fmt(Math.ceil(v / c.heads - 1e-9))} ريال` : '';
+    : c.heads ? `على الشخص ${fmt1(v / c.heads)} ريال` : '';
 }
 function press(k) {
   if (pad.fresh) { pad.fresh = false; if (k !== 'back') pad.str = ''; }
@@ -1008,10 +1022,7 @@ function renderFinal(c) {
     <span class="ft-n" role="cell"><b class="num">${fmt(c.heads)}</b><small>من ${fmt(c.all)}</small></span>
     <span class="ft-amt" role="cell"><b class="num" id="finSum">${fmt(c.collected)}</b><small>ريال</small></span>`;
   $('#finAll').textContent = `من ${fmt(c.all)}`;
-  const extra = c.collected - state.total;
-  $('#finNote').textContent = extra > 0
-    ? `${fmt(state.total)} ÷ ${fmt(c.heads)} شخص = ${fmt(c.per)} ريال للشخص بعد التقريب لأقرب ريال، فبينجمع ${fmt(extra)} ريال زيادة عن الفاتورة.`
-    : `${fmt(state.total)} ÷ ${fmt(c.heads)} شخص = ${fmt(c.per)} ريال للشخص بالضبط.`;
+  $('#finNote').innerHTML = `${fmt(state.total)} ÷ ${fmt(c.heads)} شخص = ${fmt1(c.per)} ريال للشخص، وقرّبنا قطّة كل عائلة لأقرب ريال.<br><b class="fin-diff">${diffText(c)}.</b>`;
   try {
     $('#finDate').textContent = new Intl.DateTimeFormat('ar-SA-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   } catch (e) { $('#finDate').textContent = ''; }
@@ -1034,7 +1045,7 @@ function openFinal() {
     .fromTo(['.fin-top', '.fin-title'], { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .45, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .2)
     .fromTo('.sc', { y: 26, opacity: 0, scale: .9 }, { y: 0, opacity: 1, scale: 1, duration: .75, stagger: .08, ease: 'spring', clearProps: 'transform,opacity' }, .28)
     .fromTo('.sc-ic', { scale: 0, rotation: -20, y: 10 }, { scale: 1, rotation: 0, y: 0, duration: .9, stagger: .09, ease: 'spring', clearProps: 'transform' }, .38)
-    .add(() => { countUp($('#finTotal'), state.total, 0, .9); countUp($('#finPer'), c.per, .08, .9); countUp($('#finHeads'), c.heads, .16, .9); }, .4)
+    .add(() => { countUp($('#finTotal'), state.total, 0, .9); countUp($('#finPer'), c.per, .08, .9, 1); countUp($('#finHeads'), c.heads, .16, .9); }, .4)
     .fromTo('.ft-head', { opacity: 0 }, { opacity: 1, duration: .3 }, .45)
     .fromTo(rows, { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
     .to($$('#finRows .ft-bar'), { scaleX: (i, el) => +el.dataset.w, duration: .9, stagger: .07, ease: 'springOut' }, .6)
@@ -1236,11 +1247,12 @@ onClose.editSheet = () => {
 // ——— send / listen ———
 function summary() {
   const c = compute();
-  const L = ['حساب القطّة', `الفاتورة: ${fmt(state.total)} ريال`, `الحاضرين: ${fmt(c.heads)} من ${fmt(c.all)}`, `على الشخص: ${fmt(c.per)} ريال`, ''];
+  const L = ['حساب القطّة', `الفاتورة: ${fmt(state.total)} ريال`, `الحاضرين: ${fmt(c.heads)} من ${fmt(c.all)}`, `على الشخص: ${fmt1(c.per)} ريال`, ''];
   for (const f of state.families) {
     const n = c.rows.get(f.id);
     L.push(n ? `${f.name} (${fmt(n)}): ${fmt(c.share(f.id))} ريال` : `${f.name}: ما حضر أحد`);
   }
+  if (c.diff) L.push('', diffText(c));
   const absent = state.families.flatMap(f => f.members.filter(m => !m.present));
   if (absent.length) {
     const boys = absent.filter(m => genderOf(m) === 'm'), girls = absent.filter(m => genderOf(m) === 'f');
@@ -1267,11 +1279,12 @@ function setTalking(on) {
 $('#speakBtn').addEventListener('click', () => {
   if (synth.speaking) { synth.cancel(); setTalking(false); return; }
   const c = compute();
-  const parts = [`الفاتورة ${Math.round(state.total)} ريال.`, `على الشخص ${c.per} ريال.`];
+  const parts = [`الفاتورة ${Math.round(state.total)} ريال.`, `على الشخص ${Math.round(c.per * 10) / 10} ريال.`];
   state.families.forEach(f => {
     const n = c.rows.get(f.id);
     parts.push(n ? `${f.name}: ${c.share(f.id)} ريال.` : `${f.name}: ما حضر أحد.`);
   });
+  if (c.diff) parts.push(`${diffText(c)}.`);
   const u = new SpeechSynthesisUtterance(parts.join(' '));
   u.lang = 'ar-SA';
   u.rate = .85;
@@ -1357,7 +1370,7 @@ function intro() {
     .fromTo('#step1 .ring-center > :not([hidden]) > *', { y: 14, opacity: 0, scale: .9 }, { y: 0, opacity: 1, scale: 1, duration: .8, stagger: .08, ease: 'spring', clearProps: 'transform,opacity' }, .35)
     .add(() => {
       const t = $('#totalVal'); t.dataset.val = 0; setNum(t, state.total, true, 1.2);
-      const p = $('#perVal'); p.dataset.val = 0; setNum(p, c.per, true, 1.2);
+      const p = $('#perVal'); p.dataset.val = 0; setNum(p, c.per, true, 1.2, 1);
     }, .35)
     .fromTo('#headsLine', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
     .fromTo('#step2 > :not(.list)', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .6)
