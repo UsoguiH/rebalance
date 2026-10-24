@@ -174,20 +174,18 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
 /* no families yet: one big "add a family" card and a one-tap restore of the family's names */
 .fam-empty { display: flex; flex-direction: column; gap: .8rem; }
-.ea-wrap { position: relative; }
-.ea-halo { position: absolute; inset: 0; border-radius: 1.7rem; border: 2px solid rgba(255, 255, 255, .55); pointer-events: none; opacity: 0; will-change: transform, opacity; }
 .ea-add {
-  position: relative; overflow: hidden; isolation: isolate; width: 100%; min-height: 5.6rem; border-radius: 1.7rem; padding: 0 0 0 1.1rem;
-  display: flex; align-items: center; gap: 1rem; text-align: start; background: #f8f3e7; color: #17131c;
-  box-shadow: 0 14px 34px -14px rgba(203, 180, 241, .55);
+  --art: 10.2rem;
+  position: relative; overflow: hidden; width: 100%; min-height: 8.2rem; border-radius: 1.7rem; padding: 0 calc(var(--art) + .8rem) 0 1.1rem;
+  display: flex; align-items: center; text-align: start; background: #f8f3e7; color: #17131c;
 }
-/* the drawing sits in the button's corner, its cream background the same as the button's */
-.ea-fam { flex: none; align-self: flex-end; width: 8rem; height: auto; display: block; transform-origin: 100% 100%; will-change: transform; }
-@media (max-width: 389px) { .ea-add { gap: .6rem; padding-left: .9rem; } .ea-fam { width: 6.6rem; } }
-.ea-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; padding-block: .9rem; }
+/* the drawing fills the button's corner, cropped from the top so the man reads big without making the button taller;
+   its cream background matches the button's */
+.ea-fam { position: absolute; right: 0; bottom: 0; width: var(--art); height: 100%; display: block; object-fit: cover; object-position: 100% 100%; }
+@media (max-width: 389px) { .ea-add { --art: 7.4rem; min-height: 7rem; padding-left: .9rem; padding-right: calc(var(--art) + .5rem); } }
+.ea-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding-block: .9rem; }
 .ea-txt b { font-size: 1.35rem; font-weight: 700; line-height: 1.3; }
 .ea-txt small { font-size: .9rem; color: #6b6458; line-height: 1.45; }
-.ea-add .shine { background: linear-gradient(90deg, transparent, rgba(155, 108, 240, .2), transparent); }
 .ea-restore {
   width: 100%; min-height: 4.2rem; border-radius: 1.4rem; padding: .6rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; border: 1.5px solid rgba(255, 255, 255, .2);
@@ -769,18 +767,15 @@ function renderList() {
       <button type="button" class="btn-done press">تم</button>
     </div></div>
   </li>`).join('');
-  emptyLoop.forEach(t => t.kill());
-  emptyLoop = [];
   const none = !state.families.length;
   $('#step2p').hidden = none;
   if (none) {
     list.innerHTML = `<li class="fam-empty">
-      <div class="ea-wrap"><span class="ea-halo" aria-hidden="true"></span><button type="button" class="ea-add press" id="emptyAdd">
-        <img class="ea-fam" src="${FAMILY_IMG}" alt="" width="387" height="398" draggable="false"><span class="ea-txt"><b>أضف عائلة</b><small>ما فيه عوائل للحين</small></span><span class="shine" aria-hidden="true"></span>
-      </button></div>
+      <button type="button" class="ea-add press" id="emptyAdd">
+        <img class="ea-fam" src="${FAMILY_IMG}" alt="" width="387" height="398" draggable="false"><span class="ea-txt"><b>أضف عائلة</b><small>ما فيه عوائل للحين</small></span>
+      </button>
       <button type="button" class="ea-restore press" id="emptyRestore"><b>رجّع أسماء العائلة</b><small><span class="num">${fmt(DEFAULT_FAMILIES.length)}</span> عوائل و<span class="num">${fmt(DEFAULT_HEADS)}</span> فرد</small></button>
     </li>`;
-    animateEmpty();
   }
   if (openId && !famEl(openId)) openId = null;
   if (openId) {
@@ -790,25 +785,6 @@ function renderList() {
     gsap.set($('.fam-body', li), { height: 'auto' });
     gsap.set($('.chev', li), { rotation: 180 });
   }
-}
-// the empty card comes alive: the button springs in, the drawing slides into its corner, then it keeps gently calling
-let emptyLoop = [];
-function animateEmpty() {
-  const card = $('.fam-empty', list);
-  const btn = $('.ea-add', card), fam = $('.ea-fam', card), halo = $('.ea-halo', card), shine = $('.shine', btn);
-  if (REDUCED) return;
-  const tl = gsap.timeline({ delay: .1 });
-  tl.fromTo(btn, { y: 34, opacity: 0, scale: .86 }, { y: 0, opacity: 1, scale: 1, duration: .9, ease: 'spring', clearProps: 'transform,opacity' }, 0)
-    .fromTo(fam, { xPercent: 35, yPercent: 20, opacity: 0 }, { xPercent: 0, yPercent: 0, opacity: 1, duration: 1.1, ease: 'spring' }, .2)
-    .fromTo($$('.ea-txt > *', card), { x: -18, opacity: 0 }, { x: 0, opacity: 1, duration: .7, stagger: .09, ease: 'springSoft', clearProps: 'transform,opacity' }, .3)
-    .fromTo($('.ea-restore', card), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .7, ease: 'springSoft', clearProps: 'transform,opacity' }, .55);
-  emptyLoop.push(tl,
-    // a soft ripple leaves the button, the drawing breathes in a little, and light sweeps across it
-    gsap.timeline({ delay: 1.5, repeat: -1, repeatDelay: 1.3 })
-      .fromTo(halo, { scaleX: 1, scaleY: 1, opacity: .7 }, { scaleX: 1.04, scaleY: 1.22, opacity: 0, duration: 1.3, ease: 'power2.out' }, 0)
-      .to(fam, { scale: 1.05, duration: .3, ease: 'power2.out' }, 0)
-      .to(fam, { scale: 1, duration: .9, ease: 'spring' }, .3)
-      .fromTo(shine, { xPercent: -150 }, { xPercent: 420, duration: 1.1, ease: 'power2.inOut' }, .15));
 }
 function restoreFamilies() {
   const before = JSON.stringify(state);
@@ -923,7 +899,6 @@ list.addEventListener('click', e => {
   const rb = e.target.closest('#emptyRestore');
   if (rb) {
     const r = rb.getBoundingClientRect(), card = $('.fam-empty', list);
-    emptyLoop.forEach(t => t.kill());
     const { before } = restoreFamilies();
     burst(r.left + r.width / 2, r.top + r.height / 2, 40, 180);
     gsap.to(card, { scale: .9, opacity: 0, y: -10, duration: .3, ease: 'power2.in', onComplete: () => { scrollToY(0); rebuild(true); } });
