@@ -1396,7 +1396,7 @@ function summary() {
   if (absent.length) {
     const boys = absent.filter(m => genderOf(m) === 'm'), girls = absent.filter(m => genderOf(m) === 'f');
     // grouped: the boys under one heading, the girls under another, each numbered from 1
-    L.push('', `ما حضروا (${fmt(absent.length)}):`);
+    L.push('', `ما حضروا ❌ (${fmt(absent.length)}):`);
     [['الذكور 🔵', boys], ['الإناث 🟣', girls]].forEach(([title, group]) => {
       if (!group.length) return;
       L.push('', `${title}:`);
