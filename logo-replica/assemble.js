@@ -180,6 +180,40 @@
     });
   }
 
+  // Interpolate one piece's slices toward its next-frame form. Runs are only
+  // blended when both frames have the same number of them; otherwise switch half way.
+  function blendRuns(a, b, u) {
+    if (!b || a.length !== b.length) return u < 0.5 ? a : b || a;
+    return a.map(([a0, a1], i) => {
+      let [b0, b1] = b[i];
+      while (b0 - a0 > 180) { b0 -= 360; b1 -= 360; }
+      while (a0 - b0 > 180) { b0 += 360; b1 += 360; }
+      return [lerp(a0, b0, u), lerp(a1, b1, u)];
+    });
+  }
+
+  // Pieces of a clip at fractional clip time fs, for motion 'tween': each
+  // piece linked to the next frame moves there; others switch half way.
+  function piecesAt(clip, fs) {
+    const out = [];
+    if (fs < 0 || fs >= clip.len) return out;
+    const F = clip.frames;
+    const f0 = Math.floor(fs), u = fs - f0;
+    const A = F[f0], B = F[f0 + 1] || [];
+    const targeted = new Set();
+    for (const p of A) {
+      const q = p[7] >= 0 ? B[p[7]] : null;
+      if (q) {
+        targeted.add(p[7]);
+        const dth = ((q[1] - p[1] + 540) % 360) - 180;
+        out.push([p[0], p[1] + dth * u, lerp(p[2], q[2], u), lerp(p[3], q[3], u), lerp(p[4], q[4], u),
+          lerp(p[5], q[5], u), blendRuns(p[6], q[6], u)]);
+      } else if (u < 0.5) out.push(p);
+    }
+    if (u >= 0.5) B.forEach((q, i) => { if (!targeted.has(i)) out.push(q); });
+    return out;
+  }
+
   // One requestAnimationFrame loop drives every playing instance on the page.
   const ticking = new Set();
   let instances = 0;
@@ -209,7 +243,11 @@
       maxFps: 0,   // redraw at most this often (0: every screen refresh)
       frame: null,   // { w, h } in x-heights: fit this box instead of the word (players that should match)
       fitPieces: true,   // shrink the word so no flying piece is cut (false: let the container clip them)
-      blend: true,   // blend the original's frames on every refresh (false: show the nearest one)
+      // How the original's 25 frames a second meet the screen's refresh:
+      //   'frames' shows each frame as it is for its 40 ms, like the video;
+      //   'blend'  blends the two frames either side of the moment on every refresh;
+      //   'tween'  moves linked pieces between frames and switches the rest half way.
+      motion: 'frames',
       colors: {}, onUpdate: null, onReady: null,
     }, options || {});
     const colors = Object.assign({}, COLORS, o.colors);
@@ -408,7 +446,7 @@
     // letter once it is fully cream (so no background shows between slices;
     // a green base before that would show as green rims round the springing
     // cream copy, which the original does not have).
-    function drawPieces(c, n) {
+    function drawPieces(c, n, tween) {
       const xh = scene.xh, items = [];
       let box = null;   // the region drawn on, in word units
       const grow = (x0, y0, x1, y1) => {
@@ -416,10 +454,12 @@
       };
       dc = c;
       scene.letters.forEach((q) => {
-        // the clip frame nearest this moment (letters start between whole frames)
-        const fs = Math.round((n - q.start) * q.speed);
-        if (fs >= q.clip.creamFull + 2) { c.fillStyle = colors.cream; drawGlyph(q); grow(q.x + q.l, q.t, q.x + q.r, q.b); }
-        if (fs >= 0 && fs < q.clip.len) for (const p of q.clip.frames[fs]) items.push([p, q]);
+        // the clip frame nearest this moment (letters start between whole
+        // frames), or with tween the clip moment itself
+        const ft = (n - q.start) * q.speed, fs = tween ? ft : Math.round(ft);
+        if (fs >= q.clip.creamFull + 2) { c.fillStyle = colors.cream; drawGlyph(q); grow(q.x + q.l - 1, q.t - 1, q.x + q.r + 1, q.b + 1); }
+        if (tween) for (const p of piecesAt(q.clip, fs)) items.push([p, q]);
+        else if (fs >= 0 && fs < q.clip.len) for (const p of q.clip.frames[fs]) items.push([p, q]);
       });
       items.sort((a, b) => a[0][0] - b[0][0]);
       const fill = [colors.cream, colors.green, colors.cream];
@@ -523,6 +563,7 @@
 
     const look = () => `${colors.green}|${colors.cream}|${o.registered}|${o.still}`;
 
+    let regTime = 0;   // the moment the registered mark is drawn at
     function render() {
       drawn = frame; drawnLook = look();
       const w = canvas.width, h = canvas.height;
@@ -544,38 +585,43 @@
         // frame; between them it changes evenly on every refresh. (Switching
         // frames instead lands 25 changes a second 2 or 3 refreshes apart on
         // a 60 Hz screen, unevenly, which reads as stutter.)
-        const n = scene.frames, f0 = Math.max(0, Math.min(n, Math.floor(frame))), u = frame - f0;
-        // Without blending, or once the word has settled (from scene.still on
-        // every frame is the same), the frame is drawn straight onto the canvas.
-        const direct = !o.blend || f0 >= scene.still;
-        if (direct) {
-          const f = o.blend ? f0 : Math.max(0, Math.min(n, Math.round(frame)));
-          if (scene.trace) drawTrace(ctx, scene.traceSeq[Math.min(FRAMES - 1, f)]); else drawPieces(ctx, f);
-        }
-        const A = direct ? null : frameImage(f0);
-        const B = A && u > 0.001 && f0 < n ? frameImage(f0 + 1) : A;
-        // only the part of the canvas either frame drew on is copied
-        const ba = A ? A.box : [0, 0, 0, 0], bb = B ? B.box : ba;
-        const x0 = Math.min(ba[0], bb[0]), y0 = Math.min(ba[1], bb[1]);
-        const bw = Math.max(ba[2], bb[2]) - x0, bh = Math.max(ba[3], bb[3]) - y0;
-        ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
-        if (A && bw > 0 && bh > 0) {
-          if (B === A) ctx.drawImage(A.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
-          else {
-            ctx.globalAlpha = 1 - u; ctx.drawImage(A.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
-            ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = u;
-            ctx.drawImage(B.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
+        const n = scene.frames, motion = paceFallback ? 'frames' : o.motion;
+        const f0 = Math.max(0, Math.min(n, Math.floor(frame))), u = frame - f0;
+        // the moment drawn: a whole frame, except when tweening
+        const t = motion === 'tween' ? frame : f0;
+        if (motion !== 'blend' || f0 >= scene.still) {
+          // Drawn straight onto the canvas. (Blending also stops once the
+          // word has settled: from scene.still on every frame is the same.)
+          if (scene.trace) drawTrace(ctx, scene.traceSeq[Math.min(FRAMES - 1, f0)]);
+          else drawPieces(ctx, t, motion === 'tween');
+        } else {
+          // Each frame is drawn once offscreen and the screen shows the blend
+          // of the two either side of the moment (A·(1−u) + B·u, exactly),
+          // copied only over the region either frame drew on.
+          const A = frameImage(f0), B = u > 0.001 && f0 < n ? frameImage(f0 + 1) : A;
+          const x0 = Math.min(A.box[0], B.box[0]), y0 = Math.min(A.box[1], B.box[1]);
+          const bw = Math.max(A.box[2], B.box[2]) - x0, bh = Math.max(A.box[3], B.box[3]) - y0;
+          ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+          if (bw > 0 && bh > 0) {
+            if (B === A) ctx.drawImage(A.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
+            else {
+              ctx.globalAlpha = 1 - u; ctx.drawImage(A.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
+              ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = u;
+              ctx.drawImage(B.c.canvas, x0, y0, bw, bh, x0, y0, bw, bh);
+            }
           }
+          ctx.restore();
         }
-        ctx.restore();
-        // the wave and the registered mark are smooth curves: drawn live
-        if (scene.trace) drawTraceWave(frame); else drawWave(frame - scene.t0);
+        // the wave and the registered mark: at the moment drawn ('frames'), else live
+        const tw = motion === 'frames' ? f0 : frame;
+        regTime = tw;
+        if (scene.trace) drawTraceWave(tw); else drawWave(tw - scene.t0);
       }
 
       // registered mark: fades in as the last letter settles, as in the original
       if (o.registered) {
         const ro = data.registered.opacity, R = data.registered;
-        const rf = frame - (scene.frames - FRAMES);
+        const rf = (o.still ? frame : regTime) - (scene.frames - FRAMES);
         const f0 = Math.floor(rf), u = rf - f0;
         const at = (i) => ro[Math.max(0, Math.min(ro.length - 1, i))];
         const op = lerp(at(f0), at(f0 + 1), u);
@@ -711,19 +757,28 @@
 
     function show(f) {
       frame = Math.max(0, Math.min(api.frames, f));
-      // nothing moves after scene.still: keep what is on the canvas
-      if (!(scene && drawn >= 0 && drawn >= scene.still && frame >= scene.still && drawnLook === look())) render();
+      // nothing moves after scene.still, nor within a frame shown frame by
+      // frame: keep what is on the canvas
+      const same = scene && drawn >= 0 && drawnLook === look() &&
+        ((drawn >= scene.still && frame >= scene.still) ||
+         ((paceFallback || o.motion === 'frames') && Math.floor(drawn) === Math.floor(frame)));
+      if (!same) render();
       if (o.onUpdate) o.onUpdate(frame, api.frames);
     }
 
-    // If blending frames is more than this device can draw in time (more than
-    // 6 of the last 60 refreshes late), show the nearest frame instead.
-    const late = [];
+    // If blending is more than this device can draw in time, show frames as
+    // they are until the next play(): more than 12 of the last 60 refreshes
+    // took over one and a half of the device's usual refresh interval (so a
+    // 30 Hz battery-saver screen is not mistaken for a slow one).
+    let paceFallback = false;
+    const pace = [];
     function watchPace(ms) {
-      if (!o.blend || !scene || ms > 250 || frame >= scene.still) return;
-      late.push(ms > 25 ? 1 : 0);
-      if (late.length > 60) late.shift();
-      if (late.length === 60 && late.reduce((a, b) => a + b, 0) > 6) { o.blend = false; drawn = -1; }
+      if (o.motion !== 'blend' || paceFallback || !scene || ms > 250 || frame >= scene.still) return;
+      pace.push(ms);
+      if (pace.length > 60) pace.shift();
+      if (pace.length < 60) return;
+      const usual = [...pace].sort((a, b) => a - b)[30];
+      if (pace.filter((x) => x > usual * 1.5 + 2).length > 12) { paceFallback = true; drawn = -1; }
     }
 
     function tick(now) {
@@ -749,7 +804,7 @@
       play() {
         if (playing) return api;
         if (frame >= api.frames) frame = 0;
-        playing = true; last = performance.now(); slot = -1; late.length = 0;
+        playing = true; last = performance.now(); slot = -1; pace.length = 0; paceFallback = false;
         startTicking(tick);
         return api;
       },
@@ -762,8 +817,9 @@
         if (opts.colors) Object.assign(colors, opts.colors);
         drawn = -1;
         // colours and playback settings only need a redraw, not a new scene
-        const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady', 'frame', 'fitPieces', 'blend'];
+        const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady', 'frame', 'fitPieces', 'motion'];
         const keys = Object.keys(opts);
+        if (scene && keys.includes('motion') && o.motion !== 'blend') scene.cache = null;   // its two images are not needed
         if (scene && keys.length && keys.every((k) => light.includes(k))) {
           if (keys.includes('frame') || keys.includes('fitPieces')) resize(); else render();
           if (o.onReady) o.onReady(api);
@@ -773,6 +829,8 @@
       },
       get frame() { return frame; },
       get frames() { return scene ? scene.frames : FRAMES; },
+      // the motion in use: o.motion, unless blending proved too slow (until the next play)
+      get motion() { return paceFallback ? 'frames' : o.motion; },
       // the box, in x-heights round the word's centre, that its pieces reach
       get reach() {
         if (!scene) return null;

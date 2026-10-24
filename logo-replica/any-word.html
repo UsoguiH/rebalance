@@ -87,6 +87,9 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
     <button id="next" type="button" aria-label="Next frame"><svg viewBox="0 0 14 14"><path d="M9 2h2v10H9zM2 2v10l6-5z" fill="currentColor"/></svg></button>
     <input id="scrub" type="range" min="0" max="57" value="0" step="0.05" aria-label="Frame">
     <span class="read" id="read">frame 0 / 57</span>
+    <select id="motion" aria-label="Motion" title="How the original's 25 frames a second are shown on this screen">
+      <option value="frames">Frame by frame</option><option value="blend">Smooth blend</option><option value="tween">In-between motion</option>
+    </select>
     <select id="speed" aria-label="Speed">
       <option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
     </select>
@@ -119,11 +122,13 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
   });
   $('word').value = store.get('word', 'slaace');
   $('font').value = store.get('font', 'slaace');
+  $('motion').value = store.get('motion', 'frames');
+  if (!$('motion').value) $('motion').value = 'frames';
   if (!$('font').value) $('font').value = 'slaace';
 
   let shownRead = '';
   const anim = LA.create($('art'), {
-    word: $('word').value, font: $('font').value,
+    word: $('word').value, font: $('font').value, motion: $('motion').value,
     // Touch the controls only when what they show changes, so playback
     // does not restyle the page on every screen refresh.
     onUpdate(f, n) {
@@ -160,6 +165,7 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
   $('next').addEventListener('click', () => { setPlay(false); anim.seek(Math.min(anim.frames, Math.round(anim.frame) + 1)); });
   $('scrub').addEventListener('input', (e) => { setPlay(false); anim.seek(+e.target.value); });
   $('speed').addEventListener('change', (e) => { anim.options.speed = +e.target.value; });
+  $('motion').addEventListener('change', (e) => { store.set('motion', e.target.value); anim.set({ motion: e.target.value }); });
   $('loop').addEventListener('click', (e) => {
     const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
     e.currentTarget.setAttribute('aria-pressed', on); anim.options.loop = on;
@@ -209,7 +215,7 @@ input[type="color"] { width: 34px; height: 34px; border: 1px solid var(--line); 
         // Every cell fits the same box (the largest glyph's), so all letters
         // share one scale; the cell's edge cuts pieces that fly past it.
         const a = LA.create(cell, { word: ch, registered: false, exact: false, font: 'slaace', maxFps: 30,
-          frame: { w: 2.9, h: 2.65 }, fitPieces: false, blend: false,
+          frame: { w: 2.9, h: 2.65 }, fitPieces: false, motion: 'frames',
           colors: { bg: $('c-bg').value, green: $('c-green').value, cream: $('c-cream').value } });
         a.ready.then(() => { a.seek(reduce ? a.frames : (i * 7) % a.frames); if (!reduce && cell.seen) a.play(); });
         cell.anim = a;

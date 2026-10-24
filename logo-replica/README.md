@@ -110,19 +110,22 @@ python3 font/build_font.py motion.data.js font.data.js   # needs numpy, scipy, s
   animation. To stay smooth on phones, these small players redraw 30 times a
   second (the `maxFps` option), take turns rather than all drawing on the same
   refresh, and pause while scrolled out of view.
-- **Playback** draws on one `<canvas>`.
-  - **Smooth motion:** each of the original's 25 frames a second is drawn once,
-    offscreen, and on every screen refresh the player shows the blend of the two
-    frames either side of the moment. On whole frames that is exactly the
-    original frame, and the picture changes evenly on every refresh.
-  - **Why blend:** switching frames instead puts the 25 changes a second 2 or 3
-    refreshes apart on a 60 Hz screen, unevenly, which reads as stutter. The
-    wave and the ® are drawn live.
-  - **Measured:** the frame-to-frame unevenness of the picture dropped from
-    0.6–1.2 to 0.12–0.19.
-  - **Slow devices:** if a device draws too slowly to blend (more than 6 of 60
-    refreshes late), the player shows the nearest frame instead. `blend: false`
-    does that from the start; the All letters grid uses it.
+- **Playback** draws on one `<canvas>`. The original runs at 25 frames a second, which
+  does not divide a 60 Hz screen's refresh. The **Motion** setting (`motion` option)
+  picks how its frames meet the screen:
+  - **Frame by frame** (`'frames'`, the default) shows each original frame as it is
+    for its 40 ms, as the video does, and redraws only when the frame changes. It is
+    the lightest mode.
+  - **Smooth blend** (`'blend'`) draws each frame once offscreen and shows, on every
+    refresh, the exact blend of the two frames either side. The picture changes
+    evenly (unevenness from refresh to refresh 0.12–0.19, against 0.6–1.2 for
+    in-between motion), but moving pieces show as two faint copies between whole
+    frames. If a device is too slow to blend, the player shows frame by frame until
+    the next play().
+  - **In-between motion** (`'tween'`) moves each piece linked to the next frame
+    there, and switches the rest half way. Those switches land 2 or 3 refreshes
+    apart, unevenly.
+  - The All letters grid always shows frame by frame.
 - **Kept light for phones:**
   - The canvas covers only the box the word's pieces can reach, not the whole
     container.
