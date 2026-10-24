@@ -563,38 +563,53 @@
     // with CSS aspect-ratio (ignored by the browser once it has a real height).
     let ownRatio = false, ownPosition = false;
     // Room around the container's content box, in px, before something cuts
-    // drawing off: the nearest ancestor (or the container itself) that clips
-    // its overflow, or else the page, whose left, right and top edges always
-    // cut and whose bottom does when the page does not scroll. Measured in
-    // page coordinates, so scrolling and phone toolbars do not change it.
+    // drawing off, or before spilling pieces would make something scroll that
+    // did not: inside the nearest ancestor that clips (or the container
+    // itself), within its box if it only clips, within its whole content if
+    // it scrolls; otherwise within the page as it is. Sizes are read with the
+    // canvas hidden, so its own spill never counts, and positions are taken in
+    // content coordinates, so scrolling and phone toolbars change nothing.
     function roomAround(cs, padL, padT, cw, ch) {
       const r = container.getBoundingClientRect();
       const x0 = r.left + container.clientLeft + padL, y0 = r.top + container.clientTop + padT;
-      const box = { l: x0, t: y0, r: x0 + cw, b: y0 + ch };
-      const clips = (s) => s.overflowX !== 'visible' || s.overflowY !== 'visible' ||
-        /paint|strict|content/.test(s.contain || '') || (s.clipPath && s.clipPath !== 'none');
       const html = document.documentElement, body = document.body;
-      let fixed = false;
-      for (let el = container; el && el !== body && el !== html; el = el.parentElement) {
-        const s = el === container ? cs : getComputedStyle(el);
-        if (s.position === 'fixed') fixed = true;
-        if (clips(s)) {
+      const scrolling = (v) => v === 'auto' || v === 'scroll';
+      const htmlCs = getComputedStyle(html);
+      canvas.style.display = 'none';
+      try {
+        // within element el's content area: offsets of its padding box and scroll position
+        const inside = (el, scrolls) => {
           const e = el.getBoundingClientRect();
-          const l = e.left + el.clientLeft, t = e.top + el.clientTop;
-          return { l: Math.max(0, box.l - l), t: Math.max(0, box.t - t),
-            r: Math.max(0, l + el.clientWidth - box.r), b: Math.max(0, t + el.clientHeight - box.b) };
+          // (html's box already moves with the window's scroll; an element's does not)
+          const moves = scrolls && el !== html;
+          const ox = e.left + el.clientLeft - (moves ? el.scrollLeft : 0);
+          const oy = e.top + el.clientTop - (moves ? el.scrollTop : 0);
+          const W = scrolls ? Math.max(el.scrollWidth, el.clientWidth) : el.clientWidth;
+          const H = scrolls ? Math.max(el.scrollHeight, el.clientHeight) : el.clientHeight;
+          const l = x0 - ox, t = y0 - oy;
+          return { l: Math.max(0, l), t: Math.max(0, t), r: Math.max(0, W - l - cw), b: Math.max(0, H - t - ch) };
+        };
+        for (let el = container; el && el !== html; el = el.parentElement) {
+          const s = el === container ? cs : getComputedStyle(el);
+          // body's overflow belongs to the window unless html sets its own
+          if (el === body && htmlCs.overflowX === 'visible' && htmlCs.overflowY === 'visible') break;
+          if (s.position === 'fixed') {   // a fixed container is cut by the window itself
+            return { l: Math.max(0, x0), t: Math.max(0, y0),
+              r: Math.max(0, html.clientWidth - x0 - cw), b: Math.max(0, html.clientHeight - y0 - ch) };
+          }
+          const ox = s.overflowX, oy = s.overflowY;
+          const clipsPaint = /paint|strict|content/.test(s.contain || '') || (s.clipPath && s.clipPath !== 'none');
+          if (ox !== 'visible' || oy !== 'visible' || clipsPaint) {
+            return inside(el, !clipsPaint && (scrolling(ox) || scrolling(oy)));
+          }
         }
+        // the page: the window scrolls (document.scrollingElement) unless html or body clips
+        const se = document.scrollingElement || html;
+        const pageClips = !scrolling(htmlCs.overflowY) && htmlCs.overflowY !== 'visible';
+        return inside(se, !pageClips);
+      } finally {
+        canvas.style.display = 'block';
       }
-      if (fixed) {   // a fixed container is cut by the window itself
-        return { l: Math.max(0, box.l), t: Math.max(0, box.t),
-          r: Math.max(0, html.clientWidth - box.r), b: Math.max(0, html.clientHeight - box.b) };
-      }
-      const sx = window.scrollX || 0, sy = window.scrollY || 0;
-      const scrolls = (s) => s.overflowY === 'visible' || s.overflowY === 'auto' || s.overflowY === 'scroll';
-      const pageScrolls = scrolls(getComputedStyle(html)) && scrolls(getComputedStyle(body));
-      return { l: Math.max(0, box.l + sx), t: Math.max(0, box.t + sy),
-        r: Math.max(0, html.clientWidth - (box.r + sx)),
-        b: pageScrolls ? Infinity : Math.max(0, Math.max(html.scrollHeight, html.clientHeight) - (box.b + sy)) };
     }
 
     function resize() {
