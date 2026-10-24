@@ -603,9 +603,11 @@
             return inside(el, !clipsPaint && (scrolling(ox) || scrolling(oy)));
           }
         }
-        // the page: the window scrolls (document.scrollingElement) unless html or body clips
+        // the page: the window scrolls (document.scrollingElement) unless its
+        // overflow, html's or (when html's is visible) body's, clips instead
         const se = document.scrollingElement || html;
-        const pageClips = !scrolling(htmlCs.overflowY) && htmlCs.overflowY !== 'visible';
+        const win = htmlCs.overflowY === 'visible' && body ? getComputedStyle(body) : htmlCs;
+        const pageClips = !scrolling(win.overflowY) && win.overflowY !== 'visible';
         return inside(se, !pageClips);
       } finally {
         canvas.style.display = 'block';
