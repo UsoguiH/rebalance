@@ -254,6 +254,56 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .fin-note { margin: 0; font-size: .88rem; color: var(--muted); text-align: center; line-height: 1.6; }
 .fin-actions { display: flex; flex-direction: column; gap: .6rem; }
 
+/* ——— help button & step-by-step guide ——— */
+.topbar { display: flex; justify-content: flex-end; margin-bottom: -1.2rem; }
+.help-btn { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.8rem; padding: 0 1rem 0 .85rem; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac); font-size: .92rem; font-weight: 700; }
+.help-btn .ic { width: 1.25rem; height: 1.25rem; }
+.tut { position: fixed; inset: 0; z-index: 45; touch-action: none; }
+/* room to scroll the last buttons up while the guide points at them */
+body.tut-on .app { padding-bottom: 75vh; }
+@media (max-height: 720px) { .tut-card { padding: .9rem .95rem .85rem; gap: .4rem; } .tut-card h3 { font-size: 1.2rem; } .tut-card p { font-size: 1rem; line-height: 1.6; } .tut-btns button { min-height: 3.1rem; } .eq-b b { font-size: 1.4rem; } }
+.tut-hole {
+  position: absolute; left: 0; top: 0; width: 0; height: 0; border-radius: 24px; pointer-events: none;
+  box-shadow: 0 0 0 200vmax rgba(8, 6, 12, .8); will-change: transform;
+}
+.tut-hole::after { content: ""; position: absolute; inset: -6px; border-radius: inherit; border: 3px solid var(--yes); animation: tutPulse 1.6s ease-in-out infinite; }
+.tut-hole.empty::after { display: none; }
+@keyframes tutPulse { 0%, 100% { opacity: .35; transform: scale(1); } 50% { opacity: 1; transform: scale(1.03); } }
+.tut-ripple { position: absolute; left: 0; top: 0; width: 60px; height: 60px; border-radius: 50%; background: rgba(255, 255, 255, .55); pointer-events: none; opacity: 0; will-change: transform; }
+.tut-hand { position: absolute; left: 0; top: 0; width: 3.6rem; height: 3.6rem; pointer-events: none; opacity: 0; transform-origin: 31% 8%; will-change: transform; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .5)); }
+.tut-hand svg { width: 100%; height: 100%; display: block; }
+.tut-card {
+  position: absolute; left: 0; right: 0; top: 0; margin: 0 auto; width: min(calc(100% - 32px), 27rem);
+  border-radius: 1.6rem; padding: 1.1rem 1.1rem 1rem; background: var(--primary); color: var(--on-primary);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, .8); display: flex; flex-direction: column; gap: .55rem;
+}
+.tut-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.tut-dots { display: flex; gap: .3rem; align-items: center; }
+.tut-dots i { width: .5rem; height: .5rem; border-radius: 99px; background: #cfc6da; transition: width .3s, background-color .3s; }
+.tut-dots i.on { width: 1.4rem; background: #3d2f5c; }
+.tut-dots i.done { background: #7d6aa8; }
+.tut-count { font-size: .82rem; color: #6c6478; font-weight: 600; }
+.tut-skip { min-height: 2.4rem; padding: 0 .8rem; border-radius: 999px; color: #6c6478; font-size: .88rem; font-weight: 600; }
+.tut-card h3 { margin: 0; font-size: 1.35rem; font-weight: 700; line-height: 1.35; }
+.tut-card p { margin: 0; font-size: 1.08rem; line-height: 1.75; color: #3a3442; }
+.tut-btns { display: flex; gap: .5rem; margin-top: .35rem; }
+.tut-btns button { min-height: 3.4rem; border-radius: 999px; font-size: 1.08rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
+.tut-next { flex: 1; background: var(--on-primary); color: var(--primary); }
+.tut-next .ic { width: 1.3rem; height: 1.3rem; stroke-width: 2.6; }
+.tut-back { padding: 0 1.1rem; background: #e4dcec; color: var(--on-primary); }
+.tut-say { width: 3.4rem; background: #e4dcec; color: var(--on-primary); }
+.tut-say .ic { width: 1.4rem; height: 1.4rem; }
+.eq { display: flex; align-items: stretch; justify-content: center; gap: .35rem; margin: .3rem 0 .1rem; }
+.eq-b { flex: 1; min-width: 0; border-radius: 1.1rem; padding: .6rem .3rem; display: flex; flex-direction: column; align-items: center; text-align: center; background: color-mix(in srgb, var(--c, #9b6cf0) 22%, #fff); }
+.eq-b b { font-size: 1.65rem; font-weight: 700; line-height: 1.2; }
+.eq-b small { font-size: .74rem; color: #4a4352; line-height: 1.3; }
+.eq-b.per { background: #e2d7f6; }
+.eq-b.res { background: #bff0d3; }
+.eq-b.res b { color: #0b6b3a; }
+.eq-op { align-self: center; font-size: 1.6rem; font-weight: 700; color: #6c6478; }
+.eq-ex { font-size: 1rem !important; }
+.eq-tip { font-size: .95rem !important; color: #0b6b3a !important; font-weight: 600; }
+
 /* ——— sheets ——— */
 .scrim { position: fixed; inset: 0; z-index: 30; background: rgba(0, 0, 0, .66); }
 .sheet {
@@ -344,7 +394,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .toast:not(.has-undo) { padding: .8rem 1.4rem; }
 body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px)); }
 .toast button { min-height: 2.7rem; padding: 0 1.1rem; border-radius: 999px; background: var(--on-primary); color: var(--primary); font-weight: 700; }
-.confetti { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
+.confetti { position: fixed; inset: 0; z-index: 55; pointer-events: none; overflow: hidden; }
 .confetti i { position: absolute; display: block; border-radius: 2px; will-change: transform; }
 </style>
 <!--HEAD-END-->
@@ -353,6 +403,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 <!--BODY-START-->
 <div class="glow" aria-hidden="true"></div>
 <main class="app" id="app" dir="rtl" lang="ar">
+  <div class="topbar"><button class="help-btn press" id="helpBtn" type="button"><span data-ic="help"></span>كيف أستخدمه؟</button></div>
 
   <section class="step" id="step1" aria-labelledby="h1">
     <h2 class="step-h" id="h1"><span class="step-n" id="n1">١</span>اكتب مبلغ الفاتورة</h2>
@@ -459,6 +510,23 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
   </div>
 </div>
 
+<div class="tut" id="tut" hidden dir="rtl">
+  <div class="tut-hole" id="tutHole"></div>
+  <div class="tut-ripple" id="tutRipple"></div>
+  <div class="tut-hand" id="tutHand" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M18 11v-1a2 2 0 0 0-4 0M14 10V9a2 2 0 0 0-4 0v1M10 9.5V4a2 2 0 0 0-4 0v10M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-6-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" fill="#f5f0e6" stroke="#1b1620" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <div class="tut-card" id="tutCard" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+    <div class="tut-top"><div class="tut-dots" id="tutDots"></div><span class="tut-count num" id="tutCount"></span><button class="tut-skip press" id="tutSkip" type="button">تخطّي</button></div>
+    <h3 id="tutTitle"></h3>
+    <p id="tutText"></p>
+    <div id="tutExtra"></div>
+    <div class="tut-btns">
+      <button class="tut-back press" id="tutBack" type="button">رجوع</button>
+      <button class="tut-say press" id="tutSay" type="button" aria-label="اسمع الشرح" hidden><span data-ic="sound"></span></button>
+      <button class="tut-next press" id="tutNext" type="button"><span id="tutNextLbl">التالي</span><span data-ic="arrow"></span></button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastMsg"></span><button id="toastUndo" type="button" hidden>تراجع</button></div>
 <div class="confetti" id="confetti" aria-hidden="true"></div>
 
@@ -520,6 +588,7 @@ const I = {
   artPerson: '<svg class="art" viewBox="0 0 48 48" aria-hidden="true"><circle cx="20" cy="14" r="8" fill="#f5f0e6"/><path d="M6 41c0-8.3 6.3-14.5 14-14.5S34 32.7 34 41z" fill="#f5f0e6"/><circle cx="35" cy="33" r="9.5" fill="#f2c94c" stroke="#3d2f5c" stroke-width="2.5"/><circle cx="35" cy="33" r="6" fill="none" stroke="#c99a1e" stroke-width="2"/><path d="M35 30v6" stroke="#c99a1e" stroke-width="2.2" stroke-linecap="round"/></svg>',
   artGroup: '<svg class="art" viewBox="0 0 48 48" aria-hidden="true"><circle cx="12" cy="17" r="5.5" fill="#7ee0b0"/><path d="M2 38c0-6 4.5-10.5 10-10.5S22 32 22 38z" fill="#7ee0b0"/><circle cx="36" cy="17" r="5.5" fill="#9b6cf0"/><path d="M26 38c0-6 4.5-10.5 10-10.5S46 32 46 38z" fill="#9b6cf0"/><circle cx="24" cy="14" r="7" fill="#5ccfc4" stroke="#201d25" stroke-width="2"/><path d="M11 42c0-7.5 5.8-13.5 13-13.5S37 34.5 37 42z" fill="#5ccfc4" stroke="#201d25" stroke-width="2"/></svg>',
   user: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>'),
+  help: svg('<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
   users: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
   receipt: svg('<path d="M5 2v20l2.5-1.5L10 22l2-1.5 2 1.5 2.5-1.5L19 22V2l-2.5 1.5L14 2l-2 1.5L10 2 7.5 3.5Z"/><path d="M9 8h6M9 12h6M9 16h3"/>'),
   wa: '<svg class="ic wa-logo" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>',
@@ -1278,9 +1347,12 @@ document.addEventListener('pointerdown', e => {
   };
   addEventListener('pointerup', up); addEventListener('pointercancel', up);
 });
+let scrollTw = null;
 function scrollToY(top) {
+  if (scrollTw) scrollTw.kill();
+  const max = document.documentElement.scrollHeight - innerHeight;
   const y = { v: window.scrollY };
-  gsap.to(y, { v: Math.max(0, top), duration: .7, ease: 'power3.out', onUpdate: () => window.scrollTo(0, y.v) });
+  scrollTw = gsap.to(y, { v: Math.max(0, Math.min(max, top)), duration: .7, ease: 'power3.out', onUpdate: () => window.scrollTo(0, y.v) });
 }
 function scrollToEl(el) { scrollToY(el.getBoundingClientRect().top + window.scrollY - 16); }
 function burst(x, y, count, spread) {
@@ -1297,6 +1369,200 @@ function burst(x, y, count, spread) {
       .to(p, { y: `+=${spread * 1.4}`, opacity: 0, duration: gsap.utils.random(.8, 1.2), ease: 'power1.in' });
   }
 }
+
+// ——— step-by-step guide over the real screen ———
+// It darkens everything except the part being explained, a hand shows where to tap,
+// and a big card says what to do. The last step shows how to work out one family's share.
+const TUT_KEY = 'qatta.tutorial';
+const tutSel = st => (typeof st.el === 'function' ? st.el() : st.el);
+const tut = $('#tut'), hole = $('#tutHole'), hand = $('#tutHand'), ripple = $('#tutRipple'), tcard = $('#tutCard');
+let tutI = 0, tutOn = false, tutLoop = null, tutOpened = false, tutSteps = [], tutTimer = null;
+function tutExample() {
+  const c = compute();
+  const f = state.families.find(x => c.rows.get(x.id) > 0) || state.families[0];
+  const n = f ? c.rows.get(f.id) : 0;
+  const per = c.per || Math.ceil(3000 / Math.max(1, c.heads));
+  return { f, n, per, total: n * per, sample: !c.per, i: Math.max(0, state.families.indexOf(f)) };
+}
+function buildTutSteps() {
+  const steps = [
+    { el: () => (state.total ? '#rcFull' : '#rcEmpty'), round: 28, tap: '#priceBtn', title: 'أول شي: اكتب مبلغ الفاتورة',
+      text: 'اضغط على وسط الدائرة. تطلع لك أرقام كبيرة، اكتب المبلغ اللي في الفاتورة واضغط «تم».' },
+    { el: '#ring', round: 999, title: 'كل لون عائلة',
+      text: 'الدائرة مقسومة على العوائل. كل ما حضر ناس أكثر من عائلة، كبرت قطعتها.' },
+  ];
+  if (state.families.length && state.families[0].members.length) steps.push(
+    { el: '.fam', round: 24, tap: '.fam .fam-head', before: () => { if (openId) closeFamily(false); }, title: 'افتح العائلة',
+      text: 'اضغط على اسم العائلة، وتطلع لك أسماء كل أفرادها تحتها.' },
+    { el: '.fam.open .mems', round: 18, tap: '.fam.open .mem', wait: 900,
+      before: () => { if (!openId) { openFamily(state.families[0].id); tutOpened = true; } }, title: 'مين حضر ومين ما حضر',
+      text: 'الأخضر اللي عليه ✓ يعني حاضر. اضغط على اسم اللي ما حضر، يصير مشطوب وما ينحسب عليه شي.' },
+    { el: '.fam.open .btn-done', round: 999, tap: '.fam.open .btn-done', title: 'خلصت من العائلة؟',
+      text: 'اضغط «تم» وتتسكّر. وسوّ نفس الشي مع كل عائلة.' },
+  );
+  steps.push(
+    { el: '#finalBtn', round: 28, tap: '#finalBtn', wait: 500, before: () => { if (openId) closeFamily(false); }, title: 'شوف القطّة النهائية',
+      text: 'اضغط هنا ويطلع لك جدول فيه كل عائلة: كم واحد حضر منها، وكم عليها بالريال.' },
+    { el: '#waBtn', round: 999, tap: '#waBtn', title: 'أرسل الحساب للقروب',
+      text: 'اضغط هنا ويفتح الواتساب والحساب مكتوب جاهز. اختر قروب العائلة واضغط إرسال.' },
+    { final: true, title: 'كيف تعرف قطّة عائلتك؟',
+      text: 'عدّ كم واحد حضر من عائلتك، واضربه في المبلغ اللي على الشخص:' },
+  );
+  return steps;
+}
+function stopHand() {
+  if (tutLoop) { tutLoop.kill(); tutLoop = null; }
+  gsap.set([hand, ripple], { opacity: 0 });
+}
+function startHand(sel) {
+  const el = sel && $(sel);
+  if (!el || REDUCED) return;
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + Math.min(r.height / 2, 60);
+  const size = hand.offsetWidth;
+  const hx = cx - size * .31, hy = cy - size * .08;
+  gsap.set(ripple, { x: cx - 30, y: cy - 30 });
+  tutLoop = gsap.timeline({ repeat: -1, repeatDelay: .4, delay: .3 })
+    .fromTo(hand, { opacity: 0, x: hx + 46, y: hy + 64, rotation: 18, scale: 1 }, { opacity: 1, x: hx, y: hy, rotation: 0, duration: .7, ease: 'springOut' })
+    .to(hand, { scale: .84, duration: .14, ease: 'power2.in' })
+    .fromTo(ripple, { scale: .2, opacity: .75 }, { scale: 2, opacity: 0, duration: .75, ease: 'power2.out' }, '<.08')
+    .to(hand, { scale: 1, duration: .35, ease: 'spring' }, '<')
+    .to(hand, { scale: .84, duration: .14, ease: 'power2.in' }, '+=.25')
+    .fromTo(ripple, { scale: .2, opacity: .75 }, { scale: 2, opacity: 0, duration: .75, ease: 'power2.out' }, '<.08')
+    .to(hand, { scale: 1, duration: .35, ease: 'spring' }, '<')
+    .to(hand, { opacity: 0, y: hy + 30, duration: .35, ease: 'power2.in' }, '+=.35');
+}
+function placeTut(st) {
+  const vh = innerHeight;
+  const el = st.el && $(tutSel(st));
+  const r = el ? el.getBoundingClientRect() : null;
+  const pad = 8;
+  const box = r ? { x: r.left - pad, y: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 } : { x: innerWidth / 2, y: vh / 2, w: 0, h: 0 };
+  const rad = !r ? 0 : st.round === 999 ? Math.min(box.w, box.h) / 2 : (st.round || 20) + pad;
+  hole.classList.toggle('empty', !r);
+  gsap.to(hole, { x: box.x, y: box.y, width: box.w, height: box.h, borderRadius: rad, duration: .7, ease: 'springOut' });
+  const ch = tcard.offsetHeight;
+  let top;
+  if (!r) top = Math.max(16, (vh - ch) / 2);
+  else if (vh - (box.y + box.h) >= ch + 28) top = box.y + box.h + 18;
+  else if (box.y >= ch + 28) top = box.y - ch - 18;
+  else top = Math.max(16, vh - ch - 16);
+  tcard.style.top = `${top}px`;
+}
+function fillTut(st, i) {
+  $('#tutDots').innerHTML = tutSteps.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'done' : ''}"></i>`).join('');
+  $('#tutCount').textContent = `${fmt(i + 1)} من ${fmt(tutSteps.length)}`;
+  $('#tutTitle').textContent = st.title;
+  $('#tutText').textContent = st.text;
+  $('#tutBack').hidden = i === 0;
+  $('#tutSkip').hidden = !!st.final;
+  $('#tutNextLbl').textContent = st.final ? 'يلا نبدأ' : 'التالي';
+  const extra = $('#tutExtra');
+  extra.innerHTML = '';
+  if (st.final) {
+    const ex = tutExample();
+    extra.innerHTML = `
+      <div class="eq">
+        <div class="eq-b" style="--c:${color(ex.i)}"><b class="num">${fmt(ex.n)}</b><small>حاضرين من عائلتك</small></div>
+        <span class="eq-op">×</span>
+        <div class="eq-b per"><b class="num">${fmt(ex.per)}</b><small>على الشخص</small></div>
+        <span class="eq-op">=</span>
+        <div class="eq-b res"><b class="num" id="eqRes">٠</b><small>قطّة عائلتك</small></div>
+      </div>
+      <p class="eq-ex">مثال: ${esc(ex.f ? ex.f.name : 'عائلتك')} حضر منهم ${fmt(ex.n)}، وعلى الشخص ${fmt(ex.per)} ريال، يعني قطّتهم ${fmt(ex.total)} ريال.${ex.sample ? ' (المثال على فاتورة ٣٬٠٠٠ ريال)' : ''}</p>
+      <p class="eq-tip">وما تحتاج تحسبها بنفسك: تلقاها مكتوبة جنب اسم عائلتك، وفي «القطّة النهائية».</p>`;
+    extra.dataset.total = ex.total;
+  }
+}
+function playEquation() {
+  const boxes = $$('.eq > *', tcard);
+  gsap.fromTo(boxes, { scale: .4, opacity: 0, y: 14 }, { scale: 1, opacity: 1, y: 0, duration: .7, stagger: .22, ease: 'spring', clearProps: 'transform,opacity' });
+  gsap.delayedCall(boxes.length * .22 + .1, () => {
+    countUp($('#eqRes'), +$('#tutExtra').dataset.total, 0, 1);
+    const r = $('.eq-b.res', tcard).getBoundingClientRect();
+    burst(r.left + r.width / 2, r.top + r.height / 2, 22, 120);
+    haptic(20);
+  });
+  gsap.fromTo(['.eq-ex', '.eq-tip'], { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .5, stagger: .15, delay: boxes.length * .22 + .4, ease: 'springSoft', clearProps: 'transform,opacity' });
+}
+function goTut(i) {
+  if (i < 0 || i >= tutSteps.length) { endTut(); return; }
+  const back = i < tutI;
+  tutI = i;
+  const st = tutSteps[i];
+  stopHand();
+  clearTimeout(tutTimer);
+  if (synth && synth.speaking) synth.cancel();
+  gsap.to(tcard, { opacity: 0, y: back ? -12 : 12, duration: .18, ease: 'power2.in', onComplete: () => {
+    if (st.before) st.before();
+    tutTimer = setTimeout(() => {
+      const el = st.el && $(tutSel(st));
+      if (st.el && !el) { goTut(back ? i - 1 : i + 1); return; }
+      if (el) {
+        const r = el.getBoundingClientRect();
+        scrollToY(r.top + window.scrollY - (r.height > innerHeight * .4 ? 16 : 70));
+      }
+      fillTut(st, i);
+      tutTimer = setTimeout(() => {
+        placeTut(st);
+        gsap.fromTo(tcard, { opacity: 0, y: back ? -18 : 18, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .55, ease: 'spring', clearProps: 'transform' });
+        if (st.final) playEquation();
+        else startHand(st.tap);
+      }, el ? 760 : 60);
+    }, st.wait || 0);
+  } });
+}
+function startTut() {
+  if (tutOn) return;
+  if (cur) closeSheet();
+  if (finalOpen) closeFinal();
+  tutOn = true;
+  tutOpened = false;
+  tutSteps = buildTutSteps();
+  tutI = 0;
+  document.body.classList.add('tut-on');
+  tut.hidden = false;
+  gsap.set(hole, { x: innerWidth / 2, y: innerHeight / 2, width: 0, height: 0 });
+  gsap.fromTo(tut, { opacity: 0 }, { opacity: 1, duration: .35 });
+  if (synth && window.SpeechSynthesisUtterance) $('#tutSay').hidden = false;
+  goTut(0);
+}
+function endTut() {
+  if (!tutOn) return;
+  tutOn = false;
+  stopHand();
+  clearTimeout(tutTimer);
+  if (synth && synth.speaking) synth.cancel();
+  try { localStorage.setItem(TUT_KEY, '1'); } catch (e) { /* ignore */ }
+  gsap.to(tut, { opacity: 0, duration: .3, onComplete: () => { tut.hidden = true; gsap.set(tut, { clearProps: 'opacity' }); } });
+  if (tutOpened && openId) closeFamily(false);
+  scrollToY(0);
+  setTimeout(() => { if (!tutOn) document.body.classList.remove('tut-on'); }, 750);
+}
+$('#helpBtn').addEventListener('click', startTut);
+$('#tutNext').addEventListener('click', () => goTut(tutI + 1));
+$('#tutBack').addEventListener('click', () => goTut(tutI - 1));
+$('#tutSkip').addEventListener('click', endTut);
+$('#tutSay').addEventListener('click', () => {
+  if (synth.speaking) { synth.cancel(); return; }
+  const st = tutSteps[tutI];
+  const extra = st.final ? ' ' + $$('.eq-ex, .eq-tip', tcard).map(p => p.textContent).join(' ') : '';
+  const u = new SpeechSynthesisUtterance(`${st.title}. ${st.text}${extra}`);
+  u.lang = 'ar-SA';
+  u.rate = .85;
+  const v = synth.getVoices().find(x => /^ar/i.test(x.lang));
+  if (v) u.voice = v;
+  synth.speak(u);
+});
+// the page stays still under the guide
+['wheel', 'touchmove'].forEach(t => tut.addEventListener(t, e => { if (!tcard.contains(e.target)) e.preventDefault(); }, { passive: false }));
+document.addEventListener('keydown', e => {
+  if (!tutOn) return;
+  if (e.key === 'Escape') endTut();
+  else if (e.key === 'ArrowLeft') goTut(tutI + 1);
+  else if (e.key === 'ArrowRight') goTut(tutI - 1);
+});
+addEventListener('resize', () => { if (tutOn && tutSteps[tutI]) placeTut(tutSteps[tutI]); });
 
 // ——— boot ———
 function rebuild(anim) {
@@ -1322,7 +1588,11 @@ function intro() {
     .fromTo('#headsLine', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
     .fromTo('#step2 > :not(.list)', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .6)
     .fromTo('.fam', { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: .55, stagger: .05, ease: 'springSoft', clearProps: 'transform,opacity' }, .68)
-    .fromTo('#step3 > *', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .95);
+    .fromTo('#step3 > *', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .95)
+    .fromTo('.topbar', { y: -12, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'transform,opacity' }, .2);
+  let seen = false;
+  try { seen = !!localStorage.getItem(TUT_KEY); } catch (e) { seen = true; }
+  if (!seen) gsap.delayedCall(2.2, startTut);
 }
 buildRing();
 renderList();
