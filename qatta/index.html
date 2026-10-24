@@ -15,9 +15,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: one phone screen in three numbered steps, read top to bottom.
-   1) the bill ring (price in the middle, one colored piece per family)
+   1) the bill ring (price in the middle on a little paper receipt, one colored piece per family)
    2) the families; tap one and its people open in place, tap a person to mark who did not come
-   3) a big "final qatta" button that opens a full-screen receipt of everyone, plus WhatsApp. */
+   3) a big "final qatta" button that slides up a clear table: one row per family, who came, and what they owe. */
 :root {
   --bg: #131117;
   --surface: #201d25;
@@ -34,9 +34,10 @@
   --yes: #7ee0a5;
   --yes-ink: #06301a;
   --no: #ff8f86;
-  --gold: #f2dc8c;
+  --paper: #f5f0e6;
+  --paper-ink: #1d1a22;
+  --paper-mute: #8a8378;
   --wa: #25d366;
-  --wa-ink: #05341a;
   --font: "Readex Pro", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", Tahoma, sans-serif;
   --font-num: "IBM Plex Sans Arabic", "Readex Pro", -apple-system, "Segoe UI", sans-serif;
   color-scheme: dark;
@@ -86,16 +87,16 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .step-n.done { background: var(--yes); color: var(--yes-ink); }
 .step-p { margin: -.45rem 0 0; color: var(--muted); font-size: .95rem; }
 
-/* ——— rings ——— */
+/* ——— the ring ——— */
 .hero { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
 .ring-wrap { position: relative; width: min(80vw, 17.5rem); aspect-ratio: 1; max-width: 100%; }
-.ring { width: 100%; height: 100%; display: block; overflow: visible; }
+.ring { width: 100%; height: 100%; display: block; overflow: visible; will-change: transform; }
 .ring-track { fill: none; stroke: rgba(255, 255, 255, .06); stroke-width: 24; }
-.seg { fill: none; stroke-width: 24; stroke-linecap: round; cursor: pointer; transition: stroke-width .35s, opacity .35s; }
-.ring.focus .seg { opacity: .25; }
-.ring.focus .seg.on { opacity: 1; stroke-width: 30; }
+.seg { fill: none; stroke-width: 24; stroke-linecap: round; cursor: pointer; transition: opacity .3s; }
+.ring.focus .seg { opacity: .22; }
+.ring.focus .seg.on { opacity: 1; }
 .ring-center {
-  position: absolute; inset: 17%; border-radius: 50%;
+  position: absolute; inset: 16%; border-radius: 50%;
   display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
   background: radial-gradient(circle at 50% 35%, #2c2833, #1b1920 70%);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .07), 0 20px 50px -20px rgba(0, 0, 0, .8);
@@ -107,9 +108,27 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .rc-num small { font-size: .8rem; color: var(--muted); }
 .rc-edit { display: inline-flex; align-items: center; gap: .3rem; margin-top: .3rem; padding: .25rem .8rem; border-radius: 999px; background: var(--lilac-bg); color: var(--lilac); font-size: .78rem; }
 .rc-edit .ic { width: .95rem; height: .95rem; }
-.rc-empty { display: flex; flex-direction: column; align-items: center; gap: .45rem; font-size: 1.05rem; font-weight: 700; line-height: 1.35; }
-.rc-plus { width: 3.2rem; height: 3.2rem; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
-.rc-plus .ic { width: 1.7rem; height: 1.7rem; stroke-width: 2.6; }
+/* empty state: a little paper bill, a question, and one clear action */
+.rc-empty { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.mini-bill {
+  position: relative; width: 2.7rem; height: 3.1rem; margin-bottom: .45rem; border-radius: .45rem .45rem 0 0;
+  background: var(--paper); padding: .45rem .45rem 0; display: flex; flex-direction: column; gap: .28rem;
+  transform: rotate(-6deg); will-change: transform; box-shadow: 0 10px 20px -8px rgba(0, 0, 0, .6);
+}
+.mini-bill::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -.4rem; height: .4rem;
+  background: linear-gradient(135deg, var(--paper) 33%, transparent 33%) 0 0 / .5rem .4rem repeat-x,
+              linear-gradient(225deg, var(--paper) 33%, transparent 33%) 0 0 / .5rem .4rem repeat-x;
+}
+.mini-bill i { display: block; height: .22rem; border-radius: 9px; background: #d9d1c2; }
+.mini-bill i:nth-child(2) { width: 70%; }
+.mini-bill i:nth-child(3) { width: 45%; background: #9b6cf0; }
+.rc-q { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+.rc-cta {
+  display: inline-flex; align-items: center; gap: .35rem; padding: .5rem 1.1rem; border-radius: 999px;
+  background: var(--primary); color: var(--on-primary); font-size: .92rem; font-weight: 700;
+}
+.rc-cta .ic { width: 1rem; height: 1rem; stroke-width: 2.6; }
 .per {
   display: flex; align-items: baseline; gap: .45rem; padding: .6rem 1.4rem; border-radius: 999px;
   background: var(--surface-hi); border: 1px solid rgba(255, 255, 255, .07);
@@ -128,9 +147,8 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .av {
   grid-row: 1 / 3; width: 2.9rem; height: 2.9rem; border-radius: 50%;
   background: var(--c); color: #16131b; display: grid; place-items: center; font-size: 1.25rem; font-weight: 700;
-  transition: filter .3s;
 }
-.fam.none .av { filter: grayscale(1) brightness(.6); }
+.fam.none .av { opacity: .45; }
 .fam-name { min-width: 0; font-size: 1.2rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
 .chev { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: rgba(255, 255, 255, .06); }
 .chev .ic { width: 1.15rem; height: 1.15rem; }
@@ -146,7 +164,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .mem {
   width: 100%; height: 100%; min-height: 3.5rem; display: flex; align-items: center; gap: .5rem; padding: .45rem .6rem .45rem .45rem;
   border-radius: 1.1rem; text-align: start; border: 2px dashed var(--line); background: transparent; color: var(--faint);
-  transition: background-color .25s, border-color .25s, color .25s;
+  transition: background-color .2s, border-color .2s, color .2s;
 }
 .mem.on { background: var(--yes); border: 2px solid var(--yes); color: var(--yes-ink); }
 .mk { flex: none; width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
@@ -155,19 +173,16 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .mn { flex: 1; min-width: 0; font-size: .95rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
 .mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
 .fam-empty { margin: 0; color: var(--faint); font-size: .95rem; }
-.fam-actions { display: flex; gap: .5rem; }
-.fam-actions button { min-height: 3.4rem; border-radius: 999px; font-size: 1.1rem; font-weight: 700; padding: 0 1.1rem; }
-.btn-done { flex: 1; width: 100%; background: var(--primary); color: var(--on-primary); }
+.btn-done { width: 100%; min-height: 3.4rem; border-radius: 999px; font-size: 1.1rem; font-weight: 700; background: var(--primary); color: var(--on-primary); }
 
 /* ——— step 3 ——— */
 .btn-final {
   position: relative; overflow: hidden; width: 100%; min-height: 5rem; border-radius: 1.6rem; padding: .8rem 1rem;
-  display: flex; align-items: center; gap: .9rem; text-align: start;
+  display: flex; align-items: center; gap: .9rem; text-align: start; isolation: isolate;
   border: 2px solid transparent;
   background:
     linear-gradient(135deg, #2e2843, #3a2d58) padding-box,
     linear-gradient(90deg, #5ccfc4, #7ee0b0, #f2dc8c, #ff9f7a, #9b6cf0, #7fb4ff) border-box;
-  box-shadow: 0 18px 40px -18px rgba(155, 108, 240, .6);
 }
 .bf-ic { flex: none; width: 3.2rem; height: 3.2rem; border-radius: 1rem; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
 .bf-ic .ic { width: 1.7rem; height: 1.7rem; }
@@ -176,7 +191,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .bf-txt small { font-size: .88rem; color: var(--lilac); }
 .bf-go { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; background: rgba(255, 255, 255, .1); display: grid; place-items: center; }
 .bf-go .ic { width: 1.3rem; height: 1.3rem; stroke-width: 2.6; }
-.shine { position: absolute; inset: -20% auto -20% 0; width: 35%; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .16), transparent); transform: translateX(-150%) skewX(-18deg); }
+.shine { position: absolute; z-index: -1; inset: -20% auto -20% 0; width: 35%; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .14), transparent); transform: translateX(-150%) skewX(-18deg); will-change: transform; }
 .btn { min-height: 3.8rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.12rem; font-weight: 700; padding: 0 1.2rem; text-align: center; width: 100%; }
 .btn .ic { width: 1.45rem; height: 1.45rem; }
 .btn .wa-logo { width: 1.7rem; height: 1.7rem; }
@@ -187,57 +202,44 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .quiet button { min-height: 2.9rem; padding: 0 1.1rem; border-radius: 999px; color: var(--muted); font-size: .92rem; display: inline-flex; align-items: center; gap: .45rem; border: 1px solid rgba(255, 255, 255, .12); }
 .quiet .ic { width: 1.1rem; height: 1.1rem; }
 
-/* ——— the final qatta, full screen ——— */
-.final { position: fixed; inset: 0; z-index: 35; background: var(--bg); }
-.final .glow { position: absolute; }
+/* ——— the final qatta: a clear table ——— */
+.final { position: fixed; inset: 0; z-index: 35; background: var(--bg); will-change: transform; }
 .fin-scroll {
-  position: relative; z-index: 1; height: 100%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  height: 100%; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   padding: calc(env(safe-area-inset-top, 0px) + .8rem) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 1.6rem) max(16px, env(safe-area-inset-left, 0px));
 }
-.fin-in { max-width: 30rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1.2rem; }
+.fin-in { max-width: 30rem; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem; }
 .fin-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
-.fin-date { color: var(--muted); font-size: .85rem; text-align: left; }
-.fin-title { margin: 0; font-size: 1.7rem; font-weight: 700; line-height: 1.25; }
-.fin-title small { display: block; font-size: .95rem; font-weight: 500; color: var(--muted); }
-.fin-hero { display: flex; flex-direction: column; align-items: center; gap: .6rem; }
-.fin-ring { width: min(70vw, 15rem); }
-.fin-ring .ring-center { inset: 18%; gap: 0; }
-.fin-bill { display: flex; align-items: baseline; gap: .4rem; color: var(--muted); }
-.fin-bill b { color: var(--fg); font-size: 1.3rem; }
-.fin-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
-.fs { border-radius: 1.2rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); padding: .7rem .5rem; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.fs b { font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
-.fs span { font-size: .82rem; color: var(--muted); }
-.fs.yes b { color: var(--yes); }
-.fs.no b { color: var(--no); }
-.fin-list { display: flex; flex-direction: column; gap: .8rem; perspective: 900px; }
-.fc { position: relative; border-radius: 1.4rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); overflow: hidden; }
-.fc::before { content: ""; position: absolute; inset: 0 0 auto; height: 5px; background: var(--c); }
-.fc-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: .7rem; padding: 1rem .9rem .5rem; }
-.fc-head .av { width: 2.6rem; height: 2.6rem; font-size: 1.1rem; }
-.fc-name { font-size: 1.15rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
-.fc-sub { grid-column: 2; font-size: .85rem; color: var(--muted); }
-.fc-amt { grid-column: 3; grid-row: 1 / 3; display: flex; flex-direction: column; align-items: center; }
-.fc-amt b { font-size: 1.6rem; font-weight: 700; line-height: 1.15; color: var(--c); }
-.fc-amt small { font-size: .75rem; color: var(--muted); }
-.fc-mems { list-style: none; margin: 0; padding: .2rem .9rem .9rem; display: flex; flex-direction: column; }
-.fc-mems li { display: flex; align-items: center; gap: .6rem; padding: .5rem 0; border-top: 1px solid rgba(255, 255, 255, .06); font-size: 1rem; font-weight: 600; }
-.fc-mems .mk2 { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; background: var(--yes); color: var(--yes-ink); }
-.fc-mems .mk2 .ic { width: .9rem; height: .9rem; stroke-width: 3.2; }
-.fc-mems .off { color: var(--faint); }
-.fc-mems .off .mk2 { background: rgba(255, 143, 134, .15); color: var(--no); }
-.fc-mems .off .nm { text-decoration: line-through; }
-.fc-mems .nm { flex: 1; min-width: 0; }
-.fc-mems .tagx { font-size: .78rem; color: var(--no); font-weight: 500; }
-.fc-mems .pp { font-size: .9rem; color: var(--muted); }
-.fc.none { opacity: .6; }
-.fin-sum { border-radius: 1.4rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); padding: .4rem 1rem; }
-.fin-sum div { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; padding: .65rem 0; border-top: 1px solid rgba(255, 255, 255, .06); }
-.fin-sum div:first-child { border-top: 0; }
-.fin-sum span { color: var(--muted); }
-.fin-sum b { font-size: 1.15rem; }
-.fin-sum .big b { font-size: 1.5rem; color: var(--yes); }
-.fin-note { margin: 0; font-size: .85rem; color: var(--faint); text-align: center; }
+.fin-date { color: var(--muted); font-size: .85rem; }
+.fin-title { margin: .2rem 0 0; font-size: 1.7rem; font-weight: 700; line-height: 1.25; }
+.fin-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.sc { border-radius: 1.2rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); padding: .7rem .4rem; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.sc span { font-size: .8rem; color: var(--muted); }
+.sc b { font-size: 1.5rem; font-weight: 700; line-height: 1.25; }
+.sc small { font-size: .75rem; color: var(--muted); }
+.sc.hl { background: var(--lilac-bg); border-color: rgba(203, 180, 241, .25); }
+.sc.hl b { color: #fff; }
+.ftable { border-radius: 1.4rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); overflow: hidden; }
+.ft-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 3.3rem 4.4rem; align-items: center; gap: .4rem; padding: .8rem .8rem; }
+.ft-row + .ft-row { border-top: 1px solid rgba(255, 255, 255, .06); }
+.ft-head { padding-block: .6rem; background: rgba(255, 255, 255, .03); font-size: .8rem; color: var(--muted); }
+.ft-head span:not(:first-child), .ft-n, .ft-amt { text-align: center; }
+.ft-name { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+.ft-name i { flex: none; width: .85rem; height: .85rem; border-radius: 50%; background: var(--c); }
+.ft-name span { min-width: 0; display: flex; flex-direction: column; }
+.ft-name b { font-size: 1.02rem; font-weight: 700; line-height: 1.3; }
+.ft-name small { font-size: .78rem; color: var(--no); line-height: 1.35; }
+.ft-n b { font-size: 1.2rem; font-weight: 700; }
+.ft-n small { display: block; font-size: .72rem; color: var(--muted); line-height: 1; }
+.ft-amt b { font-size: 1.2rem; font-weight: 700; color: var(--c); }
+.ft-amt small { display: block; font-size: .72rem; color: var(--muted); line-height: 1; }
+.ft-bar { position: absolute; right: .9rem; left: .9rem; bottom: 0; height: 3px; border-radius: 3px; background: var(--c); opacity: .55; transform-origin: 100% 50%; will-change: transform; }
+.ft-row.none { opacity: .55; }
+.ft-row.none .ft-amt b { color: var(--muted); }
+.ft-foot { background: rgba(126, 224, 165, .08); }
+.ft-foot .ft-name b { font-size: 1.1rem; }
+.ft-foot .ft-amt b { color: var(--yes); }
+.fin-note { margin: 0; font-size: .88rem; color: var(--muted); text-align: center; line-height: 1.6; }
 .fin-actions { display: flex; flex-direction: column; gap: .6rem; }
 
 /* ——— sheets ——— */
@@ -245,7 +247,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 31; width: 100%; max-width: 30rem; margin: 0 auto;
   border-radius: 1.8rem 1.8rem 0 0; background: #1b191f; border-top: 1px solid rgba(255, 255, 255, .08);
-  box-shadow: 0 -20px 60px -20px rgba(0, 0, 0, .7);
+  will-change: transform;
 }
 .sheet-in {
   max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 1.2rem); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
@@ -262,14 +264,25 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .x-btn { min-height: 2.7rem; padding: 0 .95rem; border-radius: 999px; background: var(--surface-hi); display: inline-flex; align-items: center; gap: .35rem; font-size: .9rem; color: var(--muted); }
 .x-btn .ic { width: 1.05rem; height: 1.05rem; }
 .handle { position: absolute; z-index: 3; top: .45rem; left: 50%; width: 2.6rem; height: .3rem; margin-left: -1.3rem; border-radius: 9px; background: var(--line); }
-.disp { display: flex; flex-direction: column; align-items: center; gap: .1rem; }
-.disp-row { display: flex; align-items: baseline; gap: .5rem; }
-.disp-val { display: flex; direction: ltr; font-size: clamp(2.6rem, 14vw, 3.2rem); font-weight: 700; line-height: 1.2; min-height: 3.9rem; padding: 0 .4rem; border-radius: 1rem; }
+/* the amount is written on a paper bill */
+.receipt {
+  position: relative; margin: .2rem .4rem 1rem; padding: 1rem 1.1rem .9rem; border-radius: 1.2rem 1.2rem 0 0;
+  background: var(--paper); color: var(--paper-ink); display: flex; flex-direction: column; align-items: center; gap: .15rem;
+}
+.receipt::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -.7rem; height: .7rem;
+  background: linear-gradient(135deg, var(--paper) 33%, transparent 33%) 0 0 / .9rem .7rem repeat-x,
+              linear-gradient(225deg, var(--paper) 33%, transparent 33%) 0 0 / .9rem .7rem repeat-x;
+}
+.rcpt-lbl { font-size: .85rem; color: var(--paper-mute); font-weight: 600; letter-spacing: .02em; }
+.disp-row { display: flex; align-items: baseline; gap: .45rem; }
+.disp-val { display: flex; direction: ltr; font-size: clamp(2.6rem, 14vw, 3.2rem); font-weight: 700; line-height: 1.2; min-height: 3.9rem; padding: 0 .4rem; border-radius: .8rem; }
 .disp-val span { display: inline-block; }
-.disp-val.ph { color: var(--faint); }
-.disp-val.fresh { background: var(--lilac-bg); }
-.disp-row small { font-size: 1rem; color: var(--muted); }
-.disp-hint { font-size: .95rem; color: var(--lilac); min-height: 1.45rem; }
+.disp-val.ph { color: #c3bbae; }
+.disp-val.fresh { background: rgba(155, 108, 240, .18); }
+.disp-row small { font-size: 1rem; color: var(--paper-mute); }
+.rcpt-line { align-self: stretch; height: 0; border-top: 2px dashed #d6cebf; margin: .35rem 0 .2rem; }
+.disp-hint { font-size: .95rem; color: #5a4a8c; font-weight: 600; min-height: 1.45rem; }
 .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; direction: ltr; }
 .key { height: 3.5rem; border-radius: 1.2rem; background: var(--surface-hi); font-size: 1.75rem; font-weight: 600; display: grid; place-items: center; }
 .key.fn { background: transparent; border: 2px solid var(--surface-top); font-family: var(--font); font-size: .95rem; color: var(--muted); }
@@ -329,7 +342,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px)); }
 .toast button { min-height: 2.7rem; padding: 0 1.1rem; border-radius: 999px; background: var(--on-primary); color: var(--primary); font-weight: 700; }
 .confetti { position: fixed; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; }
-.confetti i { position: absolute; display: block; border-radius: 2px; }
+.confetti i { position: absolute; display: block; border-radius: 2px; will-change: transform; }
 </style>
 <!--HEAD-END-->
 </head>
@@ -347,7 +360,11 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
           <g class="segs" transform="rotate(-90 150 150)"></g>
         </svg>
         <button class="ring-center press" id="priceBtn" type="button">
-          <span class="rc-empty" id="rcEmpty"><span class="rc-plus" id="rcPlus" data-ic="plus"></span>اضغط هنا</span>
+          <span class="rc-empty" id="rcEmpty">
+            <span class="mini-bill" id="miniBill" aria-hidden="true"><i></i><i></i><i></i></span>
+            <b class="rc-q">كم الفاتورة؟</b>
+            <span class="rc-cta"><span data-ic="edit"></span>اكتب المبلغ</span>
+          </span>
           <span class="rc-full" id="rcFull" hidden>
             <span class="rc-lbl">الفاتورة</span>
             <span class="rc-num"><b class="num" id="totalVal">٠</b><small>ريال</small></span>
@@ -370,7 +387,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
     <h2 class="step-h" id="h3"><span class="step-n" id="n3">٣</span>شوف الحساب وأرسله</h2>
     <button class="btn-final press" id="finalBtn" type="button">
       <span class="bf-ic" data-ic="receipt"></span>
-      <span class="bf-txt"><b>القطّة النهائية</b><small>كل الأسماء والمبالغ</small></span>
+      <span class="bf-txt"><b>القطّة النهائية</b><small>كم على كل عائلة</small></span>
       <span class="bf-go" data-ic="arrow"></span>
       <span class="shine" aria-hidden="true"></span>
     </button>
@@ -382,34 +399,23 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 </main>
 
 <div class="final" id="final" role="dialog" aria-modal="true" aria-labelledby="finTitle" hidden dir="rtl">
-  <div class="glow" aria-hidden="true"></div>
   <div class="fin-scroll" id="finScroll">
     <div class="fin-in">
       <div class="fin-top">
         <button class="x-btn press" id="finClose" type="button"><span data-ic="back2"></span>رجوع</button>
         <span class="fin-date" id="finDate"></span>
       </div>
-      <h2 class="fin-title" id="finTitle">القطّة النهائية<small>حساب كل عائلة بالتفصيل</small></h2>
-      <div class="fin-hero">
-        <div class="ring-wrap fin-ring">
-          <svg class="ring" id="finRing" viewBox="0 0 300 300" aria-hidden="true">
-            <circle class="ring-track" cx="150" cy="150" r="128"></circle>
-            <g class="segs" transform="rotate(-90 150 150)"></g>
-            </svg>
-          <div class="ring-center">
-            <span class="rc-lbl">على الشخص</span>
-            <span class="rc-num"><b class="num" id="finPer">٠</b><small>ريال</small></span>
-          </div>
-        </div>
-        <div class="fin-bill">الفاتورة <b class="num" id="finTotal">٠</b> ريال</div>
+      <h2 class="fin-title" id="finTitle">القطّة النهائية</h2>
+      <div class="fin-cards">
+        <div class="sc"><span>الفاتورة</span><b class="num" id="finTotal">٠</b><small>ريال</small></div>
+        <div class="sc hl"><span>على الشخص</span><b class="num" id="finPer">٠</b><small>ريال</small></div>
+        <div class="sc"><span>الحاضرين</span><b class="num" id="finHeads">٠</b><small id="finAll"></small></div>
       </div>
-      <div class="fin-stats">
-        <div class="fs yes"><b class="num" id="fsYes">٠</b><span>حضروا</span></div>
-        <div class="fs no"><b class="num" id="fsNo">٠</b><span>ما حضروا</span></div>
-        <div class="fs"><b class="num" id="fsFam">٠</b><span>عوائل</span></div>
+      <div class="ftable" role="table" aria-label="قطّة كل عائلة">
+        <div class="ft-row ft-head" role="row"><span role="columnheader">العائلة</span><span role="columnheader">الحاضرين</span><span role="columnheader">القطّة</span></div>
+        <div id="finRows" role="rowgroup"></div>
+        <div class="ft-row ft-foot" role="row" id="finFoot"></div>
       </div>
-      <div class="fin-list" id="finList"></div>
-      <div class="fin-sum" id="finSum"></div>
       <p class="fin-note" id="finNote"></p>
       <div class="fin-actions">
         <a class="btn btn-wa press" id="finWa" href="#" target="_blank" rel="noopener"><span data-ic="wa"></span>أرسل في واتساب</a>
@@ -426,8 +432,10 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
   <span class="handle" aria-hidden="true"></span>
   <div class="sheet-in">
     <div class="sheet-top"><h2 id="priceTitle">كم الفاتورة؟</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
-    <div class="disp">
+    <div class="receipt" id="receipt">
+      <span class="rcpt-lbl">مبلغ الفاتورة</span>
       <div class="disp-row"><span class="disp-val num" id="dispVal"></span><small>ريال</small></div>
+      <span class="rcpt-line" aria-hidden="true"></span>
       <span class="disp-hint" id="dispHint"></span>
     </div>
     <div class="keys" id="keys"></div>
@@ -476,8 +484,8 @@ const COLORS = ['#5ccfc4', '#7ee0b0', '#f2dc8c', '#ff9f7a', '#9b6cf0', '#7fb4ff'
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const TOUCH = matchMedia('(pointer: coarse)').matches;
 if (REDUCED) gsap.globalTimeline.timeScale(20);
+gsap.ticker.lagSmoothing(500, 33);
 document.documentElement.lang = 'ar';
 document.documentElement.dir = 'rtl';
 
@@ -569,9 +577,11 @@ function setNum(el, to, anim = true, dur = .8) {
   if (el._tw) el._tw.kill();
   if (!anim || from === null || from === to) { el.textContent = fmt(to); return; }
   const o = { v: from };
-  el._tw = gsap.to(o, { v: to, duration: dur, ease: 'springOut', onUpdate: () => { el.textContent = fmt(o.v); } });
+  let last = null;
+  // only touch the DOM when the shown whole number actually changes
+  el._tw = gsap.to(o, { v: to, duration: dur, ease: 'power3.out', onUpdate: () => { const r = Math.round(o.v); if (r !== last) { last = r; el.textContent = fmt(r); } } });
 }
-function countUp(el, to, delay = 0, dur = 1.1) {
+function countUp(el, to, delay = 0, dur = 1) {
   el.dataset.val = 0;
   el.textContent = fmt(0);
   gsap.delayedCall(delay, () => setNum(el, to, true, dur));
@@ -583,58 +593,76 @@ function shake(el) {
   gsap.fromTo(el, { x: 0 }, { keyframes: { x: [0, -10, 9, -6, 4, 0] }, duration: .45, ease: 'none' });
 }
 
-// ——— rings: one piece per family, sized by how many of them came ———
-const R = 128, GAP = 5, NS = 'http://www.w3.org/2000/svg';
-function makeRing(svgEl) {
-  const segG = $('.segs', svgEl);
-  const segs = new Map();
-  function draw(s) {
-    const show = s.len > 0.01;
-    const dash = show ? Math.max(.001, s.len - GAP) : 0;
-    s.el.setAttribute('stroke-dasharray', `${dash} ${100 - dash}`);
-    s.el.setAttribute('stroke-dashoffset', -(s.start + GAP / 2));
-    s.el.style.visibility = show ? 'visible' : 'hidden';
+// ——— the ring: one piece per family, sized by how many of them came.
+//     A single tween drives every piece, so it stays smooth on any phone. ———
+const R = 128, GAP = 5;
+const ringSvg = $('#ring'), segG = $('.segs', ringSvg);
+let segs = [];
+const reveal = { p: 1 };
+let ringTw = null;
+function drawRing() {
+  const lim = reveal.p * 100;
+  for (const s of segs) {
+    const len = Math.max(0, Math.min(s.len, lim - s.start));
+    const dash = len > .01 ? Math.max(.001, len - GAP) : 0;
+    s.el.setAttribute('stroke-dasharray', `${dash.toFixed(3)} ${(100 - dash).toFixed(3)}`);
+    s.el.setAttribute('stroke-dashoffset', (-(s.start + GAP / 2)).toFixed(3));
+    s.el.style.visibility = len > .01 ? 'visible' : 'hidden';
   }
-  function build() {
-    segG.innerHTML = '';
-    segs.clear();
-    state.families.forEach((f, i) => {
-      const el = document.createElementNS(NS, 'circle');
-      el.setAttribute('class', 'seg');
-      el.setAttribute('cx', 150); el.setAttribute('cy', 150); el.setAttribute('r', R);
-      el.setAttribute('pathLength', 100);
-      el.setAttribute('stroke', color(i));
-      el.dataset.id = f.id;
-      segG.appendChild(el);
-      const s = { el, start: 0, len: 0 };
-      segs.set(f.id, s);
-      draw(s);
-    });
-  }
-  function update(c, anim = true, stagger = 0) {
-    let acc = 0;
-    state.families.forEach((f, i) => {
-      const s = segs.get(f.id);
-      const len = c.heads ? (c.rows.get(f.id) / c.heads) * 100 : 0;
-      const start = acc;
-      acc += len;
-      if (!s) return;
-      gsap.killTweensOf(s);
-      if (!anim) { s.start = start; s.len = len; draw(s); return; }
-      gsap.to(s, { start, len, duration: 1.1, delay: i * stagger, ease: 'spring', onUpdate: () => draw(s) });
-    });
-  }
-  function zero() { segs.forEach(s => { gsap.killTweensOf(s); s.start = 0; s.len = 0; draw(s); }); }
-  function focus(id) {
-    svgEl.classList.toggle('focus', !!id);
-    segs.forEach((s, sid) => s.el.classList.toggle('on', sid === id));
-  }
-  return { build, update, zero, focus };
 }
-const ring = makeRing($('#ring'));
-const finRing = makeRing($('#finRing'));
-$('#ring').addEventListener('click', e => {
-  const t = e.target.closest('[data-id]');
+function ringTargets(c) {
+  let acc = 0;
+  return state.families.map(f => {
+    const len = c.heads ? (c.rows.get(f.id) / c.heads) * 100 : 0;
+    const t = { start: acc, len };
+    acc += len;
+    return t;
+  });
+}
+function buildRing() {
+  segG.innerHTML = '';
+  segs = state.families.map((f, i) => {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    el.setAttribute('class', 'seg');
+    el.setAttribute('cx', 150); el.setAttribute('cy', 150); el.setAttribute('r', R);
+    el.setAttribute('pathLength', 100);
+    el.setAttribute('stroke', color(i));
+    el.dataset.id = f.id;
+    segG.appendChild(el);
+    return { id: f.id, el, start: 0, len: 0 };
+  });
+}
+function updateRing(c, anim = true) {
+  const to = ringTargets(c);
+  if (ringTw) ringTw.kill();
+  if (!anim) { segs.forEach((s, i) => { s.start = to[i].start; s.len = to[i].len; }); drawRing(); return; }
+  const from = segs.map(s => ({ start: s.start, len: s.len }));
+  const k = { v: 0 };
+  ringTw = gsap.to(k, {
+    v: 1, duration: 1, ease: 'spring',
+    onUpdate: () => {
+      segs.forEach((s, i) => {
+        s.start = from[i].start + (to[i].start - from[i].start) * k.v;
+        s.len = Math.max(0, from[i].len + (to[i].len - from[i].len) * k.v);
+      });
+      drawRing();
+    },
+  });
+}
+// the ring draws itself clockwise in one sweep while it settles into place
+function sweepRing(c, delay = 0) {
+  updateRing(c, false);
+  reveal.p = 0;
+  drawRing();
+  gsap.to(reveal, { p: 1, duration: 1.5, delay, ease: 'power2.inOut', onUpdate: drawRing });
+  gsap.fromTo(ringSvg, { rotation: -70, scale: .9 }, { rotation: 0, scale: 1, duration: 1.7, delay, ease: 'springOut', clearProps: 'transform' });
+}
+function focusRing(id) {
+  ringSvg.classList.toggle('focus', !!id);
+  segs.forEach(s => s.el.classList.toggle('on', s.id === id));
+}
+ringSvg.addEventListener('click', e => {
+  const t = e.target.closest('.seg');
   if (t) openFamily(t.dataset.id, true);
 });
 
@@ -660,7 +688,7 @@ function renderList() {
       ${f.members.length
         ? `<p class="fam-hint">اضغط على اللي ما حضر. الأخضر حاضر.</p><ul class="mems">${f.members.map(memberHTML).join('')}</ul>`
         : '<p class="fam-hint">ما فيه أسماء. أضفها من "العوائل والأسماء" تحت.</p>'}
-      <div class="fam-actions"><button type="button" class="btn-done press">تم</button></div>
+      <button type="button" class="btn-done press">تم</button>
     </div></div>
   </li>`).join('');
   if (!state.families.length) list.innerHTML = '<li class="fam-empty">ما فيه عوائل. اضغط "العوائل والأسماء" تحت وأضف.</li>';
@@ -681,18 +709,18 @@ function famSub(f, n) {
 }
 
 // ——— update everything from state ———
-let pulse = null;
+let floatTw = null;
 function update(anim = true) {
   const c = compute();
   const has = state.total > 0;
   const empty = $('#rcEmpty'), full = $('#rcFull');
   if (full.hidden === has) {
     empty.hidden = has; full.hidden = !has;
-    if (anim) gsap.fromTo(has ? full : empty, { opacity: 0, scale: .85 }, { opacity: 1, scale: 1, duration: .7, ease: 'spring', clearProps: 'all' });
+    if (anim) gsap.fromTo(has ? full : empty, { opacity: 0, scale: .8 }, { opacity: 1, scale: 1, duration: .8, ease: 'spring', clearProps: 'transform,opacity' });
   }
-  // gently breathe the "press here" button until a price is entered
-  if (!has && !pulse && !REDUCED) pulse = gsap.to('#rcPlus', { scale: 1.12, duration: .9, ease: 'sine.inOut', repeat: -1, yoyo: true });
-  if (has && pulse) { pulse.kill(); pulse = null; gsap.set('#rcPlus', { clearProps: 'scale' }); }
+  // the little bill floats gently until a price is entered
+  if (!has && !floatTw && !REDUCED) floatTw = gsap.to('#miniBill', { y: -5, rotation: -2, duration: 1.4, ease: 'sine.inOut', repeat: -1, yoyo: true });
+  if (has && floatTw) { floatTw.kill(); floatTw = null; }
 
   const n1 = $('#n1');
   if (n1.classList.contains('done') !== has) {
@@ -705,14 +733,14 @@ function update(anim = true) {
   const showPer = has && c.heads > 0;
   if (perBox.hidden === showPer) {
     perBox.hidden = !showPer;
-    if (showPer && anim) gsap.fromTo(perBox, { opacity: 0, y: -10, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .7, ease: 'spring', clearProps: 'all' });
+    if (showPer && anim) gsap.fromTo(perBox, { opacity: 0, y: -10, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .7, ease: 'spring', clearProps: 'transform,opacity' });
   }
   setNum($('#perVal'), c.per, anim);
   $('#headsLine').innerHTML = c.heads
     ? `الحاضرين <b class="num">${fmt(c.heads)}</b> من <b class="num">${fmt(c.all)}</b>`
     : 'ما فيه أحد حاضر';
   $('#priceBtn').setAttribute('aria-label', has ? `الفاتورة ${fmt(state.total)} ريال، اضغط للتغيير` : 'اضغط هنا واكتب مبلغ الفاتورة');
-  ring.update(c, anim);
+  updateRing(c, anim);
   state.families.forEach(f => {
     const li = famEl(f.id);
     if (!li) return;
@@ -742,37 +770,37 @@ function openFamily(id, fromRing = false) {
   $('.fam-head', li).setAttribute('aria-expanded', 'true');
   const body = $('.fam-body', li);
   gsap.killTweensOf(body);
-  gsap.to(body, { height: 'auto', duration: .7, ease: 'springOut' });
-  gsap.to($('.chev', li), { rotation: 180, duration: .8, ease: 'spring' });
-  gsap.fromTo($$('.fam-hint, .mems > li, .fam-actions > *', body), { y: 22, opacity: 0, scale: .9 },
-    { y: 0, opacity: 1, scale: 1, duration: .55, stagger: .04, delay: .05, ease: 'spring', clearProps: 'transform,opacity' });
-  pop($('.av', li), .7);
-  ring.focus(id);
-  setTimeout(() => scrollToEl(li), fromRing ? 0 : 140);
+  gsap.to(body, { height: 'auto', duration: .55, ease: 'springOut' });
+  gsap.to($('.chev', li), { rotation: 180, duration: .7, ease: 'spring' });
+  gsap.fromTo($$('.fam-hint, .mems > li, .btn-done', body), { y: 18, opacity: 0 },
+    { y: 0, opacity: 1, duration: .45, stagger: .03, delay: .04, ease: 'springSoft', clearProps: 'transform,opacity' });
+  pop($('.av', li), .75);
+  focusRing(id);
+  setTimeout(() => scrollToEl(li), fromRing ? 0 : 160);
 }
 function closeFamily(scroll = true) {
   const li = openId && famEl(openId);
   openId = null;
-  ring.focus(null);
+  focusRing(null);
   if (!li) return;
   li.classList.remove('open');
   $('.fam-head', li).setAttribute('aria-expanded', 'false');
   const body = $('.fam-body', li);
   gsap.killTweensOf(body);
-  gsap.to(body, { height: 0, duration: .5, ease: 'springOut' });
-  gsap.to($('.chev', li), { rotation: 0, duration: .8, ease: 'spring' });
+  gsap.to(body, { height: 0, duration: .45, ease: 'springOut' });
+  gsap.to($('.chev', li), { rotation: 0, duration: .7, ease: 'spring' });
   if (scroll && li.getBoundingClientRect().top < 0) scrollToEl(li);
 }
 
-function syncMember(btn, present, anim = true, delay = 0) {
+function syncMember(btn, present, anim = true) {
   btn.classList.toggle('on', present);
   btn.setAttribute('aria-checked', present);
   $('.mk', btn).outerHTML = markHTML(present);
   if (!anim) return;
   const mk = $('.mk', btn);
-  gsap.fromTo(btn, { scale: .9 }, { scale: 1, duration: .7, delay, ease: 'spring', clearProps: 'scale' });
-  gsap.fromTo(mk, { scale: .3, rotation: present ? -120 : 120 }, { scale: 1, rotation: 0, duration: .8, delay, ease: 'spring' });
-  if (present) gsap.fromTo($('.ck', mk), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .4, delay: delay + .1, ease: 'springSoft' });
+  gsap.fromTo(btn, { scale: .92 }, { scale: 1, duration: .6, ease: 'spring', clearProps: 'scale' });
+  gsap.fromTo(mk, { scale: .3, rotation: present ? -120 : 120 }, { scale: 1, rotation: 0, duration: .7, ease: 'spring', clearProps: 'transform' });
+  if (present) gsap.fromTo($('.ck', mk), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .35, delay: .08, ease: 'springSoft' });
 }
 list.addEventListener('click', e => {
   const li = e.target.closest('.fam');
@@ -786,14 +814,14 @@ list.addEventListener('click', e => {
     save(); haptic(m.present ? 14 : 8);
     syncMember(btn, m.present);
     const amt = $('.fam-amt', li);
-    if (!amt.hidden) pop(amt, .85);
+    if (!amt.hidden) pop(amt, .88);
     update();
     return;
   }
   if (e.target.closest('.btn-done')) closeFamily();
 });
 
-// ——— price keypad ———
+// ——— price keypad on a paper bill ———
 const pad = { str: '', fresh: false };
 $('#keys').innerHTML = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'].map(k => {
   if (k === 'clear') return '<button type="button" class="key fn press" data-k="clear">مسح</button>';
@@ -806,12 +834,12 @@ function renderPad(popLast) {
   el.classList.toggle('ph', !txt);
   el.classList.toggle('fresh', pad.fresh && !!txt);
   el.innerHTML = [...(txt || NF.format(0))].map(ch => `<span>${esc(ch)}</span>`).join('');
-  if (popLast && txt) gsap.fromTo(el.lastElementChild, { y: 26, opacity: 0, scale: .5 }, { y: 0, opacity: 1, scale: 1, duration: .6, ease: 'spring' });
+  if (popLast && txt) gsap.fromTo(el.lastElementChild, { y: 24, opacity: 0, scale: .5 }, { y: 0, opacity: 1, scale: 1, duration: .55, ease: 'spring' });
   const c = compute();
   const v = +pad.str || 0;
   $('#dispHint').textContent = pad.fresh && txt ? 'اكتب الرقم الجديد'
-    : !txt ? 'اكتب المبلغ اللي في الفاتورة'
-    : c.heads ? `على الشخص ${fmt(Math.ceil(v / c.heads - 1e-9))} ريال` : '';
+    : !txt ? 'اكتب المبلغ المكتوب في الفاتورة'
+    : c.heads ? `يعني على الشخص ${fmt(Math.ceil(v / c.heads - 1e-9))} ريال` : '';
 }
 function press(k) {
   if (pad.fresh) { pad.fresh = false; if (k !== 'back') pad.str = ''; }
@@ -833,6 +861,7 @@ function openPrice() {
   pad.fresh = !!pad.str;
   renderPad(false);
   openSheet('priceSheet');
+  gsap.fromTo('#receipt', { y: 40, rotation: -3, opacity: 0 }, { y: 0, rotation: 0, opacity: 1, duration: .8, delay: .08, ease: 'spring', clearProps: 'transform,opacity' });
 }
 function priceDone() {
   const was = state.total;
@@ -844,10 +873,10 @@ function priceDone() {
     pop($('#priceBtn'), .9);
     if (state.total && state.total !== was) {
       const r = $('#priceBtn').getBoundingClientRect();
-      burst(r.left + r.width / 2, r.top + r.height / 2, 28, 170);
+      burst(r.left + r.width / 2, r.top + r.height / 2, 20, 160);
       haptic(25);
     }
-  }, 200);
+  }, 220);
 }
 $('#priceBtn').addEventListener('click', openPrice);
 $('#priceOk').addEventListener('click', priceDone);
@@ -879,9 +908,9 @@ function openSheet(id) {
   sh.hidden = false; scrim.hidden = false;
   gsap.killTweensOf([sh, scrim]);
   gsap.fromTo(scrim, { opacity: 0 }, { opacity: 1, duration: .3, ease: 'power2.out' });
-  gsap.fromTo(sh, { yPercent: 100, y: 0 }, { yPercent: 0, duration: .7, ease: 'springOut' });
-  gsap.fromTo($$('.sheet-in > *:not(.keys):not(.ed-list), .key, .ed-fam', sh), { y: 30, opacity: 0 },
-    { y: 0, opacity: 1, duration: .5, stagger: .02, delay: .05, ease: 'springSoft', clearProps: 'transform,opacity' });
+  gsap.fromTo(sh, { yPercent: 100, y: 0 }, { yPercent: 0, duration: .6, ease: 'springOut' });
+  gsap.fromTo($$('.key, .ed-fam, .btn-ok', sh), { y: 24, opacity: 0 },
+    { y: 0, opacity: 1, duration: .45, stagger: .015, delay: .1, ease: 'springSoft', clearProps: 'transform,opacity' });
 }
 function closeSheet() {
   const sh = cur;
@@ -890,7 +919,7 @@ function closeSheet() {
   if (document.activeElement && sh.contains(document.activeElement)) document.activeElement.blur();
   unlockScroll();
   gsap.to(scrim, { opacity: 0, duration: .25, onComplete: () => { if (!cur) scrim.hidden = true; } });
-  gsap.to(sh, { yPercent: 100, duration: .35, ease: 'power2.in', onComplete: () => { if (cur !== sh) sh.hidden = true; gsap.set(sh, { y: 0 }); } });
+  gsap.to(sh, { yPercent: 100, duration: .32, ease: 'power2.in', onComplete: () => { if (cur !== sh) sh.hidden = true; gsap.set(sh, { y: 0 }); } });
   if (onClose[sh.id]) onClose[sh.id]();
 }
 scrim.addEventListener('click', closeSheet);
@@ -928,91 +957,67 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ——— the final qatta: a full-screen receipt that grows out of the button ———
+// ——— the final qatta: one clear row per family ———
 const final = $('#final');
-let finalOpen = false, finOrigin = { x: innerWidth / 2, y: innerHeight / 2 }, finPushed = false, skipPop = false;
-const tick = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ck" d="M20 6 9 17l-5-5" pathLength="1"/></svg>';
+let finalOpen = false, finPushed = false, skipPop = false;
 function renderFinal(c) {
-  const absent = c.all - c.heads;
-  $('#finList').innerHTML = state.families.map((f, i) => {
+  const maxShare = Math.max(1, ...state.families.map(f => c.share(f.id)));
+  $('#finRows').innerHTML = state.families.map((f, i) => {
     const n = c.rows.get(f.id);
-    return `<article class="fc ${n ? '' : 'none'}" style="--c:${color(i)}">
-      <div class="fc-head">
-        <span class="av" aria-hidden="true">${esc(initial(f.name))}</span>
-        <span class="fc-name">${esc(f.name)}</span>
-        <span class="fc-sub">${n ? `${fmt(n)} × ${fmt(c.per)} ريال` : 'ما حضر أحد'}</span>
-        <span class="fc-amt"><b class="num" data-to="${c.share(f.id)}">٠</b><small>ريال</small></span>
-      </div>
-      <ul class="fc-mems">${f.members.map(m => `<li class="${m.present ? 'on' : 'off'}">
-        <span class="mk2">${m.present ? tick : I.close}</span><span class="nm">${esc(m.name)}</span>
-        ${m.present ? `<span class="pp num">${fmt(c.per)}</span>` : '<span class="tagx">ما حضر</span>'}
-      </li>`).join('')}</ul>
-    </article>`;
+    const absent = f.members.filter(m => !m.present).map(m => m.name);
+    return `<div class="ft-row ${n ? '' : 'none'}" role="row" style="--c:${color(i)}">
+      <span class="ft-name" role="cell"><i aria-hidden="true"></i><span><b>${esc(f.name)}</b>${absent.length && n ? `<small>ما حضر: ${esc(absent.join('، '))}</small>` : ''}</span></span>
+      <span class="ft-n" role="cell"><b class="num">${fmt(n)}</b><small>من ${fmt(f.members.length)}</small></span>
+      <span class="ft-amt" role="cell"><b class="num" data-to="${c.share(f.id)}">${fmt(c.share(f.id))}</b><small>ريال</small></span>
+      <i class="ft-bar" aria-hidden="true" data-w="${(c.share(f.id) / maxShare).toFixed(3)}"></i>
+    </div>`;
   }).join('');
+  $('#finFoot').innerHTML = `
+    <span class="ft-name" role="cell"><span><b>المجموع</b></span></span>
+    <span class="ft-n" role="cell"><b class="num">${fmt(c.heads)}</b><small>من ${fmt(c.all)}</small></span>
+    <span class="ft-amt" role="cell"><b class="num" id="finSum">${fmt(c.collected)}</b><small>ريال</small></span>`;
+  $('#finAll').textContent = `من ${fmt(c.all)}`;
   const extra = c.collected - state.total;
-  $('#finSum').innerHTML = `
-    <div><span>الفاتورة</span><b class="num">${fmt(state.total)} ريال</b></div>
-    <div><span>عدد الحاضرين</span><b class="num">${fmt(c.heads)} شخص</b></div>
-    <div><span>على الشخص</span><b class="num">${fmt(c.per)} ريال</b></div>
-    <div class="big"><span>اللي بينجمع</span><b class="num">${fmt(c.collected)} ريال</b></div>`;
   $('#finNote').textContent = extra > 0
-    ? `قرّبنا اللي على الشخص لأقرب ريال، فبينجمع ${fmt(extra)} ريال زيادة عن الفاتورة.`
-    : 'المبلغ ينقسم بالتساوي بدون زيادة.';
-  $('#finNote').hidden = false;
+    ? `${fmt(state.total)} ÷ ${fmt(c.heads)} شخص = ${fmt(c.per)} ريال للشخص بعد التقريب لأقرب ريال، فبينجمع ${fmt(extra)} ريال زيادة عن الفاتورة.`
+    : `${fmt(state.total)} ÷ ${fmt(c.heads)} شخص = ${fmt(c.per)} ريال للشخص بالضبط.`;
   try {
     $('#finDate').textContent = new Intl.DateTimeFormat('ar-SA-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   } catch (e) { $('#finDate').textContent = ''; }
-  return absent;
 }
 function openFinal() {
   if (!state.total) { needPrice(); return; }
   const c = compute();
   if (!c.heads) { toast('ما فيه أحد حاضر'); return; }
-  const absent = renderFinal(c);
-  const r = $('#finalBtn').getBoundingClientRect();
-  finOrigin = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  const maxR = Math.hypot(Math.max(finOrigin.x, innerWidth - finOrigin.x), Math.max(finOrigin.y, innerHeight - finOrigin.y)) + 20;
+  renderFinal(c);
   finalOpen = true;
   haptic(20);
   lockScroll();
   final.hidden = false;
   $('#finScroll').scrollTop = 0;
   try { history.pushState({ qattaFinal: 1 }, ''); finPushed = true; } catch (e) { finPushed = false; }
-  finRing.build();
-  finRing.zero();
-  const at = `${finOrigin.x}px ${finOrigin.y}px`;
+  const rows = $$('#finRows .ft-row');
+  gsap.set($$('#finRows .ft-bar'), { scaleX: 0 });
   const tl = gsap.timeline();
-  tl.fromTo(final, { clipPath: `circle(0px at ${at})` }, { clipPath: `circle(${maxR}px at ${at})`, duration: .85, ease: 'springOut', onComplete: () => gsap.set(final, { clearProps: 'clipPath' }) })
-    .fromTo('.fin-top > *, .fin-title', { y: -24, opacity: 0 }, { y: 0, opacity: 1, duration: .55, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .2)
-    .fromTo('.fin-ring', { scale: .5, opacity: 0, rotation: -40 }, { scale: 1, opacity: 1, rotation: 0, duration: 1.1, ease: 'spring', clearProps: 'transform,opacity' }, .25)
-    .add(() => finRing.update(c, true, .07), .35)
-    .add(() => { countUp($('#finPer'), c.per, 0, 1.2); countUp($('#finTotal'), state.total, .1, 1.2); }, .35)
-    .fromTo('.fin-bill', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
-    .fromTo('.fs', { y: 30, opacity: 0, scale: .8 }, { y: 0, opacity: 1, scale: 1, duration: .8, stagger: .08, ease: 'spring', clearProps: 'transform,opacity' }, .55)
-    .add(() => { countUp($('#fsYes'), c.heads, 0, .9); countUp($('#fsNo'), absent, .08, .9); countUp($('#fsFam'), c.activeFams || state.families.filter(f => c.rows.get(f.id)).length, .16, .9); }, .6);
-  // every family card rises in turn, then its people cascade in one by one and their ticks draw
-  $$('.fc').forEach((card, i) => {
-    const t0 = .75 + i * .12;
-    tl.fromTo(card, { y: 70, opacity: 0, rotationX: -25, transformOrigin: '50% 0%' }, { y: 0, opacity: 1, rotationX: 0, duration: .9, ease: 'springOut', clearProps: 'transform,opacity' }, t0)
-      .fromTo($$('.fc-mems li', card), { x: 28, opacity: 0 }, { x: 0, opacity: 1, duration: .5, stagger: .045, ease: 'springSoft', clearProps: 'transform,opacity' }, t0 + .2)
-      .fromTo($$('.mk2', card), { scale: 0 }, { scale: 1, duration: .6, stagger: .045, ease: 'spring', clearProps: 'transform' }, t0 + .25)
-      .fromTo($$('.ck', card), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .35, stagger: .045, ease: 'springSoft' }, t0 + .35)
-      .add(() => { const b = $('.fc-amt b', card); countUp(b, +b.dataset.to, 0, 1); }, t0 + .2);
-  });
-  tl.fromTo(['#finSum', '#finNote', '.fin-actions > *'], { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity' }, .9 + state.families.length * .12)
-    .add(() => burst(innerWidth / 2, innerHeight * .25, 40, 220), .9);
+  tl.fromTo(final, { yPercent: 100 }, { yPercent: 0, duration: .65, ease: 'springOut', clearProps: 'transform' })
+    .fromTo(['.fin-top', '.fin-title'], { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .45, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .2)
+    .fromTo('.sc', { y: 24, opacity: 0, scale: .9 }, { y: 0, opacity: 1, scale: 1, duration: .7, stagger: .07, ease: 'spring', clearProps: 'transform,opacity' }, .3)
+    .add(() => { countUp($('#finTotal'), state.total, 0, .9); countUp($('#finPer'), c.per, .07, .9); countUp($('#finHeads'), c.heads, .14, .9); }, .35)
+    .fromTo('.ft-head', { opacity: 0 }, { opacity: 1, duration: .3 }, .45)
+    .fromTo(rows, { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
+    .to($$('#finRows .ft-bar'), { scaleX: (i, el) => +el.dataset.w, duration: .9, stagger: .07, ease: 'springOut' }, .6)
+    .add(() => rows.forEach((r, i) => { const b = $('.ft-amt b', r); gsap.delayedCall(i * .07, () => countUp(b, +b.dataset.to, 0, .8)); }), .55)
+    .fromTo(['#finFoot', '#finNote', '.fin-actions > *'], { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .6 + rows.length * .07)
+    .add(() => pop($('#finFoot'), .96), .9 + rows.length * .07);
 }
 function closeFinal() {
   if (!finalOpen) return;
   finalOpen = false;
   if (synth && synth.speaking) { synth.cancel(); setTalking(false); }
   if (finPushed) { finPushed = false; skipPop = true; try { history.back(); } catch (e) { skipPop = false; } }
-  const r = $('#finalBtn').getBoundingClientRect();
-  const at = `${r.left + r.width / 2}px ${r.top + r.height / 2}px`;
-  const maxR = Math.hypot(innerWidth, innerHeight);
-  gsap.fromTo(final, { clipPath: `circle(${maxR}px at ${at})` }, {
-    clipPath: `circle(0px at ${at})`, duration: .55, ease: 'power3.in',
-    onComplete: () => { final.hidden = true; gsap.set(final, { clearProps: 'clipPath' }); unlockScroll(); pop($('#finalBtn'), .92); },
+  gsap.to(final, {
+    yPercent: 100, duration: .4, ease: 'power2.in',
+    onComplete: () => { final.hidden = true; gsap.set(final, { clearProps: 'transform' }); unlockScroll(); pop($('#finalBtn'), .94); },
   });
 }
 addEventListener('popstate', () => {
@@ -1023,7 +1028,7 @@ $('#finalBtn').addEventListener('click', openFinal);
 $('#finClose').addEventListener('click', closeFinal);
 $('#finBack').addEventListener('click', closeFinal);
 // a soft shine sweeps across the final button now and then, so it is easy to spot
-if (!REDUCED) gsap.timeline({ repeat: -1, repeatDelay: 2.6, delay: 2 }).fromTo('.shine', { xPercent: -150 }, { xPercent: 420, duration: 1.2, ease: 'power2.inOut' });
+if (!REDUCED) gsap.timeline({ repeat: -1, repeatDelay: 3, delay: 2.5 }).fromTo('.shine', { xPercent: -150 }, { xPercent: 420, duration: 1.1, ease: 'power2.inOut' });
 
 // ——— families & names editor ———
 const edList = $('#edList');
@@ -1112,7 +1117,7 @@ edList.addEventListener('click', e => {
     state.families = state.families.filter(x => x !== f);
     if (openId === f.id) openId = null;
     save(); edDirty = true; haptic(14);
-    gsap.to(card, { x: 60, opacity: 0, height: 0, paddingTop: 0, paddingBottom: 0, marginTop: -12, duration: .4, ease: 'power2.in', onComplete: renderEditor });
+    gsap.to(card, { x: 60, opacity: 0, duration: .3, ease: 'power2.in', onComplete: renderEditor });
     toast(`حذفنا ${f.name || 'العائلة'}`, before, renderEditor);
   }
 });
@@ -1246,19 +1251,20 @@ $('#toastUndo').addEventListener('click', () => {
 document.addEventListener('pointerdown', e => {
   const p = e.target.closest('.press');
   if (!p) return;
-  gsap.to(p, { scale: .95, duration: .15, ease: 'power2.out' });
+  gsap.to(p, { scale: .96, duration: .12, ease: 'power2.out' });
   const up = () => {
-    gsap.to(p, { scale: 1, duration: .5, ease: 'springOut', clearProps: 'scale' });
+    gsap.to(p, { scale: 1, duration: .45, ease: 'springOut', clearProps: 'scale' });
     removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
   };
   addEventListener('pointerup', up); addEventListener('pointercancel', up);
 });
 function scrollToY(top) {
   const y = { v: window.scrollY };
-  gsap.to(y, { v: Math.max(0, top), duration: .8, ease: 'springOut', onUpdate: () => window.scrollTo(0, y.v) });
+  gsap.to(y, { v: Math.max(0, top), duration: .7, ease: 'power3.out', onUpdate: () => window.scrollTo(0, y.v) });
 }
 function scrollToEl(el) { scrollToY(el.getBoundingClientRect().top + window.scrollY - 16); }
 function burst(x, y, count, spread) {
+  if (REDUCED) return;
   const layer = $('#confetti');
   for (let i = 0; i < count; i++) {
     const p = document.createElement('i');
@@ -1268,40 +1274,37 @@ function burst(x, y, count, spread) {
     const a = gsap.utils.random(-Math.PI * .95, -Math.PI * .05), sp = gsap.utils.random(spread * .4, spread);
     gsap.timeline({ onComplete: () => p.remove() })
       .to(p, { x: Math.cos(a) * sp, y: Math.sin(a) * sp, rotation: gsap.utils.random(-260, 260), duration: .6, ease: 'power3.out' })
-      .to(p, { y: `+=${spread * 1.4}`, opacity: 0, duration: gsap.utils.random(.8, 1.3), ease: 'power1.in' });
+      .to(p, { y: `+=${spread * 1.4}`, opacity: 0, duration: gsap.utils.random(.8, 1.2), ease: 'power1.in' });
   }
 }
 
 // ——— boot ———
 function rebuild(anim) {
-  ring.build();
+  buildRing();
   renderList();
   update(false);
-  ring.focus(openId);
+  focusRing(openId);
   if (anim) {
-    ring.zero();
-    ring.update(compute(), true, .07);
-    gsap.fromTo('.fam', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .05, ease: 'springSoft', clearProps: 'transform,opacity' });
+    sweepRing(compute());
+    gsap.fromTo('.fam', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .04, ease: 'springSoft', clearProps: 'transform,opacity' });
   }
 }
 function intro() {
-  const blur = px => TOUCH ? {} : { filter: `blur(${px}px)` };
   const c = compute();
+  sweepRing(c, .15);
   const tl = gsap.timeline();
-  tl.fromTo('#step1 .step-h', { y: 20, opacity: 0, ...blur(6) }, { y: 0, opacity: 1, ...blur(0), duration: .6, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, 0)
-    .fromTo('#step1 .ring-center', { scale: .6, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, ease: 'spring', clearProps: 'transform,opacity' }, .05)
-    .fromTo('#ring .ring-track', { opacity: 0 }, { opacity: 1, duration: .6 }, 0)
-    .add(() => { ring.zero(); ring.update(c, true, .08); }, .15)
+  tl.fromTo('#step1 .step-h', { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'transform,opacity' }, 0)
+    .fromTo('#step1 .ring-center', { scale: .7, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, ease: 'spring', clearProps: 'transform,opacity' }, .1)
     .add(() => {
-      const t = $('#totalVal'); t.dataset.val = 0; setNum(t, state.total);
-      const p = $('#perVal'); p.dataset.val = 0; setNum(p, c.per);
-    }, .3)
-    .fromTo(['#perBox', '#headsLine'], { y: 16, opacity: 0, ...blur(6) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .45)
-    .fromTo('#step2 > :not(.list)', { y: 24, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .55)
-    .fromTo('.fam', { y: 50, opacity: 0, ...blur(8) }, { y: 0, opacity: 1, ...blur(0), duration: .7, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity,filter' }, .62)
-    .fromTo('#step3 > *', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .6, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .95);
+      const t = $('#totalVal'); t.dataset.val = 0; setNum(t, state.total, true, 1.2);
+      const p = $('#perVal'); p.dataset.val = 0; setNum(p, c.per, true, 1.2);
+    }, .35)
+    .fromTo(['#perBox', '#headsLine'], { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
+    .fromTo('#step2 > :not(.list)', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .6)
+    .fromTo('.fam', { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: .55, stagger: .05, ease: 'springSoft', clearProps: 'transform,opacity' }, .68)
+    .fromTo('#step3 > *', { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .95);
 }
-ring.build();
+buildRing();
 renderList();
 update(false);
 intro();
