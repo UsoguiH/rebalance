@@ -146,7 +146,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
   background: var(--c); color: #16131b; display: grid; place-items: center; font-size: 1.25rem; font-weight: 700;
 }
 .fam.none .av { opacity: .45; }
-.fam-name { min-width: 0; font-size: 1.2rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.fam-name { min-width: 0; font-size: 1.2rem; font-weight: 700; line-height: 1.3; overflow-wrap: break-word; }
 .chev { flex: none; width: 2rem; height: 2rem; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: rgba(255, 255, 255, .06); }
 .chev .ic { width: 1.15rem; height: 1.15rem; }
 .fam-meta { grid-column: 2 / 4; display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-width: 0; margin-top: .25rem; }
@@ -159,15 +159,16 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .fam-hint { margin: 0; padding-top: .7rem; border-top: 1px solid rgba(255, 255, 255, .07); font-size: .9rem; color: var(--muted); }
 .mems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .mem {
-  width: 100%; height: 100%; min-height: 3.5rem; display: flex; align-items: center; gap: .5rem; padding: .45rem .6rem .45rem .45rem;
+  width: 100%; height: 100%; min-height: 3.5rem; display: flex; align-items: center; gap: .4rem; padding: .45rem .5rem .45rem .4rem;
   border-radius: 1.1rem; text-align: start; border: 2px dashed var(--line); background: transparent; color: var(--faint);
   transition: background-color .2s, border-color .2s, color .2s;
 }
 .mem.on { background: var(--yes); border: 2px solid var(--yes); color: var(--yes-ink); }
-.mk { flex: none; width: 1.9rem; height: 1.9rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
+.mk { flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
 .mem.on .mk { background: rgba(6, 48, 26, .14); }
-.mk .ic { width: 1.05rem; height: 1.05rem; stroke-width: 3; }
-.mn { flex: 1; min-width: 0; font-size: .95rem; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.mk .ic { width: .95rem; height: .95rem; stroke-width: 3; }
+.mn { flex: 1; min-width: 0; font-size: .92rem; font-weight: 700; line-height: 1.3; overflow-wrap: normal; word-break: keep-all; }
+@media (max-width: 389px) { .mn { font-size: .84rem; } }
 .mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
 .fam-empty { margin: 0; color: var(--faint); font-size: .95rem; }
 .btn-done { width: 100%; min-height: 3.4rem; border-radius: 999px; font-size: 1.1rem; font-weight: 700; background: var(--primary); color: var(--on-primary); }
