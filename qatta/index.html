@@ -314,6 +314,14 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ed-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ed-chip button { flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; color: var(--muted); }
 .ed-chip button .ic { width: 1rem; height: 1rem; stroke-width: 2.6; }
+.ed-chip { padding-inline-start: .2rem; }
+.ed-chip .g-dot { width: 2.1rem; height: 2.1rem; }
+.g-dot i { width: .8rem; height: .8rem; border-radius: 50%; background: #4f8dff; transition: background-color .25s; }
+.g-dot.f i { background: #a66cf0; }
+.ed-key { display: flex; gap: .9rem; font-size: .85rem; color: var(--muted); }
+.ed-key span { display: inline-flex; align-items: center; gap: .35rem; }
+.ed-key i { width: .7rem; height: .7rem; border-radius: 50%; background: #4f8dff; }
+.ed-key i.f { background: #a66cf0; }
 .ed-none { color: var(--faint); font-size: .9rem; }
 .ed-add { display: flex; gap: .45rem; }
 .ed-add input {
@@ -449,6 +457,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
   <span class="handle" aria-hidden="true"></span>
   <div class="sheet-in" id="editScroll">
     <div class="sheet-top"><h2 id="editTitle">العوائل والأسماء</h2><button class="x-btn press" type="button" data-close><span data-ic="close"></span>إغلاق</button></div>
+    <div class="ed-key"><span><i></i>ولد</span><span><i class="f"></i>بنت</span><span>اضغط النقطة عشان تغيّرها</span></div>
     <div class="ed-list" id="edList"></div>
     <button class="btn-addfam press" id="addFamBtn" type="button"><span data-ic="plus"></span>أضف عائلة جديدة</button>
     <button class="paste-link" id="pasteToggle" type="button">أو الصق قائمة أسماء كاملة</button>
@@ -543,7 +552,7 @@ function load() {
       if (s && Array.isArray(s.families)) {
         return {
           total: +s.total || 0,
-          families: s.families.map(f => ({ id: f.id || uid(), name: String(f.name), members: (f.members || []).map(m => ({ id: m.id || uid(), name: String(m.name), present: m.present !== false })) })),
+          families: s.families.map(f => ({ id: f.id || uid(), name: String(f.name), members: (f.members || []).map(m => ({ id: m.id || uid(), name: String(m.name), present: m.present !== false, ...(m.g ? { g: m.g } : {}) })) })),
         };
       }
     }
@@ -564,6 +573,19 @@ function initial(name) {
   if (/^ال/.test(s) && s.length > 3) s = s.slice(2);
   return s[0] || '؟';
 }
+const GIRLS = new Set(['جواهر', 'نوره', 'نورة', 'هديل', 'روان', 'وفاء', 'اديم', 'أديم', 'رنا', 'ريما', 'ريم', 'حنان', 'شذا', 'إيمان', 'ايمان', 'فرح', 'إبتسام', 'ابتسام', 'راما', 'فلوه', 'فلوة', 'سارة', 'ساره', 'غالية', 'غاليه', 'نجود',
+  'منيرة', 'منيره', 'هيا', 'لمى', 'دانة', 'دانه', 'جود', 'العنود', 'مها', 'نورا', 'لطيفة', 'هند', 'مريم', 'فاطمة', 'عائشة', 'الجوهرة', 'شهد', 'رهف', 'لين', 'ليان', 'جنى', 'ديما', 'دلال', 'أمل', 'امل',
+  'هدى', 'منى', 'بشاير', 'رغد', 'غادة', 'سلمى', 'لينا', 'نوف', 'حصة', 'موضي', 'بدرية', 'وعد', 'أروى', 'اروى', 'لولوة', 'شوق', 'تالا', 'جوري', 'ميار', 'يارا', 'لجين', 'أسيل', 'اسيل', 'سديم', 'رزان', 'أريج', 'اريج']);
+const BOYS_IN_A = new Set(['حمزة', 'حمزه', 'أسامة', 'اسامة', 'اسامه', 'طلحة', 'عبيدة', 'معاوية', 'عروة', 'قتيبة']);
+function genderOf(m) {
+  if (m.g) return m.g;
+  const first = String(m.name).trim().split(/\s+/)[0];
+  if (GIRLS.has(first)) return 'f';
+  if (!BOYS_IN_A.has(first) && /(ة|اء)$/.test(first)) return 'f';
+  return 'm';
+}
+// WhatsApp number emoji: 1️⃣ 2️⃣ … 🔟 1️⃣1️⃣
+const keycap = n => (n === 10 ? '🔟' : String(n).split('').map(d => d + '\uFE0F\u20E3').join(''));
 function compute() {
   let heads = 0, all = 0;
   const rows = new Map();
@@ -1059,7 +1081,8 @@ function splitNames(s) {
   return String(s).split(/[،,؛;\n]+/).map(t => t.replace(/^[\s\-•*·]+/, '').trim()).filter(Boolean);
 }
 function chipHTML(m) {
-  return `<span class="ed-chip" data-mid="${m.id}"><span>${esc(m.name)}</span><button type="button" class="press" data-act="delm" aria-label="احذف ${esc(m.name)}">${I.close}</button></span>`;
+  const g = genderOf(m);
+  return `<span class="ed-chip" data-mid="${m.id}"><button type="button" class="g-dot ${g}" data-act="gender" aria-label="${g === 'f' ? 'بنت' : 'ولد'}، اضغط للتغيير"><i></i></button><span>${esc(m.name)}</span><button type="button" class="press" data-act="delm" aria-label="احذف ${esc(m.name)}">${I.close}</button></span>`;
 }
 function edFamHTML(f, i) {
   return `<div class="ed-fam" data-id="${f.id}" style="--c:${color(i)}">
@@ -1128,6 +1151,17 @@ edList.addEventListener('click', e => {
   const card = b.closest('.ed-fam');
   const f = edFam(card);
   const before = JSON.stringify(state);
+  if (b.dataset.act === 'gender') {
+    const m = f.members.find(x => x.id === b.closest('.ed-chip').dataset.mid);
+    m.g = genderOf(m) === 'f' ? 'm' : 'f';
+    save(); edDirty = true; haptic(8);
+    b.classList.toggle('f', m.g === 'f');
+    b.classList.toggle('m', m.g === 'm');
+    b.setAttribute('aria-label', `${m.g === 'f' ? 'بنت' : 'ولد'}، اضغط للتغيير`);
+    pop(b, .6);
+    toast(m.g === 'f' ? `${m.name}: بنت` : `${m.name}: ولد`);
+    return;
+  }
   if (b.dataset.act === 'delm') {
     const chip = b.closest('.ed-chip');
     const m = f.members.find(x => x.id === chip.dataset.mid);
@@ -1207,8 +1241,12 @@ function summary() {
     const n = c.rows.get(f.id);
     L.push(n ? `${f.name} (${fmt(n)}): ${fmt(c.share(f.id))} ريال` : `${f.name}: ما حضر أحد`);
   }
-  const absent = state.families.flatMap(f => f.members.filter(m => !m.present).map(m => m.name));
-  if (absent.length) L.push('', `ما حضروا: ${absent.join('، ')}`);
+  const absent = state.families.flatMap(f => f.members.filter(m => !m.present));
+  if (absent.length) {
+    const boys = absent.filter(m => genderOf(m) === 'm'), girls = absent.filter(m => genderOf(m) === 'f');
+    L.push('', `ما حضروا (${fmt(absent.length)}):`);
+    [...boys.map(m => ['🔵', m]), ...girls.map(m => ['🟣', m])].forEach(([dot, m], k) => L.push(`${keycap(k + 1)} ${dot} ${m.name}`));
+  }
   return L.join('\n');
 }
 function needPrice() {
