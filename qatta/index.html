@@ -597,12 +597,25 @@ function compute() {
     heads += n; all += f.members.length;
     rows.set(f.id, n);
   }
-  // the bill is split exactly per person (e.g. 3600 ÷ 39 = 92.3); each family's share is then rounded
-  // to the nearest riyal, and the small difference left over goes to صاحب القطّة
+  // the bill is split exactly per person (e.g. 3600 ÷ 39 = 92.3) and each family's share is rounded
+  // to the nearest riyal. The families together never pay more than the bill: if rounding pushed the
+  // total over, the families that were rounded up the most give that riyal back. Any shortfall left
+  // is paid by صاحب القطّة.
   const per = heads && state.total ? state.total / heads : 0;
-  const share = id => Math.round(per * rows.get(id));
+  const exact = id => per * rows.get(id);
+  const shares = new Map(state.families.map(f => [f.id, Math.round(exact(f.id))]));
   let collected = 0;
-  for (const f of state.families) collected += share(f.id);
+  shares.forEach(v => { collected += v; });
+  if (collected > state.total) {
+    const up = state.families.filter(f => shares.get(f.id) > exact(f.id))
+      .sort((a, b) => (shares.get(b.id) - exact(b.id)) - (shares.get(a.id) - exact(a.id)));
+    for (const f of up) {
+      if (collected <= state.total) break;
+      shares.set(f.id, shares.get(f.id) - 1);
+      collected--;
+    }
+  }
+  const share = id => shares.get(id) || 0;
   return { heads, all, per, rows, share, collected, diff: state.total - collected };
 }
 function setNum(el, to, anim = true, dur = .8, dec = 0) {
