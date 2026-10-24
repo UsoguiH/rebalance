@@ -853,7 +853,7 @@ function update(anim = true) {
     if (has) setNum($('b', amt), c.share(f.id), anim);
     $('.fam-head', li).setAttribute('aria-label', `${f.name}، ${famSub(f, n)}${has ? `، عليهم ${fmt(c.share(f.id))} ريال` : ''}`);
   });
-  // wa.me's redirect turns every emoji into "�", so link straight to WhatsApp's send page, which keeps them
+  // wa.me's redirect turns every emoji into a broken-character box, so link straight to WhatsApp's send page, which keeps them
   const wa = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(summary());
   $('#waBtn').href = wa;
   $('#finWa').href = wa;
