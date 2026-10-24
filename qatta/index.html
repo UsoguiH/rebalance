@@ -210,15 +210,42 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .fin-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
 .fin-date { color: var(--muted); font-size: .85rem; }
 .fin-title { margin: .2rem 0 0; font-size: 1.7rem; font-weight: 700; line-height: 1.25; }
-.fin-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
-.sc { border-radius: 1.2rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); padding: .7rem .4rem; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
-.sc span { font-size: .8rem; color: var(--muted); }
-.sc b { font-size: 1.5rem; font-weight: 700; line-height: 1.25; }
-.sc small { font-size: .75rem; color: var(--muted); }
-.sc.hl { background: var(--lilac-bg); border-color: rgba(203, 180, 241, .25); }
-.sc.hl b { color: #fff; }
-.ftable { border-radius: 1.4rem; background: var(--surface); border: 1px solid rgba(255, 255, 255, .06); overflow: hidden; }
-.ft-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 3.3rem 4.4rem; align-items: center; gap: .4rem; padding: .8rem .8rem; }
+.fin-hero {
+  border-radius: 1.8rem; padding: 1.3rem 1rem 1rem; display: flex; flex-direction: column; align-items: center; text-align: center;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(155, 108, 240, .42), transparent 65%), linear-gradient(180deg, #2c2342, #211d29);
+}
+.fh-lbl { font-size: .95rem; color: var(--lilac); font-weight: 600; }
+.fh-num { display: flex; align-items: baseline; gap: .4rem; }
+.fh-num b { font-size: clamp(3rem, 17vw, 3.8rem); font-weight: 700; line-height: 1.1; color: #fff; }
+.fh-num small { font-size: 1.05rem; color: var(--muted); }
+.fh-mix { display: flex; gap: 3px; width: 100%; height: .55rem; margin: 1rem 0 .9rem; }
+.fh-mix i { display: block; height: 100%; min-width: .55rem; border-radius: 99px; background: var(--c); transform-origin: 100% 50%; will-change: transform; }
+.fh-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: .4rem; }
+.fh-stats > div { display: flex; flex-direction: column; align-items: center; padding: .55rem .3rem; border-radius: 1rem; background: rgba(255, 255, 255, .06); min-width: 0; }
+.fh-stats span { font-size: .78rem; color: var(--muted); }
+.fh-stats b { font-size: 1.2rem; font-weight: 700; white-space: nowrap; }
+.fh-stats b span { font-size: inherit; color: var(--fg); }
+.fh-stats small { font-size: .72rem; color: var(--muted); font-weight: 500; }
+.payer { border-radius: 1.6rem; background: var(--surface); padding: 1rem; display: flex; flex-direction: column; gap: .8rem; }
+.payer-h { display: flex; flex-direction: column; }
+.payer-h b { font-size: 1.15rem; font-weight: 700; }
+.payer-h small { font-size: .85rem; color: var(--muted); }
+.payer-chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+.pchip { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.7rem; padding: 0 .95rem 0 .8rem; border-radius: 999px; background: var(--surface-top); font-size: .95rem; font-weight: 600; transition: background-color .25s, color .25s; }
+.pchip i { width: .7rem; height: .7rem; border-radius: 50%; background: var(--c); transition: background-color .25s; }
+.pchip.on { background: var(--c); color: #16131b; }
+.pchip.on i { background: #16131b; }
+.pchip.none-chip { color: var(--muted); }
+.pchip.none-chip.on { background: var(--primary); color: var(--on-primary); }
+.payer-res { border-radius: 1.2rem; padding: .9rem 1rem; background: color-mix(in srgb, var(--c) 15%, transparent); display: flex; flex-direction: column; align-items: center; text-align: center; }
+.pr-lbl { font-size: 1rem; }
+.pr-lbl b { color: var(--c); }
+.pr-num { display: flex; align-items: baseline; gap: .35rem; }
+.pr-num b { font-size: 2.3rem; font-weight: 700; line-height: 1.2; color: var(--c); }
+.pr-num small { color: var(--muted); }
+.pr-sub { font-size: .82rem; color: var(--muted); }
+.ftable { border-radius: 1.4rem; background: var(--surface); overflow: hidden; }
+.ft-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 3.2rem 4.7rem; align-items: center; gap: .4rem; padding: .8rem .8rem; }
 .ft-item + .ft-item, .ft-foot { border-top: 1px solid rgba(255, 255, 255, .06); }
 .ft-head { padding-block: .6rem; background: rgba(255, 255, 255, .03); font-size: .8rem; color: var(--muted); }
 .ft-head span:not(:first-child), .ft-n, .ft-amt { text-align: center; }
@@ -233,21 +260,29 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ft-toggle .ic { width: .95rem; height: .95rem; stroke-width: 2.6; }
 .ft-drop { height: 0; overflow: hidden; }
 .ft-abs { list-style: none; margin: 0; padding: 0 .8rem .9rem; display: flex; flex-direction: column; gap: .4rem; }
-.ft-abs li { display: flex; align-items: center; gap: .6rem; padding: .5rem .7rem; border-radius: .9rem; background: rgba(255, 143, 134, .07); border: 1px solid rgba(255, 143, 134, .14); }
-.ab-n { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; background: var(--surface-top); font-size: .85rem; font-weight: 700; }
+.ft-abs li { display: flex; align-items: center; gap: .6rem; padding: .55rem .7rem; border-radius: 1rem; background: rgba(255, 255, 255, .04); }
+.ab-n { flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 143, 134, .14); color: var(--no); font-size: .85rem; font-weight: 700; }
 .ab-nm { flex: 1; min-width: 0; font-size: .98rem; font-weight: 600; }
 .ab-x { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 143, 134, .16); color: var(--no); }
 .ab-x .ic { width: .9rem; height: .9rem; stroke-width: 3; }
 .ft-n b { font-size: 1.2rem; font-weight: 700; }
 .ft-n small { display: block; font-size: .72rem; color: var(--muted); line-height: 1; }
-.ft-amt b { font-size: 1.2rem; font-weight: 700; color: var(--c); }
+.ft-amt { display: flex; flex-direction: column; align-items: center; gap: .2rem; }
+.ft-amt b { display: block; min-width: 100%; padding: .2rem .5rem; border-radius: 999px; font-size: 1.12rem; font-weight: 700; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
 .ft-amt small { display: block; font-size: .72rem; color: var(--muted); line-height: 1; }
+.ft-amt .lbl-p, .ft-paid { display: none; }
+.ft-item.payer .ft-amt .lbl-p { display: block; }
+.ft-item.payer .ft-amt .lbl-r { display: none; }
+.ft-item.payer .ft-paid { display: inline-flex; }
+.ft-paid { margin-top: .3rem; max-width: 100%; align-items: center; gap: .3rem; min-height: 2rem; padding: 0 .65rem; border-radius: 999px; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.ft-paid .ic { width: .95rem; height: .95rem; }
+.ft-item.payer { background: color-mix(in srgb, var(--c) 7%, transparent); }
 .ft-bar { position: absolute; right: .9rem; left: .9rem; bottom: 0; height: 3px; border-radius: 3px; background: var(--c); opacity: .55; transform-origin: 100% 50%; will-change: transform; }
 .ft-item.none .ft-row > :not(.ft-name) { opacity: .55; }
-.ft-item.none .ft-amt b { color: var(--muted); }
+.ft-item.none .ft-amt b { color: var(--muted); background: rgba(255, 255, 255, .06); }
 .ft-foot { background: rgba(126, 224, 165, .08); }
 .ft-foot .ft-name b { font-size: 1.1rem; }
-.ft-foot .ft-amt b { color: var(--yes); }
+.ft-foot .ft-amt b { color: var(--yes); background: rgba(126, 224, 165, .15); }
 .fin-note { margin: 0; font-size: .88rem; color: var(--muted); text-align: center; line-height: 1.6; }
 .fin-actions { display: flex; flex-direction: column; gap: .6rem; }
 
@@ -406,10 +441,24 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
         <span class="fin-date" id="finDate"></span>
       </div>
       <h2 class="fin-title" id="finTitle">القطّة النهائية</h2>
-      <div class="fin-cards">
-        <div class="sc"><span>الفاتورة</span><b class="num" id="finTotal">٠</b><small>ريال</small></div>
-        <div class="sc hl"><span>على الشخص</span><b class="num" id="finPer">٠</b><small>ريال</small></div>
-        <div class="sc"><span>الحاضرين</span><b class="num" id="finHeads">٠</b><small id="finAll"></small></div>
+      <div class="fin-hero">
+        <span class="fh-lbl">على الشخص</span>
+        <div class="fh-num"><b class="num" id="finPer">٠</b><small>ريال</small></div>
+        <div class="fh-mix" id="finMix" aria-hidden="true"></div>
+        <div class="fh-stats">
+          <div><span>الفاتورة</span><b class="num"><span id="finTotal">٠</span> <small>ريال</small></b></div>
+          <div><span>الحاضرين</span><b class="num"><span id="finHeads">٠</span> <small id="finAll"></small></b></div>
+          <div><span>العوائل</span><b class="num"><span id="finFams">٠</span></b></div>
+        </div>
+      </div>
+      <div class="payer">
+        <div class="payer-h"><b>مين دفع الفاتورة؟</b><small>اختر العائلة اللي دفعت، ونحسب لك كم يرجع لها</small></div>
+        <div class="payer-chips" id="payerChips"></div>
+        <div class="payer-res" id="payerRes" hidden>
+          <span class="pr-lbl">الباقين يحوّلون لـ <b id="prName"></b></span>
+          <div class="pr-num"><b class="num" id="prSum">٠</b><small>ريال</small></div>
+          <span class="pr-sub" id="prSub"></span>
+        </div>
       </div>
       <div class="ftable" role="table" aria-label="قطّة كل عائلة">
         <div class="ft-row ft-head" role="row"><span role="columnheader">العائلة</span><span role="columnheader">الحاضرين</span><span role="columnheader">القطّة</span></div>
@@ -535,6 +584,7 @@ function load() {
       if (s && Array.isArray(s.families)) {
         return {
           total: +s.total || 0,
+          payer: s.payer || null,
           families: s.families.map(f => ({ id: f.id || uid(), name: String(f.name), members: (f.members || []).map(m => ({ id: m.id || uid(), name: String(m.name), present: m.present !== false })) })),
         };
       }
@@ -542,7 +592,7 @@ function load() {
   } catch (e) { /* storage unavailable */ }
   let total = 0;
   try { total = +JSON.parse(localStorage.getItem('qatta.v4') || '{}').total || 0; } catch (e) { /* ignore */ }
-  return { total, families: DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m)) };
+  return { total, payer: null, families: DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m)) };
 }
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
@@ -968,11 +1018,11 @@ function renderFinal(c) {
     const drop = absent.length
       ? `<div class="ft-drop"><ol class="ft-abs">${absent.map((nm, k) => `<li><span class="ab-n num">${fmt(k + 1)}</span><span class="ab-nm">${esc(nm)}</span><span class="ab-x" aria-label="ما حضر">${I.close}</span></li>`).join('')}</ol></div>`
       : '';
-    return `<div class="ft-item ${n ? '' : 'none'}" style="--c:${color(i)}">
+    return `<div class="ft-item ${n ? '' : 'none'}" data-id="${f.id}" style="--c:${color(i)}">
       <div class="ft-row" role="row">
-        <span class="ft-name" role="cell"><i aria-hidden="true"></i><span class="ft-txt"><b>${esc(f.name)}</b>${toggle}</span></span>
+        <span class="ft-name" role="cell"><i aria-hidden="true"></i><span class="ft-txt"><b>${esc(f.name)}</b><span class="ft-paid">${I.receipt}الدافع</span>${toggle}</span></span>
         <span class="ft-n" role="cell"><b class="num">${fmt(n)}</b><small>من ${fmt(f.members.length)}</small></span>
-        <span class="ft-amt" role="cell"><b class="num" data-to="${c.share(f.id)}">${fmt(c.share(f.id))}</b><small>ريال</small></span>
+        <span class="ft-amt" role="cell"><b class="num" data-to="${c.share(f.id)}">${fmt(c.share(f.id))}</b><small class="lbl-r">ريال</small><small class="lbl-p">حصتهم</small></span>
         <i class="ft-bar" aria-hidden="true" data-w="${(c.share(f.id) / maxShare).toFixed(3)}"></i>
       </div>
       ${drop}
@@ -983,6 +1033,11 @@ function renderFinal(c) {
     <span class="ft-n" role="cell"><b class="num">${fmt(c.heads)}</b><small>من ${fmt(c.all)}</small></span>
     <span class="ft-amt" role="cell"><b class="num" id="finSum">${fmt(c.collected)}</b><small>ريال</small></span>`;
   $('#finAll').textContent = `من ${fmt(c.all)}`;
+  $('#finMix').innerHTML = state.families.map((f, i) => c.rows.get(f.id) ? `<i style="--c:${color(i)};flex:${c.rows.get(f.id)} 1 0"></i>` : '').join('');
+  $('#payerChips').innerHTML = state.families.map((f, i) =>
+    `<button type="button" class="pchip press" data-id="${f.id}" style="--c:${color(i)}" aria-pressed="false"><i aria-hidden="true"></i>${esc(f.name)}</button>`).join('') +
+    '<button type="button" class="pchip none-chip press" data-id="" aria-pressed="false">ولا أحد</button>';
+  applyPayer(c, false);
   const extra = c.collected - state.total;
   $('#finNote').textContent = extra > 0
     ? `${fmt(state.total)} ÷ ${fmt(c.heads)} شخص = ${fmt(c.per)} ريال للشخص بعد التقريب لأقرب ريال، فبينجمع ${fmt(extra)} ريال زيادة عن الفاتورة.`
@@ -991,6 +1046,45 @@ function renderFinal(c) {
     $('#finDate').textContent = new Intl.DateTimeFormat('ar-SA-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   } catch (e) { $('#finDate').textContent = ''; }
 }
+// who paid the bill: everyone else transfers their share to that family
+function payerOf() { return state.families.find(f => f.id === state.payer) || null; }
+function applyPayer(c, anim) {
+  const payer = payerOf();
+  $$('#payerChips .pchip').forEach(b => {
+    const on = payer ? b.dataset.id === payer.id : b.dataset.id === '';
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on);
+  });
+  $$('#finRows .ft-item').forEach(it => it.classList.toggle('payer', !!payer && it.dataset.id === payer.id));
+  const res = $('#payerRes');
+  if (!payer) {
+    if (res.hidden) return;
+    if (!anim) { res.hidden = true; return; }
+    gsap.to(res, { opacity: 0, y: -8, duration: .2, onComplete: () => { res.hidden = true; gsap.set(res, { clearProps: 'transform,opacity' }); } });
+    return;
+  }
+  res.style.setProperty('--c', color(state.families.indexOf(payer)));
+  const owed = c.collected - c.share(payer.id);
+  const others = state.families.filter(f => f !== payer && c.rows.get(f.id) > 0).length;
+  $('#prName').textContent = payer.name;
+  $('#prSub').textContent = `${fmt(others)} عوائل يحوّلون لهم، وحصة ${payer.name} نفسهم ${fmt(c.share(payer.id))} ريال`;
+  const wasHidden = res.hidden;
+  res.hidden = false;
+  if (anim && wasHidden) gsap.fromTo(res, { opacity: 0, y: -10, scale: .95 }, { opacity: 1, y: 0, scale: 1, duration: .6, ease: 'spring', clearProps: 'transform,opacity' });
+  setNum($('#prSum'), owed, anim && !wasHidden);
+}
+$('#payerChips').addEventListener('click', e => {
+  const b = e.target.closest('.pchip');
+  if (!b) return;
+  const id = b.dataset.id || null;
+  state.payer = state.payer === id ? null : id;
+  save(); haptic(12);
+  applyPayer(compute(), true);
+  pop(b, .88);
+  const wa = 'https://wa.me/?text=' + encodeURIComponent(summary());
+  $('#waBtn').href = wa;
+  $('#finWa').href = wa;
+});
 function openFinal() {
   if (!state.total) { needPrice(); return; }
   const c = compute();
@@ -1007,8 +1101,15 @@ function openFinal() {
   const tl = gsap.timeline();
   tl.fromTo(final, { yPercent: 100 }, { yPercent: 0, duration: .65, ease: 'springOut', clearProps: 'transform' })
     .fromTo(['.fin-top', '.fin-title'], { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .45, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .2)
-    .fromTo('.sc', { y: 24, opacity: 0, scale: .9 }, { y: 0, opacity: 1, scale: 1, duration: .7, stagger: .07, ease: 'spring', clearProps: 'transform,opacity' }, .3)
-    .add(() => { countUp($('#finTotal'), state.total, 0, .9); countUp($('#finPer'), c.per, .07, .9); countUp($('#finHeads'), c.heads, .14, .9); }, .35)
+    .fromTo('.fin-hero', { y: 24, opacity: 0, scale: .94 }, { y: 0, opacity: 1, scale: 1, duration: .8, ease: 'spring', clearProps: 'transform,opacity' }, .25)
+    .fromTo('#finMix i', { scaleX: 0 }, { scaleX: 1, duration: .7, stagger: .06, ease: 'springOut', clearProps: 'transform' }, .45)
+    .fromTo('.fh-stats > div', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
+    .add(() => {
+      countUp($('#finPer'), c.per, 0, 1); countUp($('#finTotal'), state.total, .1, .9);
+      countUp($('#finHeads'), c.heads, .16, .9); countUp($('#finFams'), state.families.filter(f => c.rows.get(f.id)).length, .22, .9);
+    }, .35)
+    .fromTo('.payer', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'transform,opacity' }, .45)
+    .fromTo('#payerChips .pchip', { scale: .8, opacity: 0 }, { scale: 1, opacity: 1, duration: .5, stagger: .03, ease: 'spring', clearProps: 'transform,opacity' }, .5)
     .fromTo('.ft-head', { opacity: 0 }, { opacity: 1, duration: .3 }, .45)
     .fromTo(rows, { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
     .to($$('#finRows .ft-bar'), { scaleX: (i, el) => +el.dataset.w, duration: .9, stagger: .07, ease: 'springOut' }, .6)
@@ -1199,10 +1300,12 @@ onClose.editSheet = () => {
 function summary() {
   const c = compute();
   const L = ['حساب القطّة', `الفاتورة: ${fmt(state.total)} ريال`, `الحاضرين: ${fmt(c.heads)} من ${fmt(c.all)}`, `على الشخص: ${fmt(c.per)} ريال`, ''];
+  const payer = payerOf();
   for (const f of state.families) {
     const n = c.rows.get(f.id);
-    L.push(n ? `${f.name} (${fmt(n)}): ${fmt(c.share(f.id))} ريال` : `${f.name}: ما حضر أحد`);
+    L.push(n ? `${f.name} (${fmt(n)}): ${fmt(c.share(f.id))} ريال${payer === f ? ' (دفعوا الفاتورة)' : ''}` : `${f.name}: ما حضر أحد`);
   }
+  if (payer) L.push('', `اللي دفع الفاتورة: ${payer.name}`, `الباقين يحوّلون لهم: ${fmt(c.collected - c.share(payer.id))} ريال`);
   const absent = state.families.flatMap(f => f.members.filter(m => !m.present).map(m => m.name));
   if (absent.length) L.push('', `ما حضروا: ${absent.join('، ')}`);
   return L.join('\n');
