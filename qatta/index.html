@@ -167,8 +167,9 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .mk { flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .08); }
 .mem.on .mk { background: rgba(6, 48, 26, .14); }
 .mk .ic { width: .95rem; height: .95rem; stroke-width: 3; }
-.mn { flex: 1; min-width: 0; font-size: .92rem; font-weight: 700; line-height: 1.3; overflow-wrap: normal; word-break: keep-all; }
-@media (max-width: 389px) { .mn { font-size: .84rem; } }
+.mn { flex: 1; min-width: 0; font-size: .95rem; font-weight: 700; line-height: 1.3; overflow-wrap: normal; word-break: keep-all; }
+/* narrow phones: make room for long names like عبدالرحمن by trimming padding, not the font */
+@media (max-width: 389px) { .fam-in { padding-inline: .55rem; } .mems { gap: .4rem; } .mem { padding-inline: .3rem .4rem; gap: .3rem; } }
 .mem:not(.on) .mn { text-decoration: line-through; text-decoration-thickness: 2px; }
 .fam-empty { margin: 0; color: var(--faint); font-size: .95rem; }
 .btn-done { width: 100%; min-height: 3.4rem; border-radius: 999px; font-size: 1.1rem; font-weight: 700; background: var(--primary); color: var(--on-primary); }
