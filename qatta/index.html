@@ -210,40 +210,19 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .fin-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
 .fin-date { color: var(--muted); font-size: .85rem; }
 .fin-title { margin: .2rem 0 0; font-size: 1.7rem; font-weight: 700; line-height: 1.25; }
-.fin-hero {
-  border-radius: 1.8rem; padding: 1.3rem 1rem 1rem; display: flex; flex-direction: column; align-items: center; text-align: center;
-  background: radial-gradient(120% 90% at 50% 0%, rgba(155, 108, 240, .42), transparent 65%), linear-gradient(180deg, #2c2342, #211d29);
-}
-.fh-lbl { font-size: .95rem; color: var(--lilac); font-weight: 600; }
-.fh-num { display: flex; align-items: baseline; gap: .4rem; }
-.fh-num b { font-size: clamp(3rem, 17vw, 3.8rem); font-weight: 700; line-height: 1.1; color: #fff; }
-.fh-num small { font-size: 1.05rem; color: var(--muted); }
-.fh-mix { display: flex; gap: 3px; width: 100%; height: .55rem; margin: 1rem 0 .9rem; }
-.fh-mix i { display: block; height: 100%; min-width: .55rem; border-radius: 99px; background: var(--c); transform-origin: 100% 50%; will-change: transform; }
-.fh-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: .4rem; }
-.fh-stats > div { display: flex; flex-direction: column; align-items: center; padding: .55rem .3rem; border-radius: 1rem; background: rgba(255, 255, 255, .06); min-width: 0; }
-.fh-stats span { font-size: .78rem; color: var(--muted); }
-.fh-stats b { font-size: 1.2rem; font-weight: 700; white-space: nowrap; }
-.fh-stats b span { font-size: inherit; color: var(--fg); }
-.fh-stats small { font-size: .72rem; color: var(--muted); font-weight: 500; }
-.payer { border-radius: 1.6rem; background: var(--surface); padding: 1rem; display: flex; flex-direction: column; gap: .8rem; }
-.payer-h { display: flex; flex-direction: column; }
-.payer-h b { font-size: 1.15rem; font-weight: 700; }
-.payer-h small { font-size: .85rem; color: var(--muted); }
-.payer-chips { display: flex; flex-wrap: wrap; gap: .45rem; }
-.pchip { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.7rem; padding: 0 .95rem 0 .8rem; border-radius: 999px; background: var(--surface-top); font-size: .95rem; font-weight: 600; transition: background-color .25s, color .25s; }
-.pchip i { width: .7rem; height: .7rem; border-radius: 50%; background: var(--c); transition: background-color .25s; }
-.pchip.on { background: var(--c); color: #16131b; }
-.pchip.on i { background: #16131b; }
-.pchip.none-chip { color: var(--muted); }
-.pchip.none-chip.on { background: var(--primary); color: var(--on-primary); }
-.payer-res { border-radius: 1.2rem; padding: .9rem 1rem; background: color-mix(in srgb, var(--c) 15%, transparent); display: flex; flex-direction: column; align-items: center; text-align: center; }
-.pr-lbl { font-size: 1rem; }
-.pr-lbl b { color: var(--c); }
-.pr-num { display: flex; align-items: baseline; gap: .35rem; }
-.pr-num b { font-size: 2.3rem; font-weight: 700; line-height: 1.2; color: var(--c); }
-.pr-num small { color: var(--muted); }
-.pr-sub { font-size: .82rem; color: var(--muted); }
+.fin-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .55rem; }
+.sc { border-radius: 1.4rem; background: var(--surface); padding: .9rem .4rem .8rem; display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.sc-ic { width: 2.7rem; height: 2.7rem; border-radius: .95rem; display: grid; place-items: center; margin-bottom: .4rem; background: var(--surface-top); color: var(--fg); }
+.sc-ic .ic { width: 1.4rem; height: 1.4rem; }
+.sc-bill .sc-ic { background: rgba(242, 220, 140, .14); color: #f2dc8c; }
+.sc-ppl .sc-ic { background: rgba(92, 207, 196, .14); color: #5ccfc4; }
+.sc-l { font-size: .8rem; color: var(--muted); }
+.sc b { font-size: 1.55rem; font-weight: 700; line-height: 1.25; }
+.sc small { font-size: .75rem; color: var(--muted); }
+.sc.hl { background: linear-gradient(180deg, #4a3a75, #352a52); }
+.sc.hl .sc-ic { background: var(--primary); color: var(--on-primary); }
+.sc.hl .sc-l { color: var(--lilac); }
+.sc.hl b { color: #fff; }
 .ftable { border-radius: 1.4rem; background: var(--surface); overflow: hidden; }
 .ft-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 3.2rem 4.7rem; align-items: center; gap: .4rem; padding: .8rem .8rem; }
 .ft-item + .ft-item, .ft-foot { border-top: 1px solid rgba(255, 255, 255, .06); }
@@ -262,7 +241,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ft-abs { list-style: none; margin: 0; padding: 0 .8rem .9rem; display: flex; flex-direction: column; gap: .4rem; }
 .ft-abs li { display: flex; align-items: center; gap: .6rem; padding: .55rem .7rem; border-radius: 1rem; background: rgba(255, 255, 255, .04); }
 .ab-n { flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 143, 134, .14); color: var(--no); font-size: .85rem; font-weight: 700; }
-.ab-nm { flex: 1; min-width: 0; font-size: .98rem; font-weight: 600; }
+.ab-nm { flex: 1; min-width: 0; font-size: .98rem; font-weight: 600; color: var(--no); }
 .ab-x { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 143, 134, .16); color: var(--no); }
 .ab-x .ic { width: .9rem; height: .9rem; stroke-width: 3; }
 .ft-n b { font-size: 1.2rem; font-weight: 700; }
@@ -270,13 +249,6 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ft-amt { display: flex; flex-direction: column; align-items: center; gap: .2rem; }
 .ft-amt b { display: block; min-width: 100%; padding: .2rem .5rem; border-radius: 999px; font-size: 1.12rem; font-weight: 700; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); }
 .ft-amt small { display: block; font-size: .72rem; color: var(--muted); line-height: 1; }
-.ft-amt .lbl-p, .ft-paid { display: none; }
-.ft-item.payer .ft-amt .lbl-p { display: block; }
-.ft-item.payer .ft-amt .lbl-r { display: none; }
-.ft-item.payer .ft-paid { display: inline-flex; }
-.ft-paid { margin-top: .3rem; max-width: 100%; align-items: center; gap: .3rem; min-height: 2rem; padding: 0 .65rem; border-radius: 999px; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); font-size: .8rem; font-weight: 600; white-space: nowrap; }
-.ft-paid .ic { width: .95rem; height: .95rem; }
-.ft-item.payer { background: color-mix(in srgb, var(--c) 7%, transparent); }
 .ft-bar { position: absolute; right: .9rem; left: .9rem; bottom: 0; height: 3px; border-radius: 3px; background: var(--c); opacity: .55; transform-origin: 100% 50%; will-change: transform; }
 .ft-item.none .ft-row > :not(.ft-name) { opacity: .55; }
 .ft-item.none .ft-amt b { color: var(--muted); background: rgba(255, 255, 255, .06); }
@@ -441,24 +413,10 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
         <span class="fin-date" id="finDate"></span>
       </div>
       <h2 class="fin-title" id="finTitle">القطّة النهائية</h2>
-      <div class="fin-hero">
-        <span class="fh-lbl">على الشخص</span>
-        <div class="fh-num"><b class="num" id="finPer">٠</b><small>ريال</small></div>
-        <div class="fh-mix" id="finMix" aria-hidden="true"></div>
-        <div class="fh-stats">
-          <div><span>الفاتورة</span><b class="num"><span id="finTotal">٠</span> <small>ريال</small></b></div>
-          <div><span>الحاضرين</span><b class="num"><span id="finHeads">٠</span> <small id="finAll"></small></b></div>
-          <div><span>العوائل</span><b class="num"><span id="finFams">٠</span></b></div>
-        </div>
-      </div>
-      <div class="payer">
-        <div class="payer-h"><b>مين دفع الفاتورة؟</b><small>اختر العائلة اللي دفعت، ونحسب لك كم يرجع لها</small></div>
-        <div class="payer-chips" id="payerChips"></div>
-        <div class="payer-res" id="payerRes" hidden>
-          <span class="pr-lbl">الباقين يحوّلون لـ <b id="prName"></b></span>
-          <div class="pr-num"><b class="num" id="prSum">٠</b><small>ريال</small></div>
-          <span class="pr-sub" id="prSub"></span>
-        </div>
+      <div class="fin-cards">
+        <div class="sc sc-bill"><span class="sc-ic" data-ic="receipt"></span><span class="sc-l">الفاتورة</span><b class="num" id="finTotal">٠</b><small>ريال</small></div>
+        <div class="sc hl"><span class="sc-ic" data-ic="user"></span><span class="sc-l">على الشخص</span><b class="num" id="finPer">٠</b><small>ريال</small></div>
+        <div class="sc sc-ppl"><span class="sc-ic" data-ic="users"></span><span class="sc-l">الحاضرين</span><b class="num" id="finHeads">٠</b><small id="finAll"></small></div>
       </div>
       <div class="ftable" role="table" aria-label="قطّة كل عائلة">
         <div class="ft-row ft-head" role="row"><span role="columnheader">العائلة</span><span role="columnheader">الحاضرين</span><span role="columnheader">القطّة</span></div>
@@ -563,6 +521,7 @@ const I = {
   sound: svg('<path d="M11 5 6 9H2v6h4l5 4Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),
   stop: svg('<rect x="6" y="6" width="12" height="12" rx="2"/>'),
   trash: svg('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>'),
+  user: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>'),
   users: svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
   receipt: svg('<path d="M5 2v20l2.5-1.5L10 22l2-1.5 2 1.5 2.5-1.5L19 22V2l-2.5 1.5L14 2l-2 1.5L10 2 7.5 3.5Z"/><path d="M9 8h6M9 12h6M9 16h3"/>'),
   wa: '<svg class="ic wa-logo" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.304-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>',
@@ -584,7 +543,6 @@ function load() {
       if (s && Array.isArray(s.families)) {
         return {
           total: +s.total || 0,
-          payer: s.payer || null,
           families: s.families.map(f => ({ id: f.id || uid(), name: String(f.name), members: (f.members || []).map(m => ({ id: m.id || uid(), name: String(m.name), present: m.present !== false })) })),
         };
       }
@@ -592,7 +550,7 @@ function load() {
   } catch (e) { /* storage unavailable */ }
   let total = 0;
   try { total = +JSON.parse(localStorage.getItem('qatta.v4') || '{}').total || 0; } catch (e) { /* ignore */ }
-  return { total, payer: null, families: DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m)) };
+  return { total, families: DEFAULT_FAMILIES.map(([n, m]) => makeFamily(n, m)) };
 }
 let state = load();
 function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
@@ -1020,9 +978,9 @@ function renderFinal(c) {
       : '';
     return `<div class="ft-item ${n ? '' : 'none'}" data-id="${f.id}" style="--c:${color(i)}">
       <div class="ft-row" role="row">
-        <span class="ft-name" role="cell"><i aria-hidden="true"></i><span class="ft-txt"><b>${esc(f.name)}</b><span class="ft-paid">${I.receipt}الدافع</span>${toggle}</span></span>
+        <span class="ft-name" role="cell"><i aria-hidden="true"></i><span class="ft-txt"><b>${esc(f.name)}</b>${toggle}</span></span>
         <span class="ft-n" role="cell"><b class="num">${fmt(n)}</b><small>من ${fmt(f.members.length)}</small></span>
-        <span class="ft-amt" role="cell"><b class="num" data-to="${c.share(f.id)}">${fmt(c.share(f.id))}</b><small class="lbl-r">ريال</small><small class="lbl-p">حصتهم</small></span>
+        <span class="ft-amt" role="cell"><b class="num" data-to="${c.share(f.id)}">${fmt(c.share(f.id))}</b><small>ريال</small></span>
         <i class="ft-bar" aria-hidden="true" data-w="${(c.share(f.id) / maxShare).toFixed(3)}"></i>
       </div>
       ${drop}
@@ -1033,11 +991,6 @@ function renderFinal(c) {
     <span class="ft-n" role="cell"><b class="num">${fmt(c.heads)}</b><small>من ${fmt(c.all)}</small></span>
     <span class="ft-amt" role="cell"><b class="num" id="finSum">${fmt(c.collected)}</b><small>ريال</small></span>`;
   $('#finAll').textContent = `من ${fmt(c.all)}`;
-  $('#finMix').innerHTML = state.families.map((f, i) => c.rows.get(f.id) ? `<i style="--c:${color(i)};flex:${c.rows.get(f.id)} 1 0"></i>` : '').join('');
-  $('#payerChips').innerHTML = state.families.map((f, i) =>
-    `<button type="button" class="pchip press" data-id="${f.id}" style="--c:${color(i)}" aria-pressed="false"><i aria-hidden="true"></i>${esc(f.name)}</button>`).join('') +
-    '<button type="button" class="pchip none-chip press" data-id="" aria-pressed="false">ولا أحد</button>';
-  applyPayer(c, false);
   const extra = c.collected - state.total;
   $('#finNote').textContent = extra > 0
     ? `${fmt(state.total)} ÷ ${fmt(c.heads)} شخص = ${fmt(c.per)} ريال للشخص بعد التقريب لأقرب ريال، فبينجمع ${fmt(extra)} ريال زيادة عن الفاتورة.`
@@ -1046,45 +999,6 @@ function renderFinal(c) {
     $('#finDate').textContent = new Intl.DateTimeFormat('ar-SA-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   } catch (e) { $('#finDate').textContent = ''; }
 }
-// who paid the bill: everyone else transfers their share to that family
-function payerOf() { return state.families.find(f => f.id === state.payer) || null; }
-function applyPayer(c, anim) {
-  const payer = payerOf();
-  $$('#payerChips .pchip').forEach(b => {
-    const on = payer ? b.dataset.id === payer.id : b.dataset.id === '';
-    b.classList.toggle('on', on);
-    b.setAttribute('aria-pressed', on);
-  });
-  $$('#finRows .ft-item').forEach(it => it.classList.toggle('payer', !!payer && it.dataset.id === payer.id));
-  const res = $('#payerRes');
-  if (!payer) {
-    if (res.hidden) return;
-    if (!anim) { res.hidden = true; return; }
-    gsap.to(res, { opacity: 0, y: -8, duration: .2, onComplete: () => { res.hidden = true; gsap.set(res, { clearProps: 'transform,opacity' }); } });
-    return;
-  }
-  res.style.setProperty('--c', color(state.families.indexOf(payer)));
-  const owed = c.collected - c.share(payer.id);
-  const others = state.families.filter(f => f !== payer && c.rows.get(f.id) > 0).length;
-  $('#prName').textContent = payer.name;
-  $('#prSub').textContent = `${fmt(others)} عوائل يحوّلون لهم، وحصة ${payer.name} نفسهم ${fmt(c.share(payer.id))} ريال`;
-  const wasHidden = res.hidden;
-  res.hidden = false;
-  if (anim && wasHidden) gsap.fromTo(res, { opacity: 0, y: -10, scale: .95 }, { opacity: 1, y: 0, scale: 1, duration: .6, ease: 'spring', clearProps: 'transform,opacity' });
-  setNum($('#prSum'), owed, anim && !wasHidden);
-}
-$('#payerChips').addEventListener('click', e => {
-  const b = e.target.closest('.pchip');
-  if (!b) return;
-  const id = b.dataset.id || null;
-  state.payer = state.payer === id ? null : id;
-  save(); haptic(12);
-  applyPayer(compute(), true);
-  pop(b, .88);
-  const wa = 'https://wa.me/?text=' + encodeURIComponent(summary());
-  $('#waBtn').href = wa;
-  $('#finWa').href = wa;
-});
 function openFinal() {
   if (!state.total) { needPrice(); return; }
   const c = compute();
@@ -1101,15 +1015,9 @@ function openFinal() {
   const tl = gsap.timeline();
   tl.fromTo(final, { yPercent: 100 }, { yPercent: 0, duration: .65, ease: 'springOut', clearProps: 'transform' })
     .fromTo(['.fin-top', '.fin-title'], { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .45, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .2)
-    .fromTo('.fin-hero', { y: 24, opacity: 0, scale: .94 }, { y: 0, opacity: 1, scale: 1, duration: .8, ease: 'spring', clearProps: 'transform,opacity' }, .25)
-    .fromTo('#finMix i', { scaleX: 0 }, { scaleX: 1, duration: .7, stagger: .06, ease: 'springOut', clearProps: 'transform' }, .45)
-    .fromTo('.fh-stats > div', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .06, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
-    .add(() => {
-      countUp($('#finPer'), c.per, 0, 1); countUp($('#finTotal'), state.total, .1, .9);
-      countUp($('#finHeads'), c.heads, .16, .9); countUp($('#finFams'), state.families.filter(f => c.rows.get(f.id)).length, .22, .9);
-    }, .35)
-    .fromTo('.payer', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .5, ease: 'springSoft', clearProps: 'transform,opacity' }, .45)
-    .fromTo('#payerChips .pchip', { scale: .8, opacity: 0 }, { scale: 1, opacity: 1, duration: .5, stagger: .03, ease: 'spring', clearProps: 'transform,opacity' }, .5)
+    .fromTo('.sc', { y: 26, opacity: 0, scale: .9 }, { y: 0, opacity: 1, scale: 1, duration: .75, stagger: .08, ease: 'spring', clearProps: 'transform,opacity' }, .28)
+    .fromTo('.sc-ic', { scale: 0, rotation: -25 }, { scale: 1, rotation: 0, duration: .8, stagger: .08, ease: 'spring', clearProps: 'transform' }, .38)
+    .add(() => { countUp($('#finTotal'), state.total, 0, .9); countUp($('#finPer'), c.per, .08, .9); countUp($('#finHeads'), c.heads, .16, .9); }, .4)
     .fromTo('.ft-head', { opacity: 0 }, { opacity: 1, duration: .3 }, .45)
     .fromTo(rows, { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: .5, stagger: .07, ease: 'springSoft', clearProps: 'transform,opacity' }, .5)
     .to($$('#finRows .ft-bar'), { scaleX: (i, el) => +el.dataset.w, duration: .9, stagger: .07, ease: 'springOut' }, .6)
@@ -1300,12 +1208,10 @@ onClose.editSheet = () => {
 function summary() {
   const c = compute();
   const L = ['حساب القطّة', `الفاتورة: ${fmt(state.total)} ريال`, `الحاضرين: ${fmt(c.heads)} من ${fmt(c.all)}`, `على الشخص: ${fmt(c.per)} ريال`, ''];
-  const payer = payerOf();
   for (const f of state.families) {
     const n = c.rows.get(f.id);
-    L.push(n ? `${f.name} (${fmt(n)}): ${fmt(c.share(f.id))} ريال${payer === f ? ' (دفعوا الفاتورة)' : ''}` : `${f.name}: ما حضر أحد`);
+    L.push(n ? `${f.name} (${fmt(n)}): ${fmt(c.share(f.id))} ريال` : `${f.name}: ما حضر أحد`);
   }
-  if (payer) L.push('', `اللي دفع الفاتورة: ${payer.name}`, `الباقين يحوّلون لهم: ${fmt(c.collected - c.share(payer.id))} ريال`);
   const absent = state.families.flatMap(f => f.members.filter(m => !m.present).map(m => m.name));
   if (absent.length) L.push('', `ما حضروا: ${absent.join('، ')}`);
   return L.join('\n');
