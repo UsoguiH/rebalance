@@ -240,6 +240,8 @@
     const o = Object.assign({
       word: 'slaace', font: 'slaace', registered: true, speed: 1, loop: true, exact: true, still: false,
       maxFps: 0,   // redraw at most this often (0: every screen refresh)
+      frame: null,   // { w, h } in x-heights: fit this box instead of the word (players that should match)
+      fitPieces: true,   // shrink the word so no flying piece is cut (false: let the container clip them)
       colors: {}, onUpdate: null, onReady: null,
     }, options || {});
     const colors = Object.assign({}, COLORS, o.colors);
@@ -560,6 +562,41 @@
     // A container with no height of its own is given the word's proportions
     // with CSS aspect-ratio (ignored by the browser once it has a real height).
     let ownRatio = false, ownPosition = false;
+    // Room around the container's content box, in px, before something cuts
+    // drawing off: the nearest ancestor (or the container itself) that clips
+    // its overflow, or else the page, whose left, right and top edges always
+    // cut and whose bottom does when the page does not scroll. Measured in
+    // page coordinates, so scrolling and phone toolbars do not change it.
+    function roomAround(cs, padL, padT, cw, ch) {
+      const r = container.getBoundingClientRect();
+      const x0 = r.left + container.clientLeft + padL, y0 = r.top + container.clientTop + padT;
+      const box = { l: x0, t: y0, r: x0 + cw, b: y0 + ch };
+      const clips = (s) => s.overflowX !== 'visible' || s.overflowY !== 'visible' ||
+        /paint|strict|content/.test(s.contain || '') || (s.clipPath && s.clipPath !== 'none');
+      const html = document.documentElement, body = document.body;
+      let fixed = false;
+      for (let el = container; el && el !== body && el !== html; el = el.parentElement) {
+        const s = el === container ? cs : getComputedStyle(el);
+        if (s.position === 'fixed') fixed = true;
+        if (clips(s)) {
+          const e = el.getBoundingClientRect();
+          const l = e.left + el.clientLeft, t = e.top + el.clientTop;
+          return { l: Math.max(0, box.l - l), t: Math.max(0, box.t - t),
+            r: Math.max(0, l + el.clientWidth - box.r), b: Math.max(0, t + el.clientHeight - box.b) };
+        }
+      }
+      if (fixed) {   // a fixed container is cut by the window itself
+        return { l: Math.max(0, box.l), t: Math.max(0, box.t),
+          r: Math.max(0, html.clientWidth - box.r), b: Math.max(0, html.clientHeight - box.b) };
+      }
+      const sx = window.scrollX || 0, sy = window.scrollY || 0;
+      const scrolls = (s) => s.overflowY === 'visible' || s.overflowY === 'auto' || s.overflowY === 'scroll';
+      const pageScrolls = scrolls(getComputedStyle(html)) && scrolls(getComputedStyle(body));
+      return { l: Math.max(0, box.l + sx), t: Math.max(0, box.t + sy),
+        r: Math.max(0, html.clientWidth - (box.r + sx)),
+        b: pageScrolls ? Infinity : Math.max(0, Math.max(html.scrollHeight, html.clientHeight) - (box.b + sy)) };
+    }
+
     function resize() {
       // not in the document, or hidden: lay out when the ResizeObserver sees it
       if (!container.isConnected || !container.getClientRects().length) return;
@@ -582,25 +619,21 @@
       ch = Math.max(1, ch);
       let left = 0, top = 0, dw = cw, dh = ch, k = 1, cx = 0, cy = 0;
       if (scene) {
-        // The word is centred in the container and scaled so that every piece
-        // stays visible: across, within the container (on a phone, the
-        // screen's edges); above and below, within the container plus the
-        // room the screen has beyond it, up to a quarter of its height (none
-        // when the container clips what overflows it).
-        const v = scene.view, P = scene.paint;
+        // The word is centred and fills the container (or, with the `frame`
+        // option, a box of that many x-heights does). Pieces may fly past the
+        // container; the word only shrinks as far as it must for every piece
+        // to stay inside whatever would cut it off (see roomAround).
+        const v = scene.view, P = scene.paint, xh = scene.xh, F = o.frame;
         const vcx = v.x + v.w / 2, vcy = v.y + v.h / 2;
-        const across = 2 * Math.max(vcx - P.x, P.r - vcx);
-        let up = 0, down = 0;
-        if (cs.overflowY === 'visible' && cs.overflowX === 'visible') {
-          const r = container.getBoundingClientRect(), vh = window.innerHeight || 0, cap = ch / 4;
-          const onScreen = r.top >= 0 && r.bottom <= vh;
-          up = onScreen ? Math.min(cap, r.top) : cap;
-          down = onScreen ? Math.min(cap, vh - r.bottom) : cap;
+        k = F ? Math.min(cw / (F.w * xh), ch / (F.h * xh)) : Math.min(cw / v.w, ch / v.h);
+        if (o.fitPieces) {
+          const room = roomAround(cs, padL, padT, cw, ch);
+          k = Math.min(k, (cw / 2 + room.l) / (vcx - P.x), (cw / 2 + room.r) / (P.r - vcx),
+            (ch / 2 + room.t) / (vcy - P.y), (ch / 2 + room.b) / (P.b - vcy));
         }
-        k = Math.min(cw / across, ch / v.h, (ch / 2 + up) / (vcy - P.y), (ch / 2 + down) / (P.b - vcy));
         cx = cw / 2 - vcx * k; cy = ch / 2 - vcy * k;   // unit 0 in container px
-        left = Math.max(0, Math.floor(P.x * k + cx)); top = Math.floor(P.y * k + cy);
-        dw = Math.max(1, Math.min(cw, Math.ceil(P.r * k + cx)) - left);
+        left = Math.floor(P.x * k + cx); top = Math.floor(P.y * k + cy);
+        dw = Math.max(1, Math.ceil(P.r * k + cx) - left);
         dh = Math.max(1, Math.ceil(P.b * k + cy) - top);
       }
       fit = { k, dpr, ox: cx - left, oy: cy - top, ready: true };
@@ -612,7 +645,7 @@
     }
     let ro = null;
     if (root.ResizeObserver) { ro = new ResizeObserver(resize); ro.observe(container); }
-    // the room on screen above and below the container changes with the window too
+    // the room around the container changes with the window too
     root.addEventListener('resize', resize);
 
     function show(f) {
@@ -657,10 +690,10 @@
         if (opts.colors) Object.assign(colors, opts.colors);
         drawn = -1;
         // colours and playback settings only need a redraw, not a new scene
-        const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady'];
+        const light = ['colors', 'speed', 'loop', 'maxFps', 'registered', 'onUpdate', 'onReady', 'frame', 'fitPieces'];
         const keys = Object.keys(opts);
         if (scene && keys.length && keys.every((k) => light.includes(k))) {
-          render();
+          if (keys.includes('frame') || keys.includes('fitPieces')) resize(); else render();
           if (o.onReady) o.onReady(api);
           return Promise.resolve(api);
         }
@@ -668,6 +701,12 @@
       },
       get frame() { return frame; },
       get frames() { return scene ? scene.frames : FRAMES; },
+      // the box, in x-heights round the word's centre, that its pieces reach
+      get reach() {
+        if (!scene) return null;
+        const v = scene.view, P = scene.paint, xh = scene.xh, cx = v.x + v.w / 2, cy = v.y + v.h / 2;
+        return { w: (2 * Math.max(cx - P.x, P.r - cx)) / xh, h: (2 * Math.max(cy - P.y, P.b - cy)) / xh };
+      },
       get fps() { return FPS; },
       get playing() { return playing; },
       get canvas() { return canvas; },
