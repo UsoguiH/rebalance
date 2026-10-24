@@ -197,29 +197,29 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 /* the final button is the restaurant check: a flat cream bill with a rounded top and a torn bottom edge.
    Tap anywhere on it. Its lines write in when it first comes into view, and the total spins in like a counter. */
 .check {
-  display: flex; flex-direction: column; align-items: stretch; gap: .15rem; width: 100%; padding: 1rem 1.1rem 1.35rem; text-align: center;
+  display: flex; flex-direction: column; align-items: stretch; gap: .1rem; width: 100%; padding: .8rem 1rem 1.15rem; text-align: center;
   border-radius: 1.3rem 1.3rem 0 0; background: var(--paper); color: var(--on-primary);
   --z: .45rem; -webkit-mask: conic-gradient(from -45deg at bottom, #0000 1deg, #000 2deg 88deg, #0000 89deg) 50% 0 / calc(2 * var(--z)) calc(100% + 2px); mask: conic-gradient(from -45deg at bottom, #0000 1deg, #000 2deg 88deg, #0000 89deg) 50% 0 / calc(2 * var(--z)) calc(100% + 2px);
 }
-.ck-hd { font-size: 1.02rem; font-weight: 700; line-height: 1.4; }
-.ck-date { font-size: .8rem; color: #7a7262; }
-.ck-rule { height: 0; margin-block: .45rem; border-top: 2px dashed #d8cfbd; transform-origin: 100% 50%; }
-.ck-ln { display: flex; justify-content: space-between; gap: .6rem; font-size: .9rem; color: #7a7262; }
+.ck-hd { font-size: .95rem; font-weight: 700; line-height: 1.4; }
+.ck-date { font-size: .74rem; color: #7a7262; }
+.ck-rule { height: 0; margin-block: .35rem; border-top: 2px dashed #d8cfbd; transform-origin: 100% 50%; }
+.ck-ln { display: flex; justify-content: space-between; gap: .6rem; font-size: .84rem; color: #7a7262; }
 .ck-ln b { font-weight: 700; color: var(--on-primary); }
-.ck-cap { font-size: .85rem; color: #7a7262; }
-.ck-big { display: flex; align-items: baseline; justify-content: center; gap: .4rem; min-height: 2.5rem; }
-.ck-big small { font-size: .95rem; font-weight: 600; color: #7a7262; }
+.ck-cap { font-size: .8rem; color: #7a7262; }
+.ck-big { display: flex; align-items: baseline; justify-content: center; gap: .35rem; min-height: 2.1rem; }
+.ck-big small { font-size: .85rem; font-weight: 600; color: #7a7262; }
 .check.empty .ck-big { align-items: center; font-size: .92rem; font-weight: 600; color: #a0937a; }
-.odo { display: inline-flex; direction: ltr; font-size: 2.15rem; font-weight: 700; line-height: 1.15; }
+.odo { display: inline-flex; direction: ltr; font-size: 1.8rem; font-weight: 700; line-height: 1.15; }
 .odo .col { display: inline-block; height: 1.15em; overflow: hidden; }
 .odo .reel { display: flex; flex-direction: column; will-change: transform; }
 .odo .reel i { display: block; height: 1.15em; font-style: normal; text-align: center; }
 .ck-pill {
-  align-self: center; display: inline-flex; align-items: center; gap: .6rem; min-height: 2.7rem; margin-top: .55rem; padding-inline: 1.25rem .4rem;
-  border-radius: 999px; background: var(--on-primary); color: var(--paper); font-size: 1rem; font-weight: 700; will-change: transform;
+  align-self: center; display: inline-flex; align-items: center; gap: .45rem; min-height: 2.15rem; margin-top: .45rem; padding-inline: .95rem .3rem;
+  border-radius: 999px; background: var(--on-primary); color: var(--paper); font-size: .86rem; font-weight: 700; will-change: transform;
 }
-.ck-arr { flex: none; width: 1.95rem; height: 1.95rem; border-radius: 50%; display: grid; place-items: center; background: var(--paper); color: var(--on-primary); will-change: transform; }
-.ck-arr .ic { width: 1.05rem; height: 1.05rem; stroke-width: 2.8; }
+.ck-arr { flex: none; width: 1.55rem; height: 1.55rem; border-radius: 50%; display: grid; place-items: center; background: var(--paper); color: var(--on-primary); will-change: transform; }
+.ck-arr .ic { width: .85rem; height: .85rem; stroke-width: 3; }
 .btn { min-height: 3.8rem; border-radius: 999px; display: flex; align-items: center; justify-content: center; gap: .6rem; font-size: 1.12rem; font-weight: 700; padding: 0 1.2rem; text-align: center; width: 100%; }
 .btn .ic { width: 1.45rem; height: 1.45rem; }
 .btn .wa-logo { width: 1.7rem; height: 1.7rem; }
