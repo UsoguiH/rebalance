@@ -60,12 +60,9 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ic { width: 1.3rem; height: 1.3rem; flex: none; display: block; }
 .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 
-.glow {
-  position: absolute; inset: 0 0 auto; height: 32rem; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(60% 50% at 50% 32%, rgba(124, 92, 190, .28), transparent 70%),
-    radial-gradient(40% 40% at 85% 10%, rgba(92, 207, 196, .10), transparent 70%);
-}
+/* the wallpaper: soft colour blobs painted once into a single fixed layer (see paintWall), dimmed so white text stays readable */
+.wall { position: fixed; inset: -8%; z-index: 0; pointer-events: none; background: linear-gradient(180deg, #14120e 0%, #2b2623 18%, #6e6470 38%, #ada0b3 54%, #a3a98b 74%, #6f7c57 100%); }
+.wall::after { content: ""; position: absolute; inset: 0; background: rgba(12, 10, 14, .38); }
 .app {
   position: relative; z-index: 1; width: 100%; max-width: 30rem; margin: 0 auto;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -76,7 +73,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 
 /* ——— numbered steps ——— */
 .step { display: flex; flex-direction: column; gap: .9rem; }
-.step-h { margin: 0; display: flex; align-items: center; gap: .65rem; font-size: 1.25rem; font-weight: 700; line-height: 1.35; }
+.step-h { margin: 0; display: flex; align-items: center; gap: .65rem; font-size: 1.25rem; font-weight: 700; line-height: 1.35; text-shadow: 0 1px 12px rgba(0, 0, 0, .45); }
 .step-n {
   flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%;
   display: grid; place-items: center; background: var(--primary); color: var(--on-primary); font-size: 1.05rem; font-weight: 700;
@@ -133,7 +130,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .per span { color: var(--muted); }
 .per b { font-size: 1.65rem; font-weight: 700; line-height: 1.2; }
 .per small { color: var(--muted); font-size: .9rem; }
-.heads { margin: 0; color: var(--muted); }
+.heads { margin: 0; color: var(--muted); text-shadow: 0 1px 10px rgba(0, 0, 0, .5); }
 .heads b { color: var(--fg); font-weight: 600; }
 
 /* ——— families: tap to open in place ——— */
@@ -187,22 +184,33 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .ea-txt b { font-size: 1.35rem; font-weight: 700; line-height: 1.3; }
 .ea-txt small { font-size: .9rem; color: #6b6458; line-height: 1.45; }
 .ea-restore {
-  width: 100%; min-height: 4.2rem; border-radius: 1.4rem; padding: .6rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; border: 1.5px solid rgba(255, 255, 255, .2);
+  align-self: center; min-height: 2.9rem; padding: 0 1rem; border-radius: 999px; font-size: .98rem; font-weight: 600; color: var(--fg);
+  text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .35); text-underline-offset: 5px; white-space: nowrap;
 }
-.ea-restore b { font-size: 1.08rem; font-weight: 700; line-height: 1.35; }
-.ea-restore small { color: var(--lilac); font-size: .86rem; }
+.ea-restore small { color: var(--lilac); font-size: .88rem; font-weight: 500; }
 .btn-done { width: 100%; min-height: 3.4rem; border-radius: 999px; font-size: 1.1rem; font-weight: 700; background: var(--primary); color: var(--on-primary); }
 
 /* ——— step 3 ——— */
+/* the final button wears a Siri-style edge: a ring of Siri colours turning slowly, with a soft breathing glow behind it */
+.bf-wrap { position: relative; }
+.bf-glow {
+  position: absolute; inset: .4rem .6rem -.15rem; border-radius: 1.6rem; pointer-events: none; opacity: .5; will-change: opacity, transform;
+  background: linear-gradient(90deg, #8d9fff, #bc82f3, #f5b9ea, #ff6778, #ffba71, #c686ff); filter: blur(18px);
+  animation: bf-breathe 3.2s ease-in-out infinite alternate;
+}
+@keyframes bf-breathe { from { opacity: .32; transform: scale(.97); } to { opacity: .62; transform: scale(1.02); } }
 .btn-final {
   position: relative; overflow: hidden; width: 100%; min-height: 5rem; border-radius: 1.6rem; padding: .8rem 1rem;
   display: flex; align-items: center; gap: .9rem; text-align: start; isolation: isolate;
-  border: 2px solid transparent;
-  background:
-    linear-gradient(135deg, #2e2843, #3a2d58) padding-box,
-    linear-gradient(90deg, #5ccfc4, #7ee0b0, #f2dc8c, #ff9f7a, #9b6cf0, #7fb4ff) border-box;
 }
+.bf-ring {
+  position: absolute; z-index: -3; left: 50%; top: 50%; width: 150%; aspect-ratio: 1; pointer-events: none; will-change: transform;
+  background: conic-gradient(#8d9fff, #bc82f3, #f5b9ea, #ff6778, #ffba71, #c686ff, #8d9fff);
+  transform: translate(-50%, -50%); animation: bf-spin 5s linear infinite;
+}
+@keyframes bf-spin { to { transform: translate(-50%, -50%) rotate(1turn); } }
+.btn-final::after { content: ""; position: absolute; z-index: -2; inset: 2.5px; border-radius: calc(1.6rem - 2.5px); background: linear-gradient(135deg, #2b2540, #3a2d58); }
+@media (prefers-reduced-motion: reduce) { .bf-ring, .bf-glow { animation: none; } }
 .bf-ic { flex: none; width: 3.4rem; height: 3.4rem; border-radius: 1.1rem; background: rgba(255, 255, 255, .1); display: grid; place-items: center; }
 .bf-ic .art { width: 2.7rem; height: 2.7rem; display: block; will-change: transform; }
 .bf-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -382,7 +390,7 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 </head>
 <body>
 <!--BODY-START-->
-<div class="glow" aria-hidden="true"></div>
+<div class="wall" aria-hidden="true"></div>
 <main class="app" id="app" dir="rtl" lang="ar">
 
   <section class="step" id="step1" aria-labelledby="h1">
@@ -418,12 +426,14 @@ body.sheet-open .toast { bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px))
 
   <section class="step" id="step3" aria-labelledby="h3">
     <h2 class="step-h" id="h3"><span class="step-n" id="n3">٣</span>شوف الحساب وأرسله</h2>
+    <div class="bf-wrap"><span class="bf-glow" aria-hidden="true"></span>
     <button class="btn-final press" id="finalBtn" type="button">
+      <span class="bf-ring" aria-hidden="true"></span>
       <span class="bf-ic" data-ic="artBill"></span>
       <span class="bf-txt"><b>القطّة النهائية</b><small>كم على كل عائلة</small></span>
       <span class="bf-go" data-ic="arrow"></span>
       <span class="shine" aria-hidden="true"></span>
-    </button>
+    </button></div>
     <a class="btn btn-wa press" id="waBtn" href="#" target="_blank" rel="noopener"><span data-ic="wa"></span>أرسل في واتساب</a>
     <div class="quiet">
       <button id="editBtn" type="button"><span data-ic="users"></span>العوائل والأسماء</button>
@@ -774,7 +784,7 @@ function renderList() {
       <button type="button" class="ea-add press" id="emptyAdd">
         <img class="ea-fam" src="${FAMILY_IMG}" alt="" width="387" height="398" draggable="false"><span class="ea-txt"><b>أضف عائلة</b><small>ما فيه عوائل للحين</small></span>
       </button>
-      <button type="button" class="ea-restore press" id="emptyRestore"><b>رجّع أسماء العائلة</b><small><span class="num">${fmt(DEFAULT_FAMILIES.length)}</span> عوائل و<span class="num">${fmt(DEFAULT_HEADS)}</span> فرد</small></button>
+      <button type="button" class="ea-restore press" id="emptyRestore">رجّع أسماء العائلة <small>(<span class="num">${fmt(DEFAULT_HEADS)}</span> فرد)</small></button>
     </li>`;
   }
   if (openId && !famEl(openId)) openId = null;
@@ -1146,6 +1156,28 @@ $('#finRows').addEventListener('click', e => {
 });
 $('#finClose').addEventListener('click', closeFinal);
 $('#finBack').addEventListener('click', closeFinal);
+// ——— the wallpaper: colour blobs, a light leak and a vignette, all one painted layer (same look as the rate app) ———
+const WALL_COLORS = ['#0c0b09', '#2e2528', '#9d7fb0', '#8d7f5a', '#4c7a63', '#e9d5c0', '#5d3f55', '#d89a5a'];
+const WALL_BLOBS = [
+  { w: 84, h: 66, x: -28, y: -22, o: .95 }, { w: 66, h: 60, x: -24, y: -12, o: .95, r: true }, { w: 72, h: 66, x: -22, y: 28, o: .95 }, { w: 66, h: 66, x: -26, y: 38, o: .95, r: true },
+  { w: 90, h: 60, x: 2, y: -26, o: .95, b: true }, { w: 48, h: 48, x: 28, y: 18, o: .45 }, { w: 42, h: 42, x: 8, y: 20, o: .6, r: true }, { w: 36, h: 36, x: 22, y: 58, o: .45, r: true },
+];
+(function paintWall() {
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const blobs = WALL_BLOBS.map((b, i) => {
+    const dx = Math.round(rnd(-40, 40)), dy = Math.round(rnd(-30, 30)), k = rnd(.94, 1.08), c = WALL_COLORS[i];
+    const rw = (b.w * k / 2).toFixed(1), rh = (b.h * k / 2).toFixed(1);
+    const cx = b.r ? `calc(100% - ${b.x + b.w / 2}vmax + ${dx}px)` : `calc(${b.x + b.w / 2}vmax + ${dx}px)`;
+    const cy = b.b ? `calc(100% - ${b.y + b.h / 2}vmax + ${dy}px)` : `calc(${b.y + b.h / 2}vmax + ${dy}px)`;
+    return `radial-gradient(${rw}vmax ${rh}vmax at ${cx} ${cy}, color-mix(in srgb, ${c} ${Math.round(b.o * 100)}%, transparent) 0%, color-mix(in srgb, ${c} ${Math.round(b.o * 70)}%, transparent) 40%, transparent 100%)`;
+  });
+  $('.wall').style.backgroundImage = [
+    'radial-gradient(120% 90% at 50% 40%, transparent 50%, rgba(10, 8, 10, .62) 100%)',
+    'linear-gradient(112deg, transparent 42%, rgba(255, 240, 215, .1) 50%, transparent 58%)',
+    ...blobs,
+    'linear-gradient(180deg, #14120e 0%, #2b2623 18%, #6e6470 38%, #ada0b3 54%, #a3a98b 74%, #6f7c57 100%)',
+  ].join(', ');
+})();
 // a soft shine sweeps across the final button now and then, so it is easy to spot, and its paper bill sways gently
 if (!REDUCED) gsap.to('.bf-ic .art', { rotation: 6, y: -2, duration: 1.6, ease: 'sine.inOut', repeat: -1, yoyo: true });
 if (!REDUCED) gsap.timeline({ repeat: -1, repeatDelay: 3, delay: 2.5 }).fromTo('.shine', { xPercent: -150 }, { xPercent: 420, duration: 1.1, ease: 'power2.inOut' });
