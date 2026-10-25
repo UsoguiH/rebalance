@@ -18,7 +18,16 @@
   const W = 884, H = 1520, OY = 80;   // stage size in screen px; OY = screen y of the stage top
   const FPS = 60;
   // Timeline (frames)
-  const RATTLE = [[112, 122, 0.035], [128, 141, 0.06]];   // two rattles: start, end, max tilt (rad)
+  const RATTLE = [[128, 141, 0.06]];  // a rattle after the swing settles: start, end, max tilt (rad)
+  // The swing as the locked trophy arrives, measured from the recording: the
+  // base stays put while the top tips left, swings right and settles (rad,
+  // clockwise positive, pivoting on the trophy's base)
+  const SWING = [[88, 0], [90, -0.02], [92, -0.054], [94, -0.078], [96, -0.093], [98, -0.08], [100, -0.033],
+    [102, 0.013], [104, 0.052], [106, 0.065], [108, 0.035], [110, -0.002], [112, -0.024], [114, -0.026],
+    [116, -0.017], [118, 0.004], [120, 0.02], [123, 0.012], [127, 0]];
+  // where its base sits meanwhile (the measured box centre swung with the top)
+  const SWING_X = [[90, 448], [92, 444], [94, 441], [96, 438], [100, 438], [104, 445], [106, 449], [108, 446],
+    [110, 441], [114, 438], [120, 442], [126, 440.5]];
   const BREAK = 146;                  // padlock springs open
   const CHARGE = 152, CHARGE_END = 188;  // tint -> white silhouette -> glowing outline
   const BURST = 192;                  // after a 4-frame hold
@@ -60,8 +69,8 @@
       ladderFrom: 2,
       league: 'الألماسي', title: '#1899d6', glow: '#8fd8ff',
       shine: {
-        clip: 1, facet: null,
-        glints: [[156, 168, 0.32, 0.3, 30], [162, 172, 0.52, 0.5, 26], [168, 178, 0.62, 0.24, 14]],
+        clip: 1, facetPoly: [[0.3, 0.25], [0.7, 0.25], [0.5, 0.8]],   // the gem's centre facet
+        cross: [0.4, 0.36],
         knob: null,
       },
     },
@@ -75,7 +84,7 @@
       league: 'الزمردي', title: '#58a700', glow: '#a5e05a',
       shine: {
         clip: 650 / 1052, facet: [0.5, 330 / 1052, 120 / 774, 105 / 1052],
-        glints: [[156, 168, 270 / 774, 240 / 1052, 30], [162, 172, 390 / 774, 330 / 1052, 26], [168, 178, 440 / 774, 200 / 1052, 14]],
+        cross: [340 / 774, 250 / 1052],
         knob: [370 / 774, 790 / 1052, 30 / 774, 9 / 1052],
       },
     },
@@ -267,7 +276,6 @@
     if (next) sprite(art.after, next[0], next[1], next[2]);
     const c = focusCentre(f);
     drawVignette(f, c);
-    drawRays(f, c);
     drawConfetti(f, 0);   // half the confetti flies out from behind the trophy
     if (f < BURST) drawUnlocking(f);
     else drawUnlocked(f);
@@ -281,8 +289,15 @@
     if (f >= BURST) return [GREEN.x, GREEN.y, GREEN.s, art.open];
     const g = track('grey', Math.min(f, 120));
     const s = track('grey', Math.min(f, 100))[2];
-    if (f <= 120) return [g[0], g[1], s, art.lock];
-    return [lerp(g[0], GREEN.x, easeInOut(ramp(f, 120, 134))), g[1], s, art.lock];
+    if (f <= 88) return [g[0], g[1], s, art.lock];
+    // from here the swing does the tipping, so follow the base, not the box
+    const x = keys([[88, track('grey', 88)[0]], ...SWING_X], f);
+    return [x, g[1], s, art.lock];
+  }
+  // Anchor point and tilt for drawing the locked trophy swung about its base
+  function swung(a, x, y, s, rot) {
+    const b = (a.img.height - a.ay) * s * a.k;   // anchor to base
+    return [x + b * Math.sin(rot), y + b - b * Math.cos(rot)];
   }
   function focusCentre(f) {
     const [x, y, s, a] = focusPose(f);
@@ -311,7 +326,8 @@
       x += wob(f * 1.9, 1) * shake;
       y += wob(f * 2.3, 4) * shake * 0.6;
     }
-    const rot = rattleTilt(f) + (f >= BREAK && f < BREAK + 10 ? 0.025 * Math.sin((f - BREAK) * 1.4) * (1 - ramp(f, BREAK, BREAK + 10)) : 0);
+    const rot = keys(SWING, f) + rattleTilt(f) + (f >= BREAK && f < BREAK + 10 ? 0.025 * Math.sin((f - BREAK) * 1.4) * (1 - ramp(f, BREAK, BREAK + 10)) : 0);
+    [x, y] = swung(art.lock, x, y, s, rot);
     const o = { rot };
     sprite(art.lock, x, y, s, 1, o);
     if (SET.padlock) drawPadlock(f, x, y, s, rot);
@@ -407,7 +423,6 @@
     const sy = keys([[121, 1.14], [123, 1.1], [126, 0.9], [129, 1.04], [132, 0.99], [135, 1]], r);
     const dy = keys([[121, -30], [125, -46], [128, -30], [131, -8], [134, 0], [137, -6], [140, -7], [143, -3], [146, 0]], r);
     const x = GREEN.x, y = GREEN.y + dy, s = GREEN.s * ps;
-    drawHalo(f);
     sprite(art.open, x, y, s, 1, { sx, sy });
     drawShine(r, x, y, s);
   }
@@ -477,44 +492,6 @@
     ctx.globalAlpha = 1;
   }
 
-  // Slowly turning light rays behind the unlocked trophy; they stay
-  function drawRays(f, [cx, cy]) {
-    if (f < BURST) return;
-    const a = keys([[BURST, 0], [BURST + 8, 0.95], [BURST + 60, 0.6]], f);
-    const rot = (f - BURST) * 0.0045;
-    const g = ctx.createRadialGradient(cx, cy, 60, cx, cy, 760);
-    g.addColorStop(0, SET.glow);
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.save();
-    ctx.globalAlpha = a * 0.55;
-    ctx.fillStyle = g;
-    ctx.translate(cx, cy);
-    ctx.rotate(rot);
-    ctx.beginPath();
-    const n = 12;
-    for (let i = 0; i < n; i++) {
-      const t = (i / n) * Math.PI * 2;
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, 760, t - 0.1, t + 0.1);
-      ctx.closePath();
-    }
-    ctx.fill();
-    ctx.restore();
-    ctx.globalAlpha = 1;
-  }
-  // Soft breathing glow right behind the trophy
-  function drawHalo(f) {
-    const [cx, cy] = spot(art.open, GREEN.x, GREEN.y, GREEN.s, 0.5, 0.5);
-    const a = keys([[BURST, 0.9], [BURST + 24, 0.45]], f) + 0.06 * Math.sin((f - BURST) * 0.08);
-    const g = ctx.createRadialGradient(cx, cy, 40, cx, cy, 330);
-    g.addColorStop(0, SET.glow);
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.globalAlpha = clamp(a);
-    ctx.fillStyle = g;
-    ctx.fillRect(cx - 340, cy - 340, 680, 680);
-    ctx.globalAlpha = 1;
-  }
-
   function drawFlash(f) {
     const a = keys([[BURST - 1, 0], [BURST, 1], [BURST + 3, 0.75], [BURST + 14, 0]], f) * (reduced ? 0.35 : 1);
     if (a <= 0) return;
@@ -552,30 +529,39 @@
     g.rect(0, 0, w, bookBottom);
     g.clip();
     g.fillStyle = '#ffffff';
-    // diagonal sweep: a wide band and a thin one, top-left to bottom-right
-    const p = lerp(ramp(f, 134, 166), easeInOut(ramp(f, 134, 166)), 0.5);
-    const d = lerp(-0.25, 1.35, p) * (w + bookBottom);
-    const a = keys([[133, 0], [137, 0.7], [160, 0.7], [166, 0]], f);
-    g.globalAlpha = a;
-    for (const [off, bw] of [[0, 120], [150, 34]]) {
-      const c = d - off;
+    // Timed to the recording (frames): a wide "/" band sweeps top-left to
+    // bottom-right (139-158), thin lines trail it and split in two (146-172),
+    // the centre facet flashes (151-160), then an X glint pops and shrinks.
+    const d = (t) => lerp(-0.2, 1.45, t) * (w + bookBottom);
+    const bands = [
+      [d(ramp(f, 139, 160)), 0.2, keys([[138, 0], [141, 0.75], [153, 0.75], [158, 0]], f)],
+      [d(ramp(f, 144, 172)) - 0.27 * w, 0.04, keys([[145, 0], [148, 0.9], [166, 0.9], [172, 0]], f)],
+      [d(ramp(f, 150, 174)) - 0.39 * w, 0.035, keys([[158, 0], [161, 0.85], [168, 0.85], [174, 0]], f)],
+    ];
+    for (const [c, bw, alpha] of bands) {
+      if (alpha <= 0) continue;
+      g.globalAlpha = alpha;
       g.beginPath();
-      g.moveTo(c - bw, 0);
+      g.moveTo(c - bw * w, 0);
       g.lineTo(c, 0);
       g.lineTo(c - bookBottom, bookBottom);
-      g.lineTo(c - bookBottom - bw, bookBottom);
+      g.lineTo(c - bookBottom - bw * w, bookBottom);
       g.closePath();
       g.fill();
     }
     // centre facet flash
-    const cf = sh.facet ? keys([[150, 0], [153, 0.85], [157, 0.85], [161, 0]], f) : 0;
+    const cf = keys([[150, 0], [152, 0.9], [157, 0.9], [161, 0]], f);
     if (cf > 0) {
       g.globalAlpha = cf;
       g.beginPath();
-      const [fx, fy, rx, ry] = sh.facet;
-      for (let i = 0; i < 5; i++) {
-        const ang = -Math.PI / 2 + (i / 5) * Math.PI * 2;
-        g[i ? 'lineTo' : 'moveTo'](fx * w + Math.cos(ang) * rx * w, fy * h + Math.sin(ang) * ry * h);
+      if (sh.facetPoly) {
+        sh.facetPoly.forEach(([px, py], i) => g[i ? 'lineTo' : 'moveTo'](px * w, py * h));
+      } else {
+        const [fx, fy, rx, ry] = sh.facet;
+        for (let i = 0; i < 5; i++) {
+          const ang = -Math.PI / 2 + (i / 5) * Math.PI * 2;
+          g[i ? 'lineTo' : 'moveTo'](fx * w + Math.cos(ang) * rx * w, fy * h + Math.sin(ang) * ry * h);
+        }
       }
       g.closePath();
       g.fill();
@@ -586,12 +572,32 @@
     g.globalCompositeOperation = 'source-over';
     sprite({ ...art.open, img: shineCanvas }, x, y, s);
 
-    // glints on the trophy (and the knob, for the books)
+    // the X glint: pops big, becomes a little diamond with a cross, shrinks
+    // to a dot (and a knob glint, for the books)
     const sc = s * art.open.k;
     const ox = x - art.open.ax * sc, oy = y - art.open.ay * sc;
-    for (const [f0, f1, gx, gy, r] of sh.glints) {
-      if (f < f0 || f > f1) continue;
-      star(ox + gx * w * sc, oy + gy * h * sc, r * Math.sin(Math.PI * ((f - f0) / (f1 - f0))), '#ffffff');
+    const gr = keys([[158, 0], [160, 0.05], [162, 0.11], [165, 0.09], [168, 0.07], [171, 0.05], [174, 0.03], [177, 0.012], [179, 0]], f) * w * sc;
+    if (gr > 0.5) {
+      const gx = ox + sh.cross[0] * w * sc, gy = oy + sh.cross[1] * h * sc;
+      ctx.save();
+      ctx.translate(gx, gy);
+      ctx.rotate(Math.PI / 4);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = Math.max(2, gr * 0.22);
+      ctx.beginPath();
+      ctx.moveTo(-gr, 0);
+      ctx.lineTo(gr, 0);
+      ctx.moveTo(0, -gr);
+      ctx.lineTo(0, gr);
+      ctx.stroke();
+      const sq = keys([[162, 0], [164, 0.5], [167, 0.5], [169, 0]], f);
+      if (sq > 0) {
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-gr * sq, -gr * sq, gr * sq * 2, gr * sq * 2);
+      }
+      ctx.restore();
     }
     const kg = sh.knob ? keys([[138, 0], [141, 1], [150, 1], [155, 0]], f) : 0;
     if (kg > 0) {

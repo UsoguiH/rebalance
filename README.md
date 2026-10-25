@@ -117,12 +117,16 @@ any one replays them all):
 - **First version** (`?style=classic`, `league/classic.js`): a frame-accurate recreation of the
   reference recording.
 - **New version** (default, `league/league.js`): the same zoom and pan, then a stronger unlock:
-  1. Build-up: the locked badge rattles twice, then its padlock springs open and falls away.
+  1. Build-up: the locked badge swings on its base as it arrives (tips left, swings right,
+     settles, as measured from the recording), rattles, then its padlock springs open and falls
+     away.
   2. Charge: the room dims, streaks of light are pulled in, and the badge goes icy, turns into a
      glowing outline, swells and trembles harder. It holds still for a beat.
   3. Burst: a flash, a shockwave and a screen shake. The new badge punches in with squash and
-     stretch, light rays turn behind it, and confetti blasts out and flutters down.
-  4. The league name slams in, the line under it rises, and the button appears.
+     stretch, and confetti blasts out and flutters down.
+  4. The shine, timed frame for frame to the recording: a wide band and trailing thin lines
+     sweep across, the centre facet flashes, and an X glint pops and shrinks.
+  5. The league name slams in, the line under it rises, and the button appears.
 
   Phones vibrate on the snap, the burst and the title once the page has been tapped. With
   reduced motion turned on, there is no screen shake and the flash is softer.
