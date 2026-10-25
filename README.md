@@ -107,3 +107,18 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+## League promotion animation
+
+`league/index.html` is a frame-accurate recreation of a league promotion screen,
+using the book trophies from `league/src/books.jpg`. The result card fades out, the trophy row
+zooms in and pans from the red book to the locked one, which tints icy blue, turns
+into a glowing outline, wobbles and bursts open into an emerald book with confetti,
+a shine sweep and sparkles. Click the stage to replay it.
+
+- `league/motion.js`: the trophy positions and scales, measured frame by frame from the
+  reference recording (60 fps)
+- `league/img/*.png`: the trophies cut out of the source image. `green.png` is the red book
+  recolored to emerald. Rebuild them with `python3 tools/cut-books.py` (needs Pillow and numpy)
+- `node tools/render-league.js [out.mp4]` renders the animation to video with Playwright and
+  ffmpeg. `league/league.mp4` is a render of it
