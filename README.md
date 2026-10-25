@@ -126,15 +126,15 @@ any one replays them all):
 
   Phones vibrate on the snap, the burst and the title once the page has been tapped. With
   reduced motion turned on, there is no screen shake and the flash is softer.
-- **Legendary version** (`?style=legendary`, also in `league/league.js`): after the padlock snaps,
-  the room goes dark and the badge lifts into a spotlight.
-  1. Three hits climb the rarity: نادر (blue), ملحمي (purple), أسطوري (gold). Each one has a
-     pull-back and punch, a colour ring, a spray of light, a stronger aura and more orbiting sparks.
-  2. Gold light is pulled in while the badge turns white-hot, and it freezes for a beat.
-  3. A gold explosion with a lens streak and shockwaves. The badge spins in like a card flip, then
-     floats inside counter-rotating gold and rainbow rays, with gold confetti, rising embers,
-     twinkling stars and a rainbow shimmer.
-  4. «أسطوري!» slams in, in gold, with a glint across it, then the league name and the button.
+- **Bold version** (`?style=bold`, also in `league/league.js`): the same bright, flat screen,
+  simple but hard-hitting. After the padlock snaps:
+  1. The grey badge squats down and trembles (the wind-up).
+  2. The league colour fills it from the bottom up, behind a wavy white edge.
+  3. It pops with squash and stretch: a flat disc and ring burst out, light-tinted sunburst rays
+     start turning, flat confetti flies out, and the leagues on either side hop.
+  4. A «دوري جديد!» pill pops in above it and the league name lands.
+  5. A ladder of all the leagues (bronze to champion) appears; the bar climbs from gold to
+     diamond and the diamond pops into colour.
 
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
 champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
@@ -146,7 +146,7 @@ champion locked next). Add `?set=books` for the book trophies from `league/src/b
 - `league/img/*.png`: the book trophies cut out of the source image. `green.png` is the red
   book recolored to emerald. Rebuild them with `python3 tools/cut-books.py`. Both tools need
   Pillow and numpy
-- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|legendary]` renders a
+- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold]` renders a
   version to video with Playwright and ffmpeg. `league/league.mp4`, `league/league-classic.mp4`,
-  `league/league-legendary.mp4` and `league/league-books.mp4` are renders, and
+  `league/league-bold.mp4` and `league/league-books.mp4` are renders, and
   `league/league-compare.mp4` puts the three versions side by side
