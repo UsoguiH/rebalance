@@ -111,8 +111,8 @@ Progress saves automatically to `localStorage`.
 ## League promotion animation
 
 `league/index.html` is a league promotion screen. It plays on load; tap at the end to replay.
-There are two versions, and `league/compare.html` plays them side by side, in sync (a tap on
-either replays both):
+There are three versions, and `league/compare.html` plays them side by side, in sync (a tap on
+any one replays them all):
 
 - **First version** (`?style=classic`, `league/classic.js`): a frame-accurate recreation of the
   reference recording.
@@ -126,6 +126,15 @@ either replays both):
 
   Phones vibrate on the snap, the burst and the title once the page has been tapped. With
   reduced motion turned on, there is no screen shake and the flash is softer.
+- **Legendary version** (`?style=legendary`, also in `league/league.js`): after the padlock snaps,
+  the room goes dark and the badge lifts into a spotlight.
+  1. Three hits climb the rarity: نادر (blue), ملحمي (purple), أسطوري (gold). Each one has a
+     pull-back and punch, a colour ring, a spray of light, a stronger aura and more orbiting sparks.
+  2. Gold light is pulled in while the badge turns white-hot, and it freezes for a beat.
+  3. A gold explosion with a lens streak and shockwaves. The badge spins in like a card flip, then
+     floats inside counter-rotating gold and rainbow rays, with gold confetti, rising embers,
+     twinkling stars and a rainbow shimmer.
+  4. «أسطوري!» slams in, in gold, with a glint across it, then the league name and the button.
 
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
 champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
@@ -137,7 +146,7 @@ champion locked next). Add `?set=books` for the book trophies from `league/src/b
 - `league/img/*.png`: the book trophies cut out of the source image. `green.png` is the red
   book recolored to emerald. Rebuild them with `python3 tools/cut-books.py`. Both tools need
   Pillow and numpy
-- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic]` renders a version to
-  video with Playwright and ffmpeg. `league/league.mp4`, `league/league-classic.mp4` and
-  `league/league-books.mp4` are renders, and `league/league-compare.mp4` puts the two versions
-  side by side
+- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|legendary]` renders a
+  version to video with Playwright and ffmpeg. `league/league.mp4`, `league/league-classic.mp4`,
+  `league/league-legendary.mp4` and `league/league-books.mp4` are renders, and
+  `league/league-compare.mp4` puts the three versions side by side

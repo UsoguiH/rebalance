@@ -3,6 +3,9 @@
 // off, it charges up (the room dims, light is pulled in, it swells and
 // trembles), holds for a beat, then bursts open into its unlocked art with a
 // flash, shockwave, screen shake, light rays, confetti and a title slam.
+// ?style=legendary is a third, bigger take on the unlock: the stage goes dark,
+// three hits climb the rarity (rare, epic, legendary), and the badge spins in
+// out of a gold explosion under a slammed-in title.
 // Two trophy sets: the Qudrati rank badges (default) and the books
 // (?set=books). It plays on load; tap at the end to replay.
 // (classic.js is the first version, a faithful recreation of the recording.)
@@ -20,7 +23,17 @@
   const BURST = 192;                  // after a 4-frame hold
   const POST = BURST - 121;           // recording frame = timeline frame - POST, after the burst
   const TITLE = 220;
-  const END = 380;
+  // Legendary timeline (frames); shares everything up to the padlock snap
+  const LG = {
+    dark: 150, darkFull: 174,            // the room goes dark, the badge lifts into a spotlight
+    hits: [192, 224, 256],               // each hit climbs one rarity
+    charge: 262, hold: 294, burst: 298,  // gold charge, a 4-frame freeze, the explosion
+    flip: 334,                           // the badge has spun in by here
+    title: 320, name: 338, sub: 348, button: 362,
+    end: 520,
+  };
+  const LEGEND = params_style() === 'legendary';
+  const END = LEGEND ? LG.end : 380;
   const E = 40;                       // padding around the glow canvases
   const BG = '#fffffc';
   const AR = "'Tajawal', 'Noto Sans Arabic', 'Segoe UI', sans-serif";
@@ -63,6 +76,8 @@
       },
     },
   };
+
+  function params_style() { return new URLSearchParams(location.search).get('style'); }
 
   const canvas = document.getElementById('stage');
   const ctx = canvas.getContext('2d');
@@ -612,9 +627,11 @@
     return list;
   })();
   function drawConfetti(f, layer) {
-    if (f < BURST) return;
-    const [cx, cy] = spot(art.open, GREEN.x, GREEN.y, GREEN.s, 0.5, 0.5);
-    for (const c of confetti) {
+    drawConfettiList(confetti, BURST, f, layer, spot(art.open, GREEN.x, GREEN.y, GREEN.s, 0.5, 0.5));
+  }
+  function drawConfettiList(list, burst, f, layer, [cx, cy]) {
+    if (f < burst) return;
+    for (const c of list) {
       if (c.layer !== layer || f < c.f0) continue;
       let x = c.x, y = c.y, vx = c.vx, vy = c.vy;
       const steps = Math.floor(f - c.f0);
@@ -833,9 +850,573 @@
     } else {
       drawButton(false, out);
     }
+    if (LEGEND) return drawLegendTitle(f);
     drawTitle(f);
     const b = ramp(f, TITLE + 18, TITLE + 30);
-    drawButton(true, b, b >= 1 ? 0.012 * (1 - Math.cos((f - TITLE - 30) * 0.08)) : 0);
+    if (!LEGEND) drawButton(true, b, b >= 1 ? 0.012 * (1 - Math.cos((f - TITLE - 30) * 0.08)) : 0);
+  }
+
+  // ---------- legendary ----------
+  // Rarity steps: before the first hit, then rare, epic, legendary
+  const RARITY = [
+    { color: '#8fa6ff', name: '' },
+    { color: '#35c4ff', name: 'نادر' },
+    { color: '#c25bff', name: 'ملحمي' },
+    { color: '#ffc21a', name: 'أسطوري' },
+  ];
+  const GOLD = '#ffc21a';
+  const lg = {};   // layers made at load time
+  function buildLegend() {
+    const L = art.lock;
+    lg.tint = RARITY.map((r) => layer(L, r.color));
+    lg.glow = RARITY.map((r) => layer(L, r.color, 30, 7, true));
+    lg.white = art.white;
+    lg.openGlow = layer(art.open, GOLD, 34, 9, true);
+    lg.back = layer(art.open, '#ffd84d');
+    lg.title = textBitmap('أسطوري!', 128);
+  }
+  // The title drawn once into its own canvas: gold gradient, dark outline,
+  // so the glint can be swept across it
+  function textBitmap(text, size) {
+    const c = document.createElement('canvas');
+    c.width = 860;
+    c.height = Math.round(size * 1.9);
+    const g = c.getContext('2d');
+    g.direction = 'rtl';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.font = '800 ' + size + 'px ' + AR;
+    const cy = c.height / 2;
+    g.lineJoin = 'round';
+    g.lineWidth = size * 0.16;
+    g.strokeStyle = '#2a1206';
+    g.strokeText(text, c.width / 2, cy + size * 0.06);   // drop edge
+    g.strokeText(text, c.width / 2, cy);
+    const grad = g.createLinearGradient(0, cy - size * 0.5, 0, cy + size * 0.5);
+    grad.addColorStop(0, '#fff8c9');
+    grad.addColorStop(0.45, '#ffd21f');
+    grad.addColorStop(1, '#ff8a00');
+    g.fillStyle = grad;
+    g.fillText(text, c.width / 2, cy);
+    return c;
+  }
+
+  const level = (f) => LG.hits.filter((h) => f >= h).length;
+  const sinceHit = (f) => {
+    const past = LG.hits.filter((h) => f >= h);
+    return past.length ? f - past[past.length - 1] : 999;
+  };
+
+  // Badge pose while it is still locked: lifted into the spotlight, bobbing
+  function legendPose(f) {
+    let [x, y, s] = focusPose(f);
+    y -= 80 * easeInOut(ramp(f, LG.dark, LG.darkFull + 6));
+    y += Math.sin((f - LG.dark) * 0.07) * 7 * ramp(f, LG.darkFull, LG.darkFull + 20);
+    // anticipation before each hit (pull back), punch on it
+    let k = 1, sx = 1, sy = 1;
+    for (const h of LG.hits) {
+      k *= keys([[h - 8, 1], [h - 1, 0.92], [h, 1.14], [h + 4, 0.98], [h + 8, 1]], f);
+      sx *= keys([[h - 1, 1], [h, 1.16], [h + 3, 0.92], [h + 7, 1.03], [h + 11, 1]], f);
+      sy *= keys([[h - 1, 1], [h, 0.86], [h + 3, 1.08], [h + 7, 0.98], [h + 11, 1]], f);
+    }
+    k *= keys([[LG.charge, 1], [LG.hold, 1.13]], f);
+    const tremble = reduced ? 0 : keys([[LG.charge, 0.5], [LG.hold - 1, 7], [LG.hold, 0]], f) * (f < LG.hold ? 1 : 0)
+      + (f < LG.hits[0] ? 0 : 0.8 * (f < LG.charge ? 1 : 0));
+    x += wob(f * 2.1, 3) * tremble;
+    y += wob(f * 2.6, 8) * tremble * 0.6;
+    return { x, y, s: s * k, sx, sy };
+  }
+  function legendCentre(f) {
+    if (f >= LG.burst) {
+      const bob = Math.sin((f - LG.flip) * 0.05) * 8 * ramp(f, LG.flip, LG.flip + 30);
+      return spot(art.open, GREEN.x, GREEN.y - 30 + bob, GREEN.s, 0.5, 0.5);
+    }
+    const p = legendPose(f);
+    return spot(art.lock, p.x, p.y, p.s, 0.5, 0.5);
+  }
+
+  function drawBackdrop(f, [cx, cy]) {
+    const a = easeInOut(ramp(f, LG.dark, LG.darkFull));
+    if (a <= 0) return;
+    const g = ctx.createRadialGradient(cx, cy, 80, cx, cy, 1100);
+    const lit = f >= LG.burst ? 1 : 0;
+    g.addColorStop(0, lit ? '#3d2475' : '#271650');
+    g.addColorStop(0.55, '#140b30');
+    g.addColorStop(1, '#06030f');
+    ctx.globalAlpha = a;
+    ctx.fillStyle = g;
+    ctx.fillRect(0, OY, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // A soft beam of light falling from the top onto the badge
+  function drawSpotlight(f, [cx, cy]) {
+    const a = ramp(f, LG.dark + 10, LG.darkFull + 10) * (1 - ramp(f, LG.burst, LG.burst + 10));
+    if (a <= 0) return;
+    const g = ctx.createLinearGradient(0, OY, 0, cy + 260);
+    g.addColorStop(0, 'rgba(200,210,255,0.32)');
+    g.addColorStop(1, 'rgba(200,210,255,0)');
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = a;
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(cx - 110, OY);
+    ctx.lineTo(cx + 110, OY);
+    ctx.lineTo(cx + 330, cy + 260);
+    ctx.lineTo(cx - 330, cy + 260);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function glowDisc(cx, cy, r, color, alpha) {
+    if (alpha <= 0) return;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+    ctx.restore();
+  }
+  // Wedge rays around (cx, cy); hue > -1 paints them in a cycling rainbow
+  function wedges(cx, cy, n, radius, half, rot, color, alpha, hue = -1) {
+    if (alpha <= 0) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+    for (let i = 0; i < n; i++) {
+      const t = (i / n) * Math.PI * 2;
+      const c = hue < 0 ? color : 'hsl(' + ((hue + i * (360 / n)) % 360) + ',100%,65%)';
+      const g = ctx.createRadialGradient(0, 0, 30, 0, 0, radius);
+      g.addColorStop(0, c);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, radius, t - half, t + half);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Sparks circling the badge on a tilted ring; more and faster with each hit.
+  // front = false draws the half behind the badge.
+  function drawOrbit(f, [cx, cy], front) {
+    if (f < LG.darkFull || f >= LG.burst) return;
+    const lv = level(f);
+    const n = 10 + lv * 8;
+    const color = RARITY[lv].color;
+    const speed = 0.025 + lv * 0.018 + ramp(f, LG.charge, LG.hold) * 0.06;
+    const pull = 1 - 0.45 * easeInOut(ramp(f, LG.charge, LG.hold));
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + f * speed * (1 + (i % 3) * 0.15);
+      const depth = Math.sin(a);
+      if ((depth > 0) !== front) continue;
+      const x = cx + Math.cos(a) * 300 * pull, y = cy + depth * 95 * pull - 10;
+      const r = (front ? 5 : 3.5) * (0.8 + 0.4 * ((i * 7) % 5) / 5);
+      ctx.globalAlpha = 0.25 * ramp(f, LG.darkFull, LG.darkFull + 12);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = ramp(f, LG.darkFull, LG.darkFull + 12);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Each hit: a colour ring, a spray of light streaks
+  function drawHits(f, [cx, cy]) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    LG.hits.forEach((h, i) => {
+      const t = f - h;
+      if (t < 0 || t > 26) return;
+      const p = t / 26;
+      const color = RARITY[i + 1].color;
+      ctx.globalAlpha = (1 - p) ** 1.5;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lerp(28, 2, p);
+      ctx.beginPath();
+      ctx.arc(cx, cy, lerp(170, 640 + i * 120, easeOut(p)), 0, Math.PI * 2);
+      ctx.stroke();
+      const n = 14 + i * 6;
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 5;
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2 + i;
+        const r0 = lerp(150, 380 + i * 60, easeOut(p)), len = lerp(70, 10, p);
+        ctx.strokeStyle = k % 2 ? color : '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+        ctx.lineTo(cx + Math.cos(a) * (r0 + len), cy + Math.sin(a) * (r0 + len));
+        ctx.stroke();
+      }
+    });
+    ctx.restore();
+  }
+
+  // Gold streaks pulled into the badge during the final charge
+  const goldMotes = (() => {
+    const r = rng(23);
+    const list = [];
+    for (let i = 0; i < 60; i++) {
+      list.push({ a: r() * Math.PI * 2, r0: 480 + r() * 260, f0: LG.charge + r() * (LG.hold - LG.charge - 12), dur: 10 + r() * 8, w: 3 + r() * 4 });
+    }
+    return list;
+  })();
+  function drawGoldImplosion(f, [cx, cy]) {
+    if (f < LG.charge || f >= LG.hold) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    goldMotes.forEach((m, i) => {
+      const p = (f - m.f0) / m.dur;
+      if (p <= 0 || p >= 1) return;
+      const e = p ** 2;
+      const rr = lerp(m.r0, 140, e), len = 16 + 90 * e;
+      ctx.globalAlpha = Math.min(1, p * 3) * (1 - ramp(p, 0.85, 1));
+      ctx.strokeStyle = i % 3 ? GOLD : '#ffffff';
+      ctx.lineWidth = m.w;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(m.a) * rr, cy + Math.sin(m.a) * rr);
+      ctx.lineTo(cx + Math.cos(m.a) * (rr + len), cy + Math.sin(m.a) * (rr + len));
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  // The locked badge in the dark: grey art washed with the rarity colour,
+  // a coloured glow, a white flash on each hit, white-hot by the end of the charge
+  function drawLockedLegend(f) {
+    const p = legendPose(f);
+    const lv = level(f);
+    const o = { sx: p.sx, sy: p.sy };
+    const [cx, cy] = spot(art.lock, p.x, p.y, p.s, 0.5, 0.5);
+    const pulse = 0.85 + 0.15 * Math.sin(f * 0.25);
+    glowDisc(cx, cy, 300 + lv * 50, RARITY[lv].color, (0.35 + lv * 0.12) * ramp(f, LG.dark, LG.darkFull) * pulse);
+    wedges(cx, cy, 12, 520 + lv * 90, 0.07, f * (0.004 + lv * 0.004), RARITY[lv].color, 0.1 * lv);
+    drawOrbit(f, [cx, cy], false);
+    sprite(lg.glow[lv], p.x, p.y, p.s, ramp(f, LG.dark, LG.darkFull) * pulse, o);
+    sprite(art.lock, p.x, p.y, p.s, 1, o);
+    sprite(lg.tint[lv], p.x, p.y, p.s, (0.2 + lv * 0.12) * ramp(f, LG.dark, LG.darkFull), o);
+    const flash = Math.max(1 - sinceHit(f) / 12, 0) + easeInOut(ramp(f, LG.charge + 8, LG.hold - 2));
+    sprite(lg.white, p.x, p.y, p.s, clamp(flash), o);
+    drawOrbit(f, [cx, cy], true);
+  }
+
+  // The rarity word under the badge, popping on each hit
+  function drawRarityLabel(f) {
+    const lv = level(f);
+    if (!lv || f >= LG.burst) return;
+    const t = sinceHit(f);
+    const k = keys([[0, 1.7], [4, 0.92], [7, 1.04], [10, 1]], t);
+    const a = 1 - ramp(f, LG.charge + 8, LG.hold);
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.translate(W / 2, 1010);
+    ctx.scale(k, k);
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '800 64px ' + AR;
+    ctx.shadowColor = RARITY[lv].color;
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = RARITY[lv].color;
+    ctx.fillText(RARITY[lv].name, 0, 0);
+    ctx.restore();
+  }
+
+  // ---- after the explosion ----
+  const embers = (() => {
+    const r = rng(31);
+    const list = [];
+    for (let i = 0; i < 60; i++) {
+      list.push({ x: r() * W, speed: 1.2 + r() * 2.6, off: r() * (H + 200), size: 2 + r() * 3.5, sway: r() * 6, gold: r() < 0.75 });
+    }
+    return list;
+  })();
+  function drawEmbers(f) {
+    if (f < LG.burst) return;
+    const a = ramp(f, LG.burst, LG.burst + 30);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const e of embers) {
+      const t = f - LG.burst;
+      const y = OY + H + 40 - ((e.off + t * e.speed) % (H + 200));
+      const x = e.x + Math.sin(t * 0.03 + e.sway) * 18;
+      const fade = clamp((y - OY) / 400) * a;
+      ctx.globalAlpha = fade * 0.3;
+      ctx.fillStyle = e.gold ? GOLD : '#c9a0ff';
+      ctx.beginPath();
+      ctx.arc(x, y, e.size * 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = '#fff4c4';
+      ctx.beginPath();
+      ctx.arc(x, y, e.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  // Gold and white stars twinkling on their own rhythms around the badge
+  const glints = (() => {
+    const r = rng(41);
+    const list = [];
+    for (let i = 0; i < 16; i++) {
+      const a = r() * Math.PI * 2, d = 260 + r() * 200;
+      list.push({ dx: Math.cos(a) * d, dy: Math.sin(a) * d * 0.85, period: 60 + r() * 60, phase: r(), r: 14 + r() * 22, gold: i % 3 !== 0 });
+    }
+    return list;
+  })();
+  function drawGlints(f, [cx, cy]) {
+    if (f < LG.burst + 6) return;
+    for (const g of glints) {
+      const p = (((f - LG.burst) / g.period) + g.phase) % 1;
+      if (p > 0.5) continue;
+      star(cx + g.dx, cy + g.dy, g.r * Math.sin(Math.PI * p * 2), g.gold ? '#ffd84d' : '#ffffff');
+    }
+  }
+
+  const LEGEND_CONFETTI = ['#ffc21a', '#fff1a8', '#ffffff', '#c25bff', '#35c4ff', '#ff7ad9'];
+  const legendConfetti = (() => {
+    const r = rng(53);
+    const list = [];
+    for (let i = 0; i < 110; i++) {
+      const a = -Math.PI / 2 + (r() - 0.5) * Math.PI * 1.5;
+      const v = 30 + r() * 30;
+      list.push({
+        f0: LG.burst + r() * 4, x: (r() - 0.5) * 160, y: (r() - 0.5) * 140,
+        vx: Math.cos(a) * v * 1.15, vy: Math.sin(a) * v,
+        w: 22 + r() * 16, h: 12 + r() * 8,
+        rot: r() * Math.PI * 2, spin: (r() - 0.5) * 0.3,
+        flip: r() * Math.PI * 2, flipRate: 0.12 + r() * 0.18, sway: r() * Math.PI * 2,
+        color: LEGEND_CONFETTI[i % LEGEND_CONFETTI.length], layer: i % 3 ? 0 : 1,
+      });
+    }
+    return list;
+  })();
+
+  // Rainbow shimmer swept across the revealed badge, now and then
+  let shimmerCanvas = null;
+  function drawShimmer(f, x, y, s, o) {
+    const cycle = (f - (LG.flip + 4)) % 150;
+    if (f < LG.flip + 4 || cycle > 34) return;
+    const img = art.open.img, w = img.width, h = img.height;
+    if (!shimmerCanvas) {
+      shimmerCanvas = document.createElement('canvas');
+      shimmerCanvas.width = w;
+      shimmerCanvas.height = h;
+    }
+    const g = shimmerCanvas.getContext('2d');
+    g.clearRect(0, 0, w, h);
+    const d = lerp(-0.4, 1.4, easeInOut(cycle / 34)) * (w + h);
+    const grad = g.createLinearGradient(d - h - 90, 0, d - h + 90, 0);
+    ['rgba(255,80,80,0)', 'rgba(255,200,60,0.7)', 'rgba(120,255,160,0.7)', 'rgba(80,170,255,0.7)', 'rgba(220,120,255,0.7)', 'rgba(220,120,255,0)']
+      .forEach((c, i, arr) => grad.addColorStop(i / (arr.length - 1), c));
+    g.save();
+    g.setTransform(1, 0, 1, 1, 0, 0);   // shear so the band runs diagonally
+    g.fillStyle = grad;
+    g.fillRect(-h, 0, w + 2 * h, h);
+    g.restore();
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(img, 0, 0);
+    g.globalCompositeOperation = 'source-over';
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    sprite({ ...art.open, img: shimmerCanvas }, x, y, s, 0.8, o);
+    ctx.restore();
+  }
+
+  // The revealed badge: spins in like a card flip (gold back, then the face),
+  // lands with an overshoot, then floats
+  function drawRevealed(f) {
+    const t = ramp(f, LG.burst, LG.flip);
+    const phi = (1 - easeOut(t)) * Math.PI * 4;
+    const face = Math.cos(phi);
+    const k = keys([[LG.burst, 1.45], [LG.flip - 6, 0.97], [LG.flip, 1.04], [LG.flip + 6, 0.99], [LG.flip + 10, 1]], f);
+    const bob = Math.sin((f - LG.flip) * 0.05) * 8 * ramp(f, LG.flip, LG.flip + 30);
+    const x = GREEN.x, y = GREEN.y - 30 + bob, s = GREEN.s * k;
+    const o = { sx: Math.max(0.03, Math.abs(face)) };
+    const [cx, cy] = spot(art.open, x, y, s, 0.5, 0.5);
+    const breathe = 0.85 + 0.15 * Math.sin(f * 0.06);
+    glowDisc(cx, cy, 420, GOLD, 0.55 * breathe);
+    sprite(lg.openGlow, x, y, s, keys([[LG.burst, 1], [LG.flip + 20, 0.8]], f) * breathe, o);
+    if (face >= 0) sprite(art.open, x, y, s, 1, o);
+    else sprite(lg.back, x, y, s, 1, o);
+    drawShimmer(f, x, y, s, o);
+  }
+
+  function drawLensFlare(f, [cx, cy]) {
+    const a = 1 - ramp(f, LG.burst, LG.burst + 34);
+    if (f < LG.burst || a <= 0) return;
+    const w = lerp(300, W * 1.6, easeOut(ramp(f, LG.burst, LG.burst + 12)));
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [hgt, col, al] of [[90, GOLD, 0.35], [16, '#fff6d8', 1]]) {
+      const g = ctx.createLinearGradient(cx - w / 2, 0, cx + w / 2, 0);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(0.5, col);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = a * al;
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, w / 2, hgt / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawLegendShock(f, [cx, cy]) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [f0, dur, r1, w0, color] of [[LG.burst, 30, 1000, 46, GOLD], [LG.burst + 3, 28, 760, 18, '#ffffff'], [LG.burst + 8, 30, 600, 10, '#c25bff']]) {
+      const p = ramp(f, f0, f0 + dur);
+      if (f < f0 || p >= 1) continue;
+      ctx.globalAlpha = (1 - p) ** 1.4;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lerp(w0, 2, p);
+      ctx.beginPath();
+      ctx.arc(cx, cy, lerp(160, r1, easeOut(p)), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawLegendTitle(f) {
+    if (f >= LG.title) {
+      const k = keys([[LG.title, 3.2], [LG.title + 5, 0.86], [LG.title + 9, 1.07], [LG.title + 13, 0.98], [LG.title + 16, 1]], f);
+      const bm = lg.title;
+      ctx.save();
+      ctx.globalAlpha = ramp(f, LG.title, LG.title + 3);
+      ctx.translate(W / 2, 268);
+      ctx.scale(k, k);
+      ctx.shadowColor = 'rgba(255,170,0,0.6)';
+      ctx.shadowBlur = 30;
+      ctx.drawImage(bm, -bm.width / 2, -bm.height / 2);
+      ctx.restore();
+      // a glint across the gold letters, then again every few seconds
+      const cyc = (f - (LG.title + 18)) % 170;
+      if (f >= LG.title + 18 && cyc < 26) {
+        const g = document.createElement('canvas');
+        g.width = bm.width;
+        g.height = bm.height;
+        const gc = g.getContext('2d');
+        const x = lerp(-120, bm.width + 120, easeInOut(cyc / 26));
+        gc.setTransform(1, 0, -0.35, 1, 0, 0);
+        const grad = gc.createLinearGradient(x - 60, 0, x + 60, 0);
+        grad.addColorStop(0, 'rgba(255,255,255,0)');
+        grad.addColorStop(0.5, 'rgba(255,255,255,0.95)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        gc.fillStyle = grad;
+        gc.fillRect(-200, 0, bm.width + 400, bm.height);
+        gc.setTransform(1, 0, 0, 1, 0, 0);
+        gc.globalCompositeOperation = 'destination-in';
+        gc.drawImage(bm, 0, 0);
+        ctx.drawImage(g, W / 2 - bm.width / 2, 268 - bm.height / 2);
+      }
+      // a burst of gold behind the word as it lands
+      const lp = ramp(f, LG.title + 4, LG.title + 26);
+      if (lp > 0 && lp < 1) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        rays(W / 2, 268, 16, lerp(120, 360, easeOut(lp)), lerp(160, 380, easeOut(lp)), 6, [GOLD, '#ffffff'], 1 - lp);
+        ctx.restore();
+      }
+    }
+    const np = easeOut(ramp(f, LG.name, LG.name + 14));
+    if (np > 0) {
+      ctx.save();
+      ctx.globalAlpha = np;
+      ctx.translate(W / 2, 1000 + (1 - np) * 24);
+      ctx.direction = 'rtl';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '800 70px ' + AR;
+      ctx.shadowColor = 'rgba(194,91,255,0.8)';
+      ctx.shadowBlur = 22;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('المستوى ' + SET.league, 0, 0);
+      ctx.restore();
+    }
+    const sp = easeOut(ramp(f, LG.sub, LG.sub + 14));
+    if (sp > 0) {
+      ctx.save();
+      ctx.globalAlpha = sp;
+      ctx.translate(W / 2, 1082 + (1 - sp) * 18);
+      ctx.direction = 'rtl';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '700 36px ' + AR;
+      ctx.fillStyle = '#d6c8ff';
+      ctx.fillText('تهانينا! حقّقت إنجازًا أسطوريًا هذا الأسبوع', 0, 0);
+      ctx.restore();
+    }
+    const b = ramp(f, LG.button, LG.button + 12);
+    drawButton(true, b, b >= 1 ? 0.014 * (1 - Math.cos((f - LG.button - 12) * 0.08)) : 0);
+  }
+
+  function legendShake(f) {
+    if (reduced) return [0, 0];
+    let amp = keys([[BREAK - 1, 0], [BREAK, 4], [BREAK + 8, 0]], f);
+    LG.hits.forEach((h, i) => { amp += keys([[h - 1, 0], [h, 7 + i * 5], [h + 14, 0]], f); });
+    amp += keys([[LG.burst - 1, 0], [LG.burst, 26], [LG.burst + 8, 14], [LG.burst + 36, 0]], f);
+    amp += keys([[LG.title + 4, 0], [LG.title + 5, 10], [LG.title + 16, 0]], f);
+    return [wob(f * 2.9, 2) * amp, wob(f * 3.4, 7) * amp];
+  }
+
+  function drawLegendFlash(f) {
+    let a = keys([[LG.burst - 1, 0], [LG.burst, 1], [LG.burst + 3, 0.85], [LG.burst + 8, 0.3], [LG.burst + 14, 0]], f);
+    LG.hits.forEach((h) => { a = Math.max(a, keys([[h - 1, 0], [h, 0.35], [h + 6, 0]], f)); });
+    a *= reduced ? 0.35 : 1;
+    if (a <= 0) return;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = f >= LG.burst ? '#fff8e0' : '#ffffff';
+    ctx.fillRect(0, OY, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawLegend(f) {
+    // the row as before, then the room goes dark over it
+    const red = track('red', f);
+    sprite(art.cur, red[0], red[1], red[2]);
+    const next = track('next', f);
+    if (next) sprite(art.after, next[0], next[1], next[2]);
+    const c = legendCentre(f);
+    drawBackdrop(f, c);
+    drawSpotlight(f, c);
+    if (f < LG.burst) {
+      drawLockedLegend(f);
+      const base = focusPose(f);
+      drawPadlock(f, base[0], base[1], base[2], 0);   // still tumbling away from the snap
+      drawHits(f, c);
+      drawGoldImplosion(f, c);
+      drawRarityLabel(f);
+      return;
+    }
+    const t = f - LG.burst;
+    const raysIn = keys([[0, 0], [8, 1], [70, 0.75]], t);
+    wedges(c[0], c[1], 14, 980, 0.085, t * 0.006, GOLD, 0.42 * raysIn);
+    wedges(c[0], c[1], 24, 900, 0.03, -t * 0.004, null, 0.22 * raysIn, (t * 2) % 360);
+    drawEmbers(f);
+    drawConfettiList(legendConfetti, LG.burst, f, 0, c);
+    drawRevealed(f);
+    drawConfettiList(legendConfetti, LG.burst, f, 1, c);
+    drawGlints(f, c);
+    drawLegendShock(f, c);
+    drawLensFlare(f, c);
   }
 
   // ---------- frame ----------
@@ -845,14 +1426,17 @@
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
     ctx.translate(0, -OY);
-    const [shx, shy] = shakeOffset(f);
+    const legend = LEGEND && f >= LG.dark;
+    const [shx, shy] = LEGEND ? legendShake(f) : shakeOffset(f);
     ctx.save();
     ctx.translate(shx, shy);
-    drawRow(f);
-    if (f >= BURST) drawSparkles(f - POST);
+    if (legend) drawLegend(f);
+    else drawRow(f);
+    if (!LEGEND && f >= BURST) drawSparkles(f - POST);
     drawUI(f);
     ctx.restore();
-    drawFlash(f);
+    if (LEGEND) drawLegendFlash(f);
+    else drawFlash(f);
   }
 
   let scale = 1;
@@ -875,6 +1459,12 @@
     if (!navigator.vibrate || (navigator.userActivation && !navigator.userActivation.hasBeenActive)) return;
     const at = (f, pattern) => buzzTimers.push(setTimeout(() => navigator.vibrate(pattern), ((f - 1) / FPS) * 1000));
     at(BREAK, 20);
+    if (LEGEND) {
+      LG.hits.forEach((h, i) => at(h, 25 + i * 15));
+      at(LG.burst, [60, 40, 140]);
+      at(LG.title + 5, 25);
+      return;
+    }
     at(BURST, [40, 30, 90]);
     at(TITLE + 3, 15);
   }
@@ -904,9 +1494,11 @@
     document.fonts ? Promise.all([
       document.fonts.load('700 42px Tajawal', 'لقد'), document.fonts.load('800 42px Tajawal', '8'),
       document.fonts.load('600 30px Nunito'), document.fonts.load('800 32px Nunito'),
+      document.fonts.load('800 128px Tajawal', 'أسطوري'),
     ]).catch(() => {}) : null,
   ]).then(() => {
     buildLayers();
+    if (LEGEND) buildLegend();
     fit();
     window.addEventListener('resize', () => { fit(); render(frameNow); });
     if (fixedFrame !== null) {
