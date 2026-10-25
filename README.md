@@ -110,22 +110,22 @@ Progress saves automatically to `localStorage`.
 
 ## League promotion animation
 
-`league/index.html` is a league promotion screen built on a frame-accurate recreation of
-a reference recording. Tap to start (that also turns on the sound), tap again at the end to
-replay; `?autoplay` starts it at once without sound.
+`league/index.html` is a league promotion screen. It plays on load; tap at the end to replay.
+There are two versions, and `league/compare.html` plays them side by side, in sync (a tap on
+either replays both):
 
-1. The result card fades out and the trophy row zooms in and pans to the locked next league.
-2. Build-up: the locked badge rattles twice, then its padlock springs open and falls away.
-3. Charge: the room dims, streaks of light are pulled in, and the badge goes icy, turns into a
-   glowing outline, swells and trembles harder. It holds still for a beat in silence.
-4. Burst: a flash, a shockwave and a screen shake. The new badge punches in with squash and
-   stretch, light rays turn behind it, and confetti blasts out and flutters down.
-5. The league name slams in, the line under it rises, and the button appears.
+- **First version** (`?style=classic`, `league/classic.js`): a frame-accurate recreation of the
+  reference recording.
+- **New version** (default, `league/league.js`): the same zoom and pan, then a stronger unlock:
+  1. Build-up: the locked badge rattles twice, then its padlock springs open and falls away.
+  2. Charge: the room dims, streaks of light are pulled in, and the badge goes icy, turns into a
+     glowing outline, swells and trembles harder. It holds still for a beat.
+  3. Burst: a flash, a shockwave and a screen shake. The new badge punches in with squash and
+     stretch, light rays turn behind it, and confetti blasts out and flutters down.
+  4. The league name slams in, the line under it rises, and the button appears.
 
-The sound is synthesized with Web Audio and scheduled on the same timeline (whooshes, rattle
-clicks, the padlock snap, a riser that cuts dead before the burst, the boom, a short fanfare).
-Phones vibrate on the snap, the burst and the title. With reduced motion turned on, there is no
-screen shake and the flash is softer.
+  Phones vibrate on the snap, the burst and the title once the page has been tapped. With
+  reduced motion turned on, there is no screen shake and the flash is softer.
 
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
 champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
@@ -137,6 +137,7 @@ champion locked next). Add `?set=books` for the book trophies from `league/src/b
 - `league/img/*.png`: the book trophies cut out of the source image. `green.png` is the red
   book recolored to emerald. Rebuild them with `python3 tools/cut-books.py`. Both tools need
   Pillow and numpy
-- `node tools/render-league.js [out.mp4] [ranks|books]` renders the animation and its sound to
-  video with Playwright and ffmpeg. `league/league.mp4` (ranks) and `league/league-books.mp4`
-  are renders
+- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic]` renders a version to
+  video with Playwright and ffmpeg. `league/league.mp4`, `league/league-classic.mp4` and
+  `league/league-books.mp4` are renders, and `league/league-compare.mp4` puts the two versions
+  side by side

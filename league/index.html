@@ -17,6 +17,11 @@
 <body>
 <canvas id="stage" aria-label="League promotion animation. Click to replay."></canvas>
 <script src="motion.js"></script>
-<script src="league.js"></script>
+<script>
+  // ?style=classic plays the first version (the faithful recreation)
+  const main = document.createElement('script');
+  main.src = new URLSearchParams(location.search).get('style') === 'classic' ? 'classic.js' : 'league.js';
+  document.body.appendChild(main);
+</script>
 </body>
 </html>

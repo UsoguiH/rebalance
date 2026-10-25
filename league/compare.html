@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>League Promotion Compare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;800&display=swap">
+<style>
+  :root { --bg: #f2f2ef; --ink: #3c3c3c; --muted: #777; --card: #fffffc; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font-family: 'Tajawal', sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 12px 16px; }
+  .pair { display: flex; gap: 16px; justify-content: center; width: 100%; }
+  figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+  figcaption { font-weight: 800; font-size: 17px; text-align: center; }
+  figcaption span { display: block; font-weight: 500; font-size: 13px; color: var(--muted); }
+  /* fit both side by side: limited by height (minus captions and hint) or by half the width */
+  iframe { border: 0; border-radius: 18px; background: var(--card); box-shadow: 0 2px 10px rgba(0,0,0,.08);
+           width: min(calc((100vw - 48px) / 2), calc((100vh - 120px) * 884 / 1520)); aspect-ratio: 884 / 1520; }
+  p { margin: 0; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="pair">
+  <figure>
+    <figcaption>النسخة الأولى<span>مطابقة للفيديو الأصلي</span></figcaption>
+    <iframe src="index.html?style=classic&embed" title="النسخة الأولى"></iframe>
+  </figure>
+  <figure>
+    <figcaption>النسخة الجديدة<span>أقوى: تشويق، شحن، انفجار</span></figcaption>
+    <iframe src="index.html?embed" title="النسخة الجديدة"></iframe>
+  </figure>
+</div>
+<p>اضغط على أي وحدة لإعادة الاثنتين معًا</p>
+<script>
+  // Starts both versions on the same frame once both have loaded; a tap in
+  // either one replays both.
+  const frames = [...document.querySelectorAll('iframe')];
+  let ready = 0;
+  const playBoth = () => frames.forEach((f) => f.contentWindow.postMessage({ league: 'play' }, '*'));
+  window.addEventListener('message', (e) => {
+    if (!e.data) return;
+    if (e.data.league === 'ready' && ++ready === frames.length) playBoth();
+    if (e.data.league === 'tap' && ready >= frames.length) playBoth();
+  });
+  const q = new URLSearchParams(location.search).get('set');
+  if (q) frames.forEach((f) => { f.src += '&set=' + encodeURIComponent(q); });
+</script>
+</body>
+</html>

@@ -4,7 +4,8 @@
 // trembles), holds for a beat, then bursts open into its unlocked art with a
 // flash, shockwave, screen shake, light rays, confetti and a title slam.
 // Two trophy sets: the Qudrati rank badges (default) and the books
-// (?set=books). Tap to start (that also unlocks sound); ?autoplay starts at once.
+// (?set=books). It plays on load; tap at the end to replay.
+// (classic.js is the first version, a faithful recreation of the recording.)
 // Everything is timed in frames at 60 fps (frame 1 = t 0). Up to the unlock
 // the timing matches the reference recording (motion.js holds the measured
 // trophy placements); the celebration after the burst keeps the recording's
@@ -828,8 +829,7 @@
     caption([[['لقد حصلت على المركز الـ', 700], ['8', 800], [' الأسبوع الماضي', 700]]], 778, 0, out);
     if (f < 12) {
       drawCard();
-      // waiting for the tap that starts it: a gentle breathing pulse
-      drawButton(true, 1, waiting ? 0.018 * (1 - Math.cos(idleT * 0.09)) : 0);
+      drawButton(true, 1);
     } else {
       drawButton(false, out);
     }
@@ -866,151 +866,13 @@
     canvas.height = Math.round(H * scale);
   }
 
-  // ---------- sound ----------
-  // Synthesised in Web Audio and scheduled against the timeline when playback
-  // starts, so it stays locked to the frames.
-  const sound = (() => {
-    let ac = null, out = null, noiseBuf = null, voices = [];
-    function init() {
-      if (ac) return ac.resume();
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      graph(new AC());
-    }
-    function graph(context) {
-      ac = context;
-      const comp = ac.createDynamicsCompressor();
-      out = ac.createGain();
-      out.gain.value = 0.8;
-      out.connect(comp);
-      comp.connect(ac.destination);
-      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
-      const d = noiseBuf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
-    function env(g, t, peak, attack, dur) {
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(peak, t + attack);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    }
-    function tone(t, { type = 'sine', f0, f1 = f0, dur, gain, attack = 0.004, lp = 0 }) {
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.type = type;
-      o.frequency.setValueAtTime(f0, t);
-      if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
-      env(g, t, gain, attack, dur);
-      let node = o;
-      if (lp) {
-        const fl = ac.createBiquadFilter();
-        fl.type = 'lowpass';
-        fl.frequency.value = lp;
-        o.connect(fl);
-        node = fl;
-      }
-      node.connect(g);
-      g.connect(out);
-      o.start(t);
-      o.stop(t + dur + 0.05);
-      voices.push(o);
-    }
-    function noise(t, { dur, gain, type = 'bandpass', f0, f1 = f0, q = 1, attack = 0.003 }) {
-      const n = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
-      n.buffer = noiseBuf;
-      fl.type = type;
-      fl.Q.value = q;
-      fl.frequency.setValueAtTime(f0, t);
-      if (f1 !== f0) fl.frequency.exponentialRampToValueAtTime(f1, t + dur);
-      env(g, t, gain, attack, dur);
-      n.connect(fl);
-      fl.connect(g);
-      g.connect(out);
-      n.start(t);
-      n.stop(t + dur + 0.05);
-      voices.push(n);
-    }
-    // the charge: a rising buzz that cuts dead at the hold
-    function riser(t, dur) {
-      const o = ac.createOscillator(), fl = ac.createBiquadFilter(), g = ac.createGain();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(90, t);
-      o.frequency.exponentialRampToValueAtTime(420, t + dur);
-      fl.type = 'lowpass';
-      fl.frequency.setValueAtTime(300, t);
-      fl.frequency.exponentialRampToValueAtTime(5000, t + dur);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.11, t + dur);
-      g.gain.setValueAtTime(0.11, t + dur);
-      g.gain.linearRampToValueAtTime(0, t + dur + 0.012);
-      o.connect(fl);
-      fl.connect(g);
-      g.connect(out);
-      o.start(t);
-      o.stop(t + dur + 0.05);
-      voices.push(o);
-      noise(t, { dur: dur + 0.01, gain: 0.05, type: 'highpass', f0: 800, f1: 7000, attack: dur * 0.9 });
-    }
-    function play(t0 = ac && ac.currentTime + 0.05) {
-      if (!ac) return;
-      voices.forEach((v) => { try { v.stop(); } catch (e) { /* already stopped */ } });
-      voices = [];
-      const at = (f) => t0 + (f - 1) / FPS;
-      noise(at(13), { dur: 0.5, gain: 0.05, f0: 300, f1: 1400, attack: 0.18 });
-      noise(at(45), { dur: 0.7, gain: 0.06, f0: 500, f1: 1800, attack: 0.25 });
-      const clicks = [[113, 0.14], [116, 0.16], [119, 0.12], [129, 0.2], [132, 0.24], [135, 0.24], [138, 0.2]];
-      for (const [f, g] of clicks) {
-        noise(at(f), { dur: 0.035, gain: g, type: 'highpass', f0: 2500 });
-        tone(at(f), { type: 'square', f0: 1300, f1: 800, dur: 0.04, gain: g * 0.25 });
-      }
-      // padlock snaps open
-      tone(at(BREAK), { f0: 2637, dur: 0.4, gain: 0.12 });
-      tone(at(BREAK), { f0: 3951, dur: 0.28, gain: 0.06 });
-      tone(at(BREAK), { f0: 420, f1: 90, dur: 0.09, gain: 0.25 });
-      noise(at(BREAK), { dur: 0.05, gain: 0.15, type: 'highpass', f0: 3000 });
-      riser(at(CHARGE), (CHARGE_END - CHARGE) / FPS);
-      // burst
-      const b = at(BURST);
-      tone(b, { f0: 160, f1: 36, dur: 0.9, gain: 0.75, attack: 0.002 });
-      tone(b, { type: 'triangle', f0: 82, f1: 40, dur: 0.5, gain: 0.3, attack: 0.002 });
-      noise(b, { dur: 0.75, gain: 0.45, type: 'lowpass', f0: 2600, f1: 140, attack: 0.002 });
-      [1046.5, 1318.5, 1568, 2093].forEach((hz, i) => tone(b + 0.03 * i, { type: 'triangle', f0: hz, dur: 0.9, gain: 0.05 }));
-      // title lands: a thud and a short fanfare
-      const tt = at(TITLE + 3);
-      tone(tt, { f0: 120, f1: 55, dur: 0.25, gain: 0.35, attack: 0.002 });
-      [523.25, 659.25, 783.99, 1046.5].forEach((hz, i) => {
-        const last = i === 3;
-        tone(tt + 0.09 * i, { type: 'sawtooth', f0: hz, dur: last ? 0.75 : 0.15, gain: 0.06, attack: 0.01, lp: 2400 });
-        tone(tt + 0.09 * i, { type: 'triangle', f0: hz * 2, dur: last ? 0.6 : 0.12, gain: 0.03, attack: 0.01 });
-      });
-      // pings for the sparkle bursts
-      tone(at(158 + POST), { f0: 1568, dur: 0.5, gain: 0.05 });
-      tone(at(158 + POST), { f0: 2349, dur: 0.35, gain: 0.025 });
-      tone(at(172 + POST), { f0: 2093, dur: 0.5, gain: 0.045 });
-    }
-    // Renders the whole score offline (for the video render): 16-bit stereo PCM
-    async function offline(seconds) {
-      const live = [ac, out, noiseBuf];
-      const rate = 44100;
-      graph(new OfflineAudioContext(2, Math.ceil(rate * seconds), rate));
-      play(0);
-      const buf = await ac.startRendering();
-      [ac, out, noiseBuf] = live;
-      voices = [];
-      const pcm = new Int16Array(buf.length * 2);
-      for (let c = 0; c < 2; c++) {
-        const d = buf.getChannelData(c);
-        for (let i = 0; i < d.length; i++) pcm[i * 2 + c] = Math.max(-1, Math.min(1, d[i])) * 32767;
-      }
-      return { rate, pcm: Array.from(pcm) };
-    }
-    return { init, play, offline };
-  })();
-
   // Phone buzzes on the hits, where supported
   let buzzTimers = [];
   function buzz() {
     buzzTimers.forEach(clearTimeout);
     buzzTimers = [];
-    if (!navigator.vibrate) return;
+    // browsers only allow it once the page has been tapped
+    if (!navigator.vibrate || (navigator.userActivation && !navigator.userActivation.hasBeenActive)) return;
     const at = (f, pattern) => buzzTimers.push(setTimeout(() => navigator.vibrate(pattern), ((f - 1) / FPS) * 1000));
     at(BREAK, 20);
     at(BURST, [40, 30, 90]);
@@ -1018,29 +880,23 @@
   }
 
   // ---------- playback ----------
-  let start = 0, frameNow = 1, waiting = true, idleT = 0;
+  let start = 0, frameNow = 1, playing = false;
   function tick(now) {
-    if (waiting) {
-      idleT++;
-      render(1);
-    } else {
+    if (playing) {
       if (!start) start = now;
       frameNow = 1 + ((now - start) / 1000) * FPS;
-      render(frameNow);   // keeps going past END so the rays keep turning
     }
+    render(frameNow);   // keeps going past END so the rays keep turning
     requestAnimationFrame(tick);
   }
   function play() {
-    waiting = false;
+    playing = true;
     start = 0;
     frameNow = 1;
-    sound.play();
     buzz();
   }
   function onTap() {
-    if (!waiting && frameNow < END) return;
-    sound.init();
-    play();
+    if (frameNow >= END) play();
   }
 
   Promise.all([
@@ -1059,12 +915,19 @@
       window.leagueEnd = END;
       // lets the render tool step through frames without reloading
       window.leagueFrame = (f) => render(f);
-      window.leagueAudio = (seconds) => sound.offline(seconds);
+      return;
+    }
+    requestAnimationFrame(tick);
+    // In compare.html both versions sit in iframes; the parent starts them
+    // together and a tap on either replays both.
+    if (params.has('embed')) {
+      window.addEventListener('message', (e) => { if (e.data && e.data.league === 'play') play(); });
+      canvas.addEventListener('click', () => parent.postMessage({ league: 'tap' }, '*'));
+      parent.postMessage({ league: 'ready' }, '*');
       return;
     }
     canvas.addEventListener('click', onTap);
     window.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') onTap(); });
-    if (params.has('autoplay')) play();
-    requestAnimationFrame(tick);
+    play();
   });
 })();
