@@ -1,5 +1,5 @@
 // Renders the league promotion animation to a video:
-//   node tools/render-league.js [out.mp4]
+//   node tools/render-league.js [out.mp4] [ranks|books]
 // Serves the repo on a local port, steps league/index.html?frame=N in headless
 // Chromium frame by frame (60 fps) and encodes the PNGs with ffmpeg.
 const path = require('path');
@@ -15,7 +15,8 @@ try {
 }
 (async () => {
   const root = path.join(__dirname, '..');
-  const out = path.resolve(process.argv[2] || path.join(root, 'league', 'league.mp4'));
+  const set = process.argv[3] || 'ranks';
+  const out = path.resolve(process.argv[2] || path.join(root, 'league', set === 'ranks' ? 'league.mp4' : 'league-' + set + '.mp4'));
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.css': 'text/css' };
   const server = http.createServer((req, res) => {
     const file = path.join(root, decodeURIComponent(req.url.split('?')[0]));
@@ -30,7 +31,7 @@ try {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 884, height: 1520 } });
   page.on('pageerror', (e) => console.error('PAGE ERROR', e.message));
-  await page.goto('http://127.0.0.1:' + server.address().port + '/league/index.html?frame=1');
+  await page.goto('http://127.0.0.1:' + server.address().port + '/league/index.html?frame=1&set=' + set);
   await page.waitForFunction(() => window.leagueReady);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'league-'));
   const canvas = await page.$('#stage');

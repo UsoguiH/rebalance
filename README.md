@@ -110,15 +110,20 @@ Progress saves automatically to `localStorage`.
 
 ## League promotion animation
 
-`league/index.html` is a frame-accurate recreation of a league promotion screen,
-using the book trophies from `league/src/books.jpg`. The result card fades out, the trophy row
-zooms in and pans from the red book to the locked one, which tints icy blue, turns
-into a glowing outline, wobbles and bursts open into an emerald book with confetti,
+`league/index.html` is a frame-accurate recreation of a league promotion screen. The result
+card fades out, the trophy row zooms in and pans from the current league to the locked next
+one, which tints icy blue, turns into a glowing outline, wobbles and bursts open with confetti,
 a shine sweep and sparkles. Click the stage to replay it.
+
+It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
+champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
 
 - `league/motion.js`: the trophy positions and scales, measured frame by frame from the
   reference recording (60 fps)
-- `league/img/*.png`: the trophies cut out of the source image. `green.png` is the red book
-  recolored to emerald. Rebuild them with `python3 tools/cut-books.py` (needs Pillow and numpy)
-- `node tools/render-league.js [out.mp4]` renders the animation to video with Playwright and
-  ffmpeg. `league/league.mp4` is a render of it
+- `league/img/ranks/`: the rank badges from qudrati.xyz, unchanged. The `-locked` versions
+  are made with `python3 tools/lock-ranks.py` (greyed badge plus the site's padlock)
+- `league/img/*.png`: the book trophies cut out of the source image. `green.png` is the red
+  book recolored to emerald. Rebuild them with `python3 tools/cut-books.py`. Both tools need
+  Pillow and numpy
+- `node tools/render-league.js [out.mp4] [ranks|books]` renders the animation to video with
+  Playwright and ffmpeg. `league/league.mp4` (ranks) and `league/league-books.mp4` are renders

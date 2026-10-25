@@ -1,23 +1,59 @@
 // League promotion screen. The trophy row zooms in, pans from the current
-// league (red book) to the locked next one, which glows, bursts open into the
-// emerald book and throws confetti and sparkles.
+// league to the locked next one, which glows, bursts open into its unlocked
+// art and throws confetti and sparkles.
+// Two trophy sets: the Qudrati rank badges (default) and the books
+// (?set=books).
 // Everything is timed in frames at 60 fps (frame 1 = t 0) to match the
 // reference recording; motion.js holds the measured trophy placements.
 (() => {
   const W = 884, H = 1520, OY = 80;   // stage size in screen px; OY = screen y of the stage top
   const FPS = 60, END = 252;
-  const K = 242 / 762;                // source art px -> screen px (red book is 242 wide)
-  const PAD = 6, ANCHOR = 0.829;      // sprite padding; anchor = knob/pedestal joint
   const E = 40;                       // padding around the glow canvases
   const BG = '#fffffc';
   const AR = "'Tajawal', 'Noto Sans Arabic', 'Segoe UI', sans-serif";
   const LAT = "'Nunito', 'Segoe UI', sans-serif";
-  const GREEN = { x: 440.5, y: 805, s: 1.695 };
+  const GREEN = { x: 440.5, y: 805, s: 1.695 };   // where the unlocked trophy settles
+
+  // Roles: prev (left), cur (current league), lock (the locked one that opens),
+  // open (its unlocked art), after (the next locked one, sliding in on the right).
+  // width = on-screen width at scale 1; anchor = height fraction that sits on the
+  // measured anchor line (books: the knob/pedestal joint).
+  // shine: where the shine sweep is clipped, the facet that flashes and the glints,
+  // all as fractions of the unlocked sprite.
+  const SETS = {
+    ranks: {
+      art: {
+        prev: ['ranks/rank-silver', 162], cur: ['ranks/rank-gold', 242],
+        lock: ['ranks/rank-diamond-locked', 158], open: ['ranks/rank-diamond', 242],
+        after: ['ranks/rank-champion-locked', 158],
+      },
+      pad: 0, anchor: 0.88,
+      league: 'الألماسي',
+      shine: {
+        clip: 1, facet: [0.5, 0.4, 0.17, 0.13],
+        glints: [[156, 168, 0.32, 0.3, 30], [162, 172, 0.52, 0.5, 26], [168, 178, 0.62, 0.24, 14]],
+        knob: null,
+      },
+    },
+    books: {
+      art: {
+        prev: ['blue', 162], cur: ['red', 242], lock: ['locked', 164], open: ['green', 242], after: ['locked', 164],
+      },
+      pad: 6, anchor: 0.829,
+      league: 'الزمردي',
+      shine: {
+        clip: 650 / 1052, facet: [0.5, 330 / 1052, 120 / 774, 105 / 1052],
+        glints: [[156, 168, 270 / 774, 240 / 1052, 30], [162, 172, 390 / 774, 330 / 1052, 26], [168, 178, 440 / 774, 200 / 1052, 14]],
+        knob: [370 / 774, 790 / 1052, 30 / 774, 9 / 1052],
+      },
+    },
+  };
 
   const canvas = document.getElementById('stage');
   const ctx = canvas.getContext('2d');
   const params = new URLSearchParams(location.search);
   const fixedFrame = params.has('frame') ? +params.get('frame') : null;
+  const SET = SETS[params.get('set')] || SETS.ranks;
 
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -54,18 +90,25 @@
   }
 
   // ---------- art ----------
+  // A sprite: image plus its screen scale k and anchor point (ax, ay) in image px.
   const art = {};
-  function load(name) {
+  function load(role) {
+    const [file, width] = SET.art[role];
     return new Promise((res, rej) => {
-      const im = new Image();
-      im.onload = () => res((art[name] = im));
-      im.onerror = rej;
-      im.src = 'img/' + name + '.png';
+      const img = new Image();
+      img.onload = () => {
+        const opaqueW = img.width - 2 * SET.pad, opaqueH = img.height - 2 * SET.pad;
+        res((art[role] = { img, k: width / opaqueW, ax: img.width / 2, ay: SET.pad + SET.anchor * opaqueH }));
+      };
+      img.onerror = rej;
+      img.src = 'img/' + file + '.png';
     });
   }
   // Recolored copy of a sprite, optionally grown outward (and then hollowed
   // so only the part outside the original shape is left) and blurred.
-  function layer(img, color, grow = 0, blur = 0, hollow = false) {
+  function layer(base, color, grow = 0, blur = 0, hollow = false) {
+    const img = base.img;
+    const derived = (canvas) => ({ img: canvas, k: base.k, ax: base.ax + E, ay: base.ay + E });
     const c = document.createElement('canvas');
     c.width = img.width + 2 * E;
     c.height = img.height + 2 * E;
@@ -84,17 +127,17 @@
       g.globalCompositeOperation = 'destination-out';
       g.drawImage(img, E, E);
     }
-    if (!blur) return c;
+    if (!blur) return derived(c);
     const b = document.createElement('canvas');
     b.width = c.width;
     b.height = c.height;
     const bg = b.getContext('2d');
     bg.filter = 'blur(' + blur + 'px)';
     bg.drawImage(c, 0, 0);
-    return b;
+    return derived(b);
   }
   function buildLayers() {
-    const L = art.locked;
+    const L = art.lock;
     art.tint = layer(L, '#a9dcee');
     art.pale = layer(L, '#e2f4fd');
     art.white = layer(L, '#ffffff');
@@ -102,14 +145,12 @@
     art.glow = layer(L, '#d2f5ff', 26, 5, true);
   }
 
-  // Draws a sprite with its anchor at (x, y). pad = extra padding of derived layers.
-  function sprite(img, x, y, s, alpha = 1, pad = 0) {
+  // Draws a sprite with its anchor at (x, y)
+  function sprite(a, x, y, s, alpha = 1) {
     if (alpha <= 0) return;
-    const sc = s * K;
-    const ax = img.width / 2;
-    const ay = pad + PAD + ANCHOR * (img.height - 2 * pad - 2 * PAD);
+    const sc = s * a.k;
     ctx.globalAlpha = alpha;
-    ctx.drawImage(img, x - ax * sc, y - ay * sc, img.width * sc, img.height * sc);
+    ctx.drawImage(a.img, x - a.ax * sc, y - a.ay * sc, a.img.width * sc, a.img.height * sc);
     ctx.globalAlpha = 1;
   }
 
@@ -166,26 +207,26 @@
   // ---------- trophies ----------
   function drawRow(f) {
     const blue = track('blue', f);
-    if (blue && f <= 56) sprite(art.blue, blue[0], blue[1], blue[2]);
+    if (blue && f <= 56) sprite(art.prev, blue[0], blue[1], blue[2]);
     const red = track('red', f);
-    sprite(art.red, red[0], red[1], red[2]);
+    sprite(art.cur, red[0], red[1], red[2]);
     const next = track('next', f);
-    if (next) sprite(art.locked, next[0], next[1], next[2]);
-    drawConfetti(f);   // the confetti flies out from behind the book in focus
+    if (next) sprite(art.after, next[0], next[1], next[2]);
+    drawConfetti(f);   // the confetti flies out from behind the trophy in focus
     if (f < 121) drawUnlocking(f);
-    else drawEmerald(f);
+    else drawUnlocked(f);
   }
 
-  // The locked book in focus: tints icy blue, fills pale, turns into a white
+  // The locked trophy in focus: tints icy blue, fills pale, turns into a white
   // silhouette with a cyan outline and glow, wobbles and swells.
   function drawUnlocking(f) {
     const [x, y, s] = track('grey', f);
-    sprite(art.locked, x, y, s);
-    sprite(art.tint, x, y, s, keys([[84, 0], [96, 0.72], [104, 0.72]], f), E);
-    sprite(art.pale, x, y, s, keys([[96, 0], [103, 1]], f), E);
-    sprite(art.white, x, y, s, keys([[102, 0], [106, 1]], f), E);
-    sprite(art.glow, x, y, s, keys([[101, 0], [107, 1]], f), E);
-    sprite(art.ring, x, y, s, keys([[103, 0], [106, 0.3], [110, 0.45], [114, 0.6], [118, 0.85], [120, 1]], f), E);
+    sprite(art.lock, x, y, s);
+    sprite(art.tint, x, y, s, keys([[84, 0], [96, 0.72], [104, 0.72]], f));
+    sprite(art.pale, x, y, s, keys([[96, 0], [103, 1]], f));
+    sprite(art.white, x, y, s, keys([[102, 0], [106, 1]], f));
+    sprite(art.glow, x, y, s, keys([[101, 0], [107, 1]], f));
+    sprite(art.ring, x, y, s, keys([[103, 0], [106, 0.3], [110, 0.45], [114, 0.6], [118, 0.85], [120, 1]], f));
     // twinkles inside the silhouette
     const k = s / 2.6;
     const inner = [
@@ -198,24 +239,24 @@
     }
   }
 
-  // The emerald book: one frame of the old book at pop size, then the emerald
-  // pops in big, settles with a small hop, and gets a shine sweep.
-  function drawEmerald(f) {
+  // One frame of the locked trophy, then the unlocked art pops in big,
+  // settles with a small hop, and gets a shine sweep.
+  function drawUnlocked(f) {
     const ps = keys([[121, 1.13], [122, 1.127], [125, 1.11], [128, 1.073], [130, 1.049], [131, 1.03], [132, 1.02], [133, 1.01], [134, 1]], f);
     const dy = keys([[121, -22], [125, -30], [128, -30], [130, -24], [131, -16], [132, -8], [133, -2], [134, 0], [137, -5], [140, -6], [143, -3], [146, 0]], f);
     const x = GREEN.x, y = GREEN.y + dy, s = GREEN.s * ps;
     if (f < 122) {
-      sprite(art.locked, x, GREEN.y - 14, 2.6);
+      sprite(art.lock, x, GREEN.y - 14, 2.6);
       return;
     }
-    sprite(art.green, x, y, s);
+    sprite(art.open, x, y, s);
     drawShine(f, x, y, s);
   }
 
   let shineCanvas = null;
   function drawShine(f, x, y, s) {
     if (f < 133 || f > 180) return;   // shine sweep, facet flash, glints
-    const img = art.green;
+    const img = art.open.img, sh = SET.shine;
     if (!shineCanvas) {
       shineCanvas = document.createElement('canvas');
       shineCanvas.width = img.width;
@@ -223,7 +264,7 @@
     }
     const g = shineCanvas.getContext('2d');
     const w = img.width, h = img.height;
-    const bookBottom = 650;   // below this row is the knob and pedestal
+    const bookBottom = sh.clip * h;   // below this row is the knob and pedestal
     g.clearRect(0, 0, w, h);
     g.save();
     g.beginPath();
@@ -250,10 +291,10 @@
     if (cf > 0) {
       g.globalAlpha = cf;
       g.beginPath();
-      const cx = w / 2, cy = 330;
+      const [fx, fy, rx, ry] = sh.facet;
       for (let i = 0; i < 5; i++) {
         const ang = -Math.PI / 2 + (i / 5) * Math.PI * 2;
-        g[i ? 'lineTo' : 'moveTo'](cx + Math.cos(ang) * 120, cy + Math.sin(ang) * 105);
+        g[i ? 'lineTo' : 'moveTo'](fx * w + Math.cos(ang) * rx * w, fy * h + Math.sin(ang) * ry * h);
       }
       g.closePath();
       g.fill();
@@ -262,31 +303,29 @@
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(img, 0, 0);
     g.globalCompositeOperation = 'source-over';
-    sprite(shineCanvas, x, y, s);
+    sprite({ ...art.open, img: shineCanvas }, x, y, s);
 
-    // glints on the book and knob
-    const sc = s * K;
-    const ox = x - (w / 2) * sc, oy = y - (PAD + ANCHOR * (h - 2 * PAD)) * sc;
-    const glints = [
-      [156, 168, 270, 240, 30], [162, 172, 390, 330, 26], [168, 178, 440, 200, 14],
-    ];
-    for (const [f0, f1, gx, gy, r] of glints) {
+    // glints on the trophy (and the knob, for the books)
+    const sc = s * art.open.k;
+    const ox = x - art.open.ax * sc, oy = y - art.open.ay * sc;
+    for (const [f0, f1, gx, gy, r] of sh.glints) {
       if (f < f0 || f > f1) continue;
-      star(ox + gx * sc, oy + gy * sc, r * Math.sin(Math.PI * ((f - f0) / (f1 - f0))), '#ffffff');
+      star(ox + gx * w * sc, oy + gy * h * sc, r * Math.sin(Math.PI * ((f - f0) / (f1 - f0))), '#ffffff');
     }
-    const kg = keys([[138, 0], [141, 1], [150, 1], [155, 0]], f);
+    const kg = sh.knob ? keys([[138, 0], [141, 1], [150, 1], [155, 0]], f) : 0;
     if (kg > 0) {
+      const [kx, ky, krx, kry] = sh.knob;
       ctx.globalAlpha = kg;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.ellipse(ox + 370 * sc, oy + 790 * sc, 30 * sc, 9 * sc, -0.15, 0, Math.PI * 2);
+      ctx.ellipse(ox + kx * w * sc, oy + ky * h * sc, krx * w * sc, kry * h * sc, -0.15, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
   }
 
   // ---------- confetti and sparkles ----------
-  // Squares thrown out from the book's edge in an arch, slowing to a stop,
+  // Squares thrown out from the trophy's edge in an arch, slowing to a stop,
   // then fading. Measured: ~34 px pieces travelling from ~230 to ~420 px.
   const CONFETTI_COLORS = ['#c882fa', '#ffc80a', '#ff86c4', '#1ec8f5', '#ffbe0a'];
   const confetti = (() => {
@@ -488,7 +527,7 @@
       drawButton(false, out);
     }
     if (f >= 149) {
-      caption([[['تهانينا! لقد تقدّمت إلى', 700]], [['المستوى الزمردي هذا الأسبوع.', 700]]], 1015, 66, 1);
+      caption([[['تهانينا! لقد تقدّمت إلى', 700]], [['المستوى ' + SET.league + ' هذا الأسبوع.', 700]]], 1015, 66, 1);
       drawButton(true, ramp(f, 149, 160));
     }
   }
@@ -496,6 +535,7 @@
   // ---------- frame ----------
   function render(f) {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.imageSmoothingQuality = 'high';   // the rank badges are small and drawn up to ~2x
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
     ctx.translate(0, -OY);
@@ -528,7 +568,7 @@
   }
 
   Promise.all([
-    ...['blue', 'red', 'locked', 'green'].map(load),
+    ...Object.keys(SET.art).map(load),
     document.fonts ? Promise.all([
       document.fonts.load('700 42px Tajawal', 'لقد'), document.fonts.load('800 42px Tajawal', '8'),
       document.fonts.load('600 30px Nunito'), document.fonts.load('800 32px Nunito'),
