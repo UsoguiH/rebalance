@@ -1,8 +1,10 @@
 # Makes the locked look of the rank badges for the league animation:
 #   python3 tools/lock-ranks.py   (needs Pillow and numpy)
-# Reads league/img/ranks/rank-<key>.png and writes rank-<key>-locked.png:
-# the badge in light greys with the site's padlock (white body, dark keyhole,
-# soft drop shadow) in the middle, like the locked tiers on the leaderboard.
+# Reads league/img/ranks/rank-<key>.png and writes rank-<key>-grey.png (the
+# badge in light greys) and rank-<key>-locked.png (the grey badge with the
+# site's padlock in the middle: white body, dark keyhole, soft drop shadow,
+# like the locked tiers on the leaderboard). The animation draws the padlock
+# itself on the grey badge that unlocks, so it can spring open.
 import os
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -37,6 +39,7 @@ for key in ('diamond', 'champion'):
     grey = 176 + np.clip((lum - lo) / max(hi - lo, 1), 0, 1) * 66
     out = np.dstack([grey, grey, grey + 2, a[..., 3]]).clip(0, 255).astype(np.uint8)
     im = Image.fromarray(out, 'RGBA')
+    im.save(os.path.join(DIR, 'rank-%s-grey.png' % key), optimize=True)
 
     size = round(src.width * 0.36)
     lock = padlock(size)

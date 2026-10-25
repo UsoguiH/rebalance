@@ -1,13 +1,25 @@
-// League promotion screen. The trophy row zooms in, pans from the current
-// league to the locked next one, which glows, bursts open into its unlocked
-// art and throws confetti and sparkles.
+// League promotion screen. The trophy row zooms in and pans from the current
+// league to the locked next one. The locked one rattles, its padlock springs
+// off, it charges up (the room dims, light is pulled in, it swells and
+// trembles), holds for a beat, then bursts open into its unlocked art with a
+// flash, shockwave, screen shake, light rays, confetti and a title slam.
 // Two trophy sets: the Qudrati rank badges (default) and the books
-// (?set=books).
-// Everything is timed in frames at 60 fps (frame 1 = t 0) to match the
-// reference recording; motion.js holds the measured trophy placements.
+// (?set=books). Tap to start (that also unlocks sound); ?autoplay starts at once.
+// Everything is timed in frames at 60 fps (frame 1 = t 0). Up to the unlock
+// the timing matches the reference recording (motion.js holds the measured
+// trophy placements); the celebration after the burst keeps the recording's
+// beats, shifted by POST frames.
 (() => {
   const W = 884, H = 1520, OY = 80;   // stage size in screen px; OY = screen y of the stage top
-  const FPS = 60, END = 252;
+  const FPS = 60;
+  // Timeline (frames)
+  const RATTLE = [[112, 122, 0.035], [128, 141, 0.06]];   // two rattles: start, end, max tilt (rad)
+  const BREAK = 146;                  // padlock springs open
+  const CHARGE = 152, CHARGE_END = 188;  // tint -> white silhouette -> glowing outline
+  const BURST = 192;                  // after a 4-frame hold
+  const POST = BURST - 121;           // recording frame = timeline frame - POST, after the burst
+  const TITLE = 220;
+  const END = 380;
   const E = 40;                       // padding around the glow canvases
   const BG = '#fffffc';
   const AR = "'Tajawal', 'Noto Sans Arabic', 'Segoe UI', sans-serif";
@@ -24,13 +36,14 @@
     ranks: {
       art: {
         prev: ['ranks/rank-silver', 162], cur: ['ranks/rank-gold', 242],
-        lock: ['ranks/rank-diamond-locked', 158], open: ['ranks/rank-diamond', 242],
+        lock: ['ranks/rank-diamond-grey', 158], open: ['ranks/rank-diamond', 242],
         after: ['ranks/rank-champion-locked', 158],
       },
       pad: 0, anchor: 0.88,
-      league: 'الألماسي',
+      padlock: { x: 0.5, y: 0.48, size: 0.36 },   // drawn on the lock badge, as on the site
+      league: 'الألماسي', title: '#1899d6', glow: '#8fd8ff',
       shine: {
-        clip: 1, facet: [0.5, 0.4, 0.17, 0.13],
+        clip: 1, facet: null,
         glints: [[156, 168, 0.32, 0.3, 30], [162, 172, 0.52, 0.5, 26], [168, 178, 0.62, 0.24, 14]],
         knob: null,
       },
@@ -40,7 +53,8 @@
         prev: ['blue', 162], cur: ['red', 242], lock: ['locked', 164], open: ['green', 242], after: ['locked', 164],
       },
       pad: 6, anchor: 0.829,
-      league: 'الزمردي',
+      padlock: null,                              // the keyhole is part of the art
+      league: 'الزمردي', title: '#58a700', glow: '#a5e05a',
       shine: {
         clip: 650 / 1052, facet: [0.5, 330 / 1052, 120 / 774, 105 / 1052],
         glints: [[156, 168, 270 / 774, 240 / 1052, 30], [162, 172, 390 / 774, 330 / 1052, 26], [168, 178, 440 / 774, 200 / 1052, 14]],
@@ -54,12 +68,15 @@
   const params = new URLSearchParams(location.search);
   const fixedFrame = params.has('frame') ? +params.get('frame') : null;
   const SET = SETS[params.get('set')] || SETS.ranks;
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
   const lerp = (a, b, t) => a + (b - a) * t;
   const ramp = (f, f0, f1) => clamp((f - f0) / (f1 - f0));
   const easeOut = (t) => 1 - (1 - t) ** 3;
   const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+  // smooth deterministic wobble in [-1, 1]
+  const wob = (t, seed) => (Math.sin(t * 1.7 + seed) * 0.6 + Math.sin(t * 3.1 + seed * 2.3) * 0.4);
   // Piecewise-linear keyframes: [[frame, value], ...]
   function keys(k, f) {
     if (f <= k[0][0]) return k[0][1];
@@ -145,13 +162,29 @@
     art.glow = layer(L, '#d2f5ff', 26, 5, true);
   }
 
-  // Draws a sprite with its anchor at (x, y)
-  function sprite(a, x, y, s, alpha = 1) {
+  // Draws a sprite with its anchor at (x, y); o.rot tilts it about the anchor,
+  // o.sx / o.sy squash and stretch it.
+  function sprite(a, x, y, s, alpha = 1, o = null) {
     if (alpha <= 0) return;
     const sc = s * a.k;
     ctx.globalAlpha = alpha;
-    ctx.drawImage(a.img, x - a.ax * sc, y - a.ay * sc, a.img.width * sc, a.img.height * sc);
+    if (o) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(o.rot || 0);
+      ctx.scale(o.sx || 1, o.sy || 1);
+      ctx.drawImage(a.img, -a.ax * sc, -a.ay * sc, a.img.width * sc, a.img.height * sc);
+      ctx.restore();
+    } else {
+      ctx.drawImage(a.img, x - a.ax * sc, y - a.ay * sc, a.img.width * sc, a.img.height * sc);
+    }
     ctx.globalAlpha = 1;
+  }
+  // Screen point of a spot given as fractions of the sprite image
+  function spot(a, x, y, s, fx, fy, rot = 0) {
+    const sc = s * a.k;
+    const dx = (fx * a.img.width - a.ax) * sc, dy = (fy * a.img.height - a.ay) * sc;
+    return [x + dx * Math.cos(rot) - dy * Math.sin(rot), y + dx * Math.sin(rot) + dy * Math.cos(rot)];
   }
 
   // 4-point twinkle star
@@ -212,45 +245,273 @@
     sprite(art.cur, red[0], red[1], red[2]);
     const next = track('next', f);
     if (next) sprite(art.after, next[0], next[1], next[2]);
-    drawConfetti(f);   // the confetti flies out from behind the trophy in focus
-    if (f < 121) drawUnlocking(f);
+    const c = focusCentre(f);
+    drawVignette(f, c);
+    drawRays(f, c);
+    drawConfetti(f, 0);   // half the confetti flies out from behind the trophy
+    if (f < BURST) drawUnlocking(f);
     else drawUnlocked(f);
+    drawConfetti(f, 1);
+    drawImplosion(f, c);
+    drawShockwave(f, c);
   }
 
-  // The locked trophy in focus: tints icy blue, fills pale, turns into a white
-  // silhouette with a cyan outline and glow, wobbles and swells.
+  // Where the trophy in focus sits; its visual centre is what the effects aim at
+  function focusPose(f) {
+    if (f >= BURST) return [GREEN.x, GREEN.y, GREEN.s, art.open];
+    const g = track('grey', Math.min(f, 120));
+    const s = track('grey', Math.min(f, 100))[2];
+    if (f <= 120) return [g[0], g[1], s, art.lock];
+    return [lerp(g[0], GREEN.x, easeInOut(ramp(f, 120, 134))), g[1], s, art.lock];
+  }
+  function focusCentre(f) {
+    const [x, y, s, a] = focusPose(f);
+    return spot(a, x, y, s, 0.5, 0.5);
+  }
+
+  function rattleTilt(f) {
+    let r = 0;
+    for (const [f0, f1, amp] of RATTLE) {
+      if (f < f0 || f > f1) continue;
+      const p = ramp(f, f0, f1);
+      r += amp * Math.sin((f - f0) * 1.05) * Math.sin(Math.PI * p);
+    }
+    return r;
+  }
+
+  // The locked trophy in focus. Rattles, loses its padlock, then tints icy blue,
+  // fills pale, turns into a white silhouette with a cyan outline and glow,
+  // swells and trembles harder and harder, and holds still for a beat.
   function drawUnlocking(f) {
-    const [x, y, s] = track('grey', f);
-    sprite(art.lock, x, y, s);
-    sprite(art.tint, x, y, s, keys([[84, 0], [96, 0.72], [104, 0.72]], f));
-    sprite(art.pale, x, y, s, keys([[96, 0], [103, 1]], f));
-    sprite(art.white, x, y, s, keys([[102, 0], [106, 1]], f));
-    sprite(art.glow, x, y, s, keys([[101, 0], [107, 1]], f));
-    sprite(art.ring, x, y, s, keys([[103, 0], [106, 0.3], [110, 0.45], [114, 0.6], [118, 0.85], [120, 1]], f));
+    let [x, y, s] = focusPose(f);
+    const u = f < CHARGE ? 84 : Math.min(120, 84 + (f - CHARGE));   // recording frame of the glow-up
+    s *= keys([[CHARGE + 16, 1], [CHARGE + 32, 1.067], [CHARGE + 35, 1.1], [CHARGE_END, 1.157]], f);
+    const shake = f < CHARGE_END ? keys([[CHARGE + 4, 0], [CHARGE + 22, 1.4], [CHARGE_END - 1, 5.5]], f) : 0;
+    if (shake && !reduced) {
+      x += wob(f * 1.9, 1) * shake;
+      y += wob(f * 2.3, 4) * shake * 0.6;
+    }
+    const rot = rattleTilt(f) + (f >= BREAK && f < BREAK + 10 ? 0.025 * Math.sin((f - BREAK) * 1.4) * (1 - ramp(f, BREAK, BREAK + 10)) : 0);
+    const o = { rot };
+    sprite(art.lock, x, y, s, 1, o);
+    if (SET.padlock) drawPadlock(f, x, y, s, rot);
+    sprite(art.tint, x, y, s, keys([[84, 0], [96, 0.72], [104, 0.72]], u), o);
+    sprite(art.pale, x, y, s, keys([[96, 0], [103, 1]], u), o);
+    sprite(art.white, x, y, s, keys([[102, 0], [106, 1]], u), o);
+    sprite(art.glow, x, y, s, keys([[101, 0], [107, 1]], u), o);
+    // the outline brightens through the charge and pulses during the hold
+    const hold = f >= CHARGE_END ? 0.85 + 0.15 * Math.cos((f - CHARGE_END) * 2.4) : 1;
+    sprite(art.ring, x, y, s, keys([[103, 0], [106, 0.3], [110, 0.45], [114, 0.6], [118, 0.85], [120, 1]], u) * hold, o);
     // twinkles inside the silhouette
     const k = s / 2.6;
     const inner = [
       [99, 112, 58, -300, 15], [101, 116, -12, -48, 13], [103, 118, -100, -330, 26], [105, 114, 62, -170, 10],
     ];
     for (const [f0, f1, dx, dy, r] of inner) {
-      if (f < f0 || f > f1) continue;
-      const p = (f - f0) / (f1 - f0);
-      star(x + dx * k, y + dy * k, r * Math.sin(Math.PI * p) * k, '#7fdcf5');
+      if (u < f0 || u > f1 || f >= CHARGE_END) continue;
+      const p = (u - f0) / (f1 - f0);
+      const [px, py] = spot(art.lock, x, y, s, 0.5, art.lock.ay / art.lock.img.height);
+      star(px + dx * k * (SET.padlock ? 0.6 : 1), py + dy * k * (SET.padlock ? 0.75 : 1), r * Math.sin(Math.PI * p) * k, '#7fdcf5');
     }
   }
 
-  // One frame of the locked trophy, then the unlocked art pops in big,
-  // settles with a small hop, and gets a shine sweep.
-  function drawUnlocked(f) {
-    const ps = keys([[121, 1.13], [122, 1.127], [125, 1.11], [128, 1.073], [130, 1.049], [131, 1.03], [132, 1.02], [133, 1.01], [134, 1]], f);
-    const dy = keys([[121, -22], [125, -30], [128, -30], [130, -24], [131, -16], [132, -8], [133, -2], [134, 0], [137, -5], [140, -6], [143, -3], [146, 0]], f);
-    const x = GREEN.x, y = GREEN.y + dy, s = GREEN.s * ps;
-    if (f < 122) {
-      sprite(art.lock, x, GREEN.y - 14, 2.6);
-      return;
+  // The site's padlock (24-unit icon). Before BREAK it sits on the badge and
+  // rattles with it; at BREAK the shackle springs up and swings open, then the
+  // whole lock hops off, tumbles and falls away.
+  function drawPadlock(f, x, y, s, rot) {
+    const pl = SET.padlock;
+    if (f > BREAK + 40) return;
+    let [cx, cy] = spot(art.lock, x, y, s, pl.x, pl.y, rot);
+    const size = pl.size * art.lock.img.width * s * art.lock.k;
+    let ang = rot, alpha = 1;
+    const t = f - (BREAK + 5);
+    if (t > 0) {
+      cx += -2.2 * t;
+      cy += -11 * t + 0.55 * t * t;
+      ang += -0.07 * t;
+      alpha = 1 - ramp(t, 16, 30);
     }
-    sprite(art.open, x, y, s);
-    drawShine(f, x, y, s);
+    const lift = f < BREAK ? 0 : easeOut(ramp(f, BREAK, BREAK + 4)) * 3.2;
+    const swing = f < BREAK ? 0 : easeOut(ramp(f, BREAK + 1, BREAK + 7)) * -0.75;
+    const u = size / 24;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(cx, cy);
+    ctx.rotate(ang);
+    ctx.scale(u, u);
+    ctx.translate(-12, -12);
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 3 * u;
+    ctx.shadowOffsetY = 1.5 * u;
+    // shackle: pivots on its right leg when it swings open
+    ctx.save();
+    ctx.translate(16.5, 10.5 - lift);
+    ctx.rotate(swing);
+    ctx.translate(-16.5, -10.5);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(7.5, 10.5);
+    ctx.lineTo(7.5, 8);
+    ctx.arc(12, 8, 4.5, Math.PI, 0);
+    ctx.lineTo(16.5, 10.5);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(4.7, 10, 14.6, 11, 3.4) : ctx.rect(4.7, 10, 14.6, 11);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#4b4b4b';
+    ctx.beginPath();
+    ctx.arc(12, 14.7, 1.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(11, 15.4, 2, 3.4);
+    ctx.restore();
+    // a small click of light where it snapped
+    if (f >= BREAK && f < BREAK + 10) {
+      const p = ramp(f, BREAK, BREAK + 10);
+      const [sx, sy] = spot(art.lock, x, y, s, pl.x, pl.y - pl.size * 0.45, rot);
+      rays(sx, sy, 6, 14 + 30 * easeOut(p), 22 + 40 * easeOut(p), 4, ['#ffffff'], 1 - p);
+      rays(sx, sy, 6, 14 + 30 * easeOut(p), 22 + 40 * easeOut(p), 4, [SET.glow], (1 - p) * 0.9, Math.PI / 6);
+    }
+  }
+
+  // Burst: the unlocked art punches in oversized, squashes and stretches as it
+  // lands, hops, settles, and gets a shine sweep.
+  function drawUnlocked(f) {
+    const r = f - POST;   // recording frame
+    const ps = keys([[121, 1.34], [123, 1.28], [126, 0.92], [129, 1.05], [132, 0.985], [135, 1]], r);
+    const sx = keys([[121, 0.86], [123, 0.9], [126, 1.1], [129, 0.97], [132, 1.01], [135, 1]], r);
+    const sy = keys([[121, 1.14], [123, 1.1], [126, 0.9], [129, 1.04], [132, 0.99], [135, 1]], r);
+    const dy = keys([[121, -30], [125, -46], [128, -30], [131, -8], [134, 0], [137, -6], [140, -7], [143, -3], [146, 0]], r);
+    const x = GREEN.x, y = GREEN.y + dy, s = GREEN.s * ps;
+    drawHalo(f);
+    sprite(art.open, x, y, s, 1, { sx, sy });
+    drawShine(r, x, y, s);
+  }
+
+  // ---------- burst and charge effects ----------
+  // The room dims around the trophy while it charges; the flash clears it
+  function drawVignette(f, [cx, cy]) {
+    const a = keys([[CHARGE - 6, 0], [CHARGE_END, 0.42], [BURST, 0.42], [BURST + 1, 0]], f);
+    if (a <= 0) return;
+    const g = ctx.createRadialGradient(cx, cy, 200, cx, cy, 980);
+    g.addColorStop(0, 'rgba(16,28,52,0)');
+    g.addColorStop(1, 'rgba(16,28,52,' + a + ')');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, OY, W, H);
+  }
+
+  // Streaks of light pulled in towards the trophy during the charge
+  const motes = (() => {
+    const r = rng(11);
+    const list = [];
+    for (let i = 0; i < 38; i++) {
+      list.push({
+        a: r() * Math.PI * 2,
+        r0: 430 + r() * 200,
+        f0: CHARGE + r() * (CHARGE_END - CHARGE - 14),
+        dur: 13 + r() * 8,
+        w: 3 + r() * 3,
+        color: i % 3 ? SET.glow : '#ffffff',
+      });
+    }
+    return list;
+  })();
+  function drawImplosion(f, [cx, cy]) {
+    if (f < CHARGE || f > CHARGE_END) return;
+    ctx.lineCap = 'round';
+    for (const m of motes) {
+      const p = (f - m.f0) / m.dur;
+      if (p <= 0 || p >= 1) continue;
+      const e = p ** 2.2;
+      const rr = lerp(m.r0, 150, e);
+      const len = 12 + 70 * e;
+      const ca = Math.cos(m.a), sa = Math.sin(m.a);
+      ctx.globalAlpha = Math.min(1, p * 3) * (1 - ramp(p, 0.85, 1));
+      ctx.strokeStyle = m.color;
+      ctx.lineWidth = m.w;
+      ctx.beginPath();
+      ctx.moveTo(cx + ca * rr, cy + sa * rr);
+      ctx.lineTo(cx + ca * (rr + len), cy + sa * (rr + len));
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawShockwave(f, [cx, cy]) {
+    for (const [f0, dur, r0, r1, w0, color] of [
+      [BURST, 26, 150, 860, 36, SET.glow], [BURST + 4, 26, 130, 620, 14, SET.glow],
+    ]) {
+      const p = ramp(f, f0, f0 + dur);
+      if (f < f0 || p >= 1) continue;
+      ctx.globalAlpha = 0.85 * (1 - p) ** 1.5;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lerp(w0, 2, p);
+      ctx.beginPath();
+      ctx.arc(cx, cy, lerp(r0, r1, easeOut(p)), 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Slowly turning light rays behind the unlocked trophy; they stay
+  function drawRays(f, [cx, cy]) {
+    if (f < BURST) return;
+    const a = keys([[BURST, 0], [BURST + 8, 0.95], [BURST + 60, 0.6]], f);
+    const rot = (f - BURST) * 0.0045;
+    const g = ctx.createRadialGradient(cx, cy, 60, cx, cy, 760);
+    g.addColorStop(0, SET.glow);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.save();
+    ctx.globalAlpha = a * 0.55;
+    ctx.fillStyle = g;
+    ctx.translate(cx, cy);
+    ctx.rotate(rot);
+    ctx.beginPath();
+    const n = 12;
+    for (let i = 0; i < n; i++) {
+      const t = (i / n) * Math.PI * 2;
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, 760, t - 0.1, t + 0.1);
+      ctx.closePath();
+    }
+    ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+  // Soft breathing glow right behind the trophy
+  function drawHalo(f) {
+    const [cx, cy] = spot(art.open, GREEN.x, GREEN.y, GREEN.s, 0.5, 0.5);
+    const a = keys([[BURST, 0.9], [BURST + 24, 0.45]], f) + 0.06 * Math.sin((f - BURST) * 0.08);
+    const g = ctx.createRadialGradient(cx, cy, 40, cx, cy, 330);
+    g.addColorStop(0, SET.glow);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.globalAlpha = clamp(a);
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - 340, cy - 340, 680, 680);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFlash(f) {
+    const a = keys([[BURST - 1, 0], [BURST, 1], [BURST + 3, 0.75], [BURST + 14, 0]], f) * (reduced ? 0.35 : 1);
+    if (a <= 0) return;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, OY, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  // Screen shake: a jolt when the padlock snaps, a big one on the burst, a
+  // small one when the title lands
+  function shakeOffset(f) {
+    if (reduced) return [0, 0];
+    const amp = keys([[BREAK - 1, 0], [BREAK, 4], [BREAK + 8, 0]], f)
+      + keys([[BURST - 1, 0], [BURST, 18], [BURST + 6, 10], [BURST + 26, 0]], f)
+      + keys([[TITLE + 2, 0], [TITLE + 3, 6], [TITLE + 12, 0]], f);
+    return [wob(f * 2.9, 2) * amp, wob(f * 3.4, 7) * amp];
   }
 
   let shineCanvas = null;
@@ -287,7 +548,7 @@
       g.fill();
     }
     // centre facet flash
-    const cf = keys([[150, 0], [153, 0.85], [157, 0.85], [161, 0]], f);
+    const cf = sh.facet ? keys([[150, 0], [153, 0.85], [157, 0.85], [161, 0]], f) : 0;
     if (cf > 0) {
       g.globalAlpha = cf;
       g.beginPath();
@@ -325,42 +586,53 @@
   }
 
   // ---------- confetti and sparkles ----------
-  // Squares thrown out from the trophy's edge in an arch, slowing to a stop,
-  // then fading. Measured: ~34 px pieces travelling from ~230 to ~420 px.
-  const CONFETTI_COLORS = ['#c882fa', '#ffc80a', '#ff86c4', '#1ec8f5', '#ffbe0a'];
+  // Paper bits blasted up and out of the trophy on the burst: drag slows them,
+  // gravity takes over, and they flutter (flip and sway) down past the screen.
+  // Simulated from the burst each frame so any frame can be drawn on its own.
+  const CONFETTI_COLORS = ['#ffc800', '#1cb0f6', '#58cc02', '#ff4b4b', '#ce82ff', '#ff9600', '#ff86c4'];
   const confetti = (() => {
     const r = rng(7);
     const list = [];
-    const n = 18;
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < 90; i++) {
+      const a = -Math.PI / 2 + (r() - 0.5) * Math.PI * 1.35;
+      const v = 26 + r() * 28;
       list.push({
-        a: lerp(-Math.PI * 1.12, Math.PI * 0.12, (i + 0.1 + r() * 0.8) / n),
-        r0: 205 + r() * 50,
-        r1: 340 + r() * 110,
-        size: 30 + r() * 6,
-        rot: r() * Math.PI,
-        spin: (r() - 0.5) * 0.1,
+        f0: BURST + r() * 3,
+        x: (r() - 0.5) * 160, y: (r() - 0.5) * 140,
+        vx: Math.cos(a) * v * 1.15, vy: Math.sin(a) * v,
+        w: 22 + r() * 14, h: 12 + r() * 8,
+        rot: r() * Math.PI * 2, spin: (r() - 0.5) * 0.3,
+        flip: r() * Math.PI * 2, flipRate: 0.12 + r() * 0.18,
+        sway: r() * Math.PI * 2,
         color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-        fade: 141 + r() * 5,
+        layer: i % 3 ? 0 : 1,   // two in three fly out from behind the trophy
       });
     }
     return list;
   })();
-  function drawConfetti(f) {
-    if (f < 121 || f > 156) return;
-    const cx = 440, cy = 560;
-    const t = ramp(f, 121, 148);
-    const p = 1 - (1 - t) ** 2;
+  function drawConfetti(f, layer) {
+    if (f < BURST) return;
+    const [cx, cy] = spot(art.open, GREEN.x, GREEN.y, GREEN.s, 0.5, 0.5);
     for (const c of confetti) {
-      const rr = lerp(c.r0, c.r1, p);
-      const alpha = 1 - ramp(f, c.fade - 3, c.fade + 5);
-      if (alpha <= 0) continue;
+      if (c.layer !== layer || f < c.f0) continue;
+      let x = c.x, y = c.y, vx = c.vx, vy = c.vy;
+      const steps = Math.floor(f - c.f0);
+      for (let i = 0; i < steps; i++) {
+        vx *= 0.94;
+        vy = vy * 0.94 + 0.6;
+        if (vy > 4.5) vy = 4.5;                       // flutter-limited fall speed
+        x += vx + Math.sin(c.sway + i * 0.09) * 1.4;
+        y += vy;
+      }
+      const sy = cy + y;
+      if (sy > OY + H + 40) continue;
+      const t = f - c.f0;
       ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.translate(cx + Math.cos(c.a) * rr, cy + Math.sin(c.a) * rr);
-      ctx.rotate(c.rot + c.spin * (f - 121));
+      ctx.translate(cx + x, sy);
+      ctx.rotate(c.rot + c.spin * t);
+      ctx.scale(1, Math.cos(c.flip + c.flipRate * t));
       ctx.fillStyle = c.color;
-      ctx.fillRect(-c.size / 2, -c.size / 2, c.size, c.size);
+      ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
       ctx.restore();
     }
   }
@@ -429,7 +701,7 @@
   }
 
   // ---------- screen text and controls ----------
-  function caption(lines, y0, lh, alpha) {
+  function caption(lines, y0, lh, alpha, size = 42) {
     if (alpha <= 0) return;
     ctx.globalAlpha = alpha;
     ctx.fillStyle = '#4b4b4b';
@@ -438,7 +710,7 @@
     ctx.direction = 'rtl';
     lines.forEach((parts, i) => {
       // parts: [[text, weight], ...] in reading order (right to left)
-      const fonts = parts.map(([, wt]) => wt + ' 42px ' + AR);
+      const fonts = parts.map(([, wt]) => wt + ' ' + size + 'px ' + AR);
       const widths = parts.map(([t], j) => ((ctx.font = fonts[j]), ctx.measureText(t).width));
       let right = W / 2 + widths.reduce((a, b) => a + b, 0) / 2;
       ctx.textAlign = 'right';
@@ -497,10 +769,17 @@
     ctx.stroke();
   }
 
-  function drawButton(enabled, alpha) {
+  function drawButton(enabled, alpha, pulse = 0) {
     if (alpha <= 0) return;
     const x = 36, y = 1448, w = 811, h = 111, lip = 8;
     ctx.globalAlpha = alpha;
+    ctx.save();
+    if (pulse) {
+      const k = 1 + pulse;
+      ctx.translate(W / 2, y + h / 2);
+      ctx.scale(k, k);
+      ctx.translate(-W / 2, -(y + h / 2));
+    }
     roundRect(x, y, w, h, 26);
     ctx.fillStyle = enabled ? '#0090d3' : '#d9d9d9';
     ctx.fill();
@@ -514,7 +793,34 @@
     ctx.direction = 'rtl';
     ctx.fillText('المتابعة', W / 2, y + (h - lip) / 2 + 2);
     ctx.direction = 'ltr';
+    ctx.restore();
     ctx.globalAlpha = 1;
+  }
+
+  // The league name slams in big and lands with a bounce; the line under it
+  // rises in after
+  function drawTitle(f) {
+    if (f < TITLE) return;
+    const k = keys([[TITLE, 1.9], [TITLE + 4, 0.9], [TITLE + 7, 1.05], [TITLE + 10, 0.985], [TITLE + 13, 1]], f);
+    ctx.save();
+    ctx.globalAlpha = ramp(f, TITLE, TITLE + 2);
+    ctx.translate(W / 2, 1012);
+    ctx.scale(k, k);
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '800 78px ' + AR;
+    ctx.fillStyle = SET.title;
+    ctx.fillText('المستوى ' + SET.league, 0, 0);
+    ctx.restore();
+    const p = easeOut(ramp(f, TITLE + 8, TITLE + 22));
+    if (p > 0) {
+      ctx.save();
+      ctx.globalAlpha = p;
+      ctx.translate(0, (1 - p) * 18);
+      caption([[['تهانينا! تقدّمت إلى مستوى جديد هذا الأسبوع', 700]]], 1098, 0, p, 38);
+      ctx.restore();
+    }
   }
 
   function drawUI(f) {
@@ -522,14 +828,14 @@
     caption([[['لقد حصلت على المركز الـ', 700], ['8', 800], [' الأسبوع الماضي', 700]]], 778, 0, out);
     if (f < 12) {
       drawCard();
-      drawButton(true, 1);
+      // waiting for the tap that starts it: a gentle breathing pulse
+      drawButton(true, 1, waiting ? 0.018 * (1 - Math.cos(idleT * 0.09)) : 0);
     } else {
       drawButton(false, out);
     }
-    if (f >= 149) {
-      caption([[['تهانينا! لقد تقدّمت إلى', 700]], [['المستوى ' + SET.league + ' هذا الأسبوع.', 700]]], 1015, 66, 1);
-      drawButton(true, ramp(f, 149, 160));
-    }
+    drawTitle(f);
+    const b = ramp(f, TITLE + 18, TITLE + 30);
+    drawButton(true, b, b >= 1 ? 0.012 * (1 - Math.cos((f - TITLE - 30) * 0.08)) : 0);
   }
 
   // ---------- frame ----------
@@ -539,9 +845,14 @@
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
     ctx.translate(0, -OY);
+    const [shx, shy] = shakeOffset(f);
+    ctx.save();
+    ctx.translate(shx, shy);
     drawRow(f);
-    drawSparkles(f);
+    if (f >= BURST) drawSparkles(f - POST);
     drawUI(f);
+    ctx.restore();
+    drawFlash(f);
   }
 
   let scale = 1;
@@ -555,16 +866,181 @@
     canvas.height = Math.round(H * scale);
   }
 
-  let start = 0, frameNow = 1;
+  // ---------- sound ----------
+  // Synthesised in Web Audio and scheduled against the timeline when playback
+  // starts, so it stays locked to the frames.
+  const sound = (() => {
+    let ac = null, out = null, noiseBuf = null, voices = [];
+    function init() {
+      if (ac) return ac.resume();
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      graph(new AC());
+    }
+    function graph(context) {
+      ac = context;
+      const comp = ac.createDynamicsCompressor();
+      out = ac.createGain();
+      out.gain.value = 0.8;
+      out.connect(comp);
+      comp.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    function env(g, t, peak, attack, dur) {
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    }
+    function tone(t, { type = 'sine', f0, f1 = f0, dur, gain, attack = 0.004, lp = 0 }) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(f0, t);
+      if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      env(g, t, gain, attack, dur);
+      let node = o;
+      if (lp) {
+        const fl = ac.createBiquadFilter();
+        fl.type = 'lowpass';
+        fl.frequency.value = lp;
+        o.connect(fl);
+        node = fl;
+      }
+      node.connect(g);
+      g.connect(out);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+      voices.push(o);
+    }
+    function noise(t, { dur, gain, type = 'bandpass', f0, f1 = f0, q = 1, attack = 0.003 }) {
+      const n = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+      n.buffer = noiseBuf;
+      fl.type = type;
+      fl.Q.value = q;
+      fl.frequency.setValueAtTime(f0, t);
+      if (f1 !== f0) fl.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      env(g, t, gain, attack, dur);
+      n.connect(fl);
+      fl.connect(g);
+      g.connect(out);
+      n.start(t);
+      n.stop(t + dur + 0.05);
+      voices.push(n);
+    }
+    // the charge: a rising buzz that cuts dead at the hold
+    function riser(t, dur) {
+      const o = ac.createOscillator(), fl = ac.createBiquadFilter(), g = ac.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(90, t);
+      o.frequency.exponentialRampToValueAtTime(420, t + dur);
+      fl.type = 'lowpass';
+      fl.frequency.setValueAtTime(300, t);
+      fl.frequency.exponentialRampToValueAtTime(5000, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.11, t + dur);
+      g.gain.setValueAtTime(0.11, t + dur);
+      g.gain.linearRampToValueAtTime(0, t + dur + 0.012);
+      o.connect(fl);
+      fl.connect(g);
+      g.connect(out);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+      voices.push(o);
+      noise(t, { dur: dur + 0.01, gain: 0.05, type: 'highpass', f0: 800, f1: 7000, attack: dur * 0.9 });
+    }
+    function play(t0 = ac && ac.currentTime + 0.05) {
+      if (!ac) return;
+      voices.forEach((v) => { try { v.stop(); } catch (e) { /* already stopped */ } });
+      voices = [];
+      const at = (f) => t0 + (f - 1) / FPS;
+      noise(at(13), { dur: 0.5, gain: 0.05, f0: 300, f1: 1400, attack: 0.18 });
+      noise(at(45), { dur: 0.7, gain: 0.06, f0: 500, f1: 1800, attack: 0.25 });
+      const clicks = [[113, 0.14], [116, 0.16], [119, 0.12], [129, 0.2], [132, 0.24], [135, 0.24], [138, 0.2]];
+      for (const [f, g] of clicks) {
+        noise(at(f), { dur: 0.035, gain: g, type: 'highpass', f0: 2500 });
+        tone(at(f), { type: 'square', f0: 1300, f1: 800, dur: 0.04, gain: g * 0.25 });
+      }
+      // padlock snaps open
+      tone(at(BREAK), { f0: 2637, dur: 0.4, gain: 0.12 });
+      tone(at(BREAK), { f0: 3951, dur: 0.28, gain: 0.06 });
+      tone(at(BREAK), { f0: 420, f1: 90, dur: 0.09, gain: 0.25 });
+      noise(at(BREAK), { dur: 0.05, gain: 0.15, type: 'highpass', f0: 3000 });
+      riser(at(CHARGE), (CHARGE_END - CHARGE) / FPS);
+      // burst
+      const b = at(BURST);
+      tone(b, { f0: 160, f1: 36, dur: 0.9, gain: 0.75, attack: 0.002 });
+      tone(b, { type: 'triangle', f0: 82, f1: 40, dur: 0.5, gain: 0.3, attack: 0.002 });
+      noise(b, { dur: 0.75, gain: 0.45, type: 'lowpass', f0: 2600, f1: 140, attack: 0.002 });
+      [1046.5, 1318.5, 1568, 2093].forEach((hz, i) => tone(b + 0.03 * i, { type: 'triangle', f0: hz, dur: 0.9, gain: 0.05 }));
+      // title lands: a thud and a short fanfare
+      const tt = at(TITLE + 3);
+      tone(tt, { f0: 120, f1: 55, dur: 0.25, gain: 0.35, attack: 0.002 });
+      [523.25, 659.25, 783.99, 1046.5].forEach((hz, i) => {
+        const last = i === 3;
+        tone(tt + 0.09 * i, { type: 'sawtooth', f0: hz, dur: last ? 0.75 : 0.15, gain: 0.06, attack: 0.01, lp: 2400 });
+        tone(tt + 0.09 * i, { type: 'triangle', f0: hz * 2, dur: last ? 0.6 : 0.12, gain: 0.03, attack: 0.01 });
+      });
+      // pings for the sparkle bursts
+      tone(at(158 + POST), { f0: 1568, dur: 0.5, gain: 0.05 });
+      tone(at(158 + POST), { f0: 2349, dur: 0.35, gain: 0.025 });
+      tone(at(172 + POST), { f0: 2093, dur: 0.5, gain: 0.045 });
+    }
+    // Renders the whole score offline (for the video render): 16-bit stereo PCM
+    async function offline(seconds) {
+      const live = [ac, out, noiseBuf];
+      const rate = 44100;
+      graph(new OfflineAudioContext(2, Math.ceil(rate * seconds), rate));
+      play(0);
+      const buf = await ac.startRendering();
+      [ac, out, noiseBuf] = live;
+      voices = [];
+      const pcm = new Int16Array(buf.length * 2);
+      for (let c = 0; c < 2; c++) {
+        const d = buf.getChannelData(c);
+        for (let i = 0; i < d.length; i++) pcm[i * 2 + c] = Math.max(-1, Math.min(1, d[i])) * 32767;
+      }
+      return { rate, pcm: Array.from(pcm) };
+    }
+    return { init, play, offline };
+  })();
+
+  // Phone buzzes on the hits, where supported
+  let buzzTimers = [];
+  function buzz() {
+    buzzTimers.forEach(clearTimeout);
+    buzzTimers = [];
+    if (!navigator.vibrate) return;
+    const at = (f, pattern) => buzzTimers.push(setTimeout(() => navigator.vibrate(pattern), ((f - 1) / FPS) * 1000));
+    at(BREAK, 20);
+    at(BURST, [40, 30, 90]);
+    at(TITLE + 3, 15);
+  }
+
+  // ---------- playback ----------
+  let start = 0, frameNow = 1, waiting = true, idleT = 0;
   function tick(now) {
-    if (!start) start = now;
-    frameNow = Math.min(END, 1 + ((now - start) / 1000) * FPS);
-    render(frameNow);
-    if (frameNow < END) requestAnimationFrame(tick);
+    if (waiting) {
+      idleT++;
+      render(1);
+    } else {
+      if (!start) start = now;
+      frameNow = 1 + ((now - start) / 1000) * FPS;
+      render(frameNow);   // keeps going past END so the rays keep turning
+    }
+    requestAnimationFrame(tick);
   }
   function play() {
+    waiting = false;
     start = 0;
-    requestAnimationFrame(tick);
+    frameNow = 1;
+    sound.play();
+    buzz();
+  }
+  function onTap() {
+    if (!waiting && frameNow < END) return;
+    sound.init();
+    play();
   }
 
   Promise.all([
@@ -580,11 +1056,15 @@
     if (fixedFrame !== null) {
       render(fixedFrame);
       window.leagueReady = true;
+      window.leagueEnd = END;
       // lets the render tool step through frames without reloading
       window.leagueFrame = (f) => render(f);
+      window.leagueAudio = (seconds) => sound.offline(seconds);
       return;
     }
-    canvas.addEventListener('click', () => { if (frameNow >= END || frameNow > 1) play(); });
-    play();
+    canvas.addEventListener('click', onTap);
+    window.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'Enter') onTap(); });
+    if (params.has('autoplay')) play();
+    requestAnimationFrame(tick);
   });
 })();

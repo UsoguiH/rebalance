@@ -110,20 +110,33 @@ Progress saves automatically to `localStorage`.
 
 ## League promotion animation
 
-`league/index.html` is a frame-accurate recreation of a league promotion screen. The result
-card fades out, the trophy row zooms in and pans from the current league to the locked next
-one, which tints icy blue, turns into a glowing outline, wobbles and bursts open with confetti,
-a shine sweep and sparkles. Click the stage to replay it.
+`league/index.html` is a league promotion screen built on a frame-accurate recreation of
+a reference recording. Tap to start (that also turns on the sound), tap again at the end to
+replay; `?autoplay` starts it at once without sound.
+
+1. The result card fades out and the trophy row zooms in and pans to the locked next league.
+2. Build-up: the locked badge rattles twice, then its padlock springs open and falls away.
+3. Charge: the room dims, streaks of light are pulled in, and the badge goes icy, turns into a
+   glowing outline, swells and trembles harder. It holds still for a beat in silence.
+4. Burst: a flash, a shockwave and a screen shake. The new badge punches in with squash and
+   stretch, light rays turn behind it, and confetti blasts out and flutters down.
+5. The league name slams in, the line under it rises, and the button appears.
+
+The sound is synthesized with Web Audio and scheduled on the same timeline (whooshes, rattle
+clicks, the padlock snap, a riser that cuts dead before the burst, the boom, a short fanfare).
+Phones vibrate on the snap, the burst and the title. With reduced motion turned on, there is no
+screen shake and the flash is softer.
 
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
 champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
 
 - `league/motion.js`: the trophy positions and scales, measured frame by frame from the
   reference recording (60 fps)
-- `league/img/ranks/`: the rank badges from qudrati.xyz, unchanged. The `-locked` versions
-  are made with `python3 tools/lock-ranks.py` (greyed badge plus the site's padlock)
+- `league/img/ranks/`: the rank badges from qudrati.xyz, unchanged. The `-grey` and `-locked`
+  versions are made with `python3 tools/lock-ranks.py` (greyed badge, plus the site's padlock)
 - `league/img/*.png`: the book trophies cut out of the source image. `green.png` is the red
   book recolored to emerald. Rebuild them with `python3 tools/cut-books.py`. Both tools need
   Pillow and numpy
-- `node tools/render-league.js [out.mp4] [ranks|books]` renders the animation to video with
-  Playwright and ffmpeg. `league/league.mp4` (ranks) and `league/league-books.mp4` are renders
+- `node tools/render-league.js [out.mp4] [ranks|books]` renders the animation and its sound to
+  video with Playwright and ffmpeg. `league/league.mp4` (ranks) and `league/league-books.mp4`
+  are renders
