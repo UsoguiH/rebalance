@@ -1277,7 +1277,7 @@
       swing = 0.22 * Math.exp(-t / 14) * Math.cos(t * 0.32);
     }
     ctx.save();
-    ctx.translate(W / 2, by - 1012);
+    ctx.translate(0, by - 1012);
     ctx.translate(W / 2, 1012); ctx.rotate(swing); ctx.translate(-W / 2, -1012);
     const onRibbon = drawBanner(f, open, 1012);
     ctx.save();
