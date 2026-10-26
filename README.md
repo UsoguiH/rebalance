@@ -165,6 +165,8 @@ Every promotion can be played: `?tier=1` bronze to silver, `2` silver to gold, `
 diamond (the default), `4` diamond to champion (there is no next league to show on the right).
 `league/tiers.js` holds each league's name, colours and shine shape (the pencil, the gem or the
 crown); `tools/lock-ranks.py` makes the grey and locked badges for all five.
+`league/league-tiers-classic.mp4` and `league/league-tiers-new.mp4` play all four promotions side
+by side for each version.
 
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
 champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
