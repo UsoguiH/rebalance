@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#f1f1f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Try a New Look</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app" id="app" data-screen="photo">
+
+  <header class="top">
+    <button class="pill pill--gray" id="backBtn" aria-label="Back">
+      <span class="pill-dash"></span>
+      <svg class="pill-ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19"/></svg>
+    </button>
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <button class="me" id="meBtn" aria-label="Take a new photo" hidden><img alt=""></button>
+  </header>
+
+  <main class="screens">
+
+    <!-- 1. Photo -->
+    <section class="screen" data-name="photo" aria-labelledby="t-photo">
+      <h1 class="title" id="t-photo">Let's see you</h1>
+      <div class="card card--gray cam" id="cam">
+        <video id="video" playsinline muted autoplay></video>
+        <img id="shot" alt="Your photo" hidden>
+        <svg class="guide" viewBox="0 0 300 400" aria-hidden="true"><ellipse cx="150" cy="190" rx="98" ry="128"/></svg>
+        <div class="count" id="count" aria-live="assertive"></div>
+        <div class="flash" id="flash"></div>
+        <p class="cam-msg mono" id="camMsg" hidden>Camera is off.<br>Use a picture instead.</p>
+      </div>
+      <p class="hint mono" id="photoHint">Look at the screen.<br>Keep your face inside the oval.</p>
+      <div class="actions">
+        <button class="btn btn--black" id="shootBtn"><span class="ico ico-rec"></span><span class="lbl">Take photo</span></button>
+        <button class="btn btn--gray" id="altBtn"><span class="lbl">Use a picture</span></button>
+      </div>
+      <input type="file" id="file" accept="image/*" hidden>
+    </section>
+
+    <!-- 2. Pick -->
+    <section class="screen" data-name="pick" aria-labelledby="t-pick">
+      <h1 class="title" id="t-pick">Pick a style</h1>
+      <div class="seg" role="tablist" aria-label="Style type">
+        <span class="seg-knob" aria-hidden="true"></span>
+        <button role="tab" aria-selected="true" data-kind="hair">Haircut</button>
+        <button role="tab" aria-selected="false" data-kind="beard">Beard</button>
+      </div>
+      <div class="grid" id="grid" role="list"></div>
+    </section>
+
+    <!-- 3. Making -->
+    <section class="screen" data-name="make" aria-labelledby="t-make">
+      <div class="card card--gray make">
+        <div class="make-head">
+          <div class="thumb"><img id="makeThumb" alt=""><i class="rec-dot"></i></div>
+          <div class="make-meta">
+            <h2 class="make-title" id="t-make"><span id="makeName">Your new look</span> <span class="chip">ai</span></h2>
+            <div class="bar"><i id="makeBar"></i></div>
+            <div class="times mono"><span id="makeTime">00:00</span><span id="makeEta">00:25</span></div>
+          </div>
+        </div>
+        <div class="face3d">
+          <canvas id="faceCanvas" aria-label="3D view of your face. Drag to turn it."></canvas>
+          <span class="face3d-hint mono">drag to turn</span>
+        </div>
+        <div class="log mono" id="log" aria-live="polite"></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn--black" id="stopBtn"><span class="ico ico-stop"></span><span class="lbl">Stop</span></button>
+      </div>
+    </section>
+
+    <!-- 4. Result -->
+    <section class="screen" data-name="result" aria-labelledby="t-result">
+      <h1 class="title sr-only" id="t-result">Your new look</h1>
+      <div class="stage" id="stage">
+        <div class="turn" id="turn"></div>
+        <div class="before" id="before"><img id="beforeImg" alt="Before"></div>
+        <div class="glare" aria-hidden="true"></div>
+        <div class="angle mono" id="angleLbl">Front</div>
+        <div class="drag-hint" id="dragHint" aria-hidden="true"><span class="hand"></span><span class="mono">drag to turn</span></div>
+      </div>
+      <div class="views" id="views" role="tablist" aria-label="Views"></div>
+      <div class="actions">
+        <button class="btn btn--gray btn--hold" id="holdBtn"><span class="lbl">Hold to see before</span></button>
+        <button class="btn btn--black" id="loveBtn"><span class="ico ico-check"></span><span class="lbl">I like it</span></button>
+        <button class="btn btn--ghost" id="againBtn"><span class="lbl">Try another style</span></button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Selection island (pick screen) -->
+  <div class="island" id="island" aria-live="polite">
+    <div class="wallet" id="wallet"></div>
+    <button class="go" id="goBtn"><span class="ico ico-check"></span><span class="lbl">Try it on</span></button>
+  </div>
+
+  <!-- Show the barber -->
+  <div class="sheet show" id="show" role="dialog" aria-modal="true" aria-labelledby="t-show" hidden>
+    <div class="show-inner">
+      <div class="show-photo"><img id="showImg" alt="Your new look"></div>
+      <div class="island island--static">
+        <div class="wallet" id="showWallet"></div>
+      </div>
+      <h2 class="title" id="t-show">Show this to your barber</h2>
+      <div class="actions">
+        <button class="btn btn--black" id="saveBtn"><span class="ico ico-down"></span><span class="lbl">Save picture</span></button>
+        <button class="btn btn--gray" id="doneBtn"><span class="lbl">Done, next customer</span></button>
+        <button class="btn btn--ghost" id="showBack"><span class="lbl">Back</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff settings: long-press the top-left button -->
+  <div class="sheet settings" id="settings" role="dialog" aria-modal="true" aria-labelledby="t-settings" hidden>
+    <form class="card card--gray settings-card" id="settingsForm">
+      <h2 class="make-title" id="t-settings">Staff settings</h2>
+      <label class="field"><span class="mono">Gemini API key</span>
+        <input type="password" id="keyInput" autocomplete="off" spellcheck="false" placeholder="Paste key here">
+      </label>
+      <a class="mono link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a key at aistudio.google.com</a>
+      <label class="field"><span class="mono">Image model</span>
+        <select id="modelInput"></select>
+      </label>
+      <label class="toggle"><input type="checkbox" id="viewsInput"><span class="toggle-ui"></span><span>Make side &amp; back views</span></label>
+      <p class="mono note" id="settingsNote">The key stays on this device only.</p>
+      <div class="actions">
+        <button class="btn btn--black" type="submit"><span class="ico ico-check"></span><span class="lbl">Save</span></button>
+        <button class="btn btn--ghost" type="button" id="credBtn"><span class="lbl">Photo credits</span></button>
+      </div>
+    </form>
+  </div>
+
+  <div class="toast mono" id="toast" role="status"></div>
+</div>
+
+<script src="js/styles.js"></script>
+<script src="js/gemini.js"></script>
+<script src="js/face3d.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
