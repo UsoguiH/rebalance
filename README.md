@@ -171,7 +171,8 @@ twice; gold is flipped like a coin, spinning up and landing with a thud while co
 the banner drops in swinging; diamond is the charge, hold and burst; champion is a coronation,
 with lilac flooding out, a gold crown slamming onto the badge, shockwaves, fireworks and crown
 confetti, under a purple banner with crowns.
-`league/league-tiers-classic.mp4` and `league/league-tiers-new.mp4` play all four promotions side
+`league/league-journey.mp4` plays every promotion from bronze to champion in turn, the Duolingo
+recreation next to the new version. `league/league-tiers-classic.mp4` and `league/league-tiers-new.mp4` play all four promotions side
 by side for each version.
 
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
