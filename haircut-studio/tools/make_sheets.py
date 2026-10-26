@@ -24,14 +24,24 @@ def main():
     ov = json.load(open(os.path.join(d, "candidates.json")))
     cm_path = os.path.join(d, "commons.json")
     cm = json.load(open(cm_path)) if os.path.exists(cm_path) else {}
-    # every candidate gets a key: "3" for Openverse, "c3" for Commons
+    us_path = os.path.join(d, "unsplash.json")
+    us = json.load(open(us_path)) if os.path.exists(us_path) else {}
+    src = os.environ.get("SOURCES", "u")  # any of u (Unsplash), c (Commons), o (Openverse)
+    # every candidate gets a key: "u3" for Unsplash, "c3" for Commons, "3" for Openverse
     cands = {}
     for sid in order:
-        keys = ["c%d" % i for i in range(len(cm.get(sid, [])))] + [str(i) for i in range(len(ov.get(sid, [])))]
+        keys = []
+        if "u" in src:
+            keys += ["u%d" % i for i in range(len(us.get(sid, [])))]
+        if "c" in src:
+            keys += ["c%d" % i for i in range(len(cm.get(sid, [])))]
+        if "o" in src:
+            keys += [str(i) for i in range(len(ov.get(sid, [])))]
+        keys = keys[:int(os.environ.get("MAX", "999"))]
         if keys:
             cands[sid] = keys
     order = [s for s in order if s in cands and (not only or s in only)]
-    tw, th, lab = 130, 173, 30
+    tw, th, lab = int(os.environ.get("TW", "130")), int(int(os.environ.get("TW", "130")) * 4 / 3), 30
     f_big, f_small = font(22), font(18)
     os.makedirs(os.path.join(d, "sheets"), exist_ok=True)
     for si in range(0, len(order), per_sheet):
@@ -49,14 +59,14 @@ def main():
             for i in range(a, b):
                 x = 4 + (i - a) * (tw + 4)
                 key = cands[sid][i]
-                fn = ("c%02d.jpg" % int(key[1:])) if key.startswith("c") else ("%02d.jpg" % int(key))
+                fn = (key[0] + "%02d.jpg" % int(key[1:])) if key[0] in "uc" else ("%02d.jpg" % int(key))
                 try:
                     im = Image.open(os.path.join(d, "thumbs", sid, fn)).convert("RGB")
                     im = ImageOps.fit(im, (tw, th), centering=(0.5, 0.35))
                     sheet.paste(im, (x, y + lab))
                 except Exception:
                     g.rectangle((x, y + lab, x + tw, y + lab + th), fill="#ccc")
-                g.rectangle((x, y + lab, x + 16 + 13 * len(key), y + lab + 26), fill="black" if key[0] != "c" else "#c2410c")
+                g.rectangle((x, y + lab, x + 16 + 13 * len(key), y + lab + 26), fill={"u": "black", "c": "#c2410c"}.get(key[0], "#555"))
                 g.text((x + 3, y + lab + 1), key, fill="white", font=f_big)
             y += th + lab + 6
         sheet.save(os.path.join(d, "sheets", "sheet_%02d.jpg" % (si // per_sheet)), quality=85)

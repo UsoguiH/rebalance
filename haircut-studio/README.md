@@ -2,8 +2,8 @@
 
 A barbershop try-on app. The customer takes a selfie, taps one of **50 haircuts** or
 **50 beards**, and Gemini shows them with that style. Each style is shown with a real
-photo of someone wearing it, and that photo is also sent to Gemini as the style
-reference. The result can be turned with a finger (front, left, back, right), and while
+photo of someone wearing it (from Unsplash), and that photo is also sent to Gemini as the
+style reference. The result can be turned with a finger (front, left, back, right), and while
 the AI works the customer can spin a 3D dot model of their own face.
 
 Big buttons, few screens, few words: it is built for people who are not used to apps.
@@ -55,27 +55,33 @@ front of the Gemini API and keep the key on the server.
 | `js/app.js` | Screens, camera, picking, the turnable result, settings |
 | `js/gemini.js` | Prompts and Gemini calls (`generateContent`, falling back to the Interactions API) |
 | `js/face3d.js` | The 3D face dot cloud |
-| `js/styles.js` | The 100 styles (generated) |
-| `assets/styles/` | The 100 reference photos, cropped to 600×800 |
+| `js/styles.js` | The 100 styles with their photo links and Gemini descriptions (generated) |
 | `credits.html` | Photographer and license for every photo (also linked from Staff settings) |
 | `tools/` | Scripts used to find, pick and build the reference photos |
 
 ## The reference photos
 
-All 100 are real photos under licenses that allow commercial use and changes (CC BY,
-CC BY-SA, CC0 or Public Domain). They come from Flickr and Wikimedia Commons, found
-through [Openverse](https://openverse.org). Every photographer is credited in
-`credits.html`; keep that page reachable to meet the attribution terms.
+All 100 are real photos from [Unsplash](https://unsplash.com), free to use under the
+[Unsplash License](https://unsplash.com/license), including commercially. Each one was
+picked by hand from the search results for its style. As the Unsplash API terms require,
+the app loads them straight from Unsplash's image servers (cropped around the face) rather
+than copying them, and every photographer is credited in `credits.html`. So the app needs an
+internet connection, which it already does for Gemini.
 
-To swap a photo:
+The tools can also use Wikimedia Commons or Openverse photos (those are cropped into
+`assets/styles/`), but for these styles their results were much weaker.
+
+To swap a photo (you need a free Unsplash Access Key only for this, not for the app):
 
 ```sh
 cd haircut-studio/tools
-python3 find_candidates.py /tmp/cands <style-id>   # fetch candidates
-python3 make_sheets.py /tmp/cands 12 5 <style-id>  # numbered contact sheet in /tmp/cands/sheets
-# set "<style-id>": <number> in picks.json, optionally [number, focus_x, focus_y, zoom]
-python3 build_assets.py /tmp/cands                 # rebuild assets, styles.js, credits.html
+export UNSPLASH_KEY=...                                  # unsplash.com/developers -> Your apps
+python3 find_unsplash.py /tmp/cands <style-id>           # search; query from unsplash_queries.json
+MAX=16 TW=160 python3 make_sheets.py /tmp/cands 8 4 <style-id>   # numbered sheet in /tmp/cands/sheets
+# set "<style-id>": "u7" in picks.json (or "other-style:u7" to borrow another style's photo,
+# or ["u7", "focalpoint&fp-y=.3"] to change the crop)
+python3 build_assets.py /tmp/cands                       # rebuilds js/styles.js and credits.html
 ```
 
-The style names, search terms and the description sent to Gemini live in
-`tools/styles.json` and `tools/descriptions.json`.
+The style names and the description sent to Gemini live in `tools/styles.json` and
+`tools/descriptions.json`.

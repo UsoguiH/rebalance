@@ -272,7 +272,8 @@
           ok(c.toDataURL("image/jpeg", 0.88));
         };
         img.onerror = no;
-        img.src = s.img;
+        img.crossOrigin = "anonymous";
+        img.src = s.ref || s.img;
       });
       refCache[s.id].catch(() => delete refCache[s.id]);
     }

@@ -1,1 +1,633 @@
-window.STYLES = [{"id": "buzz-cut", "kind": "hair", "name": "Buzz Cut", "desc": "Hair clipped very short and even all over the head with clippers, about 3 mm, following the head shape.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "crew-cut", "kind": "hair", "name": "Crew Cut", "desc": "Short tapered sides and back, top slightly longer (about 2-3 cm) and brushed up and forward.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "butch-cut", "kind": "hair", "name": "Butch Cut", "desc": "Very short, uniform length all over (about 6 mm), slightly longer than a buzz, rounded neat shape.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "ivy-league", "kind": "hair", "name": "Ivy League", "desc": "A longer crew cut: short tapered sides, top long enough to part on the side and sweep across.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "caesar-cut", "kind": "hair", "name": "Caesar Cut", "desc": "Short even layers with a short straight horizontal fringe brushed forward onto the forehead.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "french-crop", "kind": "hair", "name": "French Crop", "desc": "Faded sides, textured top pushed forward into a short blunt fringe across the forehead.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "low-fade", "kind": "hair", "name": "Low Fade", "desc": "Sides fade from skin just above the ears and neckline, getting longer upward; top kept a few centimetres long and neatly styled.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "mid-fade", "kind": "hair", "name": "Mid Fade", "desc": "Fade starting at temple height on the sides and back, blending smoothly into a medium-length top.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "high-fade", "kind": "hair", "name": "High Fade", "desc": "Fade starting high near the top of the head, sides almost shaved, short top.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "skin-fade", "kind": "hair", "name": "Skin Fade", "desc": "Sides and back blended down to bare skin with a smooth gradient, longer textured top.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "taper-fade", "kind": "hair", "name": "Taper Fade", "desc": "Subtle taper only at the sideburns and neckline, natural length elsewhere, clean edges.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "undercut", "kind": "hair", "name": "Undercut", "desc": "Sides and back cut very short in one length, top left long and swept back or to the side, sharp contrast.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "disconnected-undercut", "kind": "hair", "name": "Disconnected Undercut", "desc": "Shaved sides with a hard visible disconnection line to a long top slicked to one side.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "pompadour", "kind": "hair", "name": "Pompadour", "desc": "Long top swept upward and back with lots of volume at the front, short neat sides, glossy finish.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "quiff", "kind": "hair", "name": "Quiff", "desc": "Top hair brushed up and slightly back at the front with volume and texture, shorter sides.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "slicked-back", "kind": "hair", "name": "Slicked Back", "desc": "Medium-long top combed straight back with a smooth wet-look shine, tidy short sides.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "side-part", "kind": "hair", "name": "Side Part", "desc": "Classic short haircut with a clean side parting, top combed neatly to one side.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "hard-part", "kind": "hair", "name": "Hard Part", "desc": "Side part with a sharp shaved line cut into the parting, faded sides, top combed over.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "faux-hawk", "kind": "hair", "name": "Faux Hawk", "desc": "Short sides with the top hair pushed up and toward the centre into a soft ridge.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "mohawk", "kind": "hair", "name": "Mohawk", "desc": "Sides of the head fully shaved, a strip of longer hair standing up along the centre from front to back.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "flat-top", "kind": "hair", "name": "Flat Top", "desc": "Short sides, top hair standing straight up and cut perfectly flat and level on top.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "high-and-tight", "kind": "hair", "name": "High and Tight", "desc": "Military style: sides and back shaved very high and tight, a small patch of short hair on top.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "textured-crop", "kind": "hair", "name": "Textured Crop", "desc": "Short faded sides, choppy messy textured top with a short fringe pushed forward.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "fringe", "kind": "hair", "name": "Fringe", "desc": "Hair brushed forward so a fringe covers the forehead, medium length on top, short sides.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "curtains", "kind": "hair", "name": "Curtains", "desc": "Medium-length hair parted in the middle, falling on both sides of the forehead like curtains.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "bowl-cut", "kind": "hair", "name": "Bowl Cut", "desc": "Rounded cut of even length all around as if trimmed around a bowl, straight fringe.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "mullet", "kind": "hair", "name": "Mullet", "desc": "Short on the front and sides, long at the back down to the neck.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "modern-mullet", "kind": "hair", "name": "Modern Mullet", "desc": "Faded or short sides, textured top and front, longer flowing hair at the back of the neck.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "man-bun", "kind": "hair", "name": "Man Bun", "desc": "Long hair pulled back and tied into a bun at the back of the head.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "top-knot", "kind": "hair", "name": "Top Knot", "desc": "Shaved or faded sides with the long top hair tied into a small knot on the crown.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "long-hair", "kind": "hair", "name": "Long Hair", "desc": "Hair grown long past the shoulders, natural with soft waves.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "surfer-hair", "kind": "hair", "name": "Surfer Hair", "desc": "Medium-long, messy, wavy, sun-bleached looking hair, relaxed and tousled.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "afro", "kind": "hair", "name": "Afro", "desc": "Natural curly hair grown out into a round full afro shape.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "twists", "kind": "hair", "name": "Twists", "desc": "Hair twisted into small rope-like twists all over the top, sides shorter.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "dreadlocks", "kind": "hair", "name": "Dreadlocks", "desc": "Hair formed into neat locs falling from the top of the head.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "cornrows", "kind": "hair", "name": "Cornrows", "desc": "Hair braided flat to the scalp in straight neat rows from front to back.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "box-braids", "kind": "hair", "name": "Box Braids", "desc": "Hair split into square sections and braided into individual braids.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "waves", "kind": "hair", "name": "360 Waves", "desc": "Very short brushed hair forming 360 degree rippling waves pattern, clean line-up edges.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "curly-top", "kind": "hair", "name": "Curly Top", "desc": "Short faded sides with a defined curly top.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "shag", "kind": "hair", "name": "Shag", "desc": "Layered, choppy medium-length cut with feathered ends and volume on top.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "bro-flow", "kind": "hair", "name": "Bro Flow", "desc": "Medium-length hair swept back from the forehead, flowing down behind the ears.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "brush-up", "kind": "hair", "name": "Brush Up", "desc": "Top brushed straight up with volume and a natural matte finish, short sides.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "spiky", "kind": "hair", "name": "Spiky Hair", "desc": "Short hair styled up into sharp separate spikes with gel.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "shaved-head", "kind": "hair", "name": "Shaved Head", "desc": "Head shaved completely smooth and bald with a razor.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "edgar-cut", "kind": "hair", "name": "Edgar Cut", "desc": "Very straight blunt fringe cut in a horizontal line across the forehead, sharp line-up, high skin fade on the sides.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "burst-fade", "kind": "hair", "name": "Burst Fade", "desc": "Fade curving around the ear in a semicircle, longer at the back neckline, textured top.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "comb-over-fade", "kind": "hair", "name": "Comb Over Fade", "desc": "Faded sides with the top combed over to one side with a parting.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "rockabilly", "kind": "hair", "name": "Rockabilly", "desc": "1950s style: big greasy pompadour on top, combed-back sides, ducktail at the back.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "messy-tousled", "kind": "hair", "name": "Tousled", "desc": "Medium-short hair with an intentionally messy, tousled, effortless look.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "frohawk", "kind": "hair", "name": "Frohawk", "desc": "Curly afro hair shaped into a mohawk: tall curly centre strip, short faded sides.", "img": "assets/styles/low-fade.jpg", "credit": {}}, {"id": "light-stubble", "kind": "beard", "name": "Light Stubble", "desc": "A few days of short even stubble across the jaw, cheeks and upper lip.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "heavy-stubble", "kind": "beard", "name": "Heavy Stubble", "desc": "Dense short stubble about a week long, neatly edged.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "short-boxed", "kind": "beard", "name": "Short Boxed", "desc": "Short full beard trimmed close with clean sharp cheek and neck lines.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "full-beard", "kind": "beard", "name": "Full Beard", "desc": "Thick full beard covering jaw, chin and cheeks, connected to the mustache, medium length.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "garibaldi", "kind": "beard", "name": "Garibaldi", "desc": "Wide, full natural beard with a rounded bottom, about 15-20 cm long, with a natural mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "bandholz", "kind": "beard", "name": "Bandholz", "desc": "Very long, full, untrimmed beard reaching the chest with a full mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "ducktail", "kind": "beard", "name": "Ducktail", "desc": "Full beard with the chin hair grown longer and shaped to a point, like a duck's tail.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "verdi", "kind": "beard", "name": "Verdi", "desc": "Short rounded full beard (no longer than 10 cm) with a separate, styled, prominent mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "goatee", "kind": "beard", "name": "Goatee", "desc": "Hair only on the chin, cheeks and upper lip clean shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "circle-beard", "kind": "beard", "name": "Circle Beard", "desc": "Mustache connected to a chin goatee forming a rounded circle around the mouth.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "van-dyke", "kind": "beard", "name": "Van Dyke", "desc": "Pointed chin goatee with a separate mustache that does not connect, cheeks clean shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "anchor", "kind": "beard", "name": "Anchor", "desc": "Pointed beard along the jawline under the chin shaped like an anchor, with a mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "balbo", "kind": "beard", "name": "Balbo", "desc": "Floating mustache with a chin beard extending under the lower lip, no sideburns.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "chin-strap", "kind": "beard", "name": "Chin Strap", "desc": "Thin line of beard following the jawline from ear to ear, no mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "chin-curtain", "kind": "beard", "name": "Chin Curtain", "desc": "Beard along the jaw and chin hanging down like a curtain, no mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "mutton-chops", "kind": "beard", "name": "Mutton Chops", "desc": "Thick sideburns extending down the cheeks to the jaw corners, chin and mustache shaved.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "friendly-chops", "kind": "beard", "name": "Friendly Chops", "desc": "Mutton chops connected to a mustache, chin clean shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "sideburns", "kind": "beard", "name": "Long Sideburns", "desc": "Long, thick, neat sideburns down to the earlobes or lower, rest of the face clean shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "soul-patch", "kind": "beard", "name": "Soul Patch", "desc": "Small patch of hair just below the lower lip, rest of the face clean shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "chevron", "kind": "beard", "name": "Chevron", "desc": "Thick, wide mustache covering the upper lip, trimmed in a chevron shape, rest shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "handlebar", "kind": "beard", "name": "Handlebar", "desc": "Mustache with long ends curled upward and waxed, rest of the face clean shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "walrus", "kind": "beard", "name": "Walrus", "desc": "Very thick, bushy mustache drooping over the mouth, rest of the face shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "horseshoe", "kind": "beard", "name": "Horseshoe", "desc": "Mustache with vertical extensions down both sides of the mouth to the jaw, like an upside-down U.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "pencil", "kind": "beard", "name": "Pencil Mustache", "desc": "Very thin, narrow, precisely trimmed mustache just above the lip.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "fu-manchu", "kind": "beard", "name": "Fu Manchu", "desc": "Thin mustache with long ends growing downward past the chin, rest shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "imperial", "kind": "beard", "name": "Imperial", "desc": "Big mustache with ends swept upward along the cheeks, with sideburns.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "dali", "kind": "beard", "name": "Dal\u00ed", "desc": "Thin mustache with long ends waxed and pointing sharply straight upward.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "english", "kind": "beard", "name": "English", "desc": "Narrow, long mustache with the ends pulled to the sides and waxed into points.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "lumberjack", "kind": "beard", "name": "Lumberjack", "desc": "Big, thick, rugged full beard, slightly untamed, with a full mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "hipster", "kind": "beard", "name": "Hipster Beard", "desc": "Long full beard, well groomed, combed and shaped, with a styled mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "beard-fade", "kind": "beard", "name": "Faded Beard", "desc": "Full beard that fades from skin at the sideburns gradually into a fuller beard on the jaw and chin.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "corporate", "kind": "beard", "name": "Corporate", "desc": "Short, tidy, well-groomed full beard, about 1 cm, with clean lines.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "extended-goatee", "kind": "beard", "name": "Extended Goatee", "desc": "Goatee with mustache extending slightly along the jawline, cheeks shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "royale", "kind": "beard", "name": "Royale", "desc": "Mustache with a separate rectangular chin strip, no hair on the cheeks.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "wizard", "kind": "beard", "name": "Wizard Beard", "desc": "Extremely long, flowing full beard, grey or white, reaching far below the chest.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "forked", "kind": "beard", "name": "Forked Beard", "desc": "Long full beard split into two points at the bottom.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "viking", "kind": "beard", "name": "Viking Braid", "desc": "Long full beard with a braid at the chin, rugged mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "spade", "kind": "beard", "name": "Spade", "desc": "Full beard trimmed into a flat-bottomed spade shape with rounded sides.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "old-dutch", "kind": "beard", "name": "Old Dutch", "desc": "Long wide beard along the jaw and chin with no mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "pointed", "kind": "beard", "name": "Pointed Beard", "desc": "Full beard trimmed to a sharp point at the chin.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "clean-shaven", "kind": "beard", "name": "Clean Shaven", "desc": "All facial hair shaved completely smooth, no beard or mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "salt-pepper", "kind": "beard", "name": "Salt & Pepper", "desc": "Medium full beard with natural mixed grey and dark hairs, salt and pepper colour.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "sharp-lineup", "kind": "beard", "name": "Sharp Line-Up", "desc": "Short full beard with very crisp razor-sharp line-up on the cheeks and neck.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "hollywoodian", "kind": "beard", "name": "Hollywoodian", "desc": "Beard on the jaw and chin connected to a mustache, but no sideburns.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "zappa", "kind": "beard", "name": "Zappa", "desc": "Thick mustache combined with a soul patch under the lip.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "beardstache", "kind": "beard", "name": "Beardstache", "desc": "Thick prominent mustache with very short stubble on the rest of the face.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "painters-brush", "kind": "beard", "name": "Painter's Brush", "desc": "Thick, full, wide mustache like a painter's brush, rest of face shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "lampshade", "kind": "beard", "name": "Lampshade", "desc": "Mustache trimmed in a straight-edged trapezoid shape like a lampshade, rest shaven.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "red-full", "kind": "beard", "name": "Ginger Full Beard", "desc": "Full medium-length beard in a ginger red colour.", "img": "assets/styles/handlebar.jpg", "credit": {}}, {"id": "yeard", "kind": "beard", "name": "Yeard", "desc": "Full beard grown untrimmed for about a year, long and thick with a big mustache.", "img": "assets/styles/handlebar.jpg", "credit": {}}];
+/* Generated by tools/build_assets.py. Real reference photos; see credits.html. */
+window.STYLES = [
+ {
+  "id": "buzz-cut",
+  "kind": "hair",
+  "name": "Buzz Cut",
+  "desc": "Hair clipped very short and even all over the head with clippers, about 3 mm, following the head shape.",
+  "img": "https://images.unsplash.com/photo-1645857195461-f83e0391ac23?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8YnV6eiUyMGN1dCUyMGhhaXJzdHlsZSUyMG1hbnxlbnwxfHx8fDE3OTMwNTc2MzJ8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1645857195461-f83e0391ac23?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8YnV6eiUyMGN1dCUyMGhhaXJzdHlsZSUyMG1hbnxlbnwxfHx8fDE3OTMwNTc2MzJ8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Lizzy Jenkins",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@lizzybug?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-cigarette-in-his-mouth-aKXkMu3f3wk?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "ivy-league",
+  "kind": "hair",
+  "name": "Ivy League",
+  "desc": "A longer crew cut: short tapered sides, top long enough to part on the side and sweep across.",
+  "img": "https://images.unsplash.com/photo-1562004760-aceed7bb0fe3?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fGl2eSUyMGxlYWd1ZSUyMGhhaXJjdXR8ZW58MXx8fHwxNzkzMDU3NjQ3fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1562004760-aceed7bb0fe3?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fGl2eSUyMGxlYWd1ZSUyMGhhaXJjdXR8ZW58MXx8fHwxNzkzMDU3NjQ3fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Hannah Skelly",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@ivelisseskelly?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-wearing-black-button-up-long-sleeved-shirt-g5A9gO59ERU?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "caesar-cut",
+  "kind": "hair",
+  "name": "Caesar Cut",
+  "desc": "Short even layers with a short straight horizontal fringe brushed forward onto the forehead.",
+  "img": "https://images.unsplash.com/photo-1619182597083-17bda72c1d56?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fGNhZXNhciUyMGhhaXJjdXQlMjBtYW4lMjBmcmluZ2UlMjBzaG9ydHxlbnwxfHx8fDE3OTMwNTc2Njd8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1619182597083-17bda72c1d56?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fGNhZXNhciUyMGhhaXJjdXQlMjBtYW4lMjBmcmluZ2UlMjBzaG9ydHxlbnwxfHx8fDE3OTMwNTc2Njd8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Mazda Mehrad",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@mazda_mhd?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-silver-chain-necklace-1X14S8DFa4Y?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "french-crop",
+  "kind": "hair",
+  "name": "French Crop",
+  "desc": "Faded sides, textured top pushed forward into a short blunt fringe across the forehead.",
+  "img": "https://images.unsplash.com/photo-1673118306590-0a82988ba2c3?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8ZnJlbmNoJTIwY3JvcCUyMGhhaXJjdXR8ZW58MXx8fHwxNzkzMDU3Njg4fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1673118306590-0a82988ba2c3?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8ZnJlbmNoJTIwY3JvcCUyMGhhaXJjdXR8ZW58MXx8fHwxNzkzMDU3Njg4fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Thomas Marquize",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@tomarquize?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-young-man-with-a-goatee-and-a-black-hoodie-MTvrj7DBRuw?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "low-fade",
+  "kind": "hair",
+  "name": "Low Fade",
+  "desc": "Sides fade from skin just above the ears and neckline, getting longer upward; top kept a few centimetres long and neatly styled.",
+  "img": "https://images.unsplash.com/photo-1456327102063-fb5054efe647?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTN8fGxvdyUyMGZhZGUlMjBoYWlyY3V0fGVufDF8fHx8MTc5MzA1NzY5OXww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1456327102063-fb5054efe647?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTN8fGxvdyUyMGZhZGUlMjBoYWlyY3V0fGVufDF8fHx8MTc5MzA1NzY5OXww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Nathan Fertig",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@nathanfertig?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/selective-focus-photography-of-man-wearing-black-suirt-5EIW3DDX6dw?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "mid-fade",
+  "kind": "hair",
+  "name": "Mid Fade",
+  "desc": "Fade starting at temple height on the sides and back, blending smoothly into a medium-length top.",
+  "img": "https://images.unsplash.com/photo-1633601851802-ad8eb2bcf1f4?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MjF8fG1pZCUyMGZhZGUlMjBoYWlyY3V0JTIwYmFyYmVyfGVufDF8fHx8MTc5MzA1NzcxNXww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1633601851802-ad8eb2bcf1f4?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MjF8fG1pZCUyMGZhZGUlMjBoYWlyY3V0JTIwYmFyYmVyfGVufDF8fHx8MTc5MzA1NzcxNXww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Amir Javadzadeh",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@awmirjim?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-beard-and-a-checkered-shirt-OmlPIy03PGk?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "high-fade",
+  "kind": "hair",
+  "name": "High Fade",
+  "desc": "Fade starting high near the top of the head, sides almost shaved, short top.",
+  "img": "https://images.unsplash.com/photo-1514336937476-a5b961020a5c?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MjJ8fGhpZ2glMjBmYWRlJTIwaGFpcmN1dCUyMGJhcmJlcnxlbnwxfHx8fDE3OTMwNTc3MjZ8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1514336937476-a5b961020a5c?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MjJ8fGhpZ2glMjBmYWRlJTIwaGFpcmN1dCUyMGJhcmJlcnxlbnwxfHx8fDE3OTMwNTc3MjZ8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Chris Knight",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@chrisknight?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/person-trimming-mans-hair-vI3m5UnZ0aQ?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "skin-fade",
+  "kind": "hair",
+  "name": "Skin Fade",
+  "desc": "Sides and back blended down to bare skin with a smooth gradient, longer textured top.",
+  "img": "https://images.unsplash.com/photo-1578390432942-d323db577792?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NXx8c2tpbiUyMGZhZGUlMjBoYWlyY3V0JTIwYmFyYmVyfGVufDF8fHx8MTc5MzA1NzczNHww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1578390432942-d323db577792?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NXx8c2tpbiUyMGZhZGUlMjBoYWlyY3V0JTIwYmFyYmVyfGVufDF8fHx8MTc5MzA1NzczNHww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Megan Bagshaw",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@megbagshaw?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-black-and-white-photo-of-a-young-man-YmaaUNbHHtw?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "taper-fade",
+  "kind": "hair",
+  "name": "Taper Fade",
+  "desc": "Subtle taper only at the sideburns and neckline, natural length elsewhere, clean edges.",
+  "img": "https://images.unsplash.com/photo-1640301133543-41fe25ad6450?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MjZ8fHRhcGVyJTIwaGFpcmN1dCUyMGJhcmJlcnxlbnwxfHx8fDE3OTMwNTc3NDN8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1640301133543-41fe25ad6450?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MjZ8fHRhcGVyJTIwaGFpcmN1dCUyMGJhcmJlcnxlbnwxfHx8fDE3OTMwNTc3NDN8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Mitchell Orr",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@mitchorr?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-getting-his-hair-cut-by-a-barber-xO8OpsasyZA?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "undercut",
+  "kind": "hair",
+  "name": "Undercut",
+  "desc": "Sides and back cut very short in one length, top left long and swept back or to the side, sharp contrast.",
+  "img": "https://images.unsplash.com/photo-1566070449287-2992d20da072?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MjV8fHVuZGVyY3V0JTIwaGFpcnN0eWxlJTIwbWFufGVufDF8fHx8MTc5MzA1Nzc1Mnww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1566070449287-2992d20da072?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MjV8fHVuZGVyY3V0JTIwaGFpcnN0eWxlJTIwbWFufGVufDF8fHx8MTc5MzA1Nzc1Mnww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "HLS 44",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@hls44?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-wears-black-frame-sunglasses-6i3xCBnmaVw?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "disconnected-undercut",
+  "kind": "hair",
+  "name": "Disconnected Undercut",
+  "desc": "Shaved sides with a hard visible disconnection line to a long top slicked to one side.",
+  "img": "https://images.unsplash.com/photo-1616088999906-70a51c14b8dd?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTJ8fGRpc2Nvbm5lY3RlZCUyMHVuZGVyY3V0JTIwaGFpcnxlbnwxfHx8fDE3OTMwNTc3NjZ8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1616088999906-70a51c14b8dd?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTJ8fGRpc2Nvbm5lY3RlZCUyMHVuZGVyY3V0JTIwaGFpcnxlbnwxfHx8fDE3OTMwNTc3NjZ8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Nathaniel Davis",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@nathanieldavis?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-shaved-head-and-a-black-shirt-tMRhHEafN8g?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "pompadour",
+  "kind": "hair",
+  "name": "Pompadour",
+  "desc": "Long top swept upward and back with lots of volume at the front, short neat sides, glossy finish.",
+  "img": "https://images.unsplash.com/photo-1701851435849-70a9dd60b9a7?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fHBvbXBhZG91ciUyMGhhaXJzdHlsZSUyMG1hbnxlbnwxfHx8fDE3OTMwNTc3ODB8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1701851435849-70a9dd60b9a7?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fHBvbXBhZG91ciUyMGhhaXJzdHlsZSUyMG1hbnxlbnwxfHx8fDE3OTMwNTc3ODB8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Behrooz",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@behroozrahimi?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-goatee-and-a-blue-shirt-miiXwyflS9I?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "quiff",
+  "kind": "hair",
+  "name": "Quiff",
+  "desc": "Top hair brushed up and slightly back at the front with volume and texture, shorter sides.",
+  "img": "https://images.unsplash.com/photo-1698795354036-84c8199d67da?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTN8fHF1aWZmJTIwaGFpcnN0eWxlJTIwbWFufGVufDF8fHx8MTc5MzA1Nzc5Mnww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1698795354036-84c8199d67da?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTN8fHF1aWZmJTIwaGFpcnN0eWxlJTIwbWFufGVufDF8fHx8MTc5MzA1Nzc5Mnww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Alex Sheldon",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@slavewire?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-in-a-white-shirt-and-a-black-jacket-acRdRBYEZbM?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "slicked-back",
+  "kind": "hair",
+  "name": "Slicked Back",
+  "desc": "Medium-long top combed straight back with a smooth wet-look shine, tidy short sides.",
+  "img": "https://images.unsplash.com/photo-1762914395007-03ca29612b9f?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fHNsaWNrZWQlMjBiYWNrJTIwaGFpciUyMG1hbnxlbnwxfHx8fDE3OTMwNTc4MDF8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1762914395007-03ca29612b9f?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fHNsaWNrZWQlMjBiYWNrJTIwaGFpciUyMG1hbnxlbnwxfHx8fDE3OTMwNTc4MDF8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "abolfazl babaei",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@aban_pics?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-with-slicked-back-hair-and-beard-3a51XbqfJwE?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "side-part",
+  "kind": "hair",
+  "name": "Side Part",
+  "desc": "Classic short haircut with a clean side parting, top combed neatly to one side.",
+  "img": "https://images.unsplash.com/photo-1692643365655-20c69b993785?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTZ8fHNpZGUlMjBwYXJ0JTIwaGFpcnN0eWxlJTIwbWFufGVufDF8fHx8MTc5MzA1NzgxNHww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1692643365655-20c69b993785?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTZ8fHNpZGUlMjBwYXJ0JTIwaGFpcnN0eWxlJTIwbWFufGVufDF8fHx8MTc5MzA1NzgxNHww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Look Studio",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@lookphoto?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-in-a-red-and-white-striped-shirt-BczlHk_lWSY?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "hard-part",
+  "kind": "hair",
+  "name": "Hard Part",
+  "desc": "Side part with a sharp shaved line cut into the parting, faded sides, top combed over.",
+  "img": "https://images.unsplash.com/photo-1611420745411-ed8fee30b8fb?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTN8fGhhcmQlMjBwYXJ0JTIwaGFpcmN1dCUyMGJhcmJlcnxlbnwxfHx8fDE3OTMwNTc4MjJ8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1611420745411-ed8fee30b8fb?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTN8fGhhcmQlMjBwYXJ0JTIwaGFpcmN1dCUyMGJhcmJlcnxlbnwxfHx8fDE3OTMwNTc4MjJ8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "kamal alkhatib",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@pringles_2002?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-turtleneck-shirt-and-gray-denim-jacket-_V0aTZQrOq4?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "faux-hawk",
+  "kind": "hair",
+  "name": "Faux Hawk",
+  "desc": "Short sides with the top hair pushed up and toward the centre into a soft ridge.",
+  "img": "https://images.unsplash.com/photo-1544784805-39053a2d1257?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8N3x8ZmF1eCUyMGhhd2slMjBoYWlyc3R5bGV8ZW58MXx8fHwxNzkzMDU3ODMzfDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1544784805-39053a2d1257?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8N3x8ZmF1eCUyMGhhd2slMjBoYWlyc3R5bGV8ZW58MXx8fHwxNzkzMDU3ODMzfDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Tessa Reed",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@tessaereed?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-standing-beside-white-concrete-wall-pK76GLayHbc?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "mohawk",
+  "kind": "hair",
+  "name": "Mohawk",
+  "desc": "Sides of the head fully shaved, a strip of longer hair standing up along the centre from front to back.",
+  "img": "https://images.unsplash.com/photo-1562696676-727312caede0?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NXx8bW9oYXdrJTIwaGFpcnN0eWxlfGVufDF8fHx8MTc5MzA1Nzg0OXww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1562696676-727312caede0?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NXx8bW9oYXdrJTIwaGFpcnN0eWxlfGVufDF8fHx8MTc5MzA1Nzg0OXww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Chris Blonk",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@chriskristiansen?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-near-painted-wall-aTiGszXqrJE?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "high-and-tight",
+  "kind": "hair",
+  "name": "High and Tight",
+  "desc": "Military style: sides and back shaved very high and tight, a small patch of short hair on top.",
+  "img": "https://images.unsplash.com/photo-1628620753197-5db31d3bf23c?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Mnx8aGlnaCUyMGFuZCUyMHRpZ2h0JTIwaGFpcmN1dCUyMG1pbGl0YXJ5fGVufDF8fHx8MTc5MzA1Nzg4M3ww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1628620753197-5db31d3bf23c?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Mnx8aGlnaCUyMGFuZCUyMHRpZ2h0JTIwaGFpcmN1dCUyMG1pbGl0YXJ5fGVufDF8fHx8MTc5MzA1Nzg4M3ww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Levi Meir Clancy",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@levimeirclancy?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-jacket-looking-down-TApWNszSEZs?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "textured-crop",
+  "kind": "hair",
+  "name": "Textured Crop",
+  "desc": "Short faded sides, choppy messy textured top with a short fringe pushed forward.",
+  "img": "https://images.unsplash.com/photo-1644409840040-5130284fe1d6?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTB8fHRleHR1cmVkJTIwY3JvcCUyMGhhaXJjdXQlMjBtYW58ZW58MXx8fHwxNzkzMDU3OTAxfDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1644409840040-5130284fe1d6?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTB8fHRleHR1cmVkJTIwY3JvcCUyMGhhaXJjdXQlMjBtYW58ZW58MXx8fHwxNzkzMDU3OTAxfDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Teodora Popa Photographer",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@teodorapopaphotographer?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-looking-at-the-camera-znf0BA8SDU4?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "curtains",
+  "kind": "hair",
+  "name": "Curtains",
+  "desc": "Medium-length hair parted in the middle, falling on both sides of the forehead like curtains.",
+  "img": "https://images.unsplash.com/photo-1611695434398-4f4b330623e6?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fG1pZGRsZSUyMHBhcnQlMjBoYWlyJTIwbWFuJTIwY3VydGFpbnN8ZW58MXx8fHwxNzkzMDU3OTE0fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1611695434398-4f4b330623e6?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fG1pZGRsZSUyMHBhcnQlMjBoYWlyJTIwbWFuJTIwY3VydGFpbnN8ZW58MXx8fHwxNzkzMDU3OTE0fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "nrd",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@nicotitto?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/young-man-in-blue-shirt-ZmmAnliy1d4?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "bowl-cut",
+  "kind": "hair",
+  "name": "Bowl Cut",
+  "desc": "Rounded cut of even length all around as if trimmed around a bowl, straight fringe.",
+  "img": "https://images.unsplash.com/photo-1559532253-94d7e4f01119?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTB8fGJvd2wlMjBjdXQlMjBoYWlyc3R5bGV8ZW58MXx8fHwxNzkzMDU3OTM2fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1559532253-94d7e4f01119?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTB8fGJvd2wlMjBjdXQlMjBoYWlyc3R5bGV8ZW58MXx8fHwxNzkzMDU3OTM2fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Sirio",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@sirioberati?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-wearing-black-shirt-jxE_5_HqSJY?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "mullet",
+  "kind": "hair",
+  "name": "Mullet",
+  "desc": "Short on the front and sides, long at the back down to the neck.",
+  "img": "https://images.unsplash.com/photo-1782589547155-2dbaf334f0ae?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8OXx8bXVsbGV0JTIwaGFpcnN0eWxlfGVufDF8fHx8MTc5MzA1Nzk0N3ww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1782589547155-2dbaf334f0ae?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8OXx8bXVsbGV0JTIwaGFpcnN0eWxlfGVufDF8fHx8MTc5MzA1Nzk0N3ww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Gennady Zakharin",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@gennady107?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-beard-mullet-and-sunglasses-outdoors-eADueWvapKM?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "modern-mullet",
+  "kind": "hair",
+  "name": "Modern Mullet",
+  "desc": "Faded or short sides, textured top and front, longer flowing hair at the back of the neck.",
+  "img": "https://images.unsplash.com/photo-1700585560130-84a0a58e420f?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Mnx8bW9kZXJuJTIwbXVsbGV0JTIwaGFpcmN1dCUyMGZhZGV8ZW58MXx8fHwxNzkzMDU3OTY3fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1700585560130-84a0a58e420f?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Mnx8bW9kZXJuJTIwbXVsbGV0JTIwaGFpcmN1dCUyMGZhZGV8ZW58MXx8fHwxNzkzMDU3OTY3fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Good Faces",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@goodfacesagency?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-moustache-standing-in-front-of-a-blue-wall-SmGJsVTtbsg?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "man-bun",
+  "kind": "hair",
+  "name": "Man Bun",
+  "desc": "Long hair pulled back and tied into a bun at the back of the head.",
+  "img": "https://images.unsplash.com/photo-1512663150964-d8f43c899f76?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Mnx8bWFuJTIwYnVuJTIwaGFpcnN0eWxlfGVufDF8fHx8MTc5MzA1Nzk3OHww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1512663150964-d8f43c899f76?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Mnx8bWFuJTIwYnVuJTIwaGFpcnN0eWxlfGVufDF8fHx8MTc5MzA1Nzk3OHww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "SHTTEFAN",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@shttefan?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-holding-his-black-hair-Q--oPI42ArQ?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "top-knot",
+  "kind": "hair",
+  "name": "Top Knot",
+  "desc": "Shaved or faded sides with the long top hair tied into a small knot on the crown.",
+  "img": "https://images.unsplash.com/photo-1789585988461-4a5d420724fc?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Mnx8dG9wJTIwa25vdCUyMHVuZGVyY3V0JTIwbWFufGVufDF8fHx8MTc5MzA1Nzk5N3ww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1789585988461-4a5d420724fc?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Mnx8dG9wJTIwa25vdCUyMHVuZGVyY3V0JTIwbWFufGVufDF8fHx8MTc5MzA1Nzk5N3ww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Jon Rudolf Boner",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@jonrudolf?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-with-top-knot-and-vest-yQTqSxC6Zlc?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "long-hair",
+  "kind": "hair",
+  "name": "Long Hair",
+  "desc": "Hair grown long past the shoulders, natural with soft waves.",
+  "img": "https://images.unsplash.com/photo-1635567818469-e28cdf45c1f5?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8bG9uZyUyMGhhaXIlMjBtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3OTMwNTc5OTl8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1635567818469-e28cdf45c1f5?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8bG9uZyUyMGhhaXIlMjBtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3OTMwNTc5OTl8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Gahara Putra",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@garpputra?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-long-hair-wearing-a-green-shirt-aoPiT3iUrpc?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "surfer-hair",
+  "kind": "hair",
+  "name": "Surfer Hair",
+  "desc": "Medium-long, messy, wavy, sun-bleached looking hair, relaxed and tousled.",
+  "img": "https://images.unsplash.com/photo-1625619538484-2afb84daec9d?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fHN1cmZlciUyMGhhaXIlMjBtYW4lMjBtZXNzeXxlbnwxfHx8fDE3OTMwNTgwMjd8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1625619538484-2afb84daec9d?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fHN1cmZlciUyMGhhaXIlMjBtYW4lMjBtZXNzeXxlbnwxfHx8fDE3OTMwNTgwMjd8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Tim Mossholder",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@timmossholder?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-green-crew-neck-t-shirt-Dheo_yyhWPQ?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "afro",
+  "kind": "hair",
+  "name": "Afro",
+  "desc": "Natural curly hair grown out into a round full afro shape.",
+  "img": "https://images.unsplash.com/photo-1521817760127-e15c26f67fd2?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fGFmcm8lMjBoYWlyc3R5bGUlMjBtYW58ZW58MXx8fHwxNzkzMDU4MDQ4fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1521817760127-e15c26f67fd2?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fGFmcm8lMjBoYWlyc3R5bGUlMjBtYW58ZW58MXx8fHwxNzkzMDU4MDQ4fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Caftos",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@caftos?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/selective-focus-photo-of-man-wearing-green-tank-top-mgLuffTBCWk?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "twists",
+  "kind": "hair",
+  "name": "Twists",
+  "desc": "Hair twisted into small rope-like twists all over the top, sides shorter.",
+  "img": "https://images.unsplash.com/photo-1627093144349-a9724f73e640?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fHR3aXN0cyUyMGhhaXJzdHlsZSUyMG1hbnxlbnwxfHx8fDE3OTMwNTgwNzB8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1627093144349-a9724f73e640?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fHR3aXN0cyUyMGhhaXJzdHlsZSUyMG1hbnxlbnwxfHx8fDE3OTMwNTgwNzB8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Marcus Santos",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@marcussantosr?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-button-up-shirt-wXEimp1R3cE?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "dreadlocks",
+  "kind": "hair",
+  "name": "Dreadlocks",
+  "desc": "Hair formed into neat locs falling from the top of the head.",
+  "img": "https://images.unsplash.com/photo-1789272264845-e536dc1f462e?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fGRyZWFkbG9ja3MlMjBtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3OTMwNTgwODh8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1789272264845-e536dc1f462e?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fGRyZWFkbG9ja3MlMjBtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3OTMwNTgwODh8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Kevy Michaels",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@kevymichaelscontent?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/young-man-with-dreadlocks-in-park-3d1OCzzmOso?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "cornrows",
+  "kind": "hair",
+  "name": "Cornrows",
+  "desc": "Hair braided flat to the scalp in straight neat rows from front to back.",
+  "img": "https://images.unsplash.com/photo-1721658481886-86e2cb8489fc?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fDM2MCUyMHdhdmVzJTIwaGFpcnxlbnwxfHx8fDE3OTMwNTgxMTF8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1721658481886-86e2cb8489fc?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fDM2MCUyMHdhdmVzJTIwaGFpcnxlbnwxfHx8fDE3OTMwNTgxMTF8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Bobby Dimas",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@bobbydimas?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-holding-his-head-in-his-hands-gRDxVB-uQBE?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "waves",
+  "kind": "hair",
+  "name": "360 Waves",
+  "desc": "Very short brushed hair forming 360 degree rippling waves pattern, clean line-up edges.",
+  "img": "https://images.unsplash.com/photo-1720467818294-b294350fc5fb?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8MzYwJTIwd2F2ZXMlMjBoYWlyfGVufDF8fHx8MTc5MzA1ODExMXww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1720467818294-b294350fc5fb?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8MzYwJTIwd2F2ZXMlMjBoYWlyfGVufDF8fHx8MTc5MzA1ODExMXww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Clinton Dube",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@clinton455_d?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-wearing-a-black-t-shirt-looking-down-at-his-cell-phone-84lpzy66IZk?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "curly-top",
+  "kind": "hair",
+  "name": "Curly Top",
+  "desc": "Short faded sides with a defined curly top.",
+  "img": "https://images.unsplash.com/photo-1602733336592-725d476bbfdb?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTB8fGN1cmx5JTIwaGFpciUyMG1hbiUyMGZhZGV8ZW58MXx8fHwxNzkzMDU4MTI3fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1602733336592-725d476bbfdb?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTB8fGN1cmx5JTIwaGFpciUyMG1hbiUyMGZhZGV8ZW58MXx8fHwxNzkzMDU4MTI3fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Bryan reyes",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@learnyourstyle?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-white-and-red-collared-shirt-6YdMWS0D_5E?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "bro-flow",
+  "kind": "hair",
+  "name": "Bro Flow",
+  "desc": "Medium-length hair swept back from the forehead, flowing down behind the ears.",
+  "img": "https://images.unsplash.com/photo-1741352423933-43ce171ea6ed?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fGZsb3clMjBoYWlyc3R5bGUlMjBtYW4lMjBtZWRpdW0lMjBsZW5ndGglMjBzd2VwdCUyMGJhY2t8ZW58MXx8fHwxNzkzMDU4MTY1fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1741352423933-43ce171ea6ed?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fGZsb3clMjBoYWlyc3R5bGUlMjBtYW4lMjBtZWRpdW0lMjBsZW5ndGglMjBzd2VwdCUyMGJhY2t8ZW58MXx8fHwxNzkzMDU4MTY1fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Ömer Karakus",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@oemerkarakus?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/young-man-with-neutral-expression-in-the-autumn-4p6izov-NMQ?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "brush-up",
+  "kind": "hair",
+  "name": "Brush Up",
+  "desc": "Top brushed straight up with volume and a natural matte finish, short sides.",
+  "img": "https://images.unsplash.com/photo-1621095346111-a25f48b39b66?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8OXx8YnJ1c2glMjB1cCUyMGhhaXJzdHlsZSUyMG1hbnxlbnwxfHx8fDE3OTMwNTgxNzl8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1621095346111-a25f48b39b66?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8OXx8YnJ1c2glMjB1cCUyMGhhaXJzdHlsZSUyMG1hbnxlbnwxfHx8fDE3OTMwNTgxNzl8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "SAJAD FI",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@sajadfi?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-leather-jacket-standing-near-body-of-water-during-daytime-dqecEkA69WY?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "spiky",
+  "kind": "hair",
+  "name": "Spiky Hair",
+  "desc": "Short hair styled up into sharp separate spikes with gel.",
+  "img": "https://images.unsplash.com/photo-1724347965887-30bf1f545462?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fHNwaWt5JTIwaGFpciUyMG1hbnxlbnwxfHx8fDE3OTMwNTgxODd8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1724347965887-30bf1f545462?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fHNwaWt5JTIwaGFpciUyMG1hbnxlbnwxfHx8fDE3OTMwNTgxODd8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Marina Nazina",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@nazinamari?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-shirtless-man-with-his-eyes-closed-on-the-beach-qSDnZuu1gcE?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "shaved-head",
+  "kind": "hair",
+  "name": "Shaved Head",
+  "desc": "Head shaved completely smooth and bald with a razor.",
+  "img": "https://images.unsplash.com/photo-1579983926774-399a9cb765c3?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8c2hhdmVkJTIwaGVhZCUyMG1hbiUyMGJhbGR8ZW58MXx8fHwxNzkzMDU4MjAwfDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1579983926774-399a9cb765c3?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8c2hhdmVkJTIwaGVhZCUyMG1hbiUyMGJhbGR8ZW58MXx8fHwxNzkzMDU4MjAwfDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Chalo Garcia",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@photosbychalo?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-white-dress-shirt-2mWKL_I70qk?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "edgar-cut",
+  "kind": "hair",
+  "name": "Edgar Cut",
+  "desc": "Very straight blunt fringe cut in a horizontal line across the forehead, sharp line-up, high skin fade on the sides.",
+  "img": "https://images.unsplash.com/photo-1686543972602-da0c7ea61ce2?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fGNhZXNhciUyMGhhaXJjdXQlMjBtYW4lMjBmcmluZ2UlMjBzaG9ydHxlbnwxfHx8fDE3OTMwNTc2Njd8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1686543972602-da0c7ea61ce2?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fGNhZXNhciUyMGhhaXJjdXQlMjBtYW4lMjBmcmluZ2UlMjBzaG9ydHxlbnwxfHx8fDE3OTMwNTc2Njd8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Bùi Hoàng Long",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@dxaxoxfz?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-young-man-with-a-black-shirt-and-glasses-CO4tbl4qp7c?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "comb-over-fade",
+  "kind": "hair",
+  "name": "Comb Over Fade",
+  "desc": "Faded sides with the top combed over to one side with a parting.",
+  "img": "https://images.unsplash.com/photo-1628337868220-19208d39cbaf?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fGNvbWIlMjBvdmVyJTIwZmFkZSUyMGhhaXJjdXR8ZW58MXx8fHwxNzkzMDU4MjI4fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1628337868220-19208d39cbaf?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fGNvbWIlMjBvdmVyJTIwZmFkZSUyMGhhaXJjdXR8ZW58MXx8fHwxNzkzMDU4MjI4fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Or Hakim",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@orhakim?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-white-crew-neck-shirt-wearing-black-framed-eyeglasses-DKcfu8E7l_0?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "rockabilly",
+  "kind": "hair",
+  "name": "Rockabilly",
+  "desc": "1950s style: big greasy pompadour on top, combed-back sides, ducktail at the back.",
+  "img": "https://images.unsplash.com/photo-1594910344569-a542a5f4bdff?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8cm9ja2FiaWxseSUyMGhhaXIlMjBtYW58ZW58MXx8fHwxNzkzMDU4MjM0fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1594910344569-a542a5f4bdff?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8cm9ja2FiaWxseSUyMGhhaXIlMjBtYW58ZW58MXx8fHwxNzkzMDU4MjM0fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Bojan Mano",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@bojandubov?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-suit-jacket-rzQcwm_ZfBI?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "messy-tousled",
+  "kind": "hair",
+  "name": "Tousled",
+  "desc": "Medium-short hair with an intentionally messy, tousled, effortless look.",
+  "img": "https://images.unsplash.com/photo-1592158249859-f68fe4816f16?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTJ8fG1lc3N5JTIwdG91c2xlZCUyMGhhaXIlMjBtYW58ZW58MXx8fHwxNzkzMDU4MjM1fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1592158249859-f68fe4816f16?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTJ8fG1lc3N5JTIwdG91c2xlZCUyMGhhaXIlMjBtYW58ZW58MXx8fHwxNzkzMDU4MjM1fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "David Todd McCarty",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@davidtoddmccarty?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-leather-jacket-9n96o2SieUs?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ }
+];
