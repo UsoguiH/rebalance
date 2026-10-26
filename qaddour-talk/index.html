@@ -144,11 +144,11 @@ function buildActing() {
   A.wordInk = w => NUM.has(w) ? INK.num : WARN.has(w) ? INK.warn : INK.now;
 
   // pointer arm poses (deg; clockwise lifts the pointer)
-  A.ua = keys(hold(0.1, 2.6, 8), hold(9.2, 11.0, 6), hold(15.4, 17.9, -9), hold(17.9, 19.5, -6, .2),
+  A.ua = keys(hold(0.1, 2.6, 8), hold(9.2, 11.0, 6), hold(11.2, 17.8, 5), hold(17.9, 19.5, -6, .2), hold(22.2, 30.7, 5), hold(35.8, 39.0, 6),
               hold(20.9, 22.2, 6), hold(31.3, 33.4, -7), hold(46.5, 48.7, 9), hold(50.6, 60, 14, .25));
-  A.fa = keys(hold(0.1, 2.6, 6), hold(9.2, 11.0, 22), hold(15.4, 16.6, -14), hold(16.6, 17.8, -6), hold(17.9, 19.5, -22, .2),
-              hold(20.9, 22.2, 14), hold(28.9, 30.9, -12), hold(31.3, 33.4, -24),
-              hold(46.5, 48.7, 30), hold(50.6, 60, 26, .25));
+  A.fa = keys(hold(0.1, 2.6, 6), hold(9.2, 11.0, 24), hold(11.2, 15.3, 20), hold(15.4, 16.6, 26), hold(16.6, 17.8, 4), hold(17.9, 19.5, -22, .2),
+              hold(20.9, 22.1, 14), hold(22.2, 28.8, 22), hold(28.9, 30.7, 26), hold(31.3, 33.4, -24),
+              hold(35.8, 37.3, 28), hold(37.3, 39.0, 24), hold(46.5, 48.6, 30), hold(48.64, 49.8, 28), hold(50.6, 60, 26, .25));
   A.waves = [ [0.15, 2.55, 0.62, 13], [18.0, 19.4, 0.34, 7], [39.04, 41.0, 0.42, 11], [41.06, 43.0, 0.42, 8] ];
   A.slash = W(12, 3);
 
@@ -158,13 +158,20 @@ function buildActing() {
                [8.6, 9.2, 0.4, 2.5] ];                   // teasing "يجيب العيد"
   A.laugh = [17.85, 19.45];
   A.lean = keys(hold(21.0, 22.2, 1.6), hold(31.35, 33.4, -2.4), hold(39.0, 43.0, 1.8));
-  A.zoom = keys(hold(31.3, 33.5, 0.08, 0.45), hold(39.6, 42.6, 0.04, 0.5));
+  A.zoom = keys(hold(17.95, 19.4, 0.14, 0.25), hold(31.3, 33.5, 0.06, 0.45), hold(39.6, 42.6, 0.05, 0.5));
   A.hops = [0.02, 46.7, W(15, 7)];
   // extra glances on top of the emotions
   A.lookX = keys(hold(9.3, 10.6, -6), hold(31.35, 31.85, -8, .18), hold(32.05, 32.6, 7, .18), hold(37.36, 38.3, -2));
   A.lookY = keys(hold(9.3, 10.6, -6), hold(37.36, 38.3, 6));
   A.wink = W(12, 2) + 0.08;                            // "بذكاء"
   A.thoughts = WORDS.map(s => s.words[0].s);
+  // the question cards: the joke slides in on "السؤال يقول" and falls on "أمزح"; the real one comes with "اسمع"
+  A.card1 = [W(2, 1) - 0.2, W(5, 0) + 0.05]; A.card2 = W(6, 0) + 0.1;
+  A.board = keys(hold(A.card1[0] - 0.1, 60, 1, 0.55));            // the camera makes room for the card
+  const opt = [['أ', '٥'], ['ب', '٧٫٥'], ['ج', '١٠'], ['د', '١٥']];
+  A.options = opt.map(([label, value], i) => ({ label, value, tin: 30.95 + i * 0.12,
+    tries: [W(12, 1) + i * 0.13], strike: { 3: W(12, 3) + 0.1, 2: W(12, 4) + 0.05 }[i], correct: i === 1 }));
+  A.pick = W(15, 5);                                               // "الصح"
 
   const bl = []; let t = 1.1, i = 0;
   while (t < 54) { bl.push(t); t += 2.6 + seeded(i++, 3) * 1.6; }
@@ -194,6 +201,143 @@ function buildChunks() {
 
 // ---------- drawing
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+// ---------- the question card he points at
+const CARD = { x: 40, y: 390, w: 600, h: 640, pad: 30, r: 36 };
+const isNum = s => /[٠-٩0-9]/.test(s);
+// one line of RTL text, centred, numbers in blue, shrunk to fit
+function richLine(g, text, cx, y, size, maxW, ink = INK.dark, bold = 800) {
+  let f = size; const toks = text.split(' ');
+  const measure = () => { g.font = `${bold} ${f}px Baloo`; const sp = g.measureText(' ').width + 4; return { sp, ws: toks.map(t => g.measureText(t).width) }; };
+  let m = measure(); let tw = m.ws.reduce((a, b) => a + b, 0) + m.sp * (toks.length - 1);
+  if (tw > maxW) { f = Math.floor(f * maxW / tw); m = measure(); tw = m.ws.reduce((a, b) => a + b, 0) + m.sp * (toks.length - 1); }
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.direction = 'rtl';
+  let x = cx + tw / 2;
+  toks.forEach((tk, i) => { g.fillStyle = isNum(tk) ? INK.num : ink; g.fillText(tk, x - m.ws[i] / 2, y); x -= m.ws[i] + m.sp; });
+}
+// a line that arrives: rises 14 px and fades in, from 0.96
+function arrive(g, t, t0, draw) {
+  const p = seg(t, t0 - 0.05, t0 + 0.3);
+  if (p <= 0) return;
+  g.save(); g.globalAlpha *= p; g.translate(0, 14 * (1 - p)); draw(); g.restore();
+}
+function apple(g, x, y, r, eaten) {               // eaten: 0 whole, 1 gone; a half apple is clipped
+  if (eaten >= 1) return;
+  g.save(); g.translate(x, y);
+  const k = eaten < 0 ? 1 : 1 - EASE_IO(clamp(eaten)) * 0.0;
+  g.scale(k, k);
+  g.fillStyle = '#FF4B4B'; g.beginPath(); g.arc(-r * 0.42, 0, r * 0.75, 0, 7); g.arc(r * 0.42, 0, r * 0.75, 0, 7); g.fill();
+  g.fillStyle = '#FF7878'; g.beginPath(); g.ellipse(-r * 0.45, -r * 0.25, r * 0.22, r * 0.14, -0.5, 0, 7); g.fill();
+  g.strokeStyle = '#7A4A1E'; g.lineWidth = r * 0.14; g.lineCap = 'round'; g.beginPath(); g.moveTo(0, -r * 0.55); g.lineTo(r * 0.08, -r * 0.95); g.stroke();
+  g.fillStyle = '#58CC02'; g.beginPath(); g.ellipse(r * 0.32, -r * 0.92, r * 0.3, r * 0.15, -0.5, 0, 7); g.fill();
+  g.restore();
+}
+function sun(g, x, y, r, t) {
+  g.save(); g.translate(x, y); g.rotate(t * 0.8);
+  g.strokeStyle = '#FFC800'; g.lineWidth = r * 0.18; g.lineCap = 'round';
+  for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5; g.beginPath(); g.moveTo(Math.cos(a) * r * 1.2, Math.sin(a) * r * 1.2); g.lineTo(Math.cos(a) * r * 1.55, Math.sin(a) * r * 1.55); g.stroke(); }
+  g.fillStyle = '#FFC800'; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill();
+  g.fillStyle = '#FFDE5C'; g.beginPath(); g.arc(-r * 0.3, -r * 0.3, r * 0.35, 0, 7); g.fill();
+  g.restore();
+}
+function cardFrame(g, chip, chipInk) {
+  const C = CARD;
+  g.fillStyle = '#E5E5E5'; rr(g, C.x - 3, C.y - 3, C.w + 6, C.h + 12, C.r + 3); g.fill();
+  g.fillStyle = '#fff'; rr(g, C.x, C.y, C.w, C.h, C.r); g.fill();
+  g.font = '800 30px Baloo'; const cw = g.measureText(chip).width + 44;
+  g.fillStyle = chipInk; rr(g, C.x + C.w - C.pad - cw, C.y + C.pad, cw, 52, 26); g.fill();
+  g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.direction = 'rtl';
+  g.fillText(chip, C.x + C.w - C.pad - cw / 2, C.y + C.pad + 28);
+}
+// where a card is: it slides in from the left and settles; the joke card falls away
+function cardPose(t, tin, tout) {
+  if (t < tin - 0.05) return null;
+  const p = seg(t, tin, tin + 0.5);
+  let x = -700 * (1 - p), y = 0, r = -4 * (1 - p);
+  if (tout !== undefined && t > tout) {
+    const s = t - tout; if (s > 1.2) return null;
+    x += 60 * s; y = 2600 * s * s * 0.5 - 120 * s; r = 30 * s;
+  }
+  return { x, y, r };
+}
+function withPose(g, pose, draw) {
+  const C = CARD, cx = C.x + C.w / 2, cy = C.y + C.h / 2;
+  g.save(); g.translate(pose.x, pose.y); g.translate(cx, cy); g.rotate(pose.r * Math.PI / 180); g.translate(-cx, -cy); draw(); g.restore();
+}
+
+function drawJokeCard(g, t) {
+  const pose = cardPose(t, ACT.card1[0], ACT.card1[1]);
+  if (!pose) return;
+  const C = CARD, cx = C.x + C.w / 2, mw = C.w - 2 * C.pad;
+  withPose(g, pose, () => {
+    cardFrame(g, 'سؤال اليوم', '#1CB0F6');
+    arrive(g, t, W(3, 0), () => richLine(g, 'إذا كان عندك ٣ تفاحات', cx, C.y + 150, 48, mw));
+    // three apples pop in on "ثلاث"; two go on "تفاحتين", half of the third on "ونص"
+    const ay = C.y + 245;
+    [0, 1, 2].forEach(i => {
+      const tin = W(3, 3) + i * 0.1, ax = cx + 110 - i * 110;
+      const pin = seg(t, tin, tin + 0.25);
+      if (pin <= 0) return;
+      const gone = i < 2 ? seg(t, W(3, 7) + i * 0.12, W(3, 7) + i * 0.12 + 0.3, EASE_IO) : 0;
+      if (gone >= 1) return;
+      g.save(); g.globalAlpha *= pin * (1 - gone); g.translate(ax, ay); const k = (0.9 + 0.1 * pin) * (1 - 0.3 * gone); g.scale(k, k);
+      if (i === 2 && t > W(3, 8)) { const h = seg(t, W(3, 8), W(3, 8) + 0.3); g.beginPath(); g.rect(-60, -60, 120 - 60 * h, 120); g.clip(); }
+      apple(g, 0, 0, 40, 0); g.restore();
+    });
+    arrive(g, t, W(3, 5), () => richLine(g, 'وأكلت منها ٢٫٥', cx, C.y + 345, 48, mw));
+    arrive(g, t, W(4, 0), () => richLine(g, 'كم تبلغ مساحة الشمس؟', cx, C.y + 445, 52, mw, INK.num));
+    const sp = seg(t, W(4, 3), W(4, 3) + 0.35);
+    if (sp > 0) { g.save(); g.globalAlpha *= sp; sun(g, cx, C.y + 555, 34 * (0.92 + 0.08 * sp), t); g.restore(); }
+  });
+}
+
+function tile(g, x, y, w, h, label, value, st) {
+  const green = st.correct, gray = st.struck;
+  const border = green ? '#58CC02' : gray ? '#E5E5E5' : '#E5E5E5', fill = green ? '#D7FFB8' : gray ? '#F7F7F7' : '#fff';
+  const ink = green ? '#58A700' : gray ? '#AFAFAF' : INK.dark;
+  g.save(); g.translate(x + w / 2, y + h / 2); const k = 1 + 0.06 * st.pulse; g.scale(k, k); g.translate(-x - w / 2, -y - h / 2);
+  g.fillStyle = border; rr(g, x - 3, y - 3, w + 6, h + 10, 22); g.fill();
+  g.fillStyle = fill; rr(g, x, y, w, h, 20); g.fill();
+  g.textBaseline = 'middle'; g.direction = 'rtl'; g.textAlign = 'center';
+  g.strokeStyle = green ? '#58CC02' : '#E5E5E5'; g.lineWidth = 3; g.beginPath(); g.arc(x + w - 38, y + h / 2, 21, 0, 7); g.stroke();
+  g.fillStyle = green ? '#58A700' : '#AFAFAF'; g.font = '800 26px Baloo'; g.fillText(label, x + w - 38, y + h / 2 + 2);
+  g.fillStyle = gray ? '#AFAFAF' : green ? '#58A700' : INK.num; g.font = '800 54px Baloo'; g.fillText(value, x + w / 2 - 18, y + h / 2 + 3);
+  if (st.strike > 0) {                             // a red line drawn through it
+    g.strokeStyle = '#FF4B4B'; g.lineWidth = 7; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x + w - 16, y + h * 0.72); g.lineTo(x + w - 16 - (w - 32) * st.strike, y + h * 0.72 - (h * 0.44) * st.strike); g.stroke();
+  }
+  if (st.check > 0) {                              // the check mark draws on
+    g.strokeStyle = '#58CC02'; g.lineWidth = 8; g.lineCap = 'round'; g.lineJoin = 'round';
+    const p = st.check, ax = x + 34, ay = y + h / 2;
+    g.beginPath(); g.moveTo(ax - 14, ay); g.lineTo(ax - 14 + 10 * Math.min(1, p * 2), ay + 10 * Math.min(1, p * 2));
+    if (p > 0.5) g.lineTo(ax - 4 + 22 * (p - 0.5) * 2, ay + 10 - 26 * (p - 0.5) * 2); g.stroke();
+  }
+  g.restore();
+}
+
+function drawRealCard(g, t) {
+  const pose = cardPose(t, ACT.card2);
+  if (!pose) return;
+  const C = CARD, cx = C.x + C.w / 2, mw = C.w - 2 * C.pad;
+  withPose(g, pose, () => {
+    cardFrame(g, 'سؤال قدرات · كمي', '#CE82FF');
+    arrive(g, t, W(7, 0), () => richLine(g, 'عمر أحمد = ٣ أضعاف عمر سعيد', cx, C.y + 140, 44, mw));
+    arrive(g, t, W(8, 0), () => richLine(g, 'بعد ١٠ سنوات:', cx, C.y + 202, 44, mw));
+    arrive(g, t, W(8, 3), () => richLine(g, 'مجموع عمرهم = ٥٠', cx, C.y + 260, 44, mw));
+    arrive(g, t, W(9, 0), () => richLine(g, 'كم عمر سعيد الحين؟', cx, C.y + 334, 48, mw, '#1899D6'));
+    const tw = (C.w - 2 * C.pad - 20) / 2, th = 104, right = C.x + C.w - C.pad - tw, left = C.x + C.pad;
+    const rows = [C.y + C.h - C.pad - 2 * th - 22, C.y + C.h - C.pad - th];
+    ACT.options.forEach((o, i) => {
+      const x = i % 2 === 0 ? right : left, y = rows[i >> 1];
+      const pin = seg(t, o.tin, o.tin + 0.3);
+      if (pin <= 0) return;
+      const st = { pulse: o.tries.reduce((a, tt) => a + pulse(t, tt, 1, 0.1, 0.3), 0) + (o.correct ? pulse(t, ACT.pick, 1, 0.12, 0.45) : 0),
+        strike: o.strike ? seg(t, o.strike, o.strike + 0.28) : 0, struck: o.strike && t > o.strike + 0.15,
+        correct: o.correct && t > ACT.pick, check: o.correct ? seg(t, ACT.pick + 0.05, ACT.pick + 0.45) : 0 };
+      g.save(); g.globalAlpha *= pin; g.translate(0, 18 * (1 - pin)); tile(g, x, y, tw, th, o.label, o.value, st); g.restore();
+    });
+  });
+}
+
 const off = {};                                    // small canvases for the clipped eye parts
 function scratch(key, w, h) { if (!off[key]) { const c = document.createElement('canvas'); c.width = w; c.height = h; off[key] = c; } return off[key]; }
 
@@ -279,7 +423,7 @@ function drawMouth(g, st) {
     g.bezierCurveTo(cx - w * 0.3, bottom, x0 - 1, bottom * 0.6 + yL * 0.4, x0, yL); g.closePath();
   };
   g.save(); path(); g.fillStyle = INK.mouth; g.fill(); g.clip();
-  const d = bottom - top, r = Math.min(d * 0.4, w * 0.24);
+  const d = Math.max(2, bottom - top), r = Math.max(1, Math.min(d * 0.4, w * 0.24));
   g.fillStyle = INK.tongue; g.beginPath(); g.ellipse(cx + 2, bottom - r * 0.45, r * 1.4, r, 0, 0, 7); g.fill();
   if (round < 0.5) { g.fillStyle = INK.teeth; g.fillRect(x0 - 2, Math.min(yL, yR) - 3, w + 4, (upper - Math.min(yL, yR)) + 3 + Math.min(9, 2 + d * 0.22)); }
   g.restore();
@@ -372,8 +516,11 @@ function render(t) {
   const s = state(t);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#FBEDE0'; ctx.fillRect(0, 0, 1080, 1920);
+  const b = clamp(flow(t, ACT.board)), cs = 1 - 0.28 * b;
+  const S1 = T.S * cs, OX1 = 543 + 200 * b - T.feet[0] * S1, OY1 = 1790 - T.feet[1] * S1;
+  drawJokeCard(ctx, t); drawRealCard(ctx, t);
   const z = s.zoom, fx = 600, fy = 380;
-  ctx.setTransform(T.S * z, 0, 0, T.S * z, T.OX + fx * T.S * (1 - z), T.OY + fy * T.S * (1 - z));
+  ctx.setTransform(S1 * z, 0, 0, S1 * z, OX1 + fx * S1 * (1 - z), OY1 + fy * S1 * (1 - z));
   const [FX, FY] = T.feet;
   ctx.save(); const k = 1 - s.lift / 220; ctx.translate(FX + 18, 914); ctx.scale(k * s.sx, 1); ctx.translate(-FX - 18, -914);
   ctx.drawImage(IMG.shadow, 0, 0); ctx.restore();
@@ -428,9 +575,10 @@ function drawBubble(t) {
   ctx.translate(tipX, tipY); ctx.scale(sc, sc); ctx.translate(-tipX, -tipY);
   // Duolingo bubble: white, a light border, a thicker bottom edge
   ctx.fillStyle = '#E5E5E5'; rr(ctx, B.x - 4, B.y - 4, B.w + 8, h + 14, B.r + 4); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(tipX - 34, B.y + h - 2); ctx.lineTo(tipX + 6, tipY + 6); ctx.lineTo(tipX + 30, B.y + h - 2); ctx.closePath(); ctx.fill();
+  const tail = 1 - clamp(flow(t, ACT.board));
+  if (tail > 0.02) { ctx.beginPath(); ctx.moveTo(tipX - 34, B.y + h - 2); ctx.lineTo(tipX + 6, B.y + h + (tipY + 6 - B.y - h) * tail); ctx.lineTo(tipX + 30, B.y + h - 2); ctx.closePath(); ctx.fill(); }
   ctx.fillStyle = '#fff'; rr(ctx, B.x, B.y, B.w, h, B.r); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(tipX - 26, B.y + h - 6); ctx.lineTo(tipX + 4, tipY - 4); ctx.lineTo(tipX + 22, B.y + h - 6); ctx.closePath(); ctx.fill();
+  if (tail > 0.02) { ctx.beginPath(); ctx.moveTo(tipX - 26, B.y + h - 6); ctx.lineTo(tipX + 4, B.y + h + (tipY - 4 - B.y - h) * tail); ctx.lineTo(tipX + 22, B.y + h - 6); ctx.closePath(); ctx.fill(); }
   // words: said ones dark, the one being said coloured and popping, the rest waiting in grey
   ctx.font = `800 ${B.font}px Baloo`; ctx.textBaseline = 'middle'; ctx.direction = 'rtl'; ctx.textAlign = 'right';
   const textIn = ci === 0 ? appear : seg(t, C.start - 0.12, C.start + 0.08);

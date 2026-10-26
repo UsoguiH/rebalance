@@ -119,6 +119,8 @@
 - The book reads «قدرات», never EGYPT.
 - 2026-10-26: "he doesn't laugh, he doesn't react … make him a real character." Every line gets an emotion, he reacts in the pauses (a straight face, then he cracks up; waits for an answer; composes himself), and the face carries most of the acting.
 
+- 2026-10-26: "add a real question as he talks". The joke question and the real one appear on a card he points at (`drawJokeCard`, `drawRealCard`); lines arrive with the words, the answers react to what he says (struck on «واشطب», the right one turns green on «الصح»). While a card is up, the camera shrinks him and steps him right (`A.board`).
+
 ### Rig limits
 - The face is one flat drawing: no head turn (yaw). Expression comes from the eyes (the whole socket is redrawn, so lids open wider than drawn, close, squint, wink and fold into happy ^^ arcs; `tools/eye_sockets.py`), the brows (lift and angle each), the mouth (width, corner lift, smirk, "o", open) and blush.
 - Emotions are presets in `EMO` (index.html), blended by weight along `A.mood`. His drawn eyes are already heavy-lidded, so closing values stay small (0.1–0.3); 0.5 reads as nearly shut.
