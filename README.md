@@ -165,6 +165,11 @@ Every promotion can be played: `?tier=1` bronze to silver, `2` silver to gold, `
 diamond (the default), `4` diamond to champion (there is no next league to show on the right).
 `league/tiers.js` holds each league's name, colours and shine shape (the pencil, the gem or the
 crown); `tools/lock-ranks.py` makes the grey and locked badges for all five.
+In the new version each promotion has its own celebration, bigger with each league: silver
+gets a double polish and rim glints; gold adds coins that burst out, flip, land and bounce;
+diamond adds sparkle poppers and spinning crystal shards; champion has the strongest charge,
+flash and shake, three shockwaves, confetti with little gold crowns, fireworks, and the title
+on a purple ribbon.
 `league/league-tiers-classic.mp4` and `league/league-tiers-new.mp4` play all four promotions side
 by side for each version.
 
