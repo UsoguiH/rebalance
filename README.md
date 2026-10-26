@@ -140,6 +140,14 @@ any one replays them all):
   5. A ladder of all the leagues (bronze to champion) appears; the bar climbs from gold to
      diamond and the diamond pops into colour.
 
+- **Ink version** (`?style=ink`, also in `league/league.js`): no particles, glow or rays. One
+  blue pencil does everything, as if on a worksheet. After the swing it flies in eraser first and
+  rubs the locked badge away (crumbs drop), leaving a faint dashed outline; flips and traces the
+  new badge's outline; colours it in with back-and-forth strokes that uncover the real art; the
+  badge pops and its neighbours lean away; then the pencil circles it like a marked answer, ticks
+  it, and writes the league name right to left before flying off. The outline it traces comes
+  from `league/shapes.js`, made by `python3 tools/trace-outline.py`.
+
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
 champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
 
@@ -150,7 +158,7 @@ champion locked next). Add `?set=books` for the book trophies from `league/src/b
 - `league/img/*.png`: the book trophies cut out of the source image. `green.png` is the red
   book recolored to emerald. Rebuild them with `python3 tools/cut-books.py`. Both tools need
   Pillow and numpy
-- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold]` renders a
+- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold|ink]` renders a
   version to video with Playwright and ffmpeg. `league/league.mp4`, `league/league-classic.mp4`,
-  `league/league-bold.mp4` and `league/league-books.mp4` are renders, and
+  `league/league-bold.mp4`, `league/league-ink.mp4` and `league/league-books.mp4` are renders, and
   `league/league-compare.mp4` puts the three versions side by side

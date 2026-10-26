@@ -1,5 +1,5 @@
 // Renders the league promotion animation to a video:
-//   node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold]
+//   node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold|ink]
 // Serves the repo on a local port, steps league/index.html?frame=N in headless
 // Chromium frame by frame (60 fps) and encodes the PNGs with ffmpeg.
 const path = require('path');

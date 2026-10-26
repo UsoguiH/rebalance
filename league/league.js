@@ -41,7 +41,15 @@
     end: 346,
   };
   const BOLD = params_style() === 'bold';
-  const END = BOLD ? BD.end : 380;
+  // Ink timeline (frames): one blue pencil erases the locked trophy, sketches
+  // the new one, colours it in, circles it, ticks it and writes its name
+  const INK = {
+    start: 128, penIn: [118, 132], erase: [132, 154], sketch: [162, 190], color: [196, 224], pop: 228,
+    circle: [234, 258], check: [264, 278], write: [288, 324], penOut: [326, 340],
+    sub: 328, button: 340, end: 400,
+  };
+  const INKY = params_style() === 'ink';
+  const END = BOLD ? BD.end : INKY ? INK.end : 380;
   const E = 40;                       // padding around the glow canvases
   const BG = '#fffffc';
   const AR = "'Tajawal', 'Noto Sans Arabic', 'Segoe UI', sans-serif";
@@ -61,13 +69,14 @@
         lock: ['ranks/rank-diamond-grey', 158], open: ['ranks/rank-diamond', 242],
         after: ['ranks/rank-champion-locked', 158],
         l0: ['ranks/rank-bronze', 158], l3g: ['ranks/rank-diamond-grey', 158],
+        lockBaked: ['ranks/rank-diamond-locked', 158],
       },
       pad: 0, anchor: 0.88,
       padlock: { x: 0.5, y: 0.48, size: 0.36 },   // drawn on the lock badge, as on the site
       // bold style: all the leagues in order, as [reached art, not-yet art]; we climb from index 2 to 3
       ladder: [['l0', 'l0'], ['prev', 'prev'], ['cur', 'cur'], ['open', 'l3g'], ['after', 'after']],
       ladderFrom: 2,
-      league: 'الألماسي', title: '#1899d6', glow: '#8fd8ff',
+      league: 'الألماسي', title: '#1899d6', glow: '#8fd8ff', shape: 'ranks',
       shine: {
         clip: 1, facetPoly: [[0.3, 0.25], [0.7, 0.25], [0.5, 0.8]],   // the gem's centre facet
         cross: [0.4, 0.36],
@@ -77,11 +86,12 @@
     books: {
       art: {
         prev: ['blue', 162], cur: ['red', 242], lock: ['locked', 164], open: ['green', 242], after: ['locked', 164],
+        lockBaked: ['locked', 164],
       },
       pad: 6, anchor: 0.829,
       padlock: null,                              // the keyhole is part of the art
       ladder: null,
-      league: 'الزمردي', title: '#58a700', glow: '#a5e05a',
+      league: 'الزمردي', title: '#58a700', glow: '#a5e05a', shape: 'books',
       shine: {
         clip: 650 / 1052, facet: [0.5, 330 / 1052, 120 / 774, 105 / 1052],
         cross: [340 / 774, 250 / 1052],
@@ -861,6 +871,7 @@
       drawButton(false, out);
     }
     if (BOLD) return drawBoldUI(f);
+    if (INKY) return drawInkUI(f);
     drawTitle(f);
     const b = ramp(f, TITLE + 18, TITLE + 30);
     drawButton(true, b, b >= 1 ? 0.012 * (1 - Math.cos((f - TITLE - 30) * 0.08)) : 0);
@@ -1122,6 +1133,362 @@
     return [wob(f * 2.9, 2) * amp, wob(f * 3.4, 7) * amp];
   }
 
+  // ---------- ink ----------
+  // No particles or glow: everything is done by one blue pencil, as if on a
+  // worksheet. It erases the locked trophy with its eraser end (crumbs fall),
+  // flips, traces the new trophy's outline, colours it in with back-and-forth
+  // strokes that reveal the real art, circles it like a marked answer, ticks
+  // it, and writes the league name right to left.
+  const PEN_LEN = 214, PEN_SCALE = 1.4, PEN_HALF = (PEN_LEN * PEN_SCALE) / 2;
+  const WRITE_ANG = -1.0;                     // from the tip, the pencil body points up and to the right
+  const dir = (a) => [Math.cos(a), Math.sin(a)];
+
+  // Polyline helpers: cumulative lengths, a point at a distance, a partial path
+  function measure(pts) {
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    return cum;
+  }
+  function pointAt(pts, cum, d) {
+    d = clamp(d, 0, cum[cum.length - 1]);
+    let i = 1;
+    while (i < cum.length - 1 && cum[i] < d) i++;
+    const t = (d - cum[i - 1]) / Math.max(1e-6, cum[i] - cum[i - 1]);
+    return [lerp(pts[i - 1][0], pts[i][0], t), lerp(pts[i - 1][1], pts[i][1], t)];
+  }
+  function partial(g, pts, cum, d) {
+    g.beginPath();
+    g.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length && cum[i] <= d; i++) g.lineTo(pts[i][0], pts[i][1]);
+    const [x, y] = pointAt(pts, cum, d);
+    g.lineTo(x, y);
+  }
+  // Back-and-forth strokes covering a box (fractions of the image), slightly sloped
+  function zigzag(rows, slope) {
+    const pts = [];
+    for (let i = 0; i < rows; i++) {
+      const y = 0.02 + ((i + 0.5) / rows) * 0.96;
+      const a = [-0.06, y - slope], b = [1.06, y + slope];
+      if (i % 2) pts.push(b, a);
+      else pts.push(a, b);
+    }
+    return pts;
+  }
+  const ERASE_ROWS = 6, COLOR_ROWS = 8;
+  const erasePts = zigzag(ERASE_ROWS, 0.035), colorPts = zigzag(COLOR_ROWS, 0.025);
+
+  // Map image fractions to screen points for a sprite placed at (x, y, s)
+  const toScreen = (a, x, y, s, pts) => pts.map(([fx, fy]) => [x + (fx * a.img.width - a.ax) * s * a.k, y + (fy * a.img.height - a.ay) * s * a.k]);
+
+  // The trophy's place during the ink work (after the swing settles), and the
+  // open art at the same size; it eases onto the final spot at the pop
+  function inkLockPose() {
+    const [x, y, s] = focusPose(127);
+    return { x, y, s };
+  }
+  function inkOpenPose(f) {
+    const l = inkLockPose();
+    const s0 = l.s * art.lock.k / art.open.k;
+    const p = easeInOut(ramp(f, INK.pop - 6, INK.pop));
+    return { x: lerp(l.x, GREEN.x, p), y: lerp(l.y, GREEN.y, p), s: lerp(s0, GREEN.s, p) };
+  }
+
+  // Masks drawn at image resolution: the strokes so far, as a fat line
+  const maskCanvases = new Map();
+  function strokeMask(img, pts, rows, p) {
+    let c = maskCanvases.get(img);
+    if (!c) {
+      c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      maskCanvases.set(img, c);
+    }
+    const g = c.getContext('2d');
+    g.clearRect(0, 0, c.width, c.height);
+    const px = pts.map(([fx, fy]) => [fx * img.width, fy * img.height]);
+    const cum = measure(px);
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    g.lineWidth = (img.height / rows) * 1.3;
+    g.strokeStyle = '#000';
+    partial(g, px, cum, p * cum[cum.length - 1]);
+    g.stroke();
+    return c;
+  }
+  // The art cut by the mask: 'destination-in' keeps the stroked part,
+  // 'destination-out' rubs it away
+  const cutCanvases = new Map();
+  function cut(img, mask, op) {
+    let c = cutCanvases.get(op);
+    if (!c || c.width !== img.width || c.height !== img.height) {
+      c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      cutCanvases.set(op, c);
+    }
+    const g = c.getContext('2d');
+    g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, c.width, c.height);
+    g.drawImage(img, 0, 0);
+    g.globalCompositeOperation = op;
+    g.drawImage(mask, 0, 0);
+    g.globalCompositeOperation = 'source-over';
+    return c;
+  }
+
+  // Progress through a phase: quick start, steady middle, gentle finish
+  const work = (f, [f0, f1]) => {
+    const t = ramp(f, f0, f1);
+    return lerp(t, easeInOut(t), 0.6);
+  };
+
+  // The paths the pencil follows in each phase, in screen space
+  function inkPaths(f) {
+    const l = inkLockPose(), o = inkOpenPose(Math.min(f, INK.pop - 7));
+    const lockA = art.lockBaked;
+    const shape = window.LEAGUE_SHAPES[SET.shape];
+    const sketch = toScreen(art.open, o.x, o.y, o.s, [...shape, shape[0]]);
+    const [cx, cy] = spot(art.open, GREEN.x, GREEN.y, GREEN.s, 0.5, 0.5);
+    const loop = [];
+    const turns = 1.1, a0 = -2.35;
+    for (let i = 0; i <= 140; i++) {
+      const t = i / 140, a = a0 + t * turns * Math.PI * 2;
+      const r = 1 + 0.07 * t + 0.02 * Math.sin(3 * a + 0.6);
+      loop.push([cx + Math.cos(a) * 278 * r, cy + Math.sin(a) * 292 * r]);
+    }
+    const tick = [[cx + 168, cy - 158], [cx + 204, cy - 116], [cx + 292, cy - 228]];
+    return {
+      erase: toScreen(lockA, l.x, l.y, l.s * art.lock.k / lockA.k, erasePts),
+      sketch,
+      color: toScreen(art.open, o.x, o.y, o.s, colorPts),
+      loop,
+      tick,
+      centre: [cx, cy],
+    };
+  }
+
+  function titleBox() {
+    ctx.font = '800 80px ' + AR;
+    ctx.direction = 'rtl';
+    const tw = ctx.measureText('المستوى ' + SET.league).width;
+    return { right: W / 2 + tw / 2, left: W / 2 - tw / 2, y: 1000 };
+  }
+
+  // Where the pencil is: its centre, the direction from tip to eraser, and how
+  // high it is lifted off the page (for its shadow)
+  function penState(f, P) {
+    const atTip = (h, wob = 0) => ({ c: [h[0] + PEN_HALF * Math.cos(WRITE_ANG), h[1] + PEN_HALF * Math.sin(WRITE_ANG)], a: WRITE_ANG + wob, lift: 0 });
+    const atEraser = (h, wob = 0) => ({ c: [h[0] + PEN_HALF * Math.cos(WRITE_ANG), h[1] + PEN_HALF * Math.sin(WRITE_ANG)], a: WRITE_ANG + Math.PI + wob, lift: 0 });
+    const at = (pts, p) => pointAt(pts, measure(pts), p * measure(pts)[pts.length - 1]);
+    const tb = titleBox();
+    const writeHead = (p) => [lerp(tb.right, tb.left, p), tb.y + 14 * Math.sin(p * 46) - 6];
+    const phases = [
+      { f: INK.erase, s: () => atEraser(at(P.erase, 0)), e: () => atEraser(at(P.erase, 1)), head: (p, f) => atEraser(at(P.erase, p), 0.05 * Math.sin(f * 1.3)) },
+      { f: INK.sketch, s: () => atTip(at(P.sketch, 0)), e: () => atTip(at(P.sketch, 1)), head: (p, f) => atTip(at(P.sketch, p), 0.03 * Math.sin(f * 0.9)) },
+      { f: INK.color, s: () => atTip(at(P.color, 0)), e: () => atTip(at(P.color, 1)), head: (p, f) => atTip(at(P.color, p), 0.06 * Math.sin(f * 1.6)) },
+      { f: INK.circle, s: () => atTip(at(P.loop, 0)), e: () => atTip(at(P.loop, 1)), head: (p) => atTip(at(P.loop, p)) },
+      { f: INK.check, s: () => atTip(P.tick[0]), e: () => atTip(P.tick[2]), head: (p) => atTip(at(P.tick, p)) },
+      { f: INK.write, s: () => atTip(writeHead(0)), e: () => atTip(writeHead(1)), head: (p) => atTip(writeHead(p)) },
+    ];
+    const off = { c: [W + 260, OY - 260], a: WRITE_ANG + Math.PI, lift: 1 };
+    // flying in
+    if (f < INK.penIn[1]) {
+      const p = easeOut(ramp(f, INK.penIn[0], INK.penIn[1]));
+      return blend(off, phases[0].s(), p);
+    }
+    for (let i = 0; i < phases.length; i++) {
+      const ph = phases[i];
+      if (f >= ph.f[0] && f <= ph.f[1]) return ph.head(work(f, ph.f), f);
+      const next = phases[i + 1];
+      if (next && f > ph.f[1] && f < next.f[0]) {
+        const p = easeInOut(ramp(f, ph.f[1], next.f[0]));
+        return blend(ph.e(), next.s(), p);
+      }
+    }
+    // flying out
+    const last = phases[phases.length - 1].e();
+    const p = easeInOut(ramp(f, INK.penOut[0], INK.penOut[1]));
+    return blend(last, { c: [W + 260, OY - 200], a: WRITE_ANG - 0.8, lift: 1 }, p);
+  }
+  // Moves between two pencil states, rising off the page in the middle;
+  // turning the long way round when it flips ends
+  function blend(a, b, p) {
+    return {
+      c: [lerp(a.c[0], b.c[0], p), lerp(a.c[1], b.c[1], p)],
+      a: lerp(a.a, b.a, p),
+      lift: Math.max(lerp(a.lift, b.lift, p), Math.sin(Math.PI * p)),
+    };
+  }
+
+  // The pencil, drawn flat in the screen's colours; it lies along +x from its tip
+  function drawPencil(st) {
+    if (!st) return;
+    const [cx, cy] = st.c;
+    const lift = st.lift || 0;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(st.a);
+    ctx.translate(-PEN_HALF, 0);
+    const k = PEN_SCALE * (1 + lift * 0.06);
+    ctx.scale(k, k);
+    ctx.shadowColor = 'rgba(60,60,60,' + (0.16 + 0.06 * lift) + ')';
+    ctx.shadowBlur = (3 + 6 * lift) * scale;
+    // shadow offsets ignore the transform, so it always falls down and right
+    ctx.shadowOffsetX = (4 + 14 * lift) * scale;
+    ctx.shadowOffsetY = (6 + 20 * lift) * scale;
+    const shape = (fn) => { ctx.beginPath(); fn(); ctx.fill(); };
+    ctx.fillStyle = '#f2cf9d';                                            // sharpened wood
+    shape(() => { ctx.moveTo(10, -5); ctx.lineTo(40, -14); ctx.lineTo(40, 14); ctx.lineTo(10, 5); });
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = shade(SET.title);                                     // the lead
+    shape(() => { ctx.moveTo(0, 0); ctx.lineTo(11, -5.5); ctx.lineTo(11, 5.5); });
+    ctx.fillStyle = '#1cb0f6';                                            // body, three flat faces
+    ctx.fillRect(40, -14, 132, 28);
+    ctx.fillStyle = '#5cc8f8';
+    ctx.fillRect(40, -14, 132, 8);
+    ctx.fillStyle = '#1899d6';
+    ctx.fillRect(40, 6, 132, 8);
+    ctx.fillStyle = '#cfd4dc';                                            // ferrule
+    ctx.fillRect(172, -14, 20, 28);
+    ctx.fillStyle = '#aab2bf';
+    ctx.fillRect(177, -14, 3, 28);
+    ctx.fillRect(185, -14, 3, 28);
+    ctx.fillStyle = '#ff9db8';                                            // eraser
+    roundRect(190, -14, 24, 28, 7);
+    ctx.fill();
+    ctx.fillRect(190, -14, 8, 28);
+    ctx.restore();
+  }
+
+  // Eraser crumbs: shed along the eraser's path, they drop and fade
+  function drawCrumbs(f, P) {
+    if (f < INK.erase[0] || f > INK.erase[1] + 40) return;
+    const cum = measure(P.erase), len = cum[cum.length - 1];
+    for (let k = INK.erase[0]; k <= Math.min(f, INK.erase[1]); k += 1.5) {
+      const r = rng(Math.floor(k * 10));
+      for (let j = 0; j < 2; j++) {
+        const t = f - k;
+        if (t > 38) continue;
+        const [hx, hy] = pointAt(P.erase, cum, work(k, INK.erase) * len);
+        const vx = (r() - 0.5) * 3.2, vy = -1 - r() * 2.5;
+        const x = hx + vx * t, y = hy + vy * t + 0.35 * t * t;
+        const sz = 6 + r() * 6;
+        ctx.globalAlpha = 1 - ramp(t, 22, 38);
+        ctx.fillStyle = r() < 0.6 ? '#ff9db8' : '#bfc4cc';
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(r() * 3 + t * 0.1);
+        ctx.fillRect(-sz / 2, -sz / 2, sz, sz * 0.7);
+        ctx.restore();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function strokePath(pts, d, width, color, alpha = 1) {
+    if (alpha <= 0 || d <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = width;
+    ctx.strokeStyle = color;
+    partial(ctx, pts, measure(pts), d);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Leans the neighbour away from the pop, pivoting on its base, then settles
+  function leanSprite(a, t, dirSign, f) {
+    if (!t) return;
+    const rot = dirSign * keys([[INK.pop - 1, 0], [INK.pop + 5, 0.075], [INK.pop + 12, -0.02], [INK.pop + 18, 0.006], [INK.pop + 22, 0]], f);
+    const [x, y] = swung(a, t[0], t[1], t[2], rot);
+    sprite(a, x, y, t[2], 1, rot ? { rot } : null);
+  }
+
+  function drawInk(f) {
+    const P = inkPaths(f);
+    leanSprite(art.cur, track('red', f), -1, f);
+    leanSprite(art.after, track('next', f), 1, f);
+
+    // the locked trophy, rubbed away by the eraser
+    const l = inkLockPose();
+    const lockA = art.lockBaked, ls = l.s * art.lock.k / lockA.k;
+    if (f < INK.erase[1] + 1) {
+      const ep = work(f, INK.erase);
+      const img = ep > 0 ? cut(lockA.img, strokeMask(lockA.img, erasePts, ERASE_ROWS, ep), 'destination-out') : lockA.img;
+      sprite({ ...lockA, img }, l.x, l.y, ls);
+    }
+    // a faint dashed outline where it was, until the new one is drawn
+    const shape = window.LEAGUE_SHAPES[SET.shape];
+    const guideA = ramp(f, INK.erase[0] + 6, INK.erase[1]) * (1 - ramp(f, INK.sketch[1], INK.color[1]));
+    if (guideA > 0) {
+      const o = inkOpenPose(f);
+      const pts = toScreen(art.open, o.x, o.y, o.s, [...shape, shape[0]]);
+      ctx.save();
+      ctx.setLineDash([12, 14]);
+      strokePath(pts, 1e9, 3, '#c4c4c4', guideA);
+      ctx.restore();
+    }
+    drawCrumbs(f, P);
+
+    // coloured in with back-and-forth strokes that uncover the real art,
+    // then the pop
+    const o = inkOpenPose(f);
+    if (f >= INK.color[0]) {
+      const k = keys([[INK.pop - 1, 1], [INK.pop, 1.12], [INK.pop + 4, 0.95], [INK.pop + 8, 1.02], [INK.pop + 12, 1]], f);
+      const sq = { sx: keys([[INK.pop, 0.94], [INK.pop + 4, 1.05], [INK.pop + 9, 1]], f), sy: keys([[INK.pop, 1.07], [INK.pop + 4, 0.95], [INK.pop + 9, 1]], f) };
+      const cp = work(f, INK.color);
+      const img = cp < 1 ? cut(art.open.img, strokeMask(art.open.img, colorPts, COLOR_ROWS, cp), 'destination-in') : art.open.img;
+      sprite({ ...art.open, img }, o.x, o.y, o.s * k, 1, f >= INK.pop ? sq : null);
+    }
+    // the traced outline, fading once the art is complete
+    const sketchA = 1 - ramp(f, INK.color[1] - 4, INK.pop - 4);
+    if (f >= INK.sketch[0] && sketchA > 0) {
+      const cum = measure(P.sketch);
+      strokePath(P.sketch, work(f, INK.sketch) * cum[cum.length - 1], 5, SET.title, sketchA);
+    }
+    // the answer circled and ticked
+    if (f >= INK.circle[0]) {
+      const cum = measure(P.loop);
+      strokePath(P.loop, work(f, INK.circle) * cum[cum.length - 1], 10, SET.title);
+    }
+    if (f >= INK.check[0]) {
+      const cum = measure(P.tick);
+      strokePath(P.tick, work(f, INK.check) * cum[cum.length - 1], 18, SET.title);
+    }
+    // the league name, written right to left behind the pencil
+    if (f >= INK.write[0]) {
+      const tb = titleBox();
+      const p = work(f, INK.write);
+      const edge = lerp(tb.right + 6, tb.left - 6, p);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(edge, tb.y - 80, tb.right - edge + 20, 160);
+      ctx.clip();
+      ctx.direction = 'rtl';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '800 80px ' + AR;
+      ctx.fillStyle = SET.title;
+      ctx.fillText('المستوى ' + SET.league, W / 2, tb.y);
+      ctx.restore();
+    }
+    if (f >= INK.penIn[0] && f <= INK.penOut[1]) drawPencil(penState(f, P));
+  }
+
+  function drawInkUI(f) {
+    const p = easeOut(ramp(f, INK.sub, INK.sub + 14));
+    if (p > 0) {
+      ctx.save();
+      ctx.translate(0, (1 - p) * 18);
+      caption([[['تهانينا! تقدّمت إلى مستوى جديد هذا الأسبوع', 700]]], 1098, 0, p, 38);
+      ctx.restore();
+    }
+    const b = ramp(f, INK.button, INK.button + 12);
+    drawButton(true, b);
+  }
+
   // ---------- frame ----------
   function render(f) {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
@@ -1129,15 +1496,16 @@
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
     ctx.translate(0, -OY);
-    const [shx, shy] = BOLD ? boldShake(f) : shakeOffset(f);
+    const [shx, shy] = BOLD ? boldShake(f) : INKY ? [0, 0] : shakeOffset(f);
     ctx.save();
     ctx.translate(shx, shy);
     if (BOLD && f >= BREAK) drawBold(f);
+    else if (INKY && f >= INK.start) drawInk(f);
     else drawRow(f);
-    if (!BOLD && f >= BURST) drawSparkles(f - POST);
+    if (!BOLD && !INKY && f >= BURST) drawSparkles(f - POST);
     drawUI(f);
     ctx.restore();
-    if (!BOLD) drawFlash(f);
+    if (!BOLD && !INKY) drawFlash(f);
   }
 
   let scale = 1;
@@ -1160,6 +1528,11 @@
     if (!navigator.vibrate || (navigator.userActivation && !navigator.userActivation.hasBeenActive)) return;
     const at = (f, pattern) => buzzTimers.push(setTimeout(() => navigator.vibrate(pattern), ((f - 1) / FPS) * 1000));
     at(BREAK, 20);
+    if (INKY) {
+      at(INK.pop, [30, 30, 60]);
+      at(INK.check[1] - 2, 20);
+      return;
+    }
     if (BOLD) {
       at(BD.pop, [40, 30, 90]);
       at(BD.title + 3, 15);
