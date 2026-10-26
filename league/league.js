@@ -32,7 +32,17 @@
   const CHARGE = 152, CHARGE_END = 188;  // tint -> white silhouette -> glowing outline
   const BURST = 192;                  // after a 4-frame hold
   const POST = BURST - 121;           // recording frame = timeline frame - POST, after the burst
-  const TITLE = 220;
+  // The promotion (new style, rank badges): 1 silver, 2 gold, 3 diamond, 4 champion.
+  // Each runs its own sequence after the padlock snaps; diamond is the charge
+  // and burst below, the others are in the "per-promotion flows" section.
+  const TIER_N = (() => {
+    const q = new URLSearchParams(location.search);
+    return q.get('set') === 'books' ? 3 : Math.min(4, Math.max(1, +(q.get('tier') || 3)));
+  })();
+  const T1 = { flip: [156, 168], banner: 184, end: 300 };
+  const T2 = { rise: [158, 180], fall: [186, 198], land: 198, banner: 212, end: 360 };
+  const T4 = { wipe: [156, 184], lift: [166, 190], crown: [178, 206], impact: 206, settle: [212, 232], banner: 238, end: 480 };
+  const TITLE = [0, T1.banner, T2.banner, 220, T4.banner][TIER_N];
   // Bold timeline (frames); shares everything up to the padlock snap
   const BD = {
     squash: 152, fill: 162, pop: 192,   // wind-up, colour fill, the pop
@@ -56,7 +66,7 @@
   // slams down, a sticker lands, the students you passed count up
   const HY = { beats: [142, 158, 174], rise: [182, 202], slam: 208, sticker: 216, plus: 234, name: 242, count: [256, 292], button: 300, end: 370 };
   const SPARK = params_style() === 'spark', HYPE = params_style() === 'hype';
-  const END = BOLD ? BD.end : INKY ? INK.end : SPARK ? SP.end : HYPE ? HY.end : 380;
+  const END = BOLD ? BD.end : INKY ? INK.end : SPARK ? SP.end : HYPE ? HY.end : [0, T1.end, T2.end, 380, T4.end][TIER_N];
   const E = 40;                       // padding around the glow canvases
   const BG = '#fffffc';
   const AR = "'Tajawal', 'Noto Sans Arabic', 'Segoe UI', sans-serif";
@@ -511,10 +521,10 @@
     }
     return [x, y, bounced];
   }
-  function drawCoins(f, [cx, cy]) {
+  function drawCoins(f, [cx, cy], burst = BURST) {
     const floor = 330;   // a little below the badge's base
     for (const c of coins) {
-      const t = f - BURST - 2 - c.delay;
+      const t = f - burst - 2 - c.delay;
       if (t <= 0) continue;
       const [x, y, bounced] = coinAt(c, Math.floor(t), floor);
       const fade = 1 - ramp(t, 70, 90);
@@ -577,9 +587,9 @@
 
   // Champion: flat fireworks pop one after another around the badge
   const FIREWORKS = [[190, 300, 10, '#8e4cf0', '#ffc800'], [700, 260, 22, '#ffc800', '#ff86c4'], [470, 170, 34, '#b58cff', '#ffffff'], [150, 560, 46, '#ffc800', '#8e4cf0'], [740, 560, 52, '#ff86c4', '#ffc800']];
-  function drawFireworks(f) {
+  function drawFireworks(f, burst = BURST) {
     for (const [x, y, d, c1, c2] of FIREWORKS) {
-      const t = f - BURST - d;
+      const t = f - burst - d;
       if (t < 0 || t > 40) continue;
       const p = t / 40;
       dot(x, y, 26 * (1 - ramp(t, 0, 8)) * Math.min(1, t / 3 + 0.3), c1);
@@ -590,9 +600,9 @@
   }
 
   // Silver: a few bright glints on the badge's rim after the polish
-  function drawGlintsOnRim(f) {
+  function drawGlintsOnRim(f, burst = BURST) {
     for (const [d, fx, fy, r] of [[24, 0.86, 0.18, 26], [34, 0.14, 0.55, 20], [44, 0.78, 0.86, 22]]) {
-      const t = f - BURST - d;
+      const t = f - burst - d;
       if (t < 0 || t > 16) continue;
       const [x, y] = spot(art.open, GREEN.x, GREEN.y, GREEN.s, fx, fy);
       star(x, y, r * Math.sin(Math.PI * t / 16), '#ffffff');
@@ -612,17 +622,25 @@
     if (FX.sig === 'polish') drawGlintsOnRim(f);
   }
 
-  // Champion: a purple ribbon unfurls under the title, which sits on it in white
-  function drawRibbon(f, k) {
-    const open = spring(f - TITLE + 2, 2.2, 0.45);
-    if (open <= 0) return false;
+  // Every promotion's title sits on a ribbon banner in its league's colours,
+  // with its own little ornaments: a coin for gold, gems for diamond, crowns
+  // for champion. It unrolls from the middle.
+  const BANNERS = {
+    1: { main: '#8a9db5', dark: '#6b7f99', light: '#a9b9cc', deco: null },
+    2: { main: '#f0a800', dark: '#c98a00', light: '#ffc845', deco: 'coin' },
+    3: { main: '#1cb0f6', dark: '#1482bf', light: '#5cc8f8', deco: 'gem' },
+    4: { main: '#8e4cf0', dark: '#6a2fc8', light: '#a46cf5', deco: 'crown' },
+  };
+  function drawBanner(f, open, y = 1012) {
+    const b = BANNERS[TIER_N];
+    if (!b || open <= 0) return false;
     ctx.save();
-    ctx.translate(W / 2, 1012);
+    ctx.translate(W / 2, y);
     ctx.font = '800 ' + FX.title + 'px ' + AR;
     ctx.direction = 'rtl';
     const tw = ctx.measureText(SET.leagueName).width;
     const w = (tw + 120) * Math.min(1.04, open), h = 120;
-    ctx.fillStyle = '#6a2fc8';                               // folded tails
+    ctx.fillStyle = b.dark;                                  // folded tails
     for (const side of [-1, 1]) {
       const x0 = side * (w / 2 - 20);
       ctx.beginPath();
@@ -634,17 +652,208 @@
       ctx.closePath();
       ctx.fill();
     }
-    ctx.fillStyle = '#8e4cf0';
+    ctx.fillStyle = b.main;
     roundRect(-w / 2, -h / 2, w, h, 18);
     ctx.fill();
-    ctx.fillStyle = '#a46cf5';
+    ctx.fillStyle = b.light;
     ctx.fillRect(-w / 2 + 14, -h / 2 + 10, w - 28, 10);
     ctx.restore();
-    if (open > 0.6) {
-      drawCrown(W / 2 - w / 2 + 6, 1012 - h / 2 - 6, 44 * clamp((open - 0.6) * 3));
-      drawCrown(W / 2 + w / 2 - 6, 1012 - h / 2 - 6, 44 * clamp((open - 0.6) * 3));
+    const d = 44 * clamp((open - 0.6) * 3);
+    if (b.deco && d > 0) {
+      for (const side of [-1, 1]) {
+        const x = W / 2 + side * (w / 2 - 6), yy = y - h / 2 - 6;
+        if (b.deco === 'crown') drawCrown(x, yy, d);
+        else if (b.deco === 'coin') { dot(x, yy + 3, d * 0.42, '#c98a00'); dot(x, yy, d * 0.42, '#ffc800'); dot(x, yy, d * 0.24, '#ffe17a'); }
+        else {
+          ctx.fillStyle = '#a8e2ff';
+          ctx.beginPath();
+          ctx.moveTo(x, yy - d * 0.5); ctx.lineTo(x + d * 0.32, yy); ctx.lineTo(x, yy + d * 0.5); ctx.lineTo(x - d * 0.32, yy);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
     }
     return true;
+  }
+
+  // ---------- per-promotion flows (silver, gold, champion) ----------
+  const flowConfetti = TIER_N === 1 ? makeConfetti(5, T1.flip[1], FX.confetti, FX.colors)
+    : TIER_N === 2 ? makeConfetti(6, T2.land, FX.confetti, FX.colors)
+      : TIER_N === 4 ? makeConfetti(8, T4.impact, FX.confetti, FX.colors) : [];
+  if (TIER_N === 4) flowConfetti.forEach((c, i) => { c.crown = i % 6 === 0; });
+
+  // Silver: the padlock flies off, the badge flips over to silver like a card
+  // and bounces; it gets polished twice
+  function drawSilver(f) {
+    neighbours(f, T1.flip[1]);
+    const l = lockPose();
+    drawPadlock(f, l.x, l.y, l.s, 0, BREAK);
+    const c = centreOf();
+    drawConfettiList(flowConfetti, T1.flip[1], f, 0, c);
+    const u = ramp(f, T1.flip[0], T1.flip[1]);
+    const face = Math.max(0.02, Math.abs(Math.cos(Math.PI * u)));
+    if (u < 0.5) {
+      sprite(art.lock, l.x, l.y, l.s, 1, { sx: face });
+    } else {
+      const o = openPose(f, T1.flip[0], T1.flip[1]);
+      const pop = 1 + 0.16 * (1 - spring(f - T1.flip[1], 2.6, 0.35));
+      sprite(art.open, o.x, o.y, o.s * pop, 1, { sx: face });
+      drawShine(f - T1.flip[1] + 136, o.x, o.y, o.s * pop);
+      drawShine(f - T1.flip[1] + 136 - 46, o.x, o.y, o.s * pop);
+    }
+    drawConfettiList(flowConfetti, T1.flip[1], f, 1, c);
+    drawGlintsOnRim(f, T1.flip[1]);
+  }
+
+  // Gold: flipped like a coin. It rises spinning faster and faster, turns gold
+  // edge-on in mid-air, drops and lands with a thud; coins scatter and bounce
+  function drawGold(f) {
+    neighbours(f, T2.land);
+    const l = lockPose();
+    drawPadlock(f, l.x, l.y, l.s, 0, BREAK);
+    const c = centreOf();
+    drawCoins(f, c, T2.land);
+    drawConfettiList(flowConfetti, T2.land, f, 0, c);
+    const turns = 5;
+    const p = ramp(f, T2.rise[0], T2.land);
+    const phi = turns * 2 * Math.PI * (p < 1 ? p * p * (3 - 2 * p) : 1);
+    const lift = -150 * easeOut(ramp(f, T2.rise[0], T2.rise[1])) * (1 - ramp(f, T2.fall[0], T2.fall[1]) ** 2);
+    const gold = phi >= (turns - 0.5) * 2 * Math.PI - Math.PI / 2;   // switches while edge-on
+    const sx = f < T2.land ? Math.max(0.03, Math.abs(Math.cos(phi))) : keys([[T2.land, 1.22], [T2.land + 4, 0.94], [T2.land + 8, 1.03], [T2.land + 12, 1]], f);
+    const sy = f < T2.land ? 1 : keys([[T2.land, 0.8], [T2.land + 4, 1.08], [T2.land + 8, 0.98], [T2.land + 12, 1]], f);
+    if (!gold) {
+      sprite(art.lock, l.x, l.y + lift, l.s, 1, { sx, sy });
+    } else {
+      const o = openPose(f, T2.fall[0], T2.land);
+      sprite(art.open, o.x, o.y + lift, o.s, 1, { sx, sy });
+      if (f >= T2.land) drawShine(f - T2.land + 134, o.x, o.y, o.s);
+    }
+    drawConfettiList(flowConfetti, T2.land, f, 1, c);
+  }
+
+  // Champion: a coronation. Lilac floods out from the badge with turning rays;
+  // the badge rises; a big gold crown falls from the top and slams onto it; on
+  // impact it turns champion purple with a flash, fireworks and crowns of
+  // confetti, then settles wearing the crown
+  function drawBigCrown(x, y, w, rot = 0) {
+    const h = w * 0.62;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.fillStyle = '#e0a800';
+    roundRect(-w / 2, -h * 0.05, w, h * 0.32, h * 0.08);     // band, darker underside
+    ctx.fill();
+    ctx.fillStyle = '#ffc800';
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, h * 0.2);
+    ctx.lineTo(-w / 2, -h * 0.62);
+    ctx.lineTo(-w / 4, -h * 0.18);
+    ctx.lineTo(0, -h * 0.8);
+    ctx.lineTo(w / 4, -h * 0.18);
+    ctx.lineTo(w / 2, -h * 0.62);
+    ctx.lineTo(w / 2, h * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#ffe17a';
+    ctx.fillRect(-w / 2, -h * 0.02, w, h * 0.06);
+    for (const [px, py] of [[-w / 2, -h * 0.62], [0, -h * 0.8], [w / 2, -h * 0.62]]) dot(px, py, w * 0.055, '#ffc800');
+    [['#ff4b4b', -w * 0.28], ['#1cb0f6', 0], ['#58cc02', w * 0.28]].forEach(([col, gx]) => dot(gx, h * 0.1, w * 0.05, col));
+    ctx.restore();
+  }
+  function champBadgePose(f) {
+    const l = lockPose();
+    const up = -140 * easeOut(ramp(f, T4.lift[0], T4.lift[1]));
+    const bob = f > T4.lift[1] && f < T4.impact ? Math.sin((f - T4.lift[1]) * 0.25) * 4 : 0;
+    const down = spring(f - T4.settle[0], 1.8, 0.5);
+    const o = f < T4.impact ? null : openPose(f, T4.impact, T4.settle[1]);
+    const base = o || { x: l.x, y: l.y, s: l.s * art.lock.k / art.open.k };
+    const y = base.y + (f < T4.settle[0] ? up + bob : up * (1 - down));
+    return { x: base.x, y, s: base.s };
+  }
+  function drawChampion(f) {
+    const c0 = spot(art.open, GREEN.x, GREEN.y, GREEN.s, 0.5, 0.5);
+    // lilac flood and rays (behind everything)
+    const wipe = easeInOut(ramp(f, T4.wipe[0], T4.wipe[1]));
+    if (wipe > 0) {
+      ctx.fillStyle = '#f1e7ff';
+      ctx.beginPath();
+      ctx.arc(c0[0], c0[1], wipe * 1700, 0, Math.PI * 2);
+      ctx.fill();
+      const ri = clamp(spring(f - T4.wipe[0] - 6, 1.6, 0.5));
+      ctx.save();
+      ctx.translate(c0[0], c0[1]);
+      ctx.rotate((f - T4.wipe[0]) * 0.006);
+      ctx.scale(ri, ri);
+      ctx.fillStyle = '#e4d3ff';
+      ctx.beginPath();
+      for (let i = 0; i < 14; i++) {
+        const t = (i / 14) * Math.PI * 2;
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, 1100, t - 0.1, t + 0.1);
+      }
+      ctx.fill();
+      ctx.restore();
+    }
+    neighbours(f, T4.impact);
+    const l = lockPose();
+    drawPadlock(f, l.x, l.y, l.s, 0, BREAK);
+    const pose = champBadgePose(f);
+    const [cx, cy] = spot(art.open, pose.x, pose.y, pose.s, 0.5, 0.5);
+    drawFireworks(f, T4.impact - 4);
+    drawShards(f - (T4.impact - BURST), [cx, cy]);
+    drawConfettiList(flowConfetti, T4.impact, f, 0, [cx, cy]);
+    // the badge: grey and trembling while the crown falls, purple from the impact
+    const tremble = reduced || f >= T4.impact ? 0 : 3 * ramp(f, T4.crown[0], T4.impact);
+    const x = pose.x + wob(f * 2.6, 3) * tremble;
+    const sq = f < T4.impact ? null : {
+      sx: keys([[T4.impact, 1.24], [T4.impact + 4, 0.92], [T4.impact + 8, 1.04], [T4.impact + 12, 1]], f),
+      sy: keys([[T4.impact, 0.78], [T4.impact + 4, 1.1], [T4.impact + 8, 0.97], [T4.impact + 12, 1]], f),
+    };
+    if (f < T4.impact) sprite(art.lock, x, pose.y, pose.s * art.open.k / art.lock.k, 1);
+    else {
+      sprite(art.open, x, pose.y, pose.s, 1, sq);
+      sprite(art.white, x, pose.y, pose.s * art.open.k / art.lock.k, 1 - ramp(f, T4.impact, T4.impact + 12), sq);
+      drawShine(f - T4.impact + 128, x, pose.y, pose.s);
+    }
+    // the crown: falls, slams on, sits slightly tilted
+    const [tx, ty] = spot(art.open, x, pose.y, pose.s * (sq ? sq.sy : 1), 0.5, 0);
+    const fall = ramp(f, T4.crown[0], T4.impact) ** 2.2;
+    if (f >= T4.crown[0]) {
+      const cyTop = lerp(OY - 260, ty - 20, fall);
+      const k = f < T4.impact ? 1 : keys([[T4.impact, 1.18], [T4.impact + 5, 0.94], [T4.impact + 10, 1]], f);
+      const rot = f < T4.impact ? 0.3 * (1 - fall) : -0.12 * spring(f - T4.impact, 1.6, 0.35);
+      drawBigCrown(tx, cyTop, 250 * k, rot);
+    }
+    drawConfettiList(flowConfetti, T4.impact, f, 1, [cx, cy]);
+    // shockwaves
+    for (const [d, r1, w0, col] of [[0, 1000, 40, '#8e4cf0'], [4, 820, 18, '#ffc800'], [9, 640, 12, '#b58cff']]) {
+      const p = ramp(f, T4.impact + d, T4.impact + d + 28);
+      if (f < T4.impact + d || p >= 1) continue;
+      ctx.globalAlpha = 0.9 * (1 - p) ** 1.4;
+      ctx.strokeStyle = col;
+      ctx.lineWidth = lerp(w0, 2, p);
+      ctx.beginPath();
+      ctx.arc(cx, cy, lerp(160, r1, easeOut(p)), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+  function flowShake(f) {
+    if (reduced) return [0, 0];
+    let amp = keys([[BREAK - 1, 0], [BREAK, 4], [BREAK + 8, 0]], f);
+    if (TIER_N === 2) amp += keys([[T2.land - 1, 0], [T2.land, 10], [T2.land + 16, 0]], f);
+    if (TIER_N === 4) amp += keys([[T4.impact - 1, 0], [T4.impact, 26], [T4.impact + 8, 14], [T4.impact + 36, 0]], f);
+    amp += keys([[TITLE + 2, 0], [TITLE + 3, TIER_N === 4 ? 9 : 5], [TITLE + 12, 0]], f);
+    return [wob(f * 2.9, 2) * amp, wob(f * 3.4, 7) * amp];
+  }
+  function drawFlowFlash(f) {
+    if (TIER_N !== 4) return;
+    const a = keys([[T4.impact - 1, 0], [T4.impact, 0.95], [T4.impact + 3, 0.7], [T4.impact + 14, 0]], f) * (reduced ? 0.35 : 1);
+    if (a <= 0) return;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, OY, W, H);
+    ctx.globalAlpha = 1;
   }
 
   // ---------- burst and charge effects ----------
@@ -1058,7 +1267,19 @@
   function drawTitle(f) {
     if (f < TITLE) return;
     const k = keys([[TITLE, 1.9], [TITLE + 4, 0.9], [TITLE + 7, 1.05], [TITLE + 10, 0.985], [TITLE + 13, 1]], f);
-    const onRibbon = FX.sig === 'royal' && drawRibbon(f, k);
+    const open = TIER_N === 2
+      ? 1                                                   // gold's banner drops in whole
+      : spring(f - TITLE + 2, 2.2, 0.45);
+    let by = 1012, swing = 0;
+    if (TIER_N === 2) {                                     // falls from the top and swings to rest
+      const t = f - TITLE + 2;
+      by = lerp(OY - 120, 1012, spring(t, 1.6, 0.55));
+      swing = 0.22 * Math.exp(-t / 14) * Math.cos(t * 0.32);
+    }
+    ctx.save();
+    ctx.translate(W / 2, by - 1012);
+    ctx.translate(W / 2, 1012); ctx.rotate(swing); ctx.translate(-W / 2, -1012);
+    const onRibbon = drawBanner(f, open, 1012);
     ctx.save();
     ctx.globalAlpha = ramp(f, TITLE, TITLE + 2);
     ctx.translate(W / 2, 1012);
@@ -1070,12 +1291,13 @@
     ctx.fillStyle = onRibbon ? '#ffffff' : SET.title;
     ctx.fillText(SET.leagueName, 0, 0);
     ctx.restore();
+    ctx.restore();
     const p = easeOut(ramp(f, TITLE + 8, TITLE + 22));
     if (p > 0) {
       ctx.save();
       ctx.globalAlpha = p;
       ctx.translate(0, (1 - p) * 18);
-      caption([[['تهانينا! تقدّمت إلى مستوى جديد هذا الأسبوع', 700]]], FX.sig === 'royal' ? 1140 : 1098, 0, p, 38);
+      caption([[['تهانينا! تقدّمت إلى مستوى جديد هذا الأسبوع', 700]]], SET === SETS.ranks ? 1140 : 1098, 0, p, 38);
       ctx.restore();
     }
   }
@@ -2211,18 +2433,23 @@
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
     ctx.translate(0, -OY);
-    const [shx, shy] = BOLD ? boldShake(f) : HYPE ? hypeShake(f) : INKY || SPARK ? [0, 0] : shakeOffset(f);
+    const flow = !BOLD && !INKY && !SPARK && !HYPE && TIER_N !== 3 && f >= BREAK;
+    const [shx, shy] = BOLD ? boldShake(f) : HYPE ? hypeShake(f) : INKY || SPARK ? [0, 0] : TIER_N !== 3 ? flowShake(f) : shakeOffset(f);
     ctx.save();
     ctx.translate(shx, shy);
     if (BOLD && f >= BREAK) drawBold(f);
     else if (INKY && f >= INK.start) drawInk(f);
     else if (SPARK && f >= SP.ring) drawSpark(f);
     else if (HYPE && f >= SP.ring) drawHype(f);
+    else if (flow) [, drawSilver, drawGold, null, drawChampion][TIER_N](f);
     else drawRow(f);
-    if (!BOLD && !INKY && !SPARK && !HYPE && f >= BURST && FX.sparkles) drawSparkles(f - POST, FX.sparkles);
+    if (!BOLD && !INKY && !SPARK && !HYPE && TIER_N === 3 && f >= BURST && FX.sparkles) drawSparkles(f - POST, FX.sparkles);
     drawUI(f);
     ctx.restore();
-    if (!BOLD && !INKY && !SPARK && !HYPE) drawFlash(f);
+    if (!BOLD && !INKY && !SPARK && !HYPE) {
+      if (TIER_N === 3) drawFlash(f);
+      else drawFlowFlash(f);
+    }
   }
 
   let scale = 1;
@@ -2267,7 +2494,8 @@
       at(BD.arrive, 20);
       return;
     }
-    at(BURST, FX.sig === 'royal' ? [60, 30, 120, 40, 60] : [40, 30, 90]);
+    const hit = [0, T1.flip[1], T2.land, BURST, T4.impact][TIER_N];
+    at(hit, [0, [25, 20, 40], [40, 30, 90], [40, 30, 90], [60, 30, 120, 40, 60]][TIER_N]);
     at(TITLE + 3, 15);
   }
 
