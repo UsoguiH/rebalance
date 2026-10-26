@@ -49,7 +49,14 @@
     sub: 328, button: 340, end: 400,
   };
   const INKY = params_style() === 'ink';
-  const END = BOLD ? BD.end : INKY ? INK.end : 380;
+  // Spark timeline: a progress ring fills while XP counts up, shatters into
+  // shapes, the badge flips over to its new league, stats spring in
+  const SP = { ring: 128, fill: [140, 196], burst: 196, flip: [196, 208], head: 206, chip: 214, stats: 234, button: 262, end: 340 };
+  // Hype timeline: three heartbeats fill it a third at a time, it rises and
+  // slams down, a sticker lands, the students you passed count up
+  const HY = { beats: [142, 158, 174], rise: [182, 202], slam: 208, sticker: 216, plus: 234, name: 242, count: [256, 292], button: 300, end: 370 };
+  const SPARK = params_style() === 'spark', HYPE = params_style() === 'hype';
+  const END = BOLD ? BD.end : INKY ? INK.end : SPARK ? SP.end : HYPE ? HY.end : 380;
   const E = 40;                       // padding around the glow canvases
   const BG = '#fffffc';
   const AR = "'Tajawal', 'Noto Sans Arabic', 'Segoe UI', sans-serif";
@@ -364,21 +371,21 @@
   // The site's padlock (24-unit icon). Before BREAK it sits on the badge and
   // rattles with it; at BREAK the shackle springs up and swings open, then the
   // whole lock hops off, tumbles and falls away.
-  function drawPadlock(f, x, y, s, rot) {
+  function drawPadlock(f, x, y, s, rot, brk = BREAK) {
     const pl = SET.padlock;
-    if (f > BREAK + 40) return;
+    if (f > brk + 40) return;
     let [cx, cy] = spot(art.lock, x, y, s, pl.x, pl.y, rot);
     const size = pl.size * art.lock.img.width * s * art.lock.k;
     let ang = rot, alpha = 1;
-    const t = f - (BREAK + 5);
+    const t = f - (brk + 5);
     if (t > 0) {
       cx += -2.2 * t;
       cy += -11 * t + 0.55 * t * t;
       ang += -0.07 * t;
       alpha = 1 - ramp(t, 16, 30);
     }
-    const lift = f < BREAK ? 0 : easeOut(ramp(f, BREAK, BREAK + 4)) * 3.2;
-    const swing = f < BREAK ? 0 : easeOut(ramp(f, BREAK + 1, BREAK + 7)) * -0.75;
+    const lift = f < brk ? 0 : easeOut(ramp(f, brk, brk + 4)) * 3.2;
+    const swing = f < brk ? 0 : easeOut(ramp(f, brk + 1, brk + 7)) * -0.75;
     const u = size / 24;
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -416,8 +423,8 @@
     ctx.fillRect(11, 15.4, 2, 3.4);
     ctx.restore();
     // a small click of light where it snapped
-    if (f >= BREAK && f < BREAK + 10) {
-      const p = ramp(f, BREAK, BREAK + 10);
+    if (f >= brk && f < brk + 10) {
+      const p = ramp(f, brk, brk + 10);
       const [sx, sy] = spot(art.lock, x, y, s, pl.x, pl.y - pl.size * 0.45, rot);
       rays(sx, sy, 6, 14 + 30 * easeOut(p), 22 + 40 * easeOut(p), 4, ['#ffffff'], 1 - p);
       rays(sx, sy, 6, 14 + 30 * easeOut(p), 22 + 40 * easeOut(p), 4, [SET.glow], (1 - p) * 0.9, Math.PI / 6);
@@ -872,6 +879,8 @@
     }
     if (BOLD) return drawBoldUI(f);
     if (INKY) return drawInkUI(f);
+    if (SPARK) return drawSparkUI(f);
+    if (HYPE) return drawHypeUI(f);
     drawTitle(f);
     const b = ramp(f, TITLE + 18, TITLE + 30);
     drawButton(true, b, b >= 1 ? 0.012 * (1 - Math.cos((f - TITLE - 30) * 0.08)) : 0);
@@ -1489,6 +1498,500 @@
     drawButton(true, b);
   }
 
+  // ---------- shared by spark and hype ----------
+  // A damped spring from 0 to 1 over t frames: overshoots, then settles
+  function spring(t, freq = 2.2, damp = 0.38) {
+    if (t <= 0) return 0;
+    const sec = t / FPS, w = 2 * Math.PI * freq, wd = w * Math.sqrt(1 - damp * damp);
+    return 1 - Math.exp(-damp * w * sec) * (Math.cos(wd * sec) + (damp * w / wd) * Math.sin(wd * sec));
+  }
+  const PALETTE = ['#ffc800', '#1cb0f6', '#ff4b4b', '#58cc02', '#ce82ff', '#ff9600'];
+  // The student's numbers: 8th of a 30-player league, so 22 passed
+  const STATS = { xpFrom: 900, xpTo: 1800, rank: 8, size: 30 };
+
+  // The locked badge where the swing left it, and the open art at the same size
+  function lockPose() {
+    const [x, y, s] = focusPose(127);
+    return { x, y, s };
+  }
+  function openPose(f, f0, f1) {
+    const l = lockPose();
+    const p = easeInOut(ramp(f, f0, f1));
+    return { x: lerp(l.x, GREEN.x, p), y: lerp(l.y, GREEN.y, p), s: lerp(l.s * art.lock.k / art.open.k, GREEN.s, p) };
+  }
+  const centreOf = () => spot(art.open, GREEN.x, GREEN.y, GREEN.s, 0.5, 0.5);
+  // Leftmost / rightmost neighbours, hopping when told
+  function neighbours(f, hopAt) {
+    const h = (d) => keys([[hopAt + d, 0], [hopAt + d + 6, -40], [hopAt + d + 12, 0], [hopAt + d + 16, -10], [hopAt + d + 20, 0]], f);
+    const red = track('red', f);
+    sprite(art.cur, red[0], red[1] + h(1), red[2]);
+    const next = track('next', f);
+    if (next) sprite(art.after, next[0], next[1] + h(4), next[2]);
+  }
+  function text(str, x, y, font, color, align = 'center') {
+    ctx.font = font;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(str, x, y);
+  }
+
+  // Flat geometric pieces
+  function shapePath(type, r) {
+    ctx.beginPath();
+    if (type === 0) {                       // triangle
+      for (let i = 0; i < 3; i++) {
+        const a = -Math.PI / 2 + (i * 2 * Math.PI) / 3;
+        ctx[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r);
+      }
+      ctx.closePath();
+    } else if (type === 1) {                // circle
+      ctx.arc(0, 0, r * 0.8, 0, Math.PI * 2);
+    } else if (type === 2) {                // square
+      roundRect(-r * 0.75, -r * 0.75, r * 1.5, r * 1.5, r * 0.25);
+    } else if (type === 3) {                // plus
+      const t = r * 0.32;
+      ctx.moveTo(-t, -r); ctx.lineTo(t, -r); ctx.lineTo(t, -t); ctx.lineTo(r, -t); ctx.lineTo(r, t); ctx.lineTo(t, t);
+      ctx.lineTo(t, r); ctx.lineTo(-t, r); ctx.lineTo(-t, t); ctx.lineTo(-r, t); ctx.lineTo(-r, -t); ctx.lineTo(-t, -t);
+      ctx.closePath();
+    }
+  }
+  function drawShape(type, x, y, r, rot, color) {
+    if (r <= 0.5) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    if (type === 4) {                       // squiggle
+      ctx.strokeStyle = color;
+      ctx.lineWidth = r * 0.36;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      for (let i = 0; i <= 12; i++) {
+        const u = i / 12;
+        ctx[i ? 'lineTo' : 'moveTo']((u - 0.5) * r * 2.4, Math.sin(u * Math.PI * 3) * r * 0.45);
+      }
+      ctx.stroke();
+    } else {
+      shapePath(type, r);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // A white card with a grey rim and a lip, like the buttons
+  function card(x, y, w, h, r = 22) {
+    roundRect(x, y + 6, w, h, r);
+    ctx.fillStyle = '#e5e5e5';
+    ctx.fill();
+    roundRect(x, y, w, h, r);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#e5e5e5';
+    ctx.stroke();
+  }
+  // Small flat icons for the stat cards
+  function icon(kind, x, y, r) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (kind === 'bolt') {
+      ctx.fillStyle = '#ffc800';
+      ctx.beginPath();
+      ctx.moveTo(r * 0.2, -r); ctx.lineTo(-r * 0.55, r * 0.15); ctx.lineTo(-r * 0.02, r * 0.15);
+      ctx.lineTo(-r * 0.25, r); ctx.lineTo(r * 0.6, -r * 0.2); ctx.lineTo(r * 0.05, -r * 0.2);
+      ctx.closePath();
+      ctx.fill();
+    } else if (kind === 'medal') {
+      ctx.fillStyle = '#ff4b4b';
+      ctx.fillRect(-r * 0.5, -r, r * 0.35, r * 0.9);
+      ctx.fillStyle = '#1cb0f6';
+      ctx.fillRect(r * 0.15, -r, r * 0.35, r * 0.9);
+      ctx.fillStyle = '#ffc800';
+      ctx.beginPath();
+      ctx.arc(0, r * 0.3, r * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    } else {                                // arrow up
+      ctx.fillStyle = '#58cc02';
+      ctx.beginPath();
+      ctx.moveTo(0, -r); ctx.lineTo(r * 0.85, 0); ctx.lineTo(r * 0.32, 0); ctx.lineTo(r * 0.32, r);
+      ctx.lineTo(-r * 0.32, r); ctx.lineTo(-r * 0.32, 0); ctx.lineTo(-r * 0.85, 0);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ---------- spark ----------
+  // Pieces thrown off the ring when it completes: each springs out to its spot,
+  // spins, hangs a moment and pops away
+  const sparkShapes = (() => {
+    const r = rng(61);
+    const list = [];
+    for (let i = 0; i < 26; i++) {
+      list.push({
+        a: (i / 26) * Math.PI * 2 + (r() - 0.5) * 0.2,
+        d: 90 + r() * 170,
+        type: i % 5,
+        size: 16 + r() * 14,
+        spin: (r() - 0.5) * 3,
+        color: PALETTE[i % PALETTE.length],
+        out: SP.burst + 34 + r() * 26,
+        delay: r() * 3,
+      });
+    }
+    return list;
+  })();
+
+  function drawSpark(f) {
+    neighbours(f, SP.burst);
+    const [cx, cy] = centreOf();
+    const R = 300;
+    // the ring: a grey track springs in, then fills, faster and faster
+    const ringIn = spring(f - SP.ring, 2.4, 0.45);
+    const fill = ramp(f, SP.fill[0], SP.fill[1]) ** 1.7;
+    const gone = ramp(f, SP.burst, SP.burst + 3);
+    if (ringIn > 0 && gone < 1) {
+      ctx.save();
+      ctx.globalAlpha = 1 - gone;
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 24 * ringIn;
+      ctx.strokeStyle = '#e5e5e5';
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * ringIn, 0, Math.PI * 2);
+      ctx.stroke();
+      if (fill > 0) {
+        ctx.strokeStyle = SET.title;
+        ctx.lineWidth = 24 + 8 * ramp(f, SP.fill[1] - 6, SP.fill[1]);
+        ctx.beginPath();
+        ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + fill * Math.PI * 2);
+        ctx.stroke();
+        const ha = -Math.PI / 2 + fill * Math.PI * 2;
+        dot(cx + Math.cos(ha) * R, cy + Math.sin(ha) * R, 9, '#ffffff');
+      }
+      ctx.restore();
+    }
+    // the pieces
+    for (const p of sparkShapes) {
+      const t = f - SP.burst - p.delay;
+      if (t <= 0 || f > p.out + 10) continue;
+      const k = spring(t, 1.8, 0.5);
+      const dist = R + p.d * k;
+      const pop = f < p.out ? 1 : 1 - easeOut(ramp(f, p.out, p.out + 8));
+      const swell = f < p.out ? 1 : 1 + 0.4 * Math.sin(Math.PI * ramp(f, p.out, p.out + 8));
+      drawShape(p.type, cx + Math.cos(p.a) * dist, cy + Math.sin(p.a) * dist, p.size * Math.min(1, k * 1.4) * pop * swell, p.a + p.spin * k, p.color);
+    }
+    // the badge: grey and trembling while the ring fills, flips over at the burst
+    const l = lockPose();
+    const tremble = reduced ? 0 : 3.5 * fill * (f < SP.burst ? 1 : 0);
+    const lx = l.x + wob(f * 2.3, 4) * tremble;
+    const u = ramp(f, SP.flip[0], SP.flip[1]);
+    const face = Math.cos(Math.PI * u);
+    if (u < 0.5) {
+      const k = 1 + 0.05 * fill;
+      sprite(art.lock, lx, l.y, l.s * k, 1, { sx: Math.max(0.02, Math.abs(face)) });
+      if (SET.padlock && f < SP.flip[0] + 3) drawPadlock(f, lx, l.y, l.s * k, 0, 1e9);
+    } else {
+      const o = openPose(f, SP.flip[0], SP.flip[1]);
+      const pop = 1 + 0.22 * (1 - spring(f - (SP.flip[0] + 6), 2.6, 0.32));
+      sprite(art.open, o.x, o.y, o.s * pop, 1, { sx: Math.max(0.02, Math.abs(face)) });
+      drawShine(f - SP.flip[1] + 136, o.x, o.y, o.s * pop);
+    }
+  }
+
+  function drawSparkUI(f) {
+    const [cx, cy] = centreOf();
+    // the XP counter under the ring
+    if (f >= SP.ring && f < SP.head + 10) {
+      const p = ramp(f, SP.fill[0], SP.fill[1]) ** 1.7;
+      const n = Math.round(lerp(STATS.xpFrom, STATS.xpTo, p) / 10) * 10;
+      const a = spring(f - SP.ring, 2.4, 0.45) * (1 - ramp(f, SP.head - 4, SP.chip));
+      const done = f >= SP.fill[1];
+      const k = done ? 1 + 0.25 * (1 - spring(f - SP.fill[1], 3, 0.3)) : 1 + 0.06 * ((n / 100) % 1 === 0 ? 1 - ((f * 3) % 1) : 0);
+      ctx.save();
+      ctx.globalAlpha = clamp(a);
+      ctx.translate(W / 2, cy + 370);
+      ctx.scale(k, k);
+      ctx.direction = 'ltr';
+      text(n.toLocaleString('en-US') + ' XP', 0, 0, '800 64px ' + LAT, done ? SET.title : '#4b4b4b');
+      ctx.restore();
+    }
+    // heading springs up from below, then the league name in a chip
+    if (f >= SP.head) {
+      const k = spring(f - SP.head, 2.2, 0.4);
+      ctx.save();
+      ctx.globalAlpha = clamp(k * 2);
+      ctx.translate(W / 2, 250 + (1 - k) * 80);
+      ctx.direction = 'rtl';
+      text('دوري جديد!', 0, 0, '800 88px ' + AR, '#3c3c3c');
+      ctx.restore();
+    }
+    if (f >= SP.chip) {
+      const k = spring(f - SP.chip, 2.6, 0.38);
+      ctx.save();
+      ctx.translate(W / 2, cy + 368);
+      ctx.scale(k, k);
+      ctx.direction = 'rtl';
+      ctx.font = '800 54px ' + AR;
+      const label = 'المستوى ' + SET.league;
+      const w = ctx.measureText(label).width + 80, h = 92;
+      roundRect(-w / 2, -h / 2 + 7, w, h, h / 2);
+      ctx.fillStyle = shade(SET.title);
+      ctx.fill();
+      roundRect(-w / 2, -h / 2, w, h, h / 2);
+      ctx.fillStyle = SET.title;
+      ctx.fill();
+      text(label, 0, 2, '800 54px ' + AR, '#ffffff');
+      ctx.restore();
+    }
+    // three stat cards spring in one after another, numbers counting up
+    const cards = [
+      { kind: 'bolt', label: 'خبرة', value: (t) => '+' + Math.round(lerp(0, STATS.xpTo - STATS.xpFrom, t)) },
+      { kind: 'medal', label: 'ترتيبك', value: (t) => '#' + Math.max(STATS.rank, Math.round(lerp(STATS.size, STATS.rank, t))) },
+      { kind: 'arrow', label: 'تفوّقت عليهم', value: (t) => String(Math.round(lerp(0, STATS.size - STATS.rank, t))) },
+    ];
+    const cw = 252, ch = 170, gap = 18, y0 = 1170;
+    cards.forEach((c, i) => {
+      const f0 = SP.stats + i * 7;
+      if (f < f0) return;
+      const k = spring(f - f0, 2.4, 0.42);
+      const x = W / 2 + (1 - i) * (cw + gap);              // right to left
+      ctx.save();
+      ctx.translate(x, y0 + (1 - k) * 90);
+      ctx.globalAlpha = clamp(k * 1.6);
+      card(-cw / 2, -ch / 2, cw, ch);
+      icon(c.kind, 0, -ch / 2 + 44, 24);
+      const t = easeOut(ramp(f, f0 + 4, f0 + 26));
+      ctx.direction = 'ltr';
+      text('\u2066' + c.value(t) + '\u2069', 0, 6, '800 50px ' + LAT, '#3c3c3c');
+      ctx.direction = 'rtl';
+      text(c.label, 0, ch / 2 - 30, '700 28px ' + AR, '#8a8a8a');
+      ctx.restore();
+    });
+    const b = spring(f - SP.button, 2.4, 0.45);
+    if (b > 0) drawButton(true, clamp(b * 2), (1 - b) * -0.2);
+  }
+
+  // ---------- hype ----------
+  // Three heartbeats, each filling a third of the badge with colour from the
+  // bottom; it crouches, rises, slams down: the floor ripples, dust puffs,
+  // the padlock bursts off; then a tilted sticker, and the count of students
+  // you passed
+  let hypeFillCanvas = null;
+  function hypeFill(level) {
+    const img = art.open.img;
+    if (!hypeFillCanvas) {
+      hypeFillCanvas = document.createElement('canvas');
+      hypeFillCanvas.width = img.width;
+      hypeFillCanvas.height = img.height;
+    }
+    const g = hypeFillCanvas.getContext('2d');
+    g.clearRect(0, 0, img.width, img.height);
+    g.drawImage(img, 0, 0);
+    g.globalCompositeOperation = 'destination-in';
+    g.fillRect(0, img.height * (1 - level), img.width, img.height * level + 1);
+    g.globalCompositeOperation = 'source-over';
+    return hypeFillCanvas;
+  }
+  const dust = (() => {
+    const r = rng(71);
+    const list = [];
+    for (let i = 0; i < 14; i++) {
+      const side = i % 2 ? 1 : -1;
+      list.push({ side, x0: 60 + r() * 150, v: 4 + r() * 7, up: 0.8 + r() * 1.8, r0: 12 + r() * 14, grow: 1.6 + r() * 1.4 });
+    }
+    return list;
+  })();
+
+  function hypeMotion(f) {
+    // vertical offset and squash/stretch of the badge
+    const [r0, r1] = HY.rise;
+    let dy = 0, sx = 1, sy = 1;
+    if (f >= r0 - 6 && f < r0) { const p = ramp(f, r0 - 6, r0); sy = 1 - 0.14 * p; sx = 1 + 0.1 * p; }
+    if (f >= r0 && f < HY.slam) {
+      const up = easeOut(ramp(f, r0, r1));
+      const down = ramp(f, r1 + 2, HY.slam) ** 2;
+      dy = -170 * up + 170 * down;
+      const st = f < r1 ? 0.1 * (1 - ramp(f, r0, r0 + 8)) : 0.12 * down;
+      sy = 1 + st;
+      sx = 1 - st * 0.7;
+    }
+    if (f >= HY.slam) {
+      sy = keys([[HY.slam, 0.78], [HY.slam + 4, 1.1], [HY.slam + 8, 0.96], [HY.slam + 12, 1]], f);
+      sx = keys([[HY.slam, 1.2], [HY.slam + 4, 0.94], [HY.slam + 8, 1.02], [HY.slam + 12, 1]], f);
+    }
+    let k = 1;
+    HY.beats.forEach((b, i) => { k *= keys([[b - 1, 1], [b, 1.07 + i * 0.03], [b + 6, 1]], f); });
+    return { dy, sx, sy, k };
+  }
+
+  function drawHype(f) {
+    neighbours(f, HY.slam);
+    const l = lockPose();
+    const m = hypeMotion(f);
+    const base = l.y + (art.lock.img.height - art.lock.ay) * l.s * art.lock.k;   // floor line under the badge
+    const [cx, cy] = spot(art.lock, l.x, l.y, l.s, 0.5, 0.5);
+    // ripples from each heartbeat, in the league colour
+    HY.beats.forEach((b, i) => {
+      const p = ramp(f, b, b + 22);
+      if (f < b || p >= 1) return;
+      ctx.globalAlpha = (1 - p) * (0.6 + i * 0.15);
+      ctx.strokeStyle = SET.title;
+      ctx.lineWidth = lerp(14, 2, p);
+      ctx.beginPath();
+      ctx.arc(cx, cy, lerp(230, 470 + i * 60, easeOut(p)), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    });
+    // the floor: a line that snaps out on impact, and two waves skidding along it
+    if (f >= HY.slam) {
+      const p = easeOut(ramp(f, HY.slam, HY.slam + 10));
+      const fade = 1 - ramp(f, HY.slam + 30, HY.slam + 44);
+      ctx.save();
+      ctx.globalAlpha = fade;
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = '#e5e5e5';
+      ctx.beginPath();
+      ctx.moveTo(l.x - 430 * p, base);
+      ctx.lineTo(l.x + 430 * p, base);
+      ctx.stroke();
+      const q = ramp(f, HY.slam, HY.slam + 22);
+      if (q < 1) {
+        ctx.globalAlpha = 1 - q;
+        ctx.strokeStyle = SET.title;
+        ctx.lineWidth = lerp(12, 3, q);
+        for (const side of [-1, 1]) {
+          const x = l.x + side * lerp(150, 520, easeOut(q));
+          ctx.beginPath();
+          ctx.ellipse(x, base, 46, lerp(40, 10, q), 0, Math.PI, 2 * Math.PI);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+      // dust puffs
+      for (const d of dust) {
+        const t = f - HY.slam;
+        if (t > 34) continue;
+        const e = 1 - Math.exp(-t / 9);
+        const x = l.x + d.side * (d.x0 + d.v * 9 * e * 2.4);
+        const y = base - d.up * 9 * e * 3 - 6;
+        const rr = d.r0 * (1 + d.grow * e);
+        ctx.globalAlpha = 1 - ramp(t, 14, 34);
+        ctx.fillStyle = '#eceef1';
+        ctx.beginPath();
+        ctx.arc(x, y, rr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+    // the badge: grey, filling a third per heartbeat; full colour once it slams
+    const level = f >= HY.slam ? 1 : HY.beats.reduce((acc, b, i) => acc + (1 / 3) * easeOut(ramp(f, b, b + 8)), 0);
+    const o = { sx: m.sx, sy: m.sy };
+    const y = l.y + m.dy;
+    if (f < HY.slam) {
+      sprite(art.lock, l.x, y, l.s * m.k, 1, o);
+      const os = l.s * art.lock.k / art.open.k;
+      if (level > 0) sprite({ ...art.open, img: hypeFill(level) }, l.x, y, os * m.k, 1, o);
+      if (SET.padlock) drawPadlock(f, l.x, y, l.s * m.k, 0, HY.beats[2]);
+    } else {
+      const op = openPose(f, HY.slam, HY.slam + 10);
+      sprite(art.open, op.x, op.y, op.s, 1, o);
+      drawShine(f - HY.slam + 134, op.x, op.y, op.s);
+    }
+  }
+
+  // A word set like a sticker: thick white edge, soft drop, slight tilt
+  function sticker(str, x, y, size, tilt, fill, k, ink = '#ffffff') {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tilt);
+    ctx.scale(k, k);
+    ctx.direction = 'rtl';
+    ctx.font = '800 ' + size + 'px ' + AR;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = size * 0.26;
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.strokeText(str, 0, size * 0.09);
+    ctx.strokeStyle = '#ffffff';
+    ctx.strokeText(str, 0, 0);
+    ctx.fillStyle = fill;
+    ctx.fillText(str, 0, 0);
+    ctx.restore();
+  }
+
+  function drawHypeUI(f) {
+    if (f >= HY.sticker) {
+      const k = keys([[HY.sticker, 2.5], [HY.sticker + 5, 0.86], [HY.sticker + 9, 1.07], [HY.sticker + 13, 0.98], [HY.sticker + 16, 1]], f);
+      sticker('ترقية!', W / 2, 262, 118, -0.1, SET.title, k);
+    }
+    if (f >= HY.plus) {
+      const k = spring(f - HY.plus, 2.8, 0.35);
+      ctx.save();
+      ctx.translate(W / 2 + 250, 340);
+      ctx.rotate(0.14);
+      ctx.scale(k, k);
+      ctx.direction = 'rtl';
+      ctx.font = '800 36px ' + AR;
+      const plus = '\u2066+1\u2069 مستوى';   // isolate "+1" so it keeps its order in Arabic
+      const w = ctx.measureText(plus).width + 54, h = 66;
+      roundRect(-w / 2 - 6, -h / 2 - 6, w + 12, h + 12, (h + 12) / 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      roundRect(-w / 2, -h / 2, w, h, h / 2);
+      ctx.fillStyle = '#ffc800';
+      ctx.fill();
+      text(plus, 0, 2, '800 36px ' + AR, '#5a4300');
+      ctx.restore();
+    }
+    if (f >= HY.name) {
+      const k = spring(f - HY.name, 2.2, 0.42);
+      ctx.save();
+      ctx.globalAlpha = clamp(k * 2);
+      ctx.translate(W / 2, 1000 + (1 - k) * 60);
+      ctx.direction = 'rtl';
+      text('المستوى ' + SET.league, 0, 0, '800 80px ' + AR, SET.title);
+      ctx.restore();
+    }
+    // students passed, counting up with a bump on every step
+    if (f >= HY.count[0]) {
+      const a = spring(f - HY.count[0], 2.4, 0.45);
+      const passed = STATS.size - STATS.rank;
+      const n = Math.round(easeOut(ramp(f, HY.count[0] + 4, HY.count[1])) * passed);
+      const stepFrame = (() => { for (let g = f; g > HY.count[0]; g--) if (Math.round(easeOut(ramp(g - 1, HY.count[0] + 4, HY.count[1])) * passed) !== n) return g; return HY.count[0]; })();
+      const bump = 1 + 0.18 * (1 - ramp(f, stepFrame, stepFrame + 5)) * (n > 0 ? 1 : 0);
+      const done = f >= HY.count[1];
+      const k2 = done ? 1 + 0.2 * (1 - spring(f - HY.count[1], 3, 0.3)) : bump;
+      ctx.save();
+      ctx.globalAlpha = clamp(a * 2);
+      ctx.direction = 'rtl';
+      text('تفوّقت على', W / 2, 1100, '700 38px ' + AR, '#777777');
+      ctx.translate(W / 2, 1200);
+      ctx.scale(k2, k2);
+      ctx.direction = 'ltr';
+      text(String(n), 0, 0, '800 120px ' + LAT, '#58cc02');
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = clamp(a * 2);
+      ctx.direction = 'rtl';
+      text('طالب هذا الأسبوع', W / 2, 1302, '700 38px ' + AR, '#777777');
+      ctx.restore();
+    }
+    const b = spring(f - HY.button, 2.4, 0.45);
+    if (b > 0) drawButton(true, clamp(b * 2));
+  }
+
+  function hypeShake(f) {
+    if (reduced) return [0, 0];
+    let amp = keys([[HY.slam - 1, 0], [HY.slam, 18], [HY.slam + 5, 9], [HY.slam + 24, 0]], f)
+      + keys([[HY.sticker + 4, 0], [HY.sticker + 5, 7], [HY.sticker + 14, 0]], f);
+    HY.beats.forEach((b, i) => { amp += keys([[b - 1, 0], [b, 2 + i * 2], [b + 6, 0]], f); });
+    return [wob(f * 2.9, 2) * amp, wob(f * 3.4, 7) * amp];
+  }
+
   // ---------- frame ----------
   function render(f) {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
@@ -1496,16 +1999,18 @@
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
     ctx.translate(0, -OY);
-    const [shx, shy] = BOLD ? boldShake(f) : INKY ? [0, 0] : shakeOffset(f);
+    const [shx, shy] = BOLD ? boldShake(f) : HYPE ? hypeShake(f) : INKY || SPARK ? [0, 0] : shakeOffset(f);
     ctx.save();
     ctx.translate(shx, shy);
     if (BOLD && f >= BREAK) drawBold(f);
     else if (INKY && f >= INK.start) drawInk(f);
+    else if (SPARK && f >= SP.ring) drawSpark(f);
+    else if (HYPE && f >= SP.ring) drawHype(f);
     else drawRow(f);
-    if (!BOLD && !INKY && f >= BURST) drawSparkles(f - POST);
+    if (!BOLD && !INKY && !SPARK && !HYPE && f >= BURST) drawSparkles(f - POST);
     drawUI(f);
     ctx.restore();
-    if (!BOLD && !INKY) drawFlash(f);
+    if (!BOLD && !INKY && !SPARK && !HYPE) drawFlash(f);
   }
 
   let scale = 1;
@@ -1528,6 +2033,17 @@
     if (!navigator.vibrate || (navigator.userActivation && !navigator.userActivation.hasBeenActive)) return;
     const at = (f, pattern) => buzzTimers.push(setTimeout(() => navigator.vibrate(pattern), ((f - 1) / FPS) * 1000));
     at(BREAK, 20);
+    if (SPARK) {
+      at(SP.burst, [30, 30, 70]);
+      at(SP.stats, 15);
+      return;
+    }
+    if (HYPE) {
+      HY.beats.forEach((b, i) => at(b, 15 + i * 10));
+      at(HY.slam, [60, 30, 90]);
+      at(HY.sticker + 5, 25);
+      return;
+    }
     if (INKY) {
       at(INK.pop, [30, 30, 60]);
       at(INK.check[1] - 2, 20);

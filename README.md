@@ -148,6 +148,18 @@ any one replays them all):
   it, and writes the league name right to left before flying off. The outline it traces comes
   from `league/shapes.js`, made by `python3 tools/trace-outline.py`.
 
+- **Spark version** (`?style=spark`): bright, springy and number-driven. After the swing a
+  progress ring springs in around the locked badge and fills faster and faster while XP counts
+  up from 900 to 1,800; when it closes it breaks into flat geometric pieces that spring out and
+  pop away, the badge flips over to its new league, «دوري جديد!» springs up, and three stat
+  cards spring in with counters (XP gained, your rank, students you passed).
+- **Hype version** (`?style=hype`): three heartbeats, each filling a third of the badge with its
+  colour and sending out a ripple; the padlock bursts off, the badge crouches, rises and slams
+  down (the floor line snaps out, waves skid along it, dust puffs, the neighbours bounce); a
+  tilted «ترقية!» sticker lands with a «+1 مستوى» tag, and the students you passed (22 of a
+  30-player league) count up in a big number.
+- `league/compare.html` plays the Duolingo recreation, spark and hype side by side.
+
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
 champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
 
@@ -158,7 +170,8 @@ champion locked next). Add `?set=books` for the book trophies from `league/src/b
 - `league/img/*.png`: the book trophies cut out of the source image. `green.png` is the red
   book recolored to emerald. Rebuild them with `python3 tools/cut-books.py`. Both tools need
   Pillow and numpy
-- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold|ink]` renders a
+- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold|ink|spark|hype]` renders a
   version to video with Playwright and ffmpeg. `league/league.mp4`, `league/league-classic.mp4`,
-  `league/league-bold.mp4`, `league/league-ink.mp4` and `league/league-books.mp4` are renders, and
+  `league/league-bold.mp4`, `league/league-ink.mp4`, `league/league-spark.mp4`,
+  `league/league-hype.mp4` and `league/league-books.mp4` are renders, and
   `league/league-compare.mp4` puts the three versions side by side
