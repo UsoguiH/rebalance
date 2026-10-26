@@ -20,41 +20,38 @@ def api(**params):
     return json.loads(raw) if raw else {}
 
 
-def categories(q, cat):
-    found = ["Category:" + cat]
-    d = api(action="query", list="search", srnamespace=14, srsearch=q, srlimit=4)
-    found += [r["title"] for r in d.get("query", {}).get("search", [])]
-    return list(dict.fromkeys(found))
+def search_categories(q):
+    d = api(action="query", list="search", srnamespace=14, srsearch=q, srlimit=3)
+    return [r["title"] for r in d.get("query", {}).get("search", [])]
 
 
-def files_in(cat, n):
-    d = api(action="query", list="categorymembers", cmtitle=cat, cmtype="file", cmlimit=n)
-    return [m["title"] for m in d.get("query", {}).get("categorymembers", [])]
+def files_with_info(cat, n=20):
+    """Members of a category with their image info, in a single request."""
+    d = api(action="query", generator="categorymembers", gcmtitle=cat, gcmtype="file", gcmlimit=n,
+            prop="imageinfo", iiprop="url|extmetadata|mime|size", iiurlwidth=330)
+    return parse(d)
 
 
-def info(titles):
+def parse(d):
     out = []
-    for i in range(0, len(titles), 40):
-        d = api(action="query", prop="imageinfo", iiprop="url|extmetadata|mime|size",
-                iiurlwidth=330, titles="|".join(titles[i:i + 40]))
-        for p in d.get("query", {}).get("pages", {}).values():
-            ii = (p.get("imageinfo") or [{}])[0]
-            if ii.get("mime") not in ("image/jpeg", "image/png"):
-                continue
-            if min(ii.get("width", 0), ii.get("height", 0)) < 500:
-                continue
-            m = ii.get("extmetadata", {})
-            lic = (m.get("LicenseShortName", {}).get("value") or "")
-            low = lic.lower()
-            if not any(k in low for k in ("cc by", "cc0", "public domain", "pd")) or "nc" in low.replace("-", " ").split() or "nd" in low.replace("-", " ").split():
-                continue
-            out.append({
-                "src": "commons", "title": p["title"], "url": ii["url"], "thumb": ii.get("thumburl"),
-                "width": ii.get("width"), "height": ii.get("height"),
-                "page": ii.get("descriptionurl"),
-                "author": fc.strip_tags(m.get("Artist", {}).get("value")) or "Unknown",
-                "license": lic, "license_url": m.get("LicenseUrl", {}).get("value"),
-            })
+    for p in d.get("query", {}).get("pages", {}).values():
+        ii = (p.get("imageinfo") or [{}])[0]
+        if ii.get("mime") not in ("image/jpeg", "image/png"):
+            continue
+        if min(ii.get("width", 0), ii.get("height", 0)) < 500:
+            continue
+        m = ii.get("extmetadata", {})
+        lic = (m.get("LicenseShortName", {}).get("value") or "")
+        words = lic.lower().replace("-", " ").split()
+        if not any(k in lic.lower() for k in ("cc by", "cc0", "public domain", "pd")) or "nc" in words or "nd" in words:
+            continue
+        out.append({
+            "src": "commons", "title": p["title"], "url": ii["url"], "thumb": ii.get("thumburl"),
+            "width": ii.get("width"), "height": ii.get("height"),
+            "page": ii.get("descriptionurl"),
+            "author": fc.strip_tags(m.get("Artist", {}).get("value")) or "Unknown",
+            "license": lic, "license_url": m.get("LicenseUrl", {}).get("value"),
+        })
     return out
 
 
@@ -68,17 +65,21 @@ def main():
         for sid, name, q, cat in rows:
             if (only and sid not in only) or (not only and sid in got):
                 continue
-            titles = []
-            for c in categories(q, cat):
-                titles += files_in(c, 14)
-                if len(titles) >= 24:
-                    break
-            items = info(list(dict.fromkeys(titles))[:24])
+            items = files_with_info("Category:" + cat)
+            if len(items) < 6:
+                for c in search_categories(name)[:2]:
+                    if c != "Category:" + cat:
+                        items += files_with_info(c)
+            seen, uniq = set(), []
+            for c in items:
+                if c["url"] not in seen:
+                    seen.add(c["url"]); uniq.append(c)
+            items = uniq[:20]
             tdir = os.path.join(out_dir, "thumbs", sid)
             os.makedirs(tdir, exist_ok=True)
             kept = []
             for c in items:
-                time.sleep(PAUSE)
+                time.sleep(0.8)
                 data = fc.get(c["thumb"] or c["url"], tries=2)
                 if not data or len(data) < 3000:
                     continue
