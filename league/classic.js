@@ -58,6 +58,7 @@
   Object.assign(SETS.ranks.art, PROMO.art, { lock: PROMO.art.lockBaked });
   delete SETS.ranks.art.lockBaked;
   SETS.ranks.leagueName = PROMO.tier.name;
+  SETS.ranks.ink = PROMO.tier.ink;   // the glow-up before the burst, in the reached league's colours
   const SET = SETS[params.get('set')] || SETS.ranks;
 
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -143,11 +144,12 @@
   }
   function buildLayers() {
     const L = art.lock;
-    art.tint = layer(L, '#a9dcee');
-    art.pale = layer(L, '#e2f4fd');
+    const ink = SET.ink || { tint: '#a9dcee', pale: '#e2f4fd', ring: '#62e6ff', halo: '#d2f5ff', twinkle: '#7fdcf5' };
+    art.tint = layer(L, ink.tint);
+    art.pale = layer(L, ink.pale);
     art.white = layer(L, '#ffffff');
-    art.ring = layer(L, '#62e6ff', 7, 0, true);
-    art.glow = layer(L, '#d2f5ff', 26, 5, true);
+    art.ring = layer(L, ink.ring, 7, 0, true);
+    art.glow = layer(L, ink.halo, 26, 5, true);
   }
 
   // Draws a sprite with its anchor at (x, y)
@@ -240,7 +242,7 @@
     for (const [f0, f1, dx, dy, r] of inner) {
       if (f < f0 || f > f1) continue;
       const p = (f - f0) / (f1 - f0);
-      star(x + dx * k, y + dy * k, r * Math.sin(Math.PI * p) * k, '#7fdcf5');
+      star(x + dx * k, y + dy * k, r * Math.sin(Math.PI * p) * k, SET.ink ? SET.ink.twinkle : '#7fdcf5');
     }
   }
 
