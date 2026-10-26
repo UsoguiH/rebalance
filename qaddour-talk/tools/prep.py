@@ -17,7 +17,7 @@ cand = np.abs(im - BG).max(2) <= 14
 lab, _ = nd.label(cand)
 border = set(np.unique(np.r_[lab[0], lab[-1], lab[:, 0], lab[:, -1]])) - {0}
 bg = np.isin(lab, list(border))
-fg = ~bg & (yy > 5) & (xx > 3) & (xx < W - 4)   # the screenshot's border line is not him
+fg = ~bg & (yy > 9) & (xx > 3) & (xx < W - 4)   # the screenshot's border line is not him
 # the floor shadow: light neutral grey pill under the feet
 shadow = fg & (yy > 890) & (sat < 0.06) & (mx > 190)
 fg_body = fg & ~shadow
