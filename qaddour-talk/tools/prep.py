@@ -122,7 +122,7 @@ layer(forearm).save(f'{OUT}/forearm.png')
 layer(sleeve).save(f'{OUT}/upperarm.png')
 # body: everything else; under the beard the collar shows, so the cut is filled with shirt white
 body = fg_body & ~head & ~forearm & ~sleeve
-under = head & (yy > 430) & (xx > 500) & (xx < 712)
+under = head & (yy > 455) & (xx > 535) & (xx < 675)
 bimg = base.copy(); bimg[under] = [244, 243, 241]
 body_m = body | under
 # keep a sliver of the sleeve on the body so a rotated arm never opens a gap at the shoulder

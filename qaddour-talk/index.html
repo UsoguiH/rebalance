@@ -77,66 +77,102 @@ function hop(t, t0, h) {
 }
 
 // ---------- data
-let RIG, WORDS, AUDIO, IMG = {}, CHUNKS = [], ACT = {};
+let RIG, WORDS, AUDIO, SOCK, IMG = {}, CHUNKS = [], ACT = {};
 const SEGS = () => WORDS;
 const W = (s, i) => WORDS[s].words[i].s;          // when word i of segment s starts
 const WE = (s, i) => WORDS[s].words[i].e;
 const SEG = s => [WORDS[s].words[0].s, WORDS[s].words.at(-1).e];
 function aud(arr, t) { const i = t / AUDIO.hop, j = Math.floor(i); if (j < 0) return 0; if (j >= arr.length - 1) return arr.at(-1) || 0; return arr[j] + (arr[j+1] - arr[j]) * (i - j); }
 
+// ---------- emotions: each one is a full face and body, blended by weight
+// lid: -1 wide open … 0 as drawn … 1 shut. happy: eyes closed into ^^ arcs. bUp: brow lift (px, up is negative).
+// bAng: brow angle, + knits the inner ends down (anger), − lifts them (worry). Mouth: mW width, mCurve corner lift,
+// mOpen resting depth, mAsym right corner higher (a smirk), mRound an "o". blush, tilt, headDy, lean, look, pupil.
+const EMO = {
+  happy:    { lid: [-.35, -.35], bUp: [-7, -7], mW: .2, mCurve: 9, mOpen: 4, blush: .35, tilt: 2 },
+  joy:      { lid: [-.55, -.55], bUp: [-12, -12], bAng: [-4, -4], mW: .38, mCurve: 15, mOpen: 16, blush: .6, sy: .012 },
+  laugh:    { happy: 1, bUp: [-13, -13], bAng: [-7, -7], mW: .5, mCurve: 16, mOpen: 24, blush: 1, tilt: -6, headDy: -2 },
+  sly:      { lid: [.16, .3], bUp: [-13, 3], bAng: [0, 12], mCurve: 5, mAsym: 10, mW: .05, lookX: 5, tilt: -5, blush: .15 },
+  deadpan:  { lid: [.24, .24], bUp: [2, -13], bAng: [6, -2], mCurve: -1, mW: -.15, lookX: 1 },
+  surprise: { lid: [-1, -1], bUp: [-18, -18], mW: -.35, mRound: 1, mOpen: 14, mCurve: -3, headDy: -4, pupil: -.12 },
+  stern:    { lid: [.12, .12], bUp: [4, 4], bAng: [19, 19], mCurve: -10, mW: -.12, lean: 1.5 },
+  worry:    { lid: [-.3, -.3], bUp: [-7, -7], bAng: [-17, -17], mCurve: -7, mW: -.18, mOpen: 2, tilt: 5 },
+  think:    { lid: [.04, .04], bUp: [-12, -2], bAng: [0, 7], mAsym: 7, mCurve: -1, mW: -.1, lookX: -6, lookY: -6, tilt: 6 },
+  expect:   { lid: [-.45, -.45], bUp: [-12, -12], mCurve: 6, tilt: 8, mW: .05 },
+  proud:    { happy: .75, bUp: [-6, -6], mCurve: 13, mW: .28, blush: .5, tilt: 3 },
+  disgust:  { lid: [.18, .18], bUp: [3, 3], bAng: [11, 11], mCurve: -9, mAsym: -7, mW: -.05, tilt: -4 },
+};
+
 function buildActing() {
   const A = {};
-  const [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15] = WORDS.map((_, i) => SEG(i));
-  // stressed words get a forearm tap and a head nod
+  const S = WORDS.map((_, i) => SEG(i));
+  // the emotional script: [from, to, emotion, weight, ramp]
+  A.mood = [
+    [0.0, 2.6, 'joy', 1, .2],
+    [2.7, 6.1, 'stern', .45], [4.5, 6.1, 'think', .3],
+    [6.2, 8.0, 'proud', .9],
+    [8.15, 9.25, 'sly', 1, .2],
+    [9.3, 10.65, 'surprise', .85, .18],                // the dramatic pause after "السؤال"
+    [10.65, 15.5, 'happy', .5],
+    [15.5, 16.6, 'think', .7],
+    [16.6, 17.8, 'deadpan', 1, .2],                     // a straight face for the silly question…
+    [17.85, 19.45, 'laugh', 1, .14],                    // …then he cracks up
+    [19.45, 20.45, 'joy', .85, .2],
+    [21.0, 22.2, 'stern', .7, .2],                      // "اسمع السؤال الحقيقي"
+    [22.2, 28.9, 'happy', .35],
+    [28.9, 30.3, 'think', 1, .2],
+    [30.3, 31.3, 'expect', 1, .2],                      // waiting for your answer
+    [31.35, 33.4, 'sly', 1, .2],                        // the secret
+    [33.4, 35.76, 'worry', 1, .2],
+    [35.76, 37.3, 'sly', .75, .2],
+    [37.3, 39.0, 'stern', .75, .15],
+    [39.0, 43.0, 'stern', 1, .15],
+    [43.0, 46.5, 'disgust', 1, .2],
+    [46.5, 48.6, 'joy', .85, .15],
+    [48.6, 49.8, 'happy', .8],
+    [49.8, 51.2, 'joy', 1, .2],
+    [51.2, 60, 'proud', 1, .3],
+  ];
+  // weight channels per emotion, each a flow through its held windows
+  A.w = {};
+  for (const k of Object.keys(EMO)) A.w[k] = keys(...A.mood.filter(m => m[2] === k).map(([a, b, , w = 1, r = .3]) => hold(a, b, w, r)));
+
   const taps = [[1,0],[1,2],[1,16],[3,3],[3,4],[3,7],[3,8],[7,4],[7,5],[8,1],[8,6],[12,0],[12,2],[14,1],[14,9],[15,1],[15,3],[15,5]];
   A.taps = taps.map(([s, i]) => W(s, i));
   const NUM = new Set(['ثلاث','ثلاثة','تفاحتين','ونص','عشر','خمسين','أضعاف','المية']);
   const WARN = new Set(['وإياك','إياك','فاضي','أبدا','المستحيلة','واشطب']);
   A.wordInk = w => NUM.has(w) ? INK.num : WARN.has(w) ? INK.warn : INK.now;
 
-  // upper arm (shoulder) and forearm (elbow): key poses, in degrees, clockwise lifts the pointer
-  A.ua = keys(hold(s0[0] + 0.1, s0[1], 8), hold(s2[0], s2[1] + 0.2, 6), hold(s4[0], s4[1], -9),
-              hold(s6[0], s6[1], 6), hold(s10[0], s10[1], -7), hold(s15[0], W(15, 2) + 0.4, 9), hold(W(15, 6), 60, 14, 0.25));
-  A.fa = keys(hold(s0[0] + 0.1, s0[1], 6), hold(s2[0], s2[1] + 0.2, 20), hold(s4[0], s4[1], -14),
-              hold(s6[0], s6[1], 14), hold(s9[0], s9[1], -12), hold(s10[0], s10[1], -24),
-              hold(W(15, 0), W(15, 2) + 0.4, 30), hold(W(15, 6), 60, 26, 0.25));
-  A.waves = [ [s0[0] + 0.15, s0[1] - 0.05, 0.62, 13],          // hello: the pointer waves
-              [s5[0], s5[1], 0.5, 9],                           // joking: a loose dismissive wave
-              [W(13, 0), WE(13, 2), 0.42, 11], [W(13, 3), s13[1], 0.42, 8] ]; // "إياك ثم إياك": wagging
-  A.slash = W(12, 3);                                            // "واشطب": one strike through
+  // pointer arm poses (deg; clockwise lifts the pointer)
+  A.ua = keys(hold(0.1, 2.6, 8), hold(9.2, 11.0, 6), hold(15.4, 17.9, -9), hold(17.9, 19.5, -6, .2),
+              hold(20.9, 22.2, 6), hold(31.3, 33.4, -7), hold(46.5, 48.7, 9), hold(50.6, 60, 14, .25));
+  A.fa = keys(hold(0.1, 2.6, 6), hold(9.2, 11.0, 22), hold(15.4, 16.6, -14), hold(16.6, 17.8, -6), hold(17.9, 19.5, -22, .2),
+              hold(20.9, 22.2, 14), hold(28.9, 30.9, -12), hold(31.3, 33.4, -24),
+              hold(46.5, 48.7, 30), hold(50.6, 60, 26, .25));
+  A.waves = [ [0.15, 2.55, 0.62, 13], [18.0, 19.4, 0.34, 7], [39.04, 41.0, 0.42, 11], [41.06, 43.0, 0.42, 8] ];
+  A.slash = W(12, 3);
 
-  // head: tilt in degrees and nods; questions tilt and hold, "no" shakes
-  A.tilt = keys(hold(s4[0] + 0.2, s4[1] + 0.25, 6), hold(s9[0] + 0.2, s9[1] + 0.25, 5),
-                hold(s10[0], s10[1], -5), hold(W(15, 6), 60, 3, 0.3));
-  A.shakes = [ [s5[0], WE(5, 1) + 0.1, 0.36, 4.5],              // laughing "أمزح أمزح"
-               [W(11, 0), WE(11, 1) + 0.15, 0.44, 5],            // "لا تغرق"
-               [W(14, 6), s14[1] + 0.1, 0.44, 4.5] ];            // "ما نبي نشوفه أبدا"
-  A.lean = keys(hold(s6[0], s6[1], 1.4), hold(s10[0], s10[1], -2.2), hold(s13[0], s13[1], 1.6));
-  A.zoom = keys(hold(s10[0] - 0.1, s10[1] + 0.2, 0.07, 0.45));   // leaning in for the secret
-  A.hops = [W(5, 0) + 0.02, W(5, 1) + 0.02, W(15, 7)];
-
-  // eyes: glances (source px), lids and squints
-  A.lookX = keys(hold(s2[0], s2[1] + 0.2, -6), hold(s10[0] + 0.1, W(10, 2), -7), hold(W(10, 2) + 0.25, s10[1] + 0.1, 6),
-                 hold(W(12, 3), W(12, 4) + 0.2, -2));
-  A.lookY = keys(hold(s2[0], s2[1] + 0.2, -5), hold(W(12, 3), W(12, 4) + 0.2, 5), hold(s4[0] + 0.2, s4[1], -3));
-  A.lid = keys(hold(s10[0], s10[1], 0.34), hold(s13[0], s13[1], 0.14));
-  A.cheek = keys(hold(s5[0], s5[1] + 0.2, 0.42), hold(W(15, 6), 60, 0.4));
-  A.smile = keys(hold(s5[0], s5[1] + 0.3, 1), hold(s0[0], s0[1], 0.6), hold(W(15, 6), 60, 1));
-
-  // brows: raise at every new thought, hold up on questions, knit for the warning, one up for the secret
-  A.browUp = keys(hold(s4[0], s4[1] + 0.2, -9), hold(s9[0], s9[1] + 0.2, -8), hold(s5[0], s5[1], -5),
-                  hold(s13[0], s13[1], 3), hold(W(15, 6), 60, -6));
-  A.browKnit = keys(hold(s13[0], s13[1], 8));
-  A.browSly = keys(hold(s10[0], s10[1], 1));
+  A.shakes = [ [20.45, 21.0, 0.3, 3],                  // composing himself after the laugh
+               [W(11, 0), WE(11, 1) + 0.15, 0.44, 5],   // "لا تغرق"
+               [W(14, 6), 46.5, 0.44, 5],                // "ما نبي نشوفه أبدا"
+               [8.6, 9.2, 0.4, 2.5] ];                   // teasing "يجيب العيد"
+  A.laugh = [17.85, 19.45];
+  A.lean = keys(hold(21.0, 22.2, 1.6), hold(31.35, 33.4, -2.4), hold(39.0, 43.0, 1.8));
+  A.zoom = keys(hold(31.3, 33.5, 0.08, 0.45), hold(39.6, 42.6, 0.04, 0.5));
+  A.hops = [0.02, 46.7, W(15, 7)];
+  // extra glances on top of the emotions
+  A.lookX = keys(hold(9.3, 10.6, -6), hold(31.35, 31.85, -8, .18), hold(32.05, 32.6, 7, .18), hold(37.36, 38.3, -2));
+  A.lookY = keys(hold(9.3, 10.6, -6), hold(37.36, 38.3, 6));
+  A.wink = W(12, 2) + 0.08;                            // "بذكاء"
   A.thoughts = WORDS.map(s => s.words[0].s);
 
-  // blinks: every 2.6–4.2 s, plus one on each big head turn
   const bl = []; let t = 1.1, i = 0;
   while (t < 54) { bl.push(t); t += 2.6 + seeded(i++, 3) * 1.6; }
-  [s4[0] + 0.15, s5[0], s9[0] + 0.15, s10[0] + 0.05, s15[0]].forEach(x => bl.push(x));
+  [9.3, 15.5, 20.5, 28.95, 31.4, 33.4, 46.55].forEach(x => bl.push(x));
   bl.sort((a, b) => a - b);
-  A.blinks = bl.filter((x, j) => j === 0 || x - bl[j - 1] > 0.9);
-  A.blinks.push(W(10, 2) + 0.1);                      // double take in the secret
+  // no blinks while the eyes are already shut laughing or winking
+  A.blinks = bl.filter((x, j) => (j === 0 || x - bl[j - 1] > 0.9) && !(x > 17.7 && x < 19.6) && Math.abs(x - A.wink) > 0.8);
+  A.blinks.push(32.0);                                 // a double take in the secret
   return A;
 }
 
@@ -159,83 +195,137 @@ function buildChunks() {
 // ---------- drawing
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const off = {};                                    // small canvases for the clipped eye parts
-function eyeCanvas(e) {
-  if (!off[e.name]) { const c = document.createElement('canvas'); c.width = e.x1 - e.x0 + 8; c.height = e.y1 - e.y0 + 8; off[e.name] = c; }
-  return off[e.name];
-}
+function scratch(key, w, h) { if (!off[key]) { const c = document.createElement('canvas'); c.width = w; c.height = h; off[key] = c; } return off[key]; }
 
-function drawEye(g, e, st) {
-  const c = eyeCanvas(e), x = c.getContext('2d'), ox = e.x0 - 4, oy = e.y0 - 4, h = e.y1 - e.y0 + 4;
-  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height);
+// One eye: the whole socket (white + the lid area above it) is redrawn, so the lid can open
+// past the drawn heavy lid, close, squint from below, or fold into a happy ^^ arc.
+function drawEye(g, e, so, st, side) {
+  const ox = so.sx0 - 5, oy = so.sy0 - 5, w = so.sx1 - so.sx0 + 10, h = so.sy1 - so.sy0 + 10;
+  const c = scratch('eye' + e.name, w, h), x = c.getContext('2d');
+  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, w, h);
   x.globalCompositeOperation = 'source-over';
-  x.drawImage(IMG['eye' + e.name], -ox, -oy);      // the white, exact shape
+  x.drawImage(IMG['sock' + e.name], -ox, -oy);
   x.globalCompositeOperation = 'source-atop';
-  const px = e.px + st.lookX - ox, py = e.py + st.lookY - oy;
-  x.fillStyle = INK.pupil; x.beginPath(); x.arc(px, py, e.pr, 0, 7); x.fill();
-  x.fillStyle = '#fff'; x.beginPath(); x.arc(px - e.pr * 0.35, py - e.pr * 0.38, e.pr * 0.26, 0, 7); x.fill();
-  // lids and cheek: skin over the white, clipped to the 2px larger shape
-  x.globalCompositeOperation = 'source-over';
+  x.fillStyle = `rgb(${e.white})`; x.fillRect(0, 0, w, h);
+  const pr = e.pr * (1 + st.pupil), px = e.px + st.lookX - ox, py = e.py + st.lookY - oy;
+  x.fillStyle = INK.pupil; x.beginPath(); x.arc(px, py, pr, 0, 7); x.fill();
+  x.fillStyle = '#fff'; x.beginPath(); x.arc(px - pr * 0.35, py - pr * 0.38, pr * 0.27, 0, 7); x.fill();
   g.drawImage(c, ox, oy);
-  const L = lidCanvas(e), y = L.getContext('2d');
-  y.setTransform(1, 0, 0, 1, 0, 0); y.clearRect(0, 0, L.width, L.height);
+
+  // skin over the eye: lid from above, cheek from below
+  const L = scratch('lid' + e.name, w, h), y = L.getContext('2d');
+  y.setTransform(1, 0, 0, 1, 0, 0); y.clearRect(0, 0, w, h);
   y.globalCompositeOperation = 'source-over';
-  y.drawImage(IMG['eye' + e.name + 'g'], -ox, -oy);
-  y.globalCompositeOperation = 'source-in';
-  const lid = clamp(st.lid), ch = clamp(st.cheek);
-  const lidY = 1 + lid * (h * 1.02), cheekY = h + 4 - ch * h;
-  y.fillStyle = `rgb(${e.lid})`; y.fillRect(0, 0, L.width, lidY);
-  if (lid > 0.04 && lid < 0.97) { y.fillStyle = 'rgba(70,40,25,.55)'; y.fillRect(0, lidY - 1.6, L.width, 1.8); }  // the lash edge
-  if (ch > 0) { y.fillStyle = `rgb(${e.cheek})`; y.fillRect(0, cheekY, L.width, L.height); }
+  const lid = clamp(side ? st.lidR : st.lidL, -1, 1), happy = clamp(st.happy + (side ? st.wink : 0)), shut = lid + (1 - lid) * happy;
+  // the lid edge: the drawn line, sliding up to the socket's top or down past its bottom, flattening as it goes
+  const mid = (so.sx0 + so.sx1) / 2, rest = so.edgeA + so.edgeB * mid;
+  const edgeMid = shut >= 0 ? rest + shut * (so.sy1 + 3 - rest) : rest + shut * (rest - (so.sy0 - 3));
+  const slope = so.edgeB * (1 - Math.abs(shut));
+  const ey = X => edgeMid + slope * (X - mid) + 2.5 * (1 - Math.abs(shut)) * (1 - ((X - mid) / ((so.sx1 - so.sx0) / 2)) ** 2);
+  // a happy closed eye is skin, not the heavy brown lid
+  const hk = clamp(happy * 1.6), lc = e.lid.map((v, i) => Math.round(v + (RIG.skin[i] - v) * hk));
+  y.fillStyle = `rgb(${lc})`;
+  y.beginPath(); y.moveTo(0, 0); y.lineTo(w, 0);
+  for (let X = w; X >= 0; X -= 4) y.lineTo(X, ey(X + ox) - oy);
+  y.closePath(); y.fill();
+  if (shut > -0.95 && shut < 0.93) {               // the lash edge
+    y.strokeStyle = 'rgba(70,40,25,.7)'; y.lineWidth = 2;
+    y.beginPath(); for (let X = 0; X <= w; X += 4) y.lineTo(X, ey(X + ox) - oy); y.stroke();
+  }
+  const ch = clamp(st.cheek + 0.6 * happy);         // cheeks push up from below in a smile
+  if (ch > 0) {
+    const top = so.sy1 + 4 - ch * (so.sy1 - so.sy0) * 0.42;
+    y.fillStyle = `rgb(${RIG.skin})`;
+    y.beginPath(); y.moveTo(0, h); y.lineTo(0, top - oy + 6);
+    y.quadraticCurveTo(w / 2, top - oy - 8, w, top - oy + 6); y.lineTo(w, h); y.closePath(); y.fill();
+  }
+  y.globalCompositeOperation = 'destination-in';      // keep only what falls inside the socket grown by 2 px
+  y.drawImage(IMG['sock' + e.name + 'g'], -ox, -oy);
+  y.globalCompositeOperation = 'source-over';
   g.drawImage(L, ox, oy);
-  if (lid > 0.9) {                                   // the closed line
-    g.strokeStyle = 'rgba(70,40,25,.9)'; g.lineWidth = 3; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(e.x0 + 3, e.y0 + h * 0.62); g.quadraticCurveTo((e.x0 + e.x1) / 2, e.y0 + h * 0.78, e.x1 - 3, e.y0 + h * 0.6); g.stroke();
+  const cx = mid, cy = (so.sy0 + so.sy1) / 2 + 4, hw = (so.sx1 - so.sx0) * 0.36;
+  g.lineCap = 'round';
+  if (happy > 0.55) {                                // ^^ : the happy closed eye
+    g.strokeStyle = `rgba(55,32,20,${clamp((happy - 0.55) / 0.3)})`; g.lineWidth = 5;
+    g.beginPath(); g.moveTo(cx - hw, cy + 6); g.quadraticCurveTo(cx, cy - 14, cx + hw, cy + 6); g.stroke();
+  } else if (shut > 0.9) {                           // a blink's closed line
+    g.strokeStyle = 'rgba(55,32,20,.9)'; g.lineWidth = 3.5;
+    g.beginPath(); g.moveTo(cx - hw, cy + 2); g.quadraticCurveTo(cx, cy + 9, cx + hw, cy + 2); g.stroke();
   }
 }
-const lids = {};
-function lidCanvas(e) { if (!lids[e.name]) { const c = document.createElement('canvas'); c.width = e.x1 - e.x0 + 8; c.height = e.y1 - e.y0 + 8; lids[e.name] = c; } return lids[e.name]; }
 
-function drawMouth(g, o, cen, smile) {
-  const m = RIG.mouth, cx = (m.x0 + m.x1) / 2 + 1, top = m.top + 1;
-  const w = (m.x1 - m.x0) * (0.7 + 0.2 * cen + 0.16 * smile);
-  const d = T.mouth.rest + o * T.mouth.depth;
+// The mouth: corners lift for a smile and drop for a frown, one side can lift alone (a smirk),
+// it rounds into an "o", and the voice opens it.
+function drawMouth(g, st) {
+  const m = RIG.mouth, cx = (m.x0 + m.x1) / 2 + 1, top = m.top + 2;
+  const round = clamp(st.mRound);
+  const w = (m.x1 - m.x0) * clamp(0.78 + st.mW + 0.18 * st.cen * (1 - round), 0.42, 1.38) * (1 - 0.38 * round);
+  const curve = st.mCurve, asym = st.mAsym, open = Math.max(0, st.open);
   const x0 = cx - w / 2, x1 = cx + w / 2;
-  if (d < 6.5) {                                    // closed: a smiling line
-    g.strokeStyle = INK.lip; g.lineWidth = 5; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(x0 + 4, top + 2 - smile * 2); g.quadraticCurveTo(cx, top + 9 + smile * 5, x1 - 4, top + 2 - smile * 2); g.stroke();
+  const yL = top - curve + asym / 2, yR = top - curve - asym / 2;
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  if (open < 4.5 && round < 0.3) {                   // closed: one line that smiles, frowns or smirks
+    g.strokeStyle = INK.lip; g.lineWidth = 5.5;
+    g.beginPath(); g.moveTo(x0 + 3, yL); g.quadraticCurveTo(cx, top + curve * 0.55 + 1.5, x1 - 3, yR); g.stroke();
     return;
   }
-  const lift = 2 + smile * 3;                       // corners rise when he smiles
-  const path = () => { g.beginPath(); g.moveTo(x0, top - lift); g.quadraticCurveTo(cx, top + 2, x1, top - lift);
-    g.quadraticCurveTo(x1 + 1, top + d, cx, top + d); g.quadraticCurveTo(x0 - 1, top + d, x0, top - lift); g.closePath(); };
+  const bottom = Math.max(yL, yR) + open + Math.max(0, curve) * 0.45;
+  const upper = top + 1 - Math.max(0, curve) * 0.15 + Math.min(0, curve) * 0.5;
+  const path = () => {
+    g.beginPath();
+    if (round > 0.3) { g.ellipse(cx, top + open * 0.5 + 2, w / 2, Math.max(5, open * 0.55 + 3), 0, 0, 7); return; }
+    g.moveTo(x0, yL); g.quadraticCurveTo(cx, upper, x1, yR);
+    g.bezierCurveTo(x1 + 1, bottom * 0.6 + yR * 0.4, cx + w * 0.3, bottom, cx, bottom);
+    g.bezierCurveTo(cx - w * 0.3, bottom, x0 - 1, bottom * 0.6 + yL * 0.4, x0, yL); g.closePath();
+  };
   g.save(); path(); g.fillStyle = INK.mouth; g.fill(); g.clip();
-  const r = Math.min(d * 0.42, w * 0.24);
-  g.fillStyle = INK.tongue; g.beginPath(); g.ellipse(cx + 2, top + d - r * 0.55, r * 1.35, r, 0, 0, 7); g.fill();
-  g.fillStyle = INK.teeth; g.fillRect(x0, top - lift - 2, w, Math.min(8, 2 + d * 0.24) + lift);
+  const d = bottom - top, r = Math.min(d * 0.4, w * 0.24);
+  g.fillStyle = INK.tongue; g.beginPath(); g.ellipse(cx + 2, bottom - r * 0.45, r * 1.4, r, 0, 0, 7); g.fill();
+  if (round < 0.5) { g.fillStyle = INK.teeth; g.fillRect(x0 - 2, Math.min(yL, yR) - 3, w + 4, (upper - Math.min(yL, yR)) + 3 + Math.min(9, 2 + d * 0.22)); }
   g.restore();
-  g.save(); path(); g.strokeStyle = INK.lip; g.lineWidth = 2.5; g.stroke(); g.restore();
+  g.save(); path(); g.strokeStyle = INK.lip; g.lineWidth = 3; g.stroke(); g.restore();
+}
+
+function drawBlush(g, k) {
+  if (k <= 0.01) return;
+  for (const [x, y] of [[518, 374], [688, 390]]) {
+    const gr = g.createRadialGradient(x, y, 2, x, y, 24);
+    gr.addColorStop(0, `rgba(255,105,110,${0.5 * k})`); gr.addColorStop(1, 'rgba(255,105,110,0)');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, 26, 16, 0, 0, 7); g.fill();
+  }
 }
 
 function rot(g, px, py, deg) { g.translate(px, py); g.rotate(deg * Math.PI / 180); g.translate(-px, -py); }
 
 function state(t) {
   const A = ACT, env = aud(AUDIO.env, t), cen = aud(AUDIO.cen, t);
-  const s = {};
-  // talking: the jaw follows the voice, a little behind it so it reads as cause
-  const o = clamp(Math.pow(aud(AUDIO.env, t - 0.015), 0.85) * 1.05);
-  s.mouth = o; s.cen = cen;
-  s.smile = clamp(flow(t, A.smile));
+  // blend the emotions
+  const f = { lidL: 0, lidR: 0, happy: 0, bUpL: 0, bUpR: 0, bAngL: 0, bAngR: 0, mW: 0, mCurve: 3, mOpen: 0, mAsym: 0, mRound: 0,
+              blush: 0, tilt: 0, headDy: 0, lean: 0, sy: 0, lookX: 0, lookY: 0, pupil: 0 };
+  for (const [k, p] of Object.entries(EMO)) {
+    const w = clamp(flow(t, A.w[k]));
+    if (w <= 0) continue;
+    f.lidL += w * (p.lid?.[0] || 0); f.lidR += w * (p.lid?.[1] || 0); f.happy += w * (p.happy || 0);
+    f.bUpL += w * (p.bUp?.[0] || 0); f.bUpR += w * (p.bUp?.[1] || 0); f.bAngL += w * (p.bAng?.[0] || 0); f.bAngR += w * (p.bAng?.[1] || 0);
+    for (const q of ['mW', 'mCurve', 'mOpen', 'mAsym', 'mRound', 'blush', 'tilt', 'headDy', 'lean', 'sy', 'lookX', 'lookY', 'pupil']) f[q] += w * (p[q] || 0);
+  }
+  const s = { ...f, cen };
+  const laughW = clamp(flow(t, A.w.laugh));
+  // the voice opens the mouth on top of the emotion's resting shape; a laugh opens wider
+  const v = clamp(Math.pow(aud(AUDIO.env, t - 0.015), 0.85) * 1.05);
+  s.open = f.mOpen + v * (26 + 10 * laughW) * (1 - 0.35 * clamp(f.mRound));
 
-  // body: breathing, a hop, a lean, and the voice pushing it a little
+  // body: breathing, hops, a laugh shaking it ("ha-ha-ha"), the voice pushing it a little
   let lift = 0, sy = 1;
-  for (const h0 of A.hops) { const h = hop(t, h0, 22); lift += h.lift; sy *= h.sy; }
-  sy *= 1 + T.breath.amp * wave(t, T.breath.period) + 0.006 * env;
+  for (const h0 of A.hops) { const h = hop(t, h0, 24); lift += h.lift; sy *= h.sy; }
+  const ha = laughW * (0.5 - 0.5 * Math.cos(2 * Math.PI * t / 0.17));
+  sy *= 1 + T.breath.amp * wave(t, T.breath.period) + 0.006 * env + f.sy + 0.022 * ha;
+  lift += 3 * ha;
   s.lift = lift; s.sy = sy; s.sx = 1 / Math.pow(sy, 0.6);
-  s.lean = flow(t, A.lean) + 0.7 * wave(t, 4.9, 0.2);
+  s.lean = flow(t, A.lean) + f.lean + 0.7 * wave(t, 4.9, 0.2) + laughW * 1.2 * wave(t, 0.34);
 
-  // head: idle tilt + nods on stressed words + acted tilts + shakes; it rights itself after the body leans
-  let tilt = T.headIdle[0] * wave(t, T.headIdle[1]) + T.headIdle[2] * wave(t, T.headIdle[3], 0.4) + flow(t, A.tilt);
-  let dy = 0;
+  let tilt = T.headIdle[0] * wave(t, T.headIdle[1]) + T.headIdle[2] * wave(t, T.headIdle[3], 0.4) + f.tilt;
+  let dy = f.headDy - 2 * ha;
   WORDS.forEach((sg, si) => sg.words.forEach((w, wi) => {
     if (w.e - w.s < 0.16) return;
     const k = 0.55 + 0.45 * aud(AUDIO.env, w.s + 0.06);
@@ -243,34 +333,37 @@ function state(t) {
     tilt += pulse(t, w.s, T.nod.tilt * k * (seeded(si * 31 + wi) > 0.5 ? 1 : -1), 0.12, 0.4);
   }));
   for (const [a, b, p, amp] of A.shakes) tilt += accent(t, a, b, p, amp);
+  tilt += laughW * 2.5 * wave(t, 0.34, 0.25);
   tilt -= 0.45 * flow(t - 0.11, A.lean);
   s.tilt = tilt; s.headDy = dy;
 
-  // arm: key pose + idle + taps + accents; the forearm trails the shoulder by 90 ms
   const ua = t => flow(t, A.ua) + T.armIdle.ua * wave(t, 3.1) + 1.2 * wave(t, 1.9, 0.3);
   let fa = flow(t, A.fa) + T.armIdle.fa * wave(t, 2.3, 0.6) + 0.45 * (ua(t - 0.09) - ua(t));
   for (const x of A.taps) fa += pulse(t, x - 0.04, T.tap, 0.09, 0.3);
   for (const [a, b, p, amp] of A.waves) fa += accent(t, a, b, p, amp);
-  // the strike: wind up, swing through at full speed, follow through, come back
   const sl = t - A.slash;
   if (sl > -0.3 && sl < 0.75) fa += flow(sl, [[-0.3, 0], [-0.05, 22], [0.12, -30], [0.32, -34], [0.75, 0]]);
   s.ua = ua(t); s.fa = fa;
 
-  // face
   let blink = 0;
   for (const b of A.blinks) {
     const x = t - b, B = T.blink;
     if (x < 0 || x > B.close + B.hold + B.open) continue;
     blink = Math.max(blink, x < B.close ? EASE_IO(x / B.close) : x < B.close + B.hold ? 1 : 1 - EASE_OUT((x - B.close - B.hold) / B.open));
   }
-  s.lid = Math.max(flow(t, A.lid), blink);
-  s.cheek = flow(t, A.cheek) * (1 - blink);
-  s.lookX = flow(t, A.lookX) + 1.2 * wave(t, 5.3, 0.1);
-  s.lookY = flow(t, A.lookY) + 0.8 * wave(t, 4.1, 0.5);
-  let up = flow(t, A.browUp);
-  for (const x of A.thoughts) up += pulse(t, x - 0.05, -5, 0.14, 0.5);
-  up += -2.2 * clamp(env - 0.55, 0, 1);              // loud syllables lift the brows a touch
-  s.browUp = up; s.browKnit = flow(t, A.browKnit); s.browSly = flow(t, A.browSly);
+  // the wink: the right eye shuts and the cheek rises under it, the smirk deepens
+  const wk = t - A.wink, wink = wk < 0 || wk > 0.62 ? 0 : wk < 0.12 ? EASE_IO(wk / 0.12) : wk < 0.4 ? 1 : 1 - EASE_OUT((wk - 0.4) / 0.22);
+  s.lidL = f.lidL + (1 - f.lidL) * blink;
+  s.lidR = f.lidR + (1 - f.lidR) * blink;
+  s.wink = wink;
+  s.mAsym += 8 * wink; s.mCurve += 3 * wink; s.bUpL -= 5 * wink;
+  s.cheek = 0.25 * clamp(f.mCurve / 15);
+  s.lookX = f.lookX + flow(t, A.lookX) + 1.2 * wave(t, 5.3, 0.1);
+  s.lookY = f.lookY + flow(t, A.lookY) + 0.8 * wave(t, 4.1, 0.5);
+  let up = 0;
+  for (const x of A.thoughts) up += pulse(t, x - 0.05, -4, 0.14, 0.5);
+  up += -2.5 * clamp(env - 0.55, 0, 1) + laughW * 2 * wave(t, 0.34, 0.6);
+  s.bUpL += up; s.bUpR += up;
   s.zoom = 1 + flow(t, A.zoom);
   return s;
 }
@@ -279,11 +372,9 @@ function render(t) {
   const s = state(t);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#FBEDE0'; ctx.fillRect(0, 0, 1080, 1920);
-  // world -> canvas, with the secret push-in centred on the face
   const z = s.zoom, fx = 600, fy = 380;
   ctx.setTransform(T.S * z, 0, 0, T.S * z, T.OX + fx * T.S * (1 - z), T.OY + fy * T.S * (1 - z));
   const [FX, FY] = T.feet;
-  // shadow on the floor: shrinks as he leaves it
   ctx.save(); const k = 1 - s.lift / 220; ctx.translate(FX + 18, 914); ctx.scale(k * s.sx, 1); ctx.translate(-FX - 18, -914);
   ctx.drawImage(IMG.shadow, 0, 0); ctx.restore();
 
@@ -291,32 +382,30 @@ function render(t) {
   ctx.translate(0, -s.lift);
   ctx.translate(FX, FY); ctx.rotate(s.lean * Math.PI / 180); ctx.scale(s.sx, s.sy); ctx.translate(-FX, -FY);
   ctx.drawImage(IMG.body, 0, 0);
-  // the book's new title
   ctx.save(); ctx.translate(RIG.book.cx - 22, RIG.book.cy - 4); ctx.rotate(0.115);
   ctx.fillStyle = '#fff'; ctx.font = '800 36px Baloo'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
   ctx.fillText('قدرات', 0, 0); ctx.restore();
-  // arm: forearm (with hand and pointer) hangs off the elbow, the sleeve covers the joint
   ctx.save();
   rot(ctx, RIG.upperarm.px, RIG.upperarm.py, s.ua);
   ctx.save(); rot(ctx, RIG.forearm.px, RIG.forearm.py, s.fa); ctx.drawImage(IMG.forearm, 0, 0); ctx.restore();
   ctx.drawImage(IMG.upperarm, 0, 0);
   ctx.restore();
-  // head and the live face
   ctx.save();
   ctx.translate(0, s.headDy);
   rot(ctx, RIG.head.px, RIG.head.py, s.tilt);
   ctx.drawImage(IMG.head, 0, 0);
-  for (const e of RIG.eyes) drawEye(ctx, e, s);
+  drawBlush(ctx, clamp(s.blush));
+  RIG.eyes.forEach((e, i) => drawEye(ctx, e, SOCK[e.name], s, i));
   for (const b of RIG.brows) {
     ctx.save();
-    const side = b.name === 'L' ? 1 : -1;            // L is on the viewer's left; its inner end is on the right
-    const knit = s.browKnit * side, sly = b.name === 'R' ? -9 * s.browSly : 3 * s.browSly;
-    ctx.translate(0, s.browUp + sly);
-    rot(ctx, b.cx, b.cy, knit);
+    const L = b.name === 'L';
+    // L sits on the viewer's left, so its inner end is on the right: + rotation lowers it
+    ctx.translate(0, L ? s.bUpL : s.bUpR);
+    rot(ctx, b.cx, b.cy, L ? s.bAngL : -s.bAngR);
     ctx.drawImage(IMG['brow' + b.name], 0, 0);
     ctx.restore();
   }
-  drawMouth(ctx, s.mouth, s.cen, s.smile);
+  drawMouth(ctx, s);
   ctx.restore();
   ctx.restore();
 
@@ -366,8 +455,8 @@ function drawBubble(t) {
 // ---------- boot
 async function load() {
   const j = u => fetch(u).then(r => r.json());
-  [RIG, WORDS, AUDIO] = await Promise.all([j('layers/rig.json'), j('words_fixed.json'), j('audio.json')]);
-  const names = ['body', 'head', 'forearm', 'upperarm', 'shadow', 'browL', 'browR', 'eyeL', 'eyeR', 'eyeLg', 'eyeRg'];
+  [RIG, WORDS, AUDIO, SOCK] = await Promise.all([j('layers/rig.json'), j('words_fixed.json'), j('audio.json'), j('layers/sockets.json')]);
+  const names = ['body', 'head', 'forearm', 'upperarm', 'shadow', 'browL', 'browR', 'sockL', 'sockR', 'sockLg', 'sockRg'];
   await Promise.all(names.map(n => new Promise(res => { const im = new Image(); im.onload = res; im.src = `layers/${n}.png`; IMG[n] = im; })));
   await document.fonts.load(`800 66px Baloo`, 'قدرات'); await document.fonts.ready;
   ACT = buildActing(); buildChunks();

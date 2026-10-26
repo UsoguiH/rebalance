@@ -117,9 +117,11 @@
 ### The owner's rules
 - 2026-10-26: "make it as if it really goes with the speech and reacts to it, moves, and does moves like Duolingo animation." So this character is allowed hops, squash and a little overshoot on landings, beyond the skill's calm default.
 - The book reads «قدرات», never EGYPT.
+- 2026-10-26: "he doesn't laugh, he doesn't react … make him a real character." Every line gets an emotion, he reacts in the pauses (a straight face, then he cracks up; waits for an answer; composes himself), and the face carries most of the acting.
 
 ### Rig limits
-- The face is one flat drawing: no head turn (yaw); expression is lids, pupils, cheek squint, brows and mouth only.
+- The face is one flat drawing: no head turn (yaw). Expression comes from the eyes (the whole socket is redrawn, so lids open wider than drawn, close, squint, wink and fold into happy ^^ arcs; `tools/eye_sockets.py`), the brows (lift and angle each), the mouth (width, corner lift, smirk, "o", open) and blush.
+- Emotions are presets in `EMO` (index.html), blended by weight along `A.mood`. His drawn eyes are already heavy-lidded, so closing values stay small (0.1–0.3); 0.5 reads as nearly shut.
 - The book arm and the legs are part of the body layer and never move on their own.
 - Raising the upper arm more than about 8° shows the vest's edge under the sleeve.
 - Pupils are clipped to the eye whites; glances past about 7 px vanish into the lid.
