@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>قدّور يتكلم</title>
+<style>
+  @font-face { font-family: 'Baloo'; src: url(fonts/baloo-ar.woff2) format('woff2'); font-weight: 400 800; unicode-range: U+0600-06FF, U+0750-077F, U+FB50-FDFF, U+FE70-FEFF; }
+  @font-face { font-family: 'Baloo'; src: url(fonts/baloo-lat.woff2) format('woff2'); font-weight: 400 800; }
+  html, body { margin: 0; background: #FBEDE0; }
+  canvas { display: block; width: 100vw; max-width: calc(100vh * 9 / 16); margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<audio id="voice" src="voice.wav" preload="auto"></audio>
+<script>
+// قدّور talks. One clock (t, in seconds) drives every channel; render(t) is pure, so the
+// same function plays live and renders the video frame by frame.
+// Method: rossark-motion-skill — flow() for poses, idle waves that never stop,
+// follow-through by delay, blinks that close fast and open slow, nothing teleports.
+
+// ---------- tokens: every number to tune lives here
+const T = {
+  S: 1.48, OX: -229.6, OY: 425.4,           // source pixels -> 1080x1920 canvas
+  feet: [522, 922],
+  breath: { amp: 0.012, period: 2.6 },
+  headIdle: [1.6, 4.7, 0.8, 2.9],           // deg, s, deg, s
+  nod: { dy: 4.5, tilt: 1.3 },
+  armIdle: { ua: 2.2, fa: 3.2 },
+  tap: -11,                                  // forearm flick on a stressed word, deg
+  mouth: { depth: 30, rest: 3 },
+  blink: { close: 0.11, hold: 0.04, open: 0.19 },
+  bubble: { x: 70, y: 96, w: 940, pad: 46, line: 92, font: 66, r: 44 },
+};
+const INK = { dark: '#4B4B4B', future: '#C2C2C2', now: '#58CC02', num: '#1CB0F6', warn: '#FF4B4B',
+              mouth: '#7A1E2A', tongue: '#E2525D', teeth: '#FFFFFF', lip: '#6B1D24', pupil: '#17120F' };
+
+// ---------- the engine (ported from the skill's motion.ts)
+const bez = (x1, y1, x2, y2) => p => {           // cubic-bezier easing, solved by bisection
+  if (p <= 0) return 0; if (p >= 1) return 1;
+  let a = 0, b = 1, s = p;
+  for (let i = 0; i < 22; i++) { s = (a + b) / 2; const x = 3*(1-s)*(1-s)*s*x1 + 3*(1-s)*s*s*x2 + s*s*s; if (x < p) a = s; else b = s; }
+  return 3*(1-s)*(1-s)*s*y1 + 3*(1-s)*s*s*y2 + s*s*s;
+};
+const EASE_IO = bez(0.77, 0, 0.175, 1), EASE_OUT = bez(0.23, 1, 0.32, 1);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const wave = (t, period, phase = 0) => Math.sin((t / period + phase) * Math.PI * 2);
+const seg = (t, a, b, curve = EASE_OUT) => t <= a ? 0 : t >= b ? 1 : curve((t - a) / (b - a));
+function seeded(i, salt = 0) { const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return x - Math.floor(x); }
+function flow(t, k) {                            // passes through every key, never stops, never overshoots
+  const n = k.length; if (!n) return 0;
+  if (t <= k[0][0]) return k[0][1]; if (t >= k[n-1][0]) return k[n-1][1];
+  let i = 0; while (k[i+1][0] < t) i++;
+  const slope = j => (k[j+1][1] - k[j][1]) / (k[j+1][0] - k[j][0]);
+  const tan = j => { if (j === 0 || j === n-1) return 0; const a = slope(j-1), b = slope(j); if (a*b <= 0) return 0;
+    const h0 = k[j][0]-k[j-1][0], h1 = k[j+1][0]-k[j][0], w0 = 2*h1+h0, w1 = h1+2*h0; return (w0+w1)/(w0/a+w1/b); };
+  const h = k[i+1][0]-k[i][0], s = (t-k[i][0])/h, s2 = s*s, s3 = s2*s;
+  return (2*s3-3*s2+1)*k[i][1] + (s3-2*s2+s)*h*tan(i) + (-2*s3+3*s2)*k[i+1][1] + (s3-s2)*h*tan(i+1);
+}
+// a beat: rises with ease-out, settles with ease-in-out, back to 0
+const pulse = (t, t0, amp, a = 0.12, d = 0.38) => t < t0 || t > t0 + a + d ? 0
+  : t < t0 + a ? amp * EASE_OUT((t - t0) / a) : amp * (1 - EASE_IO((t - t0 - a) / d));
+// an accent: a wave switched on inside a window, faded in and out
+const accent = (t, a, b, period, amp, phase = 0) => t < a || t > b ? 0
+  : amp * wave(t - a, period, phase) * Math.min(seg(t, a, a + 0.18, EASE_IO), 1 - seg(t, b - 0.22, b, EASE_IO));
+// a pose held between keys: [t, v] pairs that ease in, hold, ease out
+const hold = (a, b, v, ramp = 0.3) => [[a - ramp, 0], [a, v], [b, v], [b + ramp, 0]];
+const keys = (...groups) => { const k = [[-1, 0]]; groups.flat().sort((p, q) => p[0] - q[0]).forEach(p => k.push(p)); k.push([999, 0]); return k; };
+// a hop: crouch, a parabola up, squash on landing, settle
+function hop(t, t0, h) {
+  const c = 0.12, air = 0.32, land = 0.2, x = t - t0;
+  if (x < 0 || x > c + air + land) return { lift: 0, sy: 1 };
+  if (x < c) return { lift: 0, sy: 1 - 0.07 * EASE_OUT(x / c) };
+  if (x < c + air) { const p = (x - c) / air; return { lift: h * 4 * p * (1 - p), sy: 1 + 0.06 * Math.sin(Math.PI * p) * (p < 0.5 ? 1 : 0.3) }; }
+  const p = (x - c - air) / land; return { lift: 0, sy: 1 - 0.1 * Math.sin(Math.PI * p) * (1 - p * 0.6) };
+}
+
+// ---------- data
+let RIG, WORDS, AUDIO, IMG = {}, CHUNKS = [], ACT = {};
+const SEGS = () => WORDS;
+const W = (s, i) => WORDS[s].words[i].s;          // when word i of segment s starts
+const WE = (s, i) => WORDS[s].words[i].e;
+const SEG = s => [WORDS[s].words[0].s, WORDS[s].words.at(-1).e];
+function aud(arr, t) { const i = t / AUDIO.hop, j = Math.floor(i); if (j < 0) return 0; if (j >= arr.length - 1) return arr.at(-1) || 0; return arr[j] + (arr[j+1] - arr[j]) * (i - j); }
+
+function buildActing() {
+  const A = {};
+  const [s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15] = WORDS.map((_, i) => SEG(i));
+  // stressed words get a forearm tap and a head nod
+  const taps = [[1,0],[1,2],[1,16],[3,3],[3,4],[3,7],[3,8],[7,4],[7,5],[8,1],[8,6],[12,0],[12,2],[14,1],[14,9],[15,1],[15,3],[15,5]];
+  A.taps = taps.map(([s, i]) => W(s, i));
+  const NUM = new Set(['ثلاث','ثلاثة','تفاحتين','ونص','عشر','خمسين','أضعاف','المية']);
+  const WARN = new Set(['وإياك','إياك','فاضي','أبدا','المستحيلة','واشطب']);
+  A.wordInk = w => NUM.has(w) ? INK.num : WARN.has(w) ? INK.warn : INK.now;
+
+  // upper arm (shoulder) and forearm (elbow): key poses, in degrees, clockwise lifts the pointer
+  A.ua = keys(hold(s0[0] + 0.1, s0[1], 8), hold(s2[0], s2[1] + 0.2, 6), hold(s4[0], s4[1], -9),
+              hold(s6[0], s6[1], 6), hold(s10[0], s10[1], -7), hold(s15[0], W(15, 2) + 0.4, 9), hold(W(15, 6), 60, 14, 0.25));
+  A.fa = keys(hold(s0[0] + 0.1, s0[1], 6), hold(s2[0], s2[1] + 0.2, 20), hold(s4[0], s4[1], -14),
+              hold(s6[0], s6[1], 14), hold(s9[0], s9[1], -12), hold(s10[0], s10[1], -24),
+              hold(W(15, 0), W(15, 2) + 0.4, 30), hold(W(15, 6), 60, 26, 0.25));
+  A.waves = [ [s0[0] + 0.15, s0[1] - 0.05, 0.62, 13],          // hello: the pointer waves
+              [s5[0], s5[1], 0.5, 9],                           // joking: a loose dismissive wave
+              [W(13, 0), WE(13, 2), 0.42, 11], [W(13, 3), s13[1], 0.42, 8] ]; // "إياك ثم إياك": wagging
+  A.slash = W(12, 3);                                            // "واشطب": one strike through
+
+  // head: tilt in degrees and nods; questions tilt and hold, "no" shakes
+  A.tilt = keys(hold(s4[0] + 0.2, s4[1] + 0.25, 6), hold(s9[0] + 0.2, s9[1] + 0.25, 5),
+                hold(s10[0], s10[1], -5), hold(W(15, 6), 60, 3, 0.3));
+  A.shakes = [ [s5[0], WE(5, 1) + 0.1, 0.36, 4.5],              // laughing "أمزح أمزح"
+               [W(11, 0), WE(11, 1) + 0.15, 0.44, 5],            // "لا تغرق"
+               [W(14, 6), s14[1] + 0.1, 0.44, 4.5] ];            // "ما نبي نشوفه أبدا"
+  A.lean = keys(hold(s6[0], s6[1], 1.4), hold(s10[0], s10[1], -2.2), hold(s13[0], s13[1], 1.6));
+  A.zoom = keys(hold(s10[0] - 0.1, s10[1] + 0.2, 0.07, 0.45));   // leaning in for the secret
+  A.hops = [W(5, 0) + 0.02, W(5, 1) + 0.02, W(15, 7)];
+
+  // eyes: glances (source px), lids and squints
+  A.lookX = keys(hold(s2[0], s2[1] + 0.2, -6), hold(s10[0] + 0.1, W(10, 2), -7), hold(W(10, 2) + 0.25, s10[1] + 0.1, 6),
+                 hold(W(12, 3), W(12, 4) + 0.2, -2));
+  A.lookY = keys(hold(s2[0], s2[1] + 0.2, -5), hold(W(12, 3), W(12, 4) + 0.2, 5), hold(s4[0] + 0.2, s4[1], -3));
+  A.lid = keys(hold(s10[0], s10[1], 0.34), hold(s13[0], s13[1], 0.14));
+  A.cheek = keys(hold(s5[0], s5[1] + 0.2, 0.42), hold(W(15, 6), 60, 0.4));
+  A.smile = keys(hold(s5[0], s5[1] + 0.3, 1), hold(s0[0], s0[1], 0.6), hold(W(15, 6), 60, 1));
+
+  // brows: raise at every new thought, hold up on questions, knit for the warning, one up for the secret
+  A.browUp = keys(hold(s4[0], s4[1] + 0.2, -9), hold(s9[0], s9[1] + 0.2, -8), hold(s5[0], s5[1], -5),
+                  hold(s13[0], s13[1], 3), hold(W(15, 6), 60, -6));
+  A.browKnit = keys(hold(s13[0], s13[1], 8));
+  A.browSly = keys(hold(s10[0], s10[1], 1));
+  A.thoughts = WORDS.map(s => s.words[0].s);
+
+  // blinks: every 2.6–4.2 s, plus one on each big head turn
+  const bl = []; let t = 1.1, i = 0;
+  while (t < 54) { bl.push(t); t += 2.6 + seeded(i++, 3) * 1.6; }
+  [s4[0] + 0.15, s5[0], s9[0] + 0.15, s10[0] + 0.05, s15[0]].forEach(x => bl.push(x));
+  bl.sort((a, b) => a - b);
+  A.blinks = bl.filter((x, j) => j === 0 || x - bl[j - 1] > 0.9);
+  A.blinks.push(W(10, 2) + 0.1);                      // double take in the secret
+  return A;
+}
+
+function buildChunks() {
+  const ctx = document.getElementById('c').getContext('2d');
+  ctx.font = `800 ${T.bubble.font}px Baloo`;
+  WORDS.forEach((s, si) => {
+    const w = s.words, n = Math.ceil(w.length / 6), per = Math.ceil(w.length / n);
+    for (let k = 0; k < w.length; k += per) {
+      const words = w.slice(k, k + per).map(x => ({ ...x, width: ctx.measureText(x.w).width }));
+      // lay out right to left, breaking into lines that fit the bubble
+      const maxW = T.bubble.w - 2 * T.bubble.pad, space = ctx.measureText(' ').width + 6, lines = [[]];
+      let lw = 0;
+      for (const x of words) { if (lw && lw + space + x.width > maxW) { lines.push([]); lw = 0; } lines.at(-1).push(x); lw += (lw ? space : 0) + x.width; }
+      CHUNKS.push({ seg: si, start: words[0].s, end: words.at(-1).e, lines, space });
+    }
+  });
+}
+
+// ---------- drawing
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const off = {};                                    // small canvases for the clipped eye parts
+function eyeCanvas(e) {
+  if (!off[e.name]) { const c = document.createElement('canvas'); c.width = e.x1 - e.x0 + 8; c.height = e.y1 - e.y0 + 8; off[e.name] = c; }
+  return off[e.name];
+}
+
+function drawEye(g, e, st) {
+  const c = eyeCanvas(e), x = c.getContext('2d'), ox = e.x0 - 4, oy = e.y0 - 4, h = e.y1 - e.y0 + 4;
+  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height);
+  x.globalCompositeOperation = 'source-over';
+  x.drawImage(IMG['eye' + e.name], -ox, -oy);      // the white, exact shape
+  x.globalCompositeOperation = 'source-atop';
+  const px = e.px + st.lookX - ox, py = e.py + st.lookY - oy;
+  x.fillStyle = INK.pupil; x.beginPath(); x.arc(px, py, e.pr, 0, 7); x.fill();
+  x.fillStyle = '#fff'; x.beginPath(); x.arc(px - e.pr * 0.35, py - e.pr * 0.38, e.pr * 0.26, 0, 7); x.fill();
+  // lids and cheek: skin over the white, clipped to the 2px larger shape
+  x.globalCompositeOperation = 'source-over';
+  g.drawImage(c, ox, oy);
+  const L = lidCanvas(e), y = L.getContext('2d');
+  y.setTransform(1, 0, 0, 1, 0, 0); y.clearRect(0, 0, L.width, L.height);
+  y.globalCompositeOperation = 'source-over';
+  y.drawImage(IMG['eye' + e.name + 'g'], -ox, -oy);
+  y.globalCompositeOperation = 'source-in';
+  const lid = clamp(st.lid), ch = clamp(st.cheek);
+  const lidY = 1 + lid * (h * 1.02), cheekY = h + 4 - ch * h;
+  y.fillStyle = `rgb(${e.lid})`; y.fillRect(0, 0, L.width, lidY);
+  if (lid > 0.04 && lid < 0.97) { y.fillStyle = 'rgba(70,40,25,.55)'; y.fillRect(0, lidY - 1.6, L.width, 1.8); }  // the lash edge
+  if (ch > 0) { y.fillStyle = `rgb(${e.cheek})`; y.fillRect(0, cheekY, L.width, L.height); }
+  g.drawImage(L, ox, oy);
+  if (lid > 0.9) {                                   // the closed line
+    g.strokeStyle = 'rgba(70,40,25,.9)'; g.lineWidth = 3; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(e.x0 + 3, e.y0 + h * 0.62); g.quadraticCurveTo((e.x0 + e.x1) / 2, e.y0 + h * 0.78, e.x1 - 3, e.y0 + h * 0.6); g.stroke();
+  }
+}
+const lids = {};
+function lidCanvas(e) { if (!lids[e.name]) { const c = document.createElement('canvas'); c.width = e.x1 - e.x0 + 8; c.height = e.y1 - e.y0 + 8; lids[e.name] = c; } return lids[e.name]; }
+
+function drawMouth(g, o, cen, smile) {
+  const m = RIG.mouth, cx = (m.x0 + m.x1) / 2 + 1, top = m.top + 1;
+  const w = (m.x1 - m.x0) * (0.7 + 0.2 * cen + 0.16 * smile);
+  const d = T.mouth.rest + o * T.mouth.depth;
+  const x0 = cx - w / 2, x1 = cx + w / 2;
+  if (d < 6.5) {                                    // closed: a smiling line
+    g.strokeStyle = INK.lip; g.lineWidth = 5; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x0 + 4, top + 2 - smile * 2); g.quadraticCurveTo(cx, top + 9 + smile * 5, x1 - 4, top + 2 - smile * 2); g.stroke();
+    return;
+  }
+  const lift = 2 + smile * 3;                       // corners rise when he smiles
+  const path = () => { g.beginPath(); g.moveTo(x0, top - lift); g.quadraticCurveTo(cx, top + 2, x1, top - lift);
+    g.quadraticCurveTo(x1 + 1, top + d, cx, top + d); g.quadraticCurveTo(x0 - 1, top + d, x0, top - lift); g.closePath(); };
+  g.save(); path(); g.fillStyle = INK.mouth; g.fill(); g.clip();
+  const r = Math.min(d * 0.42, w * 0.24);
+  g.fillStyle = INK.tongue; g.beginPath(); g.ellipse(cx + 2, top + d - r * 0.55, r * 1.35, r, 0, 0, 7); g.fill();
+  g.fillStyle = INK.teeth; g.fillRect(x0, top - lift - 2, w, Math.min(8, 2 + d * 0.24) + lift);
+  g.restore();
+  g.save(); path(); g.strokeStyle = INK.lip; g.lineWidth = 2.5; g.stroke(); g.restore();
+}
+
+function rot(g, px, py, deg) { g.translate(px, py); g.rotate(deg * Math.PI / 180); g.translate(-px, -py); }
+
+function state(t) {
+  const A = ACT, env = aud(AUDIO.env, t), cen = aud(AUDIO.cen, t);
+  const s = {};
+  // talking: the jaw follows the voice, a little behind it so it reads as cause
+  const o = clamp(Math.pow(aud(AUDIO.env, t - 0.015), 0.85) * 1.05);
+  s.mouth = o; s.cen = cen;
+  s.smile = clamp(flow(t, A.smile));
+
+  // body: breathing, a hop, a lean, and the voice pushing it a little
+  let lift = 0, sy = 1;
+  for (const h0 of A.hops) { const h = hop(t, h0, 22); lift += h.lift; sy *= h.sy; }
+  sy *= 1 + T.breath.amp * wave(t, T.breath.period) + 0.006 * env;
+  s.lift = lift; s.sy = sy; s.sx = 1 / Math.pow(sy, 0.6);
+  s.lean = flow(t, A.lean) + 0.7 * wave(t, 4.9, 0.2);
+
+  // head: idle tilt + nods on stressed words + acted tilts + shakes; it rights itself after the body leans
+  let tilt = T.headIdle[0] * wave(t, T.headIdle[1]) + T.headIdle[2] * wave(t, T.headIdle[3], 0.4) + flow(t, A.tilt);
+  let dy = 0;
+  WORDS.forEach((sg, si) => sg.words.forEach((w, wi) => {
+    if (w.e - w.s < 0.16) return;
+    const k = 0.55 + 0.45 * aud(AUDIO.env, w.s + 0.06);
+    dy += pulse(t, w.s, T.nod.dy * k, 0.1, 0.32);
+    tilt += pulse(t, w.s, T.nod.tilt * k * (seeded(si * 31 + wi) > 0.5 ? 1 : -1), 0.12, 0.4);
+  }));
+  for (const [a, b, p, amp] of A.shakes) tilt += accent(t, a, b, p, amp);
+  tilt -= 0.45 * flow(t - 0.11, A.lean);
+  s.tilt = tilt; s.headDy = dy;
+
+  // arm: key pose + idle + taps + accents; the forearm trails the shoulder by 90 ms
+  const ua = t => flow(t, A.ua) + T.armIdle.ua * wave(t, 3.1) + 1.2 * wave(t, 1.9, 0.3);
+  let fa = flow(t, A.fa) + T.armIdle.fa * wave(t, 2.3, 0.6) + 0.45 * (ua(t - 0.09) - ua(t));
+  for (const x of A.taps) fa += pulse(t, x - 0.04, T.tap, 0.09, 0.3);
+  for (const [a, b, p, amp] of A.waves) fa += accent(t, a, b, p, amp);
+  // the strike: wind up, swing through at full speed, follow through, come back
+  const sl = t - A.slash;
+  if (sl > -0.3 && sl < 0.75) fa += flow(sl, [[-0.3, 0], [-0.05, 22], [0.12, -30], [0.32, -34], [0.75, 0]]);
+  s.ua = ua(t); s.fa = fa;
+
+  // face
+  let blink = 0;
+  for (const b of A.blinks) {
+    const x = t - b, B = T.blink;
+    if (x < 0 || x > B.close + B.hold + B.open) continue;
+    blink = Math.max(blink, x < B.close ? EASE_IO(x / B.close) : x < B.close + B.hold ? 1 : 1 - EASE_OUT((x - B.close - B.hold) / B.open));
+  }
+  s.lid = Math.max(flow(t, A.lid), blink);
+  s.cheek = flow(t, A.cheek) * (1 - blink);
+  s.lookX = flow(t, A.lookX) + 1.2 * wave(t, 5.3, 0.1);
+  s.lookY = flow(t, A.lookY) + 0.8 * wave(t, 4.1, 0.5);
+  let up = flow(t, A.browUp);
+  for (const x of A.thoughts) up += pulse(t, x - 0.05, -5, 0.14, 0.5);
+  up += -2.2 * clamp(env - 0.55, 0, 1);              // loud syllables lift the brows a touch
+  s.browUp = up; s.browKnit = flow(t, A.browKnit); s.browSly = flow(t, A.browSly);
+  s.zoom = 1 + flow(t, A.zoom);
+  return s;
+}
+
+function render(t) {
+  const s = state(t);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#FBEDE0'; ctx.fillRect(0, 0, 1080, 1920);
+  // world -> canvas, with the secret push-in centred on the face
+  const z = s.zoom, fx = 600, fy = 380;
+  ctx.setTransform(T.S * z, 0, 0, T.S * z, T.OX + fx * T.S * (1 - z), T.OY + fy * T.S * (1 - z));
+  const [FX, FY] = T.feet;
+  // shadow on the floor: shrinks as he leaves it
+  ctx.save(); const k = 1 - s.lift / 220; ctx.translate(FX + 18, 914); ctx.scale(k * s.sx, 1); ctx.translate(-FX - 18, -914);
+  ctx.drawImage(IMG.shadow, 0, 0); ctx.restore();
+
+  ctx.save();
+  ctx.translate(0, -s.lift);
+  ctx.translate(FX, FY); ctx.rotate(s.lean * Math.PI / 180); ctx.scale(s.sx, s.sy); ctx.translate(-FX, -FY);
+  ctx.drawImage(IMG.body, 0, 0);
+  // the book's new title
+  ctx.save(); ctx.translate(RIG.book.cx - 22, RIG.book.cy - 4); ctx.rotate(0.115);
+  ctx.fillStyle = '#fff'; ctx.font = '800 36px Baloo'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+  ctx.fillText('قدرات', 0, 0); ctx.restore();
+  // arm: forearm (with hand and pointer) hangs off the elbow, the sleeve covers the joint
+  ctx.save();
+  rot(ctx, RIG.upperarm.px, RIG.upperarm.py, s.ua);
+  ctx.save(); rot(ctx, RIG.forearm.px, RIG.forearm.py, s.fa); ctx.drawImage(IMG.forearm, 0, 0); ctx.restore();
+  ctx.drawImage(IMG.upperarm, 0, 0);
+  ctx.restore();
+  // head and the live face
+  ctx.save();
+  ctx.translate(0, s.headDy);
+  rot(ctx, RIG.head.px, RIG.head.py, s.tilt);
+  ctx.drawImage(IMG.head, 0, 0);
+  for (const e of RIG.eyes) drawEye(ctx, e, s);
+  for (const b of RIG.brows) {
+    ctx.save();
+    const side = b.name === 'L' ? 1 : -1;            // L is on the viewer's left; its inner end is on the right
+    const knit = s.browKnit * side, sly = b.name === 'R' ? -9 * s.browSly : 3 * s.browSly;
+    ctx.translate(0, s.browUp + sly);
+    rot(ctx, b.cx, b.cy, knit);
+    ctx.drawImage(IMG['brow' + b.name], 0, 0);
+    ctx.restore();
+  }
+  drawMouth(ctx, s.mouth, s.cen, s.smile);
+  ctx.restore();
+  ctx.restore();
+
+  drawBubble(t);
+}
+
+function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+function drawBubble(t) {
+  const B = T.bubble;
+  let ci = -1; for (let i = 0; i < CHUNKS.length; i++) if (t >= CHUNKS[i].start - 0.12) ci = i;
+  if (ci < 0) ci = 0;
+  const C = CHUNKS[ci];
+  const appear = seg(t, -0.05, 0.3);                 // the first bubble arrives
+  const pop = ci === 0 ? appear : seg(t, C.start - 0.12, C.start + 0.1);
+  const sc = 0.965 + 0.035 * pop;
+  const h = C.lines.length * B.line + 2 * B.pad - 8;
+  const cx = B.x + B.w / 2, tipX = 640, tipY = B.y + h + 52;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = appear;
+  ctx.translate(tipX, tipY); ctx.scale(sc, sc); ctx.translate(-tipX, -tipY);
+  // Duolingo bubble: white, a light border, a thicker bottom edge
+  ctx.fillStyle = '#E5E5E5'; rr(ctx, B.x - 4, B.y - 4, B.w + 8, h + 14, B.r + 4); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(tipX - 34, B.y + h - 2); ctx.lineTo(tipX + 6, tipY + 6); ctx.lineTo(tipX + 30, B.y + h - 2); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#fff'; rr(ctx, B.x, B.y, B.w, h, B.r); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(tipX - 26, B.y + h - 6); ctx.lineTo(tipX + 4, tipY - 4); ctx.lineTo(tipX + 22, B.y + h - 6); ctx.closePath(); ctx.fill();
+  // words: said ones dark, the one being said coloured and popping, the rest waiting in grey
+  ctx.font = `800 ${B.font}px Baloo`; ctx.textBaseline = 'middle'; ctx.direction = 'rtl'; ctx.textAlign = 'right';
+  const textIn = ci === 0 ? appear : seg(t, C.start - 0.12, C.start + 0.08);
+  C.lines.forEach((line, li) => {
+    const lw = line.reduce((a, x) => a + x.width, 0) + C.space * (line.length - 1);
+    let x = cx + lw / 2; const y = B.y + B.pad + li * B.line + B.line / 2 - 10;
+    for (const w of line) {
+      const said = t >= w.s, now = t >= w.s && t < w.e + 0.08;
+      const p = pulse(t, w.s - 0.02, 1, 0.1, 0.26);
+      ctx.save();
+      ctx.globalAlpha = appear * (0.35 + 0.65 * textIn);
+      ctx.translate(x - w.width / 2, y - 6 * p); ctx.scale(1 + 0.1 * p, 1 + 0.1 * p);
+      ctx.fillStyle = now ? ACT.wordInk(w.w) : said ? INK.dark : INK.future;
+      ctx.textAlign = 'center'; ctx.fillText(w.w, 0, 0);
+      ctx.restore();
+      x -= w.width + C.space;
+    }
+  });
+  ctx.globalAlpha = 1; ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+// ---------- boot
+async function load() {
+  const j = u => fetch(u).then(r => r.json());
+  [RIG, WORDS, AUDIO] = await Promise.all([j('layers/rig.json'), j('words_fixed.json'), j('audio.json')]);
+  const names = ['body', 'head', 'forearm', 'upperarm', 'shadow', 'browL', 'browR', 'eyeL', 'eyeR', 'eyeLg', 'eyeRg'];
+  await Promise.all(names.map(n => new Promise(res => { const im = new Image(); im.onload = res; im.src = `layers/${n}.png`; IMG[n] = im; })));
+  await document.fonts.load(`800 66px Baloo`, 'قدرات'); await document.fonts.ready;
+  ACT = buildActing(); buildChunks();
+  window.READY = true;
+  render(0);
+}
+window.render = render;
+load();
+// live playback: tap to play with the voice
+cv.addEventListener('click', () => {
+  const a = document.getElementById('voice'); a.currentTime = 0; a.play();
+  const tick = () => { render(a.currentTime); if (!a.paused) requestAnimationFrame(tick); }; tick();
+});
+</script>
+</body>
+</html>
