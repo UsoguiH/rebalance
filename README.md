@@ -158,7 +158,13 @@ any one replays them all):
   down (the floor line snaps out, waves skid along it, dust puffs, the neighbours bounce); a
   tilted «ترقية!» sticker lands with a «+1 مستوى» tag, and the students you passed (22 of a
   30-player league) count up in a big number.
-- `league/compare.html` plays the Duolingo recreation, spark and hype side by side.
+- `league/compare.html` plays the Duolingo recreation and the new (swinging) version side by
+  side, with buttons for each promotion.
+
+Every promotion can be played: `?tier=1` bronze to silver, `2` silver to gold, `3` gold to
+diamond (the default), `4` diamond to champion (there is no next league to show on the right).
+`league/tiers.js` holds each league's name, colours and shine shape (the pencil, the gem or the
+crown); `tools/lock-ranks.py` makes the grey and locked badges for all five.
 
 It plays with the Qudrati rank badges by default (silver, gold, then diamond unlocking, with
 champion locked next). Add `?set=books` for the book trophies from `league/src/books.jpg`.
@@ -170,7 +176,7 @@ champion locked next). Add `?set=books` for the book trophies from `league/src/b
 - `league/img/*.png`: the book trophies cut out of the source image. `green.png` is the red
   book recolored to emerald. Rebuild them with `python3 tools/cut-books.py`. Both tools need
   Pillow and numpy
-- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold|ink|spark|hype]` renders a
+- `node tools/render-league.js [out.mp4] [ranks|books] [new|classic|bold|ink|spark|hype] [tier 1-4]` renders a
   version to video with Playwright and ffmpeg. `league/league.mp4`, `league/league-classic.mp4`,
   `league/league-bold.mp4`, `league/league-ink.mp4`, `league/league-spark.mp4`,
   `league/league-hype.mp4` and `league/league-books.mp4` are renders, and

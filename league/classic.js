@@ -29,7 +29,6 @@
         after: ['ranks/rank-champion-locked', 158],
       },
       pad: 0, anchor: 0.88,
-      league: 'الألماسي',
       shine: {
         clip: 1, facet: [0.5, 0.4, 0.17, 0.13],
         glints: [[156, 168, 0.32, 0.3, 30], [162, 172, 0.52, 0.5, 26], [168, 178, 0.62, 0.24, 14]],
@@ -41,7 +40,7 @@
         prev: ['blue', 162], cur: ['red', 242], lock: ['locked', 164], open: ['green', 242], after: ['locked', 164],
       },
       pad: 6, anchor: 0.829,
-      league: 'الزمردي',
+      leagueName: 'المستوى الزمردي',
       shine: {
         clip: 650 / 1052, facet: [0.5, 330 / 1052, 120 / 774, 105 / 1052],
         glints: [[156, 168, 270 / 774, 240 / 1052, 30], [162, 172, 390 / 774, 330 / 1052, 26], [168, 178, 440 / 774, 200 / 1052, 14]],
@@ -54,6 +53,11 @@
   const ctx = canvas.getContext('2d');
   const params = new URLSearchParams(location.search);
   const fixedFrame = params.has('frame') ? +params.get('frame') : null;
+  // ?tier=1..4 picks the promotion: into silver, gold, diamond (the default) or champion
+  const PROMO = window.leaguePromotion(+(params.get('tier') || 3));
+  Object.assign(SETS.ranks.art, PROMO.art, { lock: PROMO.art.lockBaked });
+  delete SETS.ranks.art.lockBaked;
+  SETS.ranks.leagueName = PROMO.tier.name;
   const SET = SETS[params.get('set')] || SETS.ranks;
 
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -148,7 +152,7 @@
 
   // Draws a sprite with its anchor at (x, y)
   function sprite(a, x, y, s, alpha = 1) {
-    if (alpha <= 0) return;
+    if (!a || alpha <= 0) return;   // a role can be empty (no league below bronze or above champion)
     const sc = s * a.k;
     ctx.globalAlpha = alpha;
     ctx.drawImage(a.img, x - a.ax * sc, y - a.ay * sc, a.img.width * sc, a.img.height * sc);
@@ -528,7 +532,7 @@
       drawButton(false, out);
     }
     if (f >= 149) {
-      caption([[['تهانينا! لقد تقدّمت إلى', 700]], [['المستوى ' + SET.league + ' هذا الأسبوع.', 700]]], 1015, 66, 1);
+      caption([[['تهانينا! لقد تقدّمت إلى', 700]], [[SET.leagueName + ' هذا الأسبوع.', 700]]], 1015, 66, 1);
       drawButton(true, ramp(f, 149, 160));
     }
   }
@@ -569,7 +573,7 @@
   }
 
   Promise.all([
-    ...Object.keys(SET.art).map(load),
+    ...Object.keys(SET.art).filter((role) => SET.art[role]).map(load),
     document.fonts ? Promise.all([
       document.fonts.load('700 42px Tajawal', 'لقد'), document.fonts.load('800 42px Tajawal', '8'),
       document.fonts.load('600 30px Nunito'), document.fonts.load('800 32px Nunito'),

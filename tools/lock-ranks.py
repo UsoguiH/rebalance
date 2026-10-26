@@ -31,7 +31,7 @@ def padlock(size):
     return im.resize((size, size), Image.LANCZOS)
 
 
-for key in ('diamond', 'champion'):
+for key in ('bronze', 'silver', 'gold', 'diamond', 'champion'):
     src = Image.open(os.path.join(DIR, 'rank-%s.png' % key)).convert('RGBA')
     a = np.asarray(src).astype(float)
     lum = a[..., 0] * 0.299 + a[..., 1] * 0.587 + a[..., 2] * 0.114

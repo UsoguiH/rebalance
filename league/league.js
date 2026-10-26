@@ -83,11 +83,9 @@
       // bold style: all the leagues in order, as [reached art, not-yet art]; we climb from index 2 to 3
       ladder: [['l0', 'l0'], ['prev', 'prev'], ['cur', 'cur'], ['open', 'l3g'], ['after', 'after']],
       ladderFrom: 2,
-      league: 'الألماسي', title: '#1899d6', glow: '#8fd8ff', shape: 'ranks',
+      shape: 'ranks',   // name, colours and shine come from tiers.js
       shine: {
-        clip: 1, facetPoly: [[0.3, 0.25], [0.7, 0.25], [0.5, 0.8]],   // the gem's centre facet
-        cross: [0.4, 0.36],
-        knob: null,
+        clip: 1, knob: null,
       },
     },
     books: {
@@ -98,7 +96,7 @@
       pad: 6, anchor: 0.829,
       padlock: null,                              // the keyhole is part of the art
       ladder: null,
-      league: 'الزمردي', title: '#58a700', glow: '#a5e05a', shape: 'books',
+      leagueName: 'المستوى الزمردي', title: '#58a700', glow: '#a5e05a', shape: 'books',
       shine: {
         clip: 650 / 1052, facet: [0.5, 330 / 1052, 120 / 774, 105 / 1052],
         cross: [340 / 774, 250 / 1052],
@@ -113,6 +111,11 @@
   const ctx = canvas.getContext('2d');
   const params = new URLSearchParams(location.search);
   const fixedFrame = params.has('frame') ? +params.get('frame') : null;
+  // ?tier=1..4 picks the promotion: into silver, gold, diamond (the default) or champion
+  const PROMO = window.leaguePromotion(+(params.get('tier') || 3));
+  Object.assign(SETS.ranks.art, PROMO.art);
+  Object.assign(SETS.ranks, { leagueName: PROMO.tier.name, title: PROMO.tier.title, glow: PROMO.tier.glow });
+  Object.assign(SETS.ranks.shine, { facetPoly: PROMO.tier.facet, cross: PROMO.tier.cross });
   const SET = SETS[params.get('set')] || SETS.ranks;
   const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -211,7 +214,7 @@
   // Draws a sprite with its anchor at (x, y); o.rot tilts it about the anchor,
   // o.sx / o.sy squash and stretch it.
   function sprite(a, x, y, s, alpha = 1, o = null) {
-    if (alpha <= 0) return;
+    if (!a || alpha <= 0) return;   // a role can be empty (no league below bronze or above champion)
     const sc = s * a.k;
     ctx.globalAlpha = alpha;
     if (o) {
@@ -856,7 +859,7 @@
     ctx.textBaseline = 'middle';
     ctx.font = '800 78px ' + AR;
     ctx.fillStyle = SET.title;
-    ctx.fillText('المستوى ' + SET.league, 0, 0);
+    ctx.fillText(SET.leagueName, 0, 0);
     ctx.restore();
     const p = easeOut(ramp(f, TITLE + 8, TITLE + 22));
     if (p > 0) {
@@ -1119,7 +1122,7 @@
       ctx.textBaseline = 'middle';
       ctx.font = '800 80px ' + AR;
       ctx.fillStyle = SET.title;
-      ctx.fillText('المستوى ' + SET.league, 0, 0);
+      ctx.fillText(SET.leagueName, 0, 0);
       ctx.restore();
     }
     const p = easeOut(ramp(f, BD.sub, BD.sub + 14));
@@ -1279,7 +1282,7 @@
   function titleBox() {
     ctx.font = '800 80px ' + AR;
     ctx.direction = 'rtl';
-    const tw = ctx.measureText('المستوى ' + SET.league).width;
+    const tw = ctx.measureText(SET.leagueName).width;
     return { right: W / 2 + tw / 2, left: W / 2 - tw / 2, y: 1000 };
   }
 
@@ -1480,7 +1483,7 @@
       ctx.textBaseline = 'middle';
       ctx.font = '800 80px ' + AR;
       ctx.fillStyle = SET.title;
-      ctx.fillText('المستوى ' + SET.league, W / 2, tb.y);
+      ctx.fillText(SET.leagueName, W / 2, tb.y);
       ctx.restore();
     }
     if (f >= INK.penIn[0] && f <= INK.penOut[1]) drawPencil(penState(f, P));
@@ -1734,7 +1737,7 @@
       ctx.scale(k, k);
       ctx.direction = 'rtl';
       ctx.font = '800 54px ' + AR;
-      const label = 'المستوى ' + SET.league;
+      const label = SET.leagueName;
       const w = ctx.measureText(label).width + 80, h = 92;
       roundRect(-w / 2, -h / 2 + 7, w, h, h / 2);
       ctx.fillStyle = shade(SET.title);
@@ -1953,7 +1956,7 @@
       ctx.globalAlpha = clamp(k * 2);
       ctx.translate(W / 2, 1000 + (1 - k) * 60);
       ctx.direction = 'rtl';
-      text('المستوى ' + SET.league, 0, 0, '800 80px ' + AR, SET.title);
+      text(SET.leagueName, 0, 0, '800 80px ' + AR, SET.title);
       ctx.restore();
     }
     // students passed, counting up with a bump on every step
@@ -2080,7 +2083,7 @@
   }
 
   Promise.all([
-    ...Object.keys(SET.art).map(load),
+    ...Object.keys(SET.art).filter((role) => SET.art[role]).map(load),
     document.fonts ? Promise.all([
       document.fonts.load('700 42px Tajawal', 'لقد'), document.fonts.load('800 42px Tajawal', '8'),
       document.fonts.load('600 30px Nunito'), document.fonts.load('800 32px Nunito'),

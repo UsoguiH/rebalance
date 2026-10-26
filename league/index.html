@@ -18,9 +18,10 @@
 <canvas id="stage" aria-label="League promotion animation. Click to replay."></canvas>
 <script src="motion.js"></script>
 <script src="shapes.js"></script>
+<script src="tiers.js"></script>
 <script>
   // ?style=classic plays the first version (the faithful recreation);
-  // the new, bold (?style=bold) and ink (?style=ink) versions live in league.js
+  // the other styles live in league.js; ?tier=1..4 picks the promotion
   const main = document.createElement('script');
   main.src = new URLSearchParams(location.search).get('style') === 'classic' ? 'classic.js' : 'league.js';
   document.body.appendChild(main);

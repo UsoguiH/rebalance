@@ -8,40 +8,48 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;800&display=swap">
 <style>
-  :root { --bg: #f2f2ef; --ink: #3c3c3c; --muted: #777; --card: #fffffc; }
+  :root { --bg: #f2f2ef; --ink: #3c3c3c; --muted: #777; --card: #fffffc; --line: #e5e5e5; --accent: #1cb0f6; }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font-family: 'Tajawal', sans-serif; }
-  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 12px 16px; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px 16px; }
+  .tiers { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .tiers button { font: inherit; font-weight: 800; font-size: 14px; color: var(--ink); background: var(--card);
+                  border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 14px; padding: 6px 12px; cursor: pointer; }
+  .tiers button[aria-pressed="true"] { color: #fff; background: var(--accent); border-color: #1899d6; }
   .pair { display: flex; gap: 16px; justify-content: center; width: 100%; }
-  figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+  figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
   figcaption { font-weight: 800; font-size: 17px; text-align: center; }
   figcaption span { display: block; font-weight: 500; font-size: 13px; color: var(--muted); }
-  /* fit all three side by side: limited by height (minus captions and hint) or by a third of the width */
+  /* fit both side by side: limited by height (minus the tier buttons, captions and hint) or by half the width */
   iframe { border: 0; border-radius: 18px; background: var(--card); box-shadow: 0 2px 10px rgba(0,0,0,.08);
-           width: min(calc((100vw - 64px) / 3), calc((100vh - 120px) * 884 / 1520)); aspect-ratio: 884 / 1520; }
+           width: min(calc((100vw - 48px) / 2), calc((100vh - 170px) * 884 / 1520)); aspect-ratio: 884 / 1520; }
   p { margin: 0; font-size: 13px; color: var(--muted); }
 </style>
 </head>
 <body>
+<div class="tiers" role="group" aria-label="الترقية">
+  <button data-tier="1">البرونزي ← الفضي</button>
+  <button data-tier="2">الفضي ← الذهبي</button>
+  <button data-tier="3">الذهبي ← الألماسي</button>
+  <button data-tier="4">الألماسي ← الأبطال</button>
+</div>
 <div class="pair">
   <figure>
-    <figcaption>النسخة الأولى<span>مطابقة للفيديو الأصلي</span></figcaption>
-    <iframe src="index.html?style=classic&embed" title="النسخة الأولى"></iframe>
+    <figcaption>نسخة دولينجو<span>مطابقة للفيديو الأصلي</span></figcaption>
+    <iframe data-style="classic" title="نسخة دولينجو"></iframe>
   </figure>
   <figure>
-    <figcaption>نسخة شرارة<span>حلقة تتعبّى، أشكال، أرقام تعد</span></figcaption>
-    <iframe src="index.html?style=spark&embed" title="نسخة شرارة"></iframe>
-  </figure>
-  <figure>
-    <figcaption>نسخة حماس<span>نبضات، ضربة، ملصق، عدّاد</span></figcaption>
-    <iframe src="index.html?style=hype&embed" title="نسخة حماس"></iframe>
+    <figcaption>النسخة المتأرجحة<span>تتأرجح، تنفجر، ولمعة مثل دولينجو</span></figcaption>
+    <iframe data-style="new" title="النسخة المتأرجحة"></iframe>
   </figure>
 </div>
-<p>اضغط على أي وحدة لإعادة الكل معًا</p>
+<p>اضغط على أي وحدة لإعادة الاثنتين معًا</p>
 <script>
-  // Starts all versions on the same frame once they have loaded; a tap in
-  // any one replays them all.
+  // Both versions in iframes, started on the same frame once both have loaded;
+  // a tap in either replays both. The buttons switch the promotion.
   const frames = [...document.querySelectorAll('iframe')];
+  const buttons = [...document.querySelectorAll('.tiers button')];
+  const set = new URLSearchParams(location.search).get('set');
   let ready = 0;
   const playAll = () => frames.forEach((f) => f.contentWindow.postMessage({ league: 'play' }, '*'));
   window.addEventListener('message', (e) => {
@@ -49,8 +57,15 @@
     if (e.data.league === 'ready' && ++ready === frames.length) playAll();
     if (e.data.league === 'tap' && ready >= frames.length) playAll();
   });
-  const q = new URLSearchParams(location.search).get('set');
-  if (q) frames.forEach((f) => { f.src += '&set=' + encodeURIComponent(q); });
+  function show(tier) {
+    ready = 0;
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tier === String(tier))));
+    frames.forEach((f) => {
+      f.src = 'index.html?embed&style=' + f.dataset.style + '&tier=' + tier + (set ? '&set=' + encodeURIComponent(set) : '');
+    });
+  }
+  buttons.forEach((b) => b.addEventListener('click', () => show(b.dataset.tier)));
+  show(new URLSearchParams(location.search).get('tier') || 3);
 </script>
 </body>
 </html>
