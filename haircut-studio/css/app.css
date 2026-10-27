@@ -296,6 +296,12 @@ label.btn { cursor: pointer; }
 .show-inner { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; animation: rise .7s var(--spring) both; }
 .show-photo { border-radius: var(--r-xl); overflow: hidden; aspect-ratio: 3 / 4; max-height: 52vh; margin: 0 auto; width: 100%; background: #ddd; }
 .show-photo img { width: 100%; height: 100%; object-fit: cover; }
+/* every view that will be saved; tap one to look at it */
+.show-views { display: flex; justify-content: center; gap: 10px; }
+.show-view { position: relative; width: 64px; aspect-ratio: 3 / 4; border-radius: 18px; overflow: hidden; background: #ddd; transition: transform .5s var(--spring), box-shadow .3s; }
+.show-view img { width: 100%; height: 100%; object-fit: cover; }
+.show-view span { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 0; font: 400 11px var(--mono); color: var(--white); background: rgba(0, 0, 0, .45); text-align: center; }
+.show-view[aria-selected="true"] { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--ink); }
 .show .title { text-align: center; }
 .settings { display: flex; justify-content: center; align-items: flex-start; }
 .settings .settings-card { margin: auto 0; } /* centred when it fits, scrolls from the top when it does not */

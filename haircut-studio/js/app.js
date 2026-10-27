@@ -713,10 +713,31 @@
     const url = near && S.frames[near.id];
     return typeof url === "string" && url.startsWith("data:") ? url : S.frames.front;
   }
+  // Every finished view goes on the barber card and into the save.
   $("#loveBtn").addEventListener("click", () => {
-    $("#showImg").src = currentFrame();
+    const list = ready();
+    const cur = currentFrame();
+    $("#showImg").src = cur;
     $("#showPicked").dataset.key = "";
     picked($("#showPicked"));
+    const box = $("#showViews");
+    box.innerHTML = "";
+    box.hidden = list.length < 2;
+    list.forEach((v) => {
+      const b = document.createElement("button");
+      b.className = "show-view"; b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", S.frames[v.id] === cur);
+      b.innerHTML = '<img alt=""><span></span>';
+      b.querySelector("img").src = S.frames[v.id];
+      b.querySelector("span").textContent = v.label;
+      b.addEventListener("click", () => {
+        $("#showImg").src = S.frames[v.id];
+        $$(".show-view", box).forEach((x) => x.setAttribute("aria-selected", x === b));
+        buzz(5);
+      });
+      box.appendChild(b);
+    });
+    $("#saveBtn .lbl").textContent = list.length > 1 ? `Save ${list.length} pictures` : "Save picture";
     $("#show").hidden = false;
     buzz([10, 50, 10]);
   });
@@ -730,24 +751,38 @@
       : Promise.resolve(null);
     return downloadsP;
   };
+  // Saves every finished view (front, right, back, left) as its own picture.
   $("#saveBtn").addEventListener("click", async () => {
     const names = [S.pick.hair, S.pick.beard].filter(Boolean).join("-");
-    const filename = `my-new-look-${names}.jpg`, url = $("#showImg").src;
+    const list = ready();
+    const files = (list.length ? list : [{ id: "front", label: "Front" }]).map((v) => ({
+      filename: `my-new-look-${names}${list.length > 1 ? "-" + v.label.toLowerCase() : ""}.jpg`,
+      url: S.frames[v.id] || $("#showImg").src,
+    }));
+    const btn = $("#saveBtn");
+    btn.disabled = true;
+    let saved = 0;
     const dl = await downloads();
-    if (dl) {
+    for (const f of files) {
       try {
-        const blob = await (await fetch(url)).blob();
-        await dl.save({ filename, data: blob });
-        toast("Saved");
+        if (dl) {
+          await dl.save({ filename: f.filename, data: await (await fetch(f.url)).blob() });
+        } else {
+          const a = document.createElement("a");
+          a.href = f.url; a.download = f.filename;
+          document.body.appendChild(a); a.click(); a.remove();
+          await wait(600); // browsers drop downloads fired too close together
+        }
+        saved++;
       } catch (e) {
-        if (e && e.code !== "declined") toast("Saving is not available here.");
+        if (e && e.code === "declined") break; // they said no: stop asking
+        if (e && e.code === "rate_limited") { await wait(1500); continue; }
+        toast("Saving is not available here.");
+        break;
       }
-      return;
     }
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    toast("Saved");
+    btn.disabled = false;
+    if (saved) toast(saved > 1 ? `Saved ${saved} pictures` : "Saved");
   });
   $("#doneBtn").addEventListener("click", reset);
 
