@@ -4,11 +4,11 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const app = $("#app");
   const STEPS = ["photo", "pick", "make", "result"];
-  const VIEWS = [ // yaw in degrees: dragging right turns the face to the right
+  const VIEWS = [ // yaw in degrees: dragging right turns the nose toward the right edge
     { id: "front", label: "Front", yaw: 0 },
-    { id: "left", label: "Left", yaw: 90 },
+    { id: "right", label: "Right", yaw: 90 },
     { id: "back", label: "Back", yaw: 180 },
-    { id: "right", label: "Right", yaw: 270 },
+    { id: "left", label: "Left", yaw: 270 },
   ];
   const STYLE_BY_ID = Object.fromEntries(window.STYLES.map((s) => [s.id, s]));
 
@@ -124,6 +124,7 @@
     $("#cam").classList.add("has-shot");
     $("#photoHint").innerHTML = "Do you like this photo?";
     setBtn($("#shootBtn"), "ico-check", "Use this photo");
+    $("#shootBtn").disabled = false;
     setBtn($("#altBtn"), null, "Take again");
     stopCamera();
     face.load(canvas); // start finding the face while they browse styles
@@ -317,6 +318,7 @@
     const beard = S.pick.beard && STYLE_BY_ID[S.pick.beard];
     const names = [hair, beard].filter(Boolean).map((s) => s.name);
     const run = ++S.run;
+    S.failed = false;
     S.ctrl && S.ctrl.abort();
     S.ctrl = new AbortController();
     S.frames = {};
@@ -343,7 +345,7 @@
     say(script[line++]);
     const talk = setInterval(() => { if (line < script.length) say(script[line++]); }, 3200);
 
-    const t0 = performance.now(), EST = 25;
+    const t0 = performance.now(), EST = estimate();
     $("#makeEta").textContent = "~" + clock(EST);
     const timer = setInterval(() => {
       const s = (performance.now() - t0) / 1000;
@@ -362,6 +364,7 @@
       });
       if (run !== S.run) return;
       end();
+      learn((performance.now() - t0) / 1000);
       $("#makeBar").style.width = "100%";
       say("Done. Have a look!");
       buzz([15, 60, 30]);
@@ -369,50 +372,72 @@
       if (run !== S.run) return;
       S.frames = { front: url };
       showResult(true);
-      if (Gemini.settings.views) makeViews(run);
+      if (Gemini.settings.views) makeViews(run, [hRef, bRef].filter(Boolean));
     } catch (e) {
       end();
       if (e.name === "AbortError" || run !== S.run) return;
       console.error(e);
-      if (e.message === "NO_KEY") { openSettings("Add the Gemini API key first."); go("pick", true); return; }
+      if (e.code === "NO_KEY") { openSettings("Add the Gemini API key first."); go("pick", true); return; }
       say(friendly(e), "err");
       buzz([40, 60, 40]);
-      setBtn($("#stopBtn"), null, "Back to styles");
+      S.failed = true;
+      setBtn($("#stopBtn"), "ico-again", "Try again");
     }
   }
 
   function friendly(e) {
-    if (!navigator.onLine) return "No internet. Please check the connection.";
-    if (e.status === 429) return "Too many tries right now. Please wait one minute.";
-    if (e.status === 401 || e.status === 403 || /api key/i.test(e.message)) return "The AI key is not working. Please ask the staff.";
-    if (e.status === 422) return "Sorry, I could not make this look. Try another photo or style.";
-    return "Sorry, something went wrong. Please try again.";
+    if (!navigator.onLine || e.code === "NETWORK") return "No internet. Please check the connection.";
+    switch (e.code) {
+      case "QUOTA": return "The AI is busy. Please wait one minute and try again.";
+      case "KEY": return "The AI key is not working. Please ask the staff.";
+      case "BLOCKED": return "The AI would not edit this photo. Try another photo or style.";
+      case "NO_IMAGE": return "Sorry, I could not make this look. Try again or pick another style.";
+      case "TIMEOUT": return "The AI is slow right now. Please try again.";
+      case "MODEL": return "No AI image model is available. Please ask the staff.";
+      default: return "Sorry, something went wrong. Please try again.";
+    }
+  }
+
+  // The time estimate learns from real runs on this device.
+  function estimate() {
+    try { return Math.max(8, Math.min(90, parseFloat(localStorage.getItem("hs.eta")) || 25)); } catch (e) { return 25; }
+  }
+  function learn(s) {
+    try { localStorage.setItem("hs.eta", String(Math.round(estimate() * 0.6 + s * 0.4))); } catch (e) { /* private mode */ }
   }
   const clock = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 
-  $("#stopBtn").addEventListener("click", () => {
+  function stopMaking() {
+    S.failed = false;
     S.run++;
     S.ctrl && S.ctrl.abort();
     buzz(10);
     go("pick", true);
+  }
+  $("#stopBtn").addEventListener("click", () => {
+    if (S.failed) { buzz(10); make(); } else stopMaking();
   });
 
-  async function makeViews(run) {
+  // Side and back views are made together; each one appears as soon as it is ready.
+  function makeViews(run, refs) {
+    S.refs = refs;
     const todo = VIEWS.filter((v) => v.id !== "front");
     todo.forEach((v) => { S.frames[v.id] = "wait"; });
     renderViews();
-    for (const v of todo) {
-      if (run !== S.run) return;
+    return Promise.all(todo.map(async (v, i) => {
+      await new Promise((r) => setTimeout(r, i * 400)); // stagger to be gentle on rate limits
       try {
-        S.frames[v.id] = await Gemini.view({ result: S.frames.front, photo: S.photo, view: v.id, signal: S.ctrl.signal });
+        const url = await Gemini.view({ result: S.frames.front, photo: S.photo, view: v.id, refs, signal: S.ctrl.signal });
         if (run !== S.run) return;
+        S.frames[v.id] = url;
         buzz(6);
       } catch (e) {
         if (e.name === "AbortError" || run !== S.run) return;
+        console.error(e);
         S.frames[v.id] = "fail";
       }
       renderFrames(); renderViews();
-    }
+    }));
   }
 
   /* ---------- 4. result: drag to turn the head ---------- */
@@ -503,7 +528,7 @@
   async function retryView(v) {
     const run = S.run;
     S.frames[v.id] = "wait"; renderViews();
-    try { S.frames[v.id] = await Gemini.view({ result: S.frames.front, photo: S.photo, view: v.id, signal: S.ctrl.signal }); }
+    try { S.frames[v.id] = await Gemini.view({ result: S.frames.front, photo: S.photo, view: v.id, refs: S.refs || [], signal: S.ctrl.signal }); }
     catch (e) { S.frames[v.id] = "fail"; }
     if (run === S.run) { renderFrames(); renderViews(); }
   }
@@ -628,6 +653,7 @@
   function reset() {
     S.run++; S.ctrl && S.ctrl.abort();
     S.pick = { hair: null, beard: null }; S.frames = {};
+    Gemini.clear();
     turn.innerHTML = ""; $("#wallet").dataset.key = "";
     $("#show").hidden = true;
     $("#beforeImg").removeAttribute("src");
@@ -654,15 +680,40 @@
     if (sc === "photo") { toast("Press and hold for staff settings"); return; }
     buzz(6);
     if (sc === "pick") go("photo", true);
-    else if (sc === "make") $("#stopBtn").click();
+    else if (sc === "make") stopMaking();
     else if (sc === "result") $("#againBtn").click();
   });
 
   /* ---------- settings ---------- */
   const modelSel = $("#modelInput");
-  Gemini.MODELS.forEach(([id, label]) => { const o = document.createElement("option"); o.value = id; o.textContent = label; modelSel.appendChild(o); });
+  fillModels();
+  function fillModels(ids) {
+    modelSel.innerHTML = "";
+    const names = Object.fromEntries(Gemini.MODELS);
+    (ids || Gemini.MODELS.map((m) => m[0])).forEach((id) => {
+      const o = document.createElement("option"); o.value = id; o.textContent = names[id] || id; modelSel.appendChild(o);
+    });
+  }
+  $("#checkBtn").addEventListener("click", async () => {
+    const key = $("#keyInput").value.trim(), note = $("#settingsNote");
+    if (!key) { note.textContent = "Paste the key first."; return; }
+    note.textContent = "Checking…";
+    try {
+      const ids = await Gemini.listModels(key);
+      if (!ids.length) { note.textContent = "The key works, but it has no image models."; return; }
+      const keep = modelSel.value;
+      fillModels(ids);
+      modelSel.value = ids.includes(keep) ? keep : ids[0];
+      note.textContent = `The key works. ${ids.length} image model${ids.length > 1 ? "s" : ""} found.`;
+      buzz([10, 40, 10]);
+    } catch (e) {
+      note.textContent = e.code === "QUOTA" ? "The key works but is busy. Try again in a minute." : "That key does not work: " + e.message;
+    }
+  });
+
   function openSettings(note) {
     $("#keyInput").value = Gemini.settings.key;
+    if (![...modelSel.options].some((o) => o.value === Gemini.settings.model)) fillModels([Gemini.settings.model, ...Gemini.MODELS.map((m) => m[0]).filter((m) => m !== Gemini.settings.model)]);
     modelSel.value = Gemini.settings.model;
     $("#viewsInput").checked = Gemini.settings.views;
     $("#settingsNote").textContent = note || "The key stays on this device only.";

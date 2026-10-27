@@ -123,6 +123,8 @@ img { display: block; -webkit-user-drag: none; }
 .ico-rec { width: 22px; height: 22px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 5px rgba(255, 74, 28, .25); animation: breathe 2.2s ease-in-out infinite; }
 .ico-stop { width: 22px; height: 22px; border-radius: 5px; background: var(--white); }
 .ico-check, .ico-down { width: 28px; height: 28px; background: currentColor; -webkit-mask: var(--m) center/contain no-repeat; mask: var(--m) center/contain no-repeat; }
+.ico-again { width: 28px; height: 28px; background: currentColor; -webkit-mask: var(--m) center/contain no-repeat; mask: var(--m) center/contain no-repeat; --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.6-5.9M20 4v5h-5'/%3E%3C/svg%3E"); }
+.btn--small { min-height: 64px; font-size: 21px; }
 .ico-check { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E"); }
 .ico-down { --m: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4v11m-5-5l5 5 5-5M5 20h14'/%3E%3C/svg%3E"); }
 
