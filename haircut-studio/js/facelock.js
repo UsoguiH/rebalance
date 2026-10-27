@@ -13,6 +13,13 @@
   const W = 960, H = 1280;
   const OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
   const BROWS = [70, 63, 105, 66, 107, 336, 296, 334, 293, 300];
+  // Eyes, nose and mouth (each traced around, with how much to grow it): always the customer's own pixels.
+  const CORE = [
+    [[33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246], 1.6],
+    [[263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466], 1.6],
+    [[168, 193, 245, 128, 114, 217, 198, 209, 49, 64, 98, 97, 2, 326, 327, 294, 279, 429, 420, 437, 343, 357, 465, 417], 1.1],
+    [[61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185], 1.25],
+  ];
   const ALIGN = [33, 133, 362, 263, 168, 6, 197, 195, 5, 4, 1, 98, 327];
   const SHAPE = [33, 133, 159, 145, 362, 263, 386, 374, 1, 4, 5, 6, 168, 98, 327, 61, 291];
   const LIMITS = { scale: [0.85, 1.18], angle: 10, drift: 0.12 };
@@ -86,15 +93,25 @@
       // Hair in either picture, grown a little so no stray old strands are left at the edge.
       const both = canvas(), b = both.getContext("2d");
       b.drawImage(hairO, 0, 0); b.drawImage(hairR, 0, 0);
-      g.drawImage(dilate(both, W * 0.012), 0, 0);
+      g.drawImage(dilate(both, W * 0.02), 0, 0);
       // The scalp above the hairline, so very short cuts on bald heads still show.
       g.beginPath();
       g.ellipse(cx, top.y, faceW * 0.62, faceH * 0.5, 0, Math.PI, 2 * Math.PI);
       g.fill();
-      if (!beard) { // the customer's own beard stays, even if the hair model calls it hair
+      // The upper forehead near the hairline, where fringe tips hide from the hair model.
+      path(g, scaled(oval.filter((p) => p.y < top.y + (browY - top.y) * 0.55), 0.96, 0.9)); g.fill();
+      if (!beard) {
+        // The customer's own beard stays, even though the hair model calls it hair: around the
+        // jaw, whatever is hair in both pictures is beard. Hair the AI removed (long hair that hung
+        // over the cheeks) is not, so it may go.
+        const keep = canvas(), k = keep.getContext("2d");
+        k.fillStyle = "#fff";
+        path(k, scaled(oval.filter((p) => p.y > noseBase - faceH * 0.04), 1.05, 1.1)); k.fill();
+        k.beginPath(); k.ellipse(cx, chin.y, faceW * 0.45, faceH * 0.6, 0, 0, Math.PI); k.fill();
+        k.globalCompositeOperation = "destination-in"; k.drawImage(hairO, 0, 0);
+        k.globalCompositeOperation = "destination-in"; k.drawImage(hairR, 0, 0);
         g.globalCompositeOperation = "destination-out";
-        path(g, scaled(oval.filter((p) => p.y > noseBase - faceH * 0.04), 1.05, 1.12)); g.fill();
-        g.beginPath(); g.ellipse(cx, chin.y, faceW * 0.5, faceH * 0.6, 0, 0, Math.PI); g.fill();
+        g.drawImage(keep, 0, 0);
         g.globalCompositeOperation = "source-over";
       }
     }
@@ -125,6 +142,15 @@
       l.beginPath(); l.rect(0, browY + faceH * 0.01, W, H); l.clip();
       path(l, scaled(oval, 0.97, 0.94)); l.fill();
       l.restore();
+    }
+    if (hair) {
+      // Hair is never "face": old strands over the cheeks or forehead may go, new ones may come.
+      l.globalCompositeOperation = "destination-out";
+      l.drawImage(dilate(hairO, W * 0.02), 0, 0);
+      l.drawImage(hairR, 0, 0);
+      // ...but the eyes, nose and mouth always stay the customer's own.
+      l.globalCompositeOperation = "source-over";
+      for (const [ids, k] of CORE) { path(l, scaled(ids.map((i) => L[i]), k)); l.fill(); }
     }
     g.globalCompositeOperation = "destination-out";
     g.drawImage(feather(lock, W * 0.012), 0, 0);

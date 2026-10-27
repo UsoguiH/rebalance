@@ -114,12 +114,23 @@ greeting is shown to the customer while they wait: friendly, plain words, about 
     refs.forEach((s, i) => p.push(`IMAGE ${3 + i}, a real photo of the requested ${s.kind === "hair" ? "haircut" : "facial hair"} "${s.name}":`, s.ref));
     p.push(`You are a strict quality inspector for a barbershop's AI preview app. The customer asked for ${refs.map((s) => `${s.name} (${s.desc})`).join(" and ")}.
 ${hair ? "" : "The hair on the head was supposed to stay unchanged. "}${beard ? "" : "The facial hair was supposed to stay unchanged. "}Everything else (face, skin, clothes, background, lighting, framing) was supposed to stay exactly as in IMAGE 1.
-Score IMAGE 2 honestly. Give a low same_person score if the face looks like a different person, younger, smoothed or "beautified". Give a low realism score for painted-looking hair, a blurry or fake hairline, a visible seam or halo around the hair, or any distortion. Give a low kept_details score if anything outside the hair and facial hair changed.`);
+Score IMAGE 2 from the point of view of the customer and their barber, not a pixel inspector. Use this scale for every score:
+10 = perfect, looks like a real photo of the same person with the requested style
+8-9 = good; only tiny flaws you have to search for
+6-7 = noticeable flaws that a customer would see at a glance
+3-5 = clearly wrong: looks like a different person, the wrong style, or obviously fake
+0-2 = unusable
+same_person: compare the face itself (eyes, nose, mouth, skin, age, expression). Score low if it looks like a different person, younger, smoothed or beautified.
+style_match: does the new hair or facial hair look like the requested style, adapted to this person?
+realism: low only for painted or helmet-like hair, a fake hairline, a seam or halo, or distortions.
+kept_details: low if anything outside the hair and facial hair changed.
+Only write problems and fix for flaws that score below 8; otherwise leave them empty.`);
     return p;
   }
   // Higher is better; who the person is matters most.
   const checkScore = (c) => c.same_person * 3 + c.style_match * 2 + c.realism * 2 + c.kept_details;
-  const checkPassed = (c) => c.same_person >= 8 && c.style_match >= 7 && c.realism >= 7 && c.kept_details >= 6;
+  // A redraw costs time and money; only results a customer would notice are redrawn.
+  const checkPassed = (c) => c.same_person >= 7 && c.style_match >= 6 && c.realism >= 6 && c.kept_details >= 6;
 
   /* ---------- side and back views ---------- */
   // Directions in image terms so they match the drag: dragging right shows the nose pointing right.
