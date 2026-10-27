@@ -135,28 +135,33 @@
     $("#shot").hidden = true; $("#shot").removeAttribute("src");
     photoUI();
   }
-  // One place decides what the photo screen shows.
+  // One place decides what the photo screen shows. Choosing a file is always a <label for="file">,
+  // a native tap target, because some in-app browsers ignore a file input clicked from script.
   function photoUI() {
-    const cam = $("#cam"), shoot = $("#shootBtn"), alt = $("#altBtn"), hint = $("#photoHint");
+    const cam = $("#cam"), shoot = $("#shootBtn"), alt = $("#altBtn"), pick = $("#pickBtn"), again = $("#pickAgainBtn"), hint = $("#photoHint");
     const live = !S.photo && S.camera === "on";
     cam.classList.toggle("has-shot", !!S.photo);
-    cam.classList.toggle("no-cam", !S.photo && S.camera !== "on");
-    $("#camPick").hidden = !!S.photo || S.camera === "on";
+    cam.classList.toggle("no-cam", !S.photo && !live);
+    video.hidden = !live; // an empty video shows a big "play" placeholder on Android
+    $("#camPick").hidden = !!S.photo || live;
     shoot.disabled = false;
     if (S.photo) {
       hint.textContent = "Do you like this photo?";
       setBtn(shoot, "ico-check", "Use this photo");
-      setBtn(alt, null, S.photoSource === "camera" ? "Take again" : "Choose another");
-      alt.hidden = false;
+      shoot.hidden = false; pick.hidden = true;
+      alt.hidden = S.photoSource !== "camera";
+      again.hidden = S.photoSource === "camera";
+      again.querySelector(".lbl").textContent = "Choose another";
     } else if (live) {
       hint.innerHTML = "Look at the screen.<br>Keep your face inside the oval.";
       setBtn(shoot, "ico-rec", "Take photo");
-      setBtn(alt, "ico-photo", "Upload a photo");
-      alt.hidden = false;
+      shoot.hidden = false; pick.hidden = true; alt.hidden = true;
+      again.hidden = false;
+      again.querySelector(".lbl").textContent = "Upload a photo";
     } else {
       hint.textContent = S.camera === "wait" ? "Starting the camera… or choose a photo." : "Choose a clear photo of your face.";
-      setBtn(shoot, "ico-photo", "Choose a photo");
-      alt.hidden = true;
+      shoot.hidden = true; alt.hidden = true; again.hidden = true;
+      pick.hidden = false;
     }
   }
   function setBtn(btn, ico, label) {
@@ -169,16 +174,9 @@
   $("#shootBtn").addEventListener("click", () => {
     if (S.photo) { $("#meBtn img").src = S.photo; buzz(); go("pick"); }
     else if (S.camera === "on") shoot();
-    else $("#file").click();
   });
-  $("#altBtn").addEventListener("click", () => {
-    if (S.photo) {
-      const again = S.photoSource === "camera";
-      clearPhoto();
-      if (again) startCamera(); else $("#file").click();
-    } else $("#file").click();
-  });
-  $("#camPick").addEventListener("click", () => $("#file").click());
+  $("#altBtn").addEventListener("click", () => { clearPhoto(); startCamera(); }); // "Take again"
+  ["#pickBtn", "#pickAgainBtn", "#camPick"].forEach((sel) => $(sel).addEventListener("click", () => buzz(6)));
   async function usePicture(f) {
     if (!f || !/^image\//.test(f.type)) { toast("Please choose a photo."); return; }
     try {

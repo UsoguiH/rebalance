@@ -28,24 +28,31 @@
     <!-- 1. Photo -->
     <section class="screen" data-name="photo" aria-labelledby="t-photo">
       <h1 class="title" id="t-photo">Let's see you</h1>
-      <div class="card card--gray cam" id="cam">
-        <video id="video" playsinline muted autoplay></video>
+      <div class="card cam" id="cam">
+        <video id="video" playsinline muted autoplay hidden></video>
         <img id="shot" alt="Your photo" hidden>
         <svg class="guide" viewBox="0 0 300 400" aria-hidden="true"><ellipse cx="150" cy="190" rx="98" ry="128"/></svg>
         <div class="count" id="count" aria-live="assertive"></div>
         <div class="flash" id="flash"></div>
-        <button class="cam-pick" id="camPick" type="button" hidden>
-          <span class="cam-pick-ico"><span class="ico ico-photo"></span></span>
-          <span class="cam-pick-t">Tap to choose your photo</span>
-          <span class="cam-pick-s mono">Just you · facing the camera · good light</span>
-        </button>
+        <!-- Labels open the photo picker natively: phones honour a tap on them even inside other apps. -->
+        <label class="cam-pick" id="camPick" for="file" hidden>
+          <span class="pick-card">
+            <span class="pick-kind">Photo</span>
+            <span class="pick-name">Your photo</span>
+            <span class="pick-sub mono">Tap to choose</span>
+          </span>
+          <span class="pick-go" aria-hidden="true"><span class="ico ico-plus"></span></span>
+          <span class="pick-tip mono">Just you · facing the camera · good light</span>
+        </label>
       </div>
       <p class="hint mono" id="photoHint" aria-live="polite"></p>
       <div class="actions">
-        <button class="btn btn--black" id="shootBtn"><span class="lbl">Choose a photo</span></button>
-        <button class="btn btn--gray" id="altBtn" hidden><span class="lbl">Upload a photo</span></button>
+        <button class="btn btn--black" id="shootBtn" hidden><span class="lbl">Take photo</span></button>
+        <label class="btn btn--black" id="pickBtn" for="file"><span class="ico ico-photo"></span><span class="lbl">Choose a photo</span></label>
+        <button class="btn btn--gray" id="altBtn" hidden><span class="lbl">Take again</span></button>
+        <label class="btn btn--gray" id="pickAgainBtn" for="file" hidden><span class="lbl">Choose another</span></label>
       </div>
-      <input type="file" id="file" accept="image/*" hidden>
+      <input type="file" id="file" accept="image/*" class="file-input" tabindex="-1" aria-hidden="true">
     </section>
 
     <!-- 2. Pick -->
