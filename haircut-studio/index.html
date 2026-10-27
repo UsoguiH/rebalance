@@ -58,6 +58,11 @@
         <button role="tab" aria-selected="false" data-kind="beard">Beard</button>
       </div>
       <div class="grid" id="grid" role="list"></div>
+      <div class="pager" id="pager">
+        <button class="pager-btn" id="prevPage" aria-label="Previous styles">‹</button>
+        <span class="pager-label mono" id="pageLbl" aria-live="polite">1 / 1</span>
+        <button class="pager-btn" id="nextPage" aria-label="More styles">›</button>
+      </div>
     </section>
 
     <!-- 3. Making -->
@@ -96,7 +101,7 @@
       <div class="views" id="views" role="tablist" aria-label="Views"></div>
       <div class="actions">
         <button class="btn btn--gray" id="sidesBtn" hidden><span class="ico ico-turn"></span><span class="lbl">See sides &amp; back</span></button>
-        <button class="btn btn--gray btn--hold" id="holdBtn"><span class="lbl">Hold to see before</span></button>
+        <button class="btn btn--gray btn--hold" id="holdBtn"><span class="lbl">Hold for before</span></button>
         <button class="btn btn--black" id="loveBtn"><span class="ico ico-check"></span><span class="lbl">I like it</span></button>
         <button class="btn btn--ghost" id="againBtn"><span class="lbl">Try another style</span></button>
       </div>
@@ -119,7 +124,7 @@
       <h2 class="title" id="t-show">Show this to your barber</h2>
       <div class="actions">
         <button class="btn btn--black" id="saveBtn"><span class="ico ico-down"></span><span class="lbl">Save picture</span></button>
-        <button class="btn btn--gray" id="doneBtn"><span class="lbl">Done, next customer</span></button>
+        <button class="btn btn--gray" id="doneBtn"><span class="lbl">Next customer</span></button>
         <button class="btn btn--ghost" id="showBack"><span class="lbl">Back</span></button>
       </div>
     </div>

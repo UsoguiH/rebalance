@@ -62,6 +62,7 @@
     if (name === "photo") startCamera(); else stopCamera();
     if (name !== "make") face.stop();
     if (name !== "photo") idleFace.stop();
+    if (name === "pick") requestAnimationFrame(() => renderGrid()); // measure once it is on screen
     updateIsland();
   }
 
@@ -219,17 +220,37 @@
   /* ---------- 2. pick ---------- */
   const grid = $("#grid");
 
-  function renderGrid() {
+  // One page of styles at a time, as many as fit the space without scrolling.
+  // Swipe sideways or use the arrows to see the next page.
+  const page = { hair: 0, beard: 0 };
+  function layout() {
+    const w = grid.clientWidth, h = grid.clientHeight;
+    if (!w || !h) return { cols: 2, rows: 2 };
+    const cols = w >= 760 ? 4 : w >= 520 ? 3 : 2;
+    const tileW = (w - 12 * (cols - 1)) / cols;
+    const rows = Math.max(1, Math.round((h + 12) / (tileW * 1.2 + 12)));
+    return { cols, rows };
+  }
+  function renderGrid(dir) {
     const list = window.STYLES.filter((s) => s.kind === S.kind);
+    const { cols, rows } = layout();
+    const per = cols * rows, pages = Math.max(1, Math.ceil(list.length / per));
+    page[S.kind] = Math.min(Math.max(0, page[S.kind]), pages - 1);
+    const p = page[S.kind];
+    grid.style.setProperty("--cols", cols);
+    grid.style.setProperty("--rows", rows);
+    grid.dataset.dir = dir || "";
+    grid.dataset.per = per;
     grid.innerHTML = "";
-    list.forEach((s, i) => {
+    list.slice(p * per, p * per + per).forEach((s, k) => {
+      const i = p * per + k;
       const b = document.createElement("button");
       b.className = "tile" + (S.pick[s.kind] === s.id ? " on" : "");
       b.setAttribute("role", "listitem");
       b.setAttribute("aria-pressed", S.pick[s.kind] === s.id);
-      b.style.setProperty("--i", Math.min(i, 16));
+      b.style.setProperty("--i", k);
       b.dataset.id = s.id;
-      b.innerHTML = `<img alt="" loading="${i < 8 ? "eager" : "lazy"}" decoding="async"><span class="tile-no">${String(i + 1).padStart(2, "0")}</span><span class="tile-name"></span><span class="tile-tick"><span class="ico ico-check"></span></span>`;
+      b.innerHTML = `<img alt="" decoding="async"><span class="tile-no">${String(i + 1).padStart(2, "0")}</span><span class="tile-name"></span><span class="tile-tick"><span class="ico ico-check"></span></span>`;
       b.querySelector(".tile-name").textContent = s.name;
       const img = b.querySelector("img");
       img.onload = () => img.classList.add("ok");
@@ -237,7 +258,43 @@
       if (s.pos) img.style.objectPosition = s.pos;
       grid.appendChild(b);
     });
+    // warm up the next page's photos so paging feels instant
+    list.slice((p + 1) * per, (p + 2) * per).forEach((s) => { new Image().src = s.img; });
+    $("#pageLbl").textContent = `${p + 1} / ${pages}`;
+    $("#prevPage").disabled = p === 0;
+    $("#nextPage").disabled = p >= pages - 1;
+    $("#pager").style.visibility = pages > 1 ? "visible" : "hidden";
   }
+  function turnPage(d) {
+    const before = page[S.kind];
+    page[S.kind] += d;
+    renderGrid(d > 0 ? "next" : "prev");
+    if (page[S.kind] !== before) buzz(6);
+  }
+  $("#prevPage").addEventListener("click", () => turnPage(-1));
+  $("#nextPage").addEventListener("click", () => turnPage(1));
+  // swipe left / right on the styles
+  let swipe = null, swiped = false;
+  grid.addEventListener("pointerdown", (e) => { swipe = { x: e.clientX, y: e.clientY }; swiped = false; });
+  grid.addEventListener("pointerup", (e) => {
+    if (!swipe) return;
+    const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+    swipe = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) { swiped = true; turnPage(dx < 0 ? 1 : -1); }
+  });
+  grid.addEventListener("pointercancel", () => { swipe = null; });
+  // keep the same styles in view when the screen size changes
+  let resizeT = 0;
+  addEventListener("resize", () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => {
+      if (app.dataset.screen !== "pick") return;
+      const first = page[S.kind] * (+grid.dataset.per || 4);
+      const { cols, rows } = layout();
+      page[S.kind] = Math.floor(first / (cols * rows));
+      renderGrid();
+    }, 150);
+  });
 
   function setKind(kind) {
     if (S.kind === kind) return;
@@ -251,7 +308,7 @@
 
   grid.addEventListener("click", (e) => {
     const tile = e.target.closest(".tile");
-    if (!tile) return;
+    if (!tile || swiped) { swiped = false; return; }
     const s = STYLE_BY_ID[tile.dataset.id];
     const on = S.pick[s.kind] !== s.id;
     $$(".tile.on", grid).forEach((t) => { t.classList.remove("on"); t.setAttribute("aria-pressed", "false"); });
@@ -698,8 +755,8 @@
 
   // Hold to see the original photo.
   const hold = $("#holdBtn");
-  const holdOn = (e) => { if (e.type === "keydown" && e.key !== " " && e.key !== "Enter") return; if (e.repeat) return; e.preventDefault(); stage.classList.add("show-before"); hold.classList.add("holding"); hold.querySelector(".lbl").textContent = "This was you before"; buzz(8); };
-  const holdOff = () => { stage.classList.remove("show-before"); hold.classList.remove("holding"); hold.querySelector(".lbl").textContent = "Hold to see before"; };
+  const holdOn = (e) => { if (e.type === "keydown" && e.key !== " " && e.key !== "Enter") return; if (e.repeat) return; e.preventDefault(); stage.classList.add("show-before"); hold.classList.add("holding"); hold.querySelector(".lbl").textContent = "Before"; buzz(8); };
+  const holdOff = () => { stage.classList.remove("show-before"); hold.classList.remove("holding"); hold.querySelector(".lbl").textContent = "Hold for before"; };
   hold.addEventListener("pointerdown", holdOn);
   ["pointerup", "pointerleave", "pointercancel", "keyup", "blur"].forEach((ev) => hold.addEventListener(ev, holdOff));
   hold.addEventListener("keydown", holdOn);
@@ -796,6 +853,7 @@
     $("#beforeImg").removeAttribute("src");
     $("#meBtn img").removeAttribute("src");
     clearPhoto();
+    page.hair = page.beard = 0;
     S.kind = "beard"; setKind("hair");
     go("photo", true);
   }
