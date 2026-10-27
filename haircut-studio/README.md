@@ -1,9 +1,9 @@
 # Try a New Look
 
-A barbershop try-on app. The customer takes a selfie, taps one of **haircuts** or
-**beards** (42 haircuts and 21 beards for now; the list is easy to grow), and Gemini shows them with that style. Each style is shown with a real
-photo of someone wearing it (from Unsplash), and that photo is also sent to Gemini as the
-style reference. The result can be turned with a finger (front, left, back, right), and while
+A barbershop try-on app. The customer takes a selfie, taps a haircut and/or a beard
+(42 haircuts and 21 beards for now; the list is easy to grow), and Gemini shows them with
+that style. Each style is shown with a real photo of someone wearing it (from Unsplash), and
+that photo is also sent to Gemini as the style reference. The result can be turned with a finger (front, left, back, right), and while
 the AI works the customer can spin a 3D dot model of their own face.
 
 Big buttons, few screens, few words: it is built for people who are not used to apps.
