@@ -156,7 +156,7 @@
       again.hidden = S.photoSource === "camera";
       again.querySelector(".lbl").textContent = "Choose another";
     } else if (live) {
-      hint.innerHTML = "Look at the screen.<br>Keep your face inside the oval.";
+      hint.hidden = true; // the oval says it all
       setBtn(shoot, "ico-rec", "Take photo");
       shoot.hidden = false; pick.hidden = true; alt.hidden = true;
       again.hidden = false;
@@ -171,7 +171,7 @@
   }
 
   // The turning 3D face skeleton shown while waiting for a photo (built from a style photo's face).
-  const idleFace = Face3D.create($("#idleFace"), { scale: 0.82 });
+  const idleFace = Face3D.create($("#idleFace"), { scale: 0.82, simple: true });
   let idleLoaded = false;
   function idleInit() {
     if (idleLoaded) return;
@@ -179,6 +179,7 @@
     const s = STYLE_BY_ID["buzz-cut"] || window.STYLES[0];
     loadRef(s).then((url) => new Promise((ok, no) => { const img = new Image(); img.onload = () => ok(img); img.onerror = no; img.src = url; }))
       .then((img) => idleFace.load(img))
+      .then(() => $("#cam").classList.add("face-ready"))
       .catch(() => { idleLoaded = false; });
   }
   function setBtn(btn, ico, label) {

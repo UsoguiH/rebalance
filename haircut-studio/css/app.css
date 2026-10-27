@@ -142,8 +142,9 @@ img { display: block; -webkit-user-drag: none; }
 
 /* camera */
 /* the main picture of a screen: fills the height that is left, keeps 3:4 */
-.cam, .stage, .show-photo { flex: 1 1 0 !important; min-height: 0; width: auto; max-width: 100%; aspect-ratio: 3 / 4; align-self: center; max-height: none; }
-.cam { margin: 0 auto; background: var(--ink); }
+.stage, .show-photo { flex: 1 1 0 !important; min-height: 0; width: auto; max-width: 100%; aspect-ratio: 3 / 4; align-self: center; max-height: none; }
+/* The photo card is always the reference's wide black stadium: full width, as tall as fits. */
+.cam { flex: 0 1 auto !important; width: 100%; aspect-ratio: 1.25; min-height: 0; align-self: stretch; margin: auto 0; border-radius: 9999px; background: var(--ink); }
 .cam video, .cam #shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cam video { transform: scaleX(-1); }
 .cam #shot { animation: develop .9s var(--soft); }
@@ -159,12 +160,12 @@ img { display: block; -webkit-user-drag: none; }
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 18px; padding: 24px; color: var(--white); text-align: left; cursor: pointer;
 }
-/* Without a photo or camera the card is the reference's black stadium: card + round button. */
-.cam.no-cam { flex: 0 1 auto !important; width: 100%; aspect-ratio: 1.42; align-self: stretch; border-radius: 9999px; }
-.idle-face { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* Without a photo or camera: just the dashed oval while the 3D face loads, then the face fades in. */
+.idle-face { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity .8s var(--soft); }
+.cam.face-ready .idle-face { opacity: 1; }
 .file-input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); pointer-events: none; }
 label.btn { cursor: pointer; }
-.cam.no-cam .guide { opacity: 0; }
+.cam.no-cam.face-ready .guide { opacity: 0; }
 
 /* segmented control */
 .seg {
@@ -387,7 +388,6 @@ label.btn { cursor: pointer; }
 .screen[data-name="result"] .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .screen[data-name="result"] #sidesBtn, .screen[data-name="result"] #againBtn { grid-column: 1 / -1; }
 .screen[data-name="result"] .btn, .show .btn { padding: 0 16px; white-space: nowrap; }
-.cam.no-cam { margin: auto 0; } /* the stadium sits in the middle of the free space */
 .show .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .show #saveBtn { grid-column: 1 / -1; }
 /* shorter phones: slimmer controls so everything still fits */

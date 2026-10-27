@@ -61,7 +61,8 @@
     return out;
   }
 
-  function create(canvas, { scale = 1 } = {}) {
+  // simple: no stand-in head and no flying dots; the real face just fades in where it is.
+  function create(canvas, { scale = 1, simple = false } = {}) {
     const g = canvas.getContext("2d");
     let pts = [], born = 0, raf = 0, running = false;
     let yaw = 0, pitch = 0, vy = 0, vp = 0, dragging = false, lastX = 0, lastY = 0, idleAt = 0;
@@ -69,7 +70,7 @@
 
     function setPoints(list) {
       for (const p of list) {
-        const r = 2.4 + Math.random() * 2.5, a = Math.random() * 6.283, b = Math.random() * 3.1416;
+        const r = 1.6 + Math.random() * 0.8, a = Math.random() * 6.283, b = Math.random() * 3.1416;
         p.sx = Math.sin(b) * Math.cos(a) * r; p.sy = Math.cos(b) * r; p.sz = Math.sin(b) * Math.sin(a) * r;
         p.d = (p.y + 1) * 0.25 + Math.random() * 0.25;
       }
@@ -98,19 +99,19 @@
       const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
       const S = Math.min(W * 0.5, H * 0.5) * 0.78 * scale, f = 3.2;
       const scanY = ((t * 0.45) % 1.6) - 0.8; // sweeps top to bottom
-      const age = (now - born) / 1700;
+      const age = (now - born) / 1700, fade = simple && !reduce ? Math.min(1, (now - born) / 800) : 1;
       const hot = [];
 
       for (const p of pts) {
-        let k = reduce ? 1 : Math.min(1, Math.max(0, (age - p.d) / 0.6));
+        let k = reduce || simple ? 1 : Math.min(1, Math.max(0, (age - p.d) / 0.6));
         k = 1 - Math.pow(1 - k, 3);
         const X = p.sx + (p.x - p.sx) * k, Y = p.sy + (p.y - p.sy) * k, Z = p.sz + (p.z - p.sz) * k;
         const x1 = X * cy - Z * sy, z1 = X * sy + Z * cy;
         const y2 = Y * cp - z1 * sp, z2 = Y * sp + z1 * cp;
-        const q = f / (f + z2);
+        const q = Math.min(1.8, Math.max(0.4, f / (f + z2))); // no giant dots close to the eye
         const px = W / 2 + x1 * S * q, py = H / 2 + y2 * S * q;
         const front = Math.max(0, Math.min(1, 0.6 - z2 * 0.7));
-        let a = (p.shell ? 0.2 : 0.22 + p.l * 0.75) * (0.25 + front * 0.75) * (0.3 + k * 0.7);
+        let a = (p.shell ? 0.2 : 0.22 + p.l * 0.75) * (0.25 + front * 0.75) * (0.3 + k * 0.7) * fade;
         const r = (p.shell ? 0.9 : 1.05 + p.l * 0.6) * q;
         if (!p.shell && Math.abs(Y - scanY) < 0.035) { hot.push(px, py, r); continue; }
         g.fillStyle = "rgba(255,255,255," + a.toFixed(3) + ")";
@@ -144,11 +145,11 @@
 
     let job = 0;
     return {
-      // Shows the stand-in head at once, then swaps in the real face when found.
+      // Shows the stand-in head at once (not in simple mode), then swaps in the real face when found.
       async load(img) {
         const id = ++job;
         const lum = pixels(img);
-        setPoints(fallback(lum));
+        if (!simple) setPoints(fallback(lum));
         try {
           const { lm, edges } = await Promise.race([
             Vision.landmarker(), new Promise((_, no) => setTimeout(() => no(new Error("slow")), 15000)),
@@ -157,6 +158,7 @@
           const L = r.faceLandmarks && r.faceLandmarks[0];
           if (L && id === job) setPoints(fromLandmarks(L, edges, lum, img.width / img.height));
         } catch (e) { /* keep the stand-in */ }
+        if (simple && id === job && !pts.length) setPoints(fallback(lum));
       },
       start() { if (!running) { running = true; idleAt = 0; born = performance.now(); raf = requestAnimationFrame(frame); } },
       stop() { running = false; cancelAnimationFrame(raf); },
