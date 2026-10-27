@@ -15,6 +15,8 @@
   const S = {
     photo: null, // data URL, 3:4
     photoImg: null,
+    photoSource: null, // "camera" | "upload"
+    camera: "wait", // "wait" | "on" | "off"
     kind: "hair",
     pick: { hair: null, beard: null },
     frames: {}, // view id -> data URL | "wait" | "fail"
@@ -66,19 +68,21 @@
   const video = $("#video");
   let stream = null;
 
+  // camera: "wait" while asking, "on" when streaming, "off" when there is none or it was refused.
   async function startCamera() {
     if (S.photo || stream) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { S.camera = "off"; return photoUI(); }
+    S.camera = "wait"; photoUI();
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 } }, audio: false });
       if (app.dataset.screen !== "photo" || S.photo) return stopCamera();
       video.srcObject = stream;
-      $("#camMsg").hidden = true;
-      $("#shootBtn").disabled = false;
+      S.camera = "on";
     } catch (e) {
       stream = null;
-      $("#camMsg").hidden = false;
-      $("#shootBtn").disabled = true;
+      S.camera = "off";
     }
+    photoUI();
   }
   function stopCamera() {
     if (stream) stream.getTracks().forEach((t) => t.stop());
@@ -112,30 +116,48 @@
     count.innerHTML = "";
     $("#flash").classList.remove("go"); void $("#flash").offsetWidth; $("#flash").classList.add("go");
     buzz([20, 40, 20]);
-    setPhoto(toPortrait(video, video.videoWidth, video.videoHeight, true));
+    setPhoto(toPortrait(video, video.videoWidth, video.videoHeight, true), "camera");
     btn.disabled = false;
   }
 
-  function setPhoto(canvas) {
+  function setPhoto(canvas, source) {
     S.photo = canvas.toDataURL("image/jpeg", 0.9);
     S.photoImg = canvas;
+    S.photoSource = source;
     const shot = $("#shot");
     shot.src = S.photo; shot.hidden = false;
-    $("#cam").classList.add("has-shot");
-    $("#photoHint").innerHTML = "Do you like this photo?";
-    setBtn($("#shootBtn"), "ico-check", "Use this photo");
-    $("#shootBtn").disabled = false;
-    setBtn($("#altBtn"), null, "Take again");
     stopCamera();
+    photoUI();
     face.load(canvas); // start finding the face while they browse styles
   }
   function clearPhoto() {
     S.photo = null; S.photoImg = null;
     $("#shot").hidden = true; $("#shot").removeAttribute("src");
-    $("#cam").classList.remove("has-shot");
-    $("#photoHint").innerHTML = "Look at the screen.<br>Keep your face inside the oval.";
-    setBtn($("#shootBtn"), "ico-rec", "Take photo");
-    setBtn($("#altBtn"), null, "Use a picture");
+    photoUI();
+  }
+  // One place decides what the photo screen shows.
+  function photoUI() {
+    const cam = $("#cam"), shoot = $("#shootBtn"), alt = $("#altBtn"), hint = $("#photoHint");
+    const live = !S.photo && S.camera === "on";
+    cam.classList.toggle("has-shot", !!S.photo);
+    cam.classList.toggle("no-cam", !S.photo && S.camera !== "on");
+    $("#camPick").hidden = !!S.photo || S.camera === "on";
+    shoot.disabled = false;
+    if (S.photo) {
+      hint.textContent = "Do you like this photo?";
+      setBtn(shoot, "ico-check", "Use this photo");
+      setBtn(alt, null, S.photoSource === "camera" ? "Take again" : "Choose another");
+      alt.hidden = false;
+    } else if (live) {
+      hint.innerHTML = "Look at the screen.<br>Keep your face inside the oval.";
+      setBtn(shoot, "ico-rec", "Take photo");
+      setBtn(alt, "ico-photo", "Upload a photo");
+      alt.hidden = false;
+    } else {
+      hint.textContent = S.camera === "wait" ? "Starting the camera… or choose a photo." : "Choose a clear photo of your face.";
+      setBtn(shoot, "ico-photo", "Choose a photo");
+      alt.hidden = true;
+    }
   }
   function setBtn(btn, ico, label) {
     btn.querySelector(".lbl").textContent = label;
@@ -145,19 +167,38 @@
   }
 
   $("#shootBtn").addEventListener("click", () => {
-    if (S.photo) { $("#meBtn img").src = S.photo; buzz(); go("pick"); } else shoot();
+    if (S.photo) { $("#meBtn img").src = S.photo; buzz(); go("pick"); }
+    else if (S.camera === "on") shoot();
+    else $("#file").click();
   });
   $("#altBtn").addEventListener("click", () => {
-    if (S.photo) { clearPhoto(); startCamera(); } else $("#file").click();
+    if (S.photo) {
+      const again = S.photoSource === "camera";
+      clearPhoto();
+      if (again) startCamera(); else $("#file").click();
+    } else $("#file").click();
   });
-  $("#file").addEventListener("change", async (e) => {
-    const f = e.target.files[0];
-    e.target.value = "";
-    if (!f) return;
+  $("#camPick").addEventListener("click", () => $("#file").click());
+  async function usePicture(f) {
+    if (!f || !/^image\//.test(f.type)) { toast("Please choose a photo."); return; }
     try {
       const bmp = await createImageBitmap(f, { imageOrientation: "from-image" });
-      setPhoto(toPortrait(bmp, bmp.width, bmp.height, false));
+      setPhoto(toPortrait(bmp, bmp.width, bmp.height, false), "upload");
+      buzz(10);
     } catch (err) { toast("That picture could not be opened."); }
+  }
+  $("#file").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    e.target.value = "";
+    usePicture(f);
+  });
+  // Drag a photo onto the card (computers).
+  const camCard = $("#cam");
+  ["dragenter", "dragover"].forEach((ev) => camCard.addEventListener(ev, (e) => { e.preventDefault(); camCard.classList.add("drag"); }));
+  ["dragleave", "dragend"].forEach((ev) => camCard.addEventListener(ev, () => camCard.classList.remove("drag")));
+  camCard.addEventListener("drop", (e) => {
+    e.preventDefault(); camCard.classList.remove("drag");
+    usePicture(e.dataTransfer.files[0]);
   });
   $("#meBtn").addEventListener("click", () => { clearPhoto(); go("photo", true); });
 
@@ -362,8 +403,7 @@
         if (info.hair_colour && hair) setTimeout(() => run === S.run && say(`I will keep your natural ${info.hair_colour.toLowerCase()} colour.`), 1800);
       }
       if (stage === "draw") { say(`Now the ${names.join(" and the ")}.`); talkThrough(drawing); }
-      if (stage === "check") { clearInterval(talk); say("Checking it still looks just like you."); }
-      if (stage === "fix") { say("Fixing a small detail. One moment."); talkThrough(["Redoing the edges.", "Matching the light.", "Almost there."]); }
+      if (stage === "fix" && app.dataset.screen === "make") { say("Fixing a small detail. One moment."); talkThrough(["Redoing the edges.", "Matching the light.", "Almost there."]); }
     };
 
     try {
@@ -386,7 +426,24 @@
       S.frames = { front: out.url };
       S.plan = out.plan;
       showResult(true);
-      if (Gemini.settings.views) makeViews(run, [hRef, bRef].filter(Boolean));
+      const refs = [hRef, bRef].filter(Boolean);
+      if (Gemini.settings.views) { // show the coming views straight away
+        VIEWS.forEach((v) => { if (v.id !== "front") S.frames[v.id] = "wait"; });
+        renderViews();
+      }
+      // The check runs while they look; a fixed picture slides in, then the side views are made from it.
+      $("#improving").hidden = !Gemini.settings.smart;
+      const better = await out.improve;
+      if (run !== S.run) return;
+      $("#improving").hidden = true;
+      if (better) {
+        S.frames.front = better.url;
+        renderFrames();
+        const img = turn.querySelector('[data-v="front"]');
+        if (img) { img.classList.remove("swap"); void img.offsetWidth; img.classList.add("swap"); }
+        toast("I fixed a small detail");
+      }
+      if (Gemini.settings.views) makeViews(run, refs);
     } catch (e) {
       end();
       if (e.name === "AbortError" || run !== S.run) return;
@@ -480,7 +537,7 @@
     go("result");
     renderFrames(); renderViews();
     if (fresh) { stage.classList.remove("reveal"); void stage.offsetWidth; stage.classList.add("reveal"); }
-    $("#dragHint").classList.toggle("gone", !Gemini.settings.views);
+    S.dragged = false;
   }
 
   function renderFrames() {
@@ -494,6 +551,8 @@
       if (img.src !== S.frames[v.id]) img.src = S.frames[v.id];
     }
     $$("img", turn).forEach((img) => { if (!ready().some((v) => v.id === img.dataset.v)) img.remove(); });
+    // "Drag to turn" only once there is something to turn to.
+    $("#dragHint").classList.toggle("gone", ready().length < 2 || !!S.dragged);
     paint();
   }
 
@@ -607,6 +666,7 @@
       drag.moved = true;
       stage.setPointerCapture(drag.id);
       $("#dragHint").classList.add("gone");
+      S.dragged = true;
     }
     if (!drag.moved) return;
     const many = ready().length > 1;
@@ -669,10 +729,31 @@
     buzz([10, 50, 10]);
   });
   $("#showBack").addEventListener("click", () => { $("#show").hidden = true; });
-  $("#saveBtn").addEventListener("click", () => {
-    const a = document.createElement("a");
+  // Inside claude.ai the page asks the viewer to save through the downloads capability;
+  // elsewhere a normal download link does it.
+  let downloadsP = null;
+  const downloads = () => {
+    if (!downloadsP) downloadsP = window.claude && window.claude.use
+      ? Promise.race([window.claude.use("downloads").catch(() => null), wait(4000).then(() => null)])
+      : Promise.resolve(null);
+    return downloadsP;
+  };
+  $("#saveBtn").addEventListener("click", async () => {
     const names = [S.pick.hair, S.pick.beard].filter(Boolean).join("-");
-    a.href = $("#showImg").src; a.download = `my-new-look-${names}.jpg`;
+    const filename = `my-new-look-${names}.jpg`, url = $("#showImg").src;
+    const dl = await downloads();
+    if (dl) {
+      try {
+        const blob = await (await fetch(url)).blob();
+        await dl.save({ filename, data: blob });
+        toast("Saved");
+      } catch (e) {
+        if (e && e.code !== "declined") toast("Saving is not available here.");
+      }
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
     document.body.appendChild(a); a.click(); a.remove();
     toast("Saved");
   });
@@ -740,13 +821,16 @@
     }
   });
 
-  function openSettings(note) {
+  function openSettings(note, firstRun) {
+    $("#t-settings").textContent = firstRun ? "One-time setup" : "Staff settings";
+    $("#advanced").hidden = !!firstRun; // first time: just the key
+    $("#credBtn").hidden = !!firstRun;
     $("#keyInput").value = Gemini.settings.key;
     if (![...modelSel.options].some((o) => o.value === Gemini.settings.model)) fillModels([Gemini.settings.model, ...Gemini.MODELS.map((m) => m[0]).filter((m) => m !== Gemini.settings.model)]);
     modelSel.value = Gemini.settings.model;
     $("#viewsInput").checked = Gemini.settings.views;
     $("#smartInput").checked = Gemini.settings.smart;
-    $("#settingsNote").textContent = note || "The key stays on this device only.";
+    $("#settingsNote").textContent = note || "The key stays on this device only. Later, press and hold the top-left button to come back here.";
     $("#settings").hidden = false;
     setTimeout(() => (Gemini.settings.key ? modelSel : $("#keyInput")).focus(), 300);
   }
@@ -760,6 +844,7 @@
     toast(Gemini.settings.key ? "Saved" : "No key saved");
   });
   $("#settings").addEventListener("click", (e) => { if (e.target.id === "settings") $("#settings").hidden = true; });
+  $("#closeSettings").addEventListener("click", () => { $("#settings").hidden = true; });
   $("#credBtn").addEventListener("click", () => window.open("credits.html", "_blank", "noopener"));
   addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
@@ -770,6 +855,6 @@
   /* ---------- start ---------- */
   renderGrid();
   go("photo");
-  if (!Gemini.settings.key) setTimeout(() => toast("Staff: press and hold the top-left button to add the key"), 1200);
+  if (!Gemini.settings.key) setTimeout(() => openSettings("Paste your Gemini API key once. It stays on this device. Later, press and hold the top-left button to come back here.", true), 700);
   setTimeout(() => Vision.warm(), 4000);
 })();

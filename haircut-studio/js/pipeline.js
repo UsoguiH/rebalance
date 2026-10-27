@@ -5,10 +5,11 @@
    - draw:  the image model edits the photo
    - lock:  the customer's own face and everything else is put back (facelock.js); if the
             AI moved the head too much to lock, that counts as a failed draw
-   - check: a text model scores the locked picture; a weak one is redrawn once with notes
+   - check: a text model scores the locked picture while it is already on screen; a weak one is
+            redrawn once with notes and swapped in (result.improve)
    At most two image calls per look. Look, plan, lock and check are helpers: if one cannot
    run (no model, no network to the vision files), the try-on goes on without it.
-   onStep(stage, info): "look", "plan", "planned", "draw", "check", "fix", "done". */
+   onStep(stage, info): "look", "plan", "planned", "draw", "done", then maybe "fix" in the background. */
 (function () {
   const P = window.Prompts, G = window.Gemini;
   const cache = new Map(); // same photo + same styles = same picture, no second charge
@@ -69,23 +70,29 @@
       if (again && (again.locked || !best.locked)) best = again;
     }
 
+    // The picture is shown now. The check runs after, in the background: if it finds a
+    // problem a customer would notice, a better picture replaces this one on screen.
+    const result = { ...best, plan, draws, improve: Promise.resolve(null) };
     if (smart) {
-      onStep("check");
-      best.check = await helper("check", () => G.json(P.checkParts({ ...look, result: best.url }), P.CHECK_SCHEMA, signal));
-      if (best.check && !P.checkPassed(best.check) && draws < MAX_DRAWS) {
-        onStep("fix", best.check);
+      result.improve = (async () => {
+        const check = await helper("check", () => G.json(P.checkParts({ ...look, result: best.url }), P.CHECK_SCHEMA, signal));
+        result.check = check;
+        if (!check || P.checkPassed(check) || draws >= MAX_DRAWS) return null;
+        onStep("fix", check);
         const redo = await helper("redraw", async () => {
-          const r = await draw([best.check.fix || best.check.problems, best.locked ? "" : P.MOVED_FIX].filter(Boolean).join(" "));
+          const r = await draw([check.fix || check.problems, best.locked ? "" : P.MOVED_FIX].filter(Boolean).join(" "));
           r.check = await helper("recheck", () => G.json(P.checkParts({ ...look, result: r.url }), P.CHECK_SCHEMA, signal));
           return r;
         });
         // A locked picture always beats an unlocked one; otherwise the better check wins.
-        const better = redo && (redo.locked !== best.locked ? redo.locked : !redo.check || P.checkScore(redo.check) >= P.checkScore(best.check));
-        if (better) best = redo;
-      }
+        const better = redo && (redo.locked !== best.locked ? redo.locked : !redo.check || P.checkScore(redo.check) >= P.checkScore(check));
+        if (!better) return null;
+        Object.assign(result, redo); // later cache hits get the better picture
+        return redo;
+      })().catch((e) => { if (e.name !== "AbortError") console.warn("improve step failed:", e); return null; });
     }
-    onStep("done", best);
-    return { ...best, plan, draws };
+    onStep("done", result);
+    return result;
   }
 
   window.Pipeline = {

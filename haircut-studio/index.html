@@ -34,12 +34,16 @@
         <svg class="guide" viewBox="0 0 300 400" aria-hidden="true"><ellipse cx="150" cy="190" rx="98" ry="128"/></svg>
         <div class="count" id="count" aria-live="assertive"></div>
         <div class="flash" id="flash"></div>
-        <p class="cam-msg mono" id="camMsg" hidden>Camera is off.<br>Use a picture instead.</p>
+        <button class="cam-pick" id="camPick" type="button" hidden>
+          <span class="cam-pick-ico"><span class="ico ico-photo"></span></span>
+          <span class="cam-pick-t">Tap to choose your photo</span>
+          <span class="cam-pick-s mono">Just you · facing the camera · good light</span>
+        </button>
       </div>
-      <p class="hint mono" id="photoHint">Look at the screen.<br>Keep your face inside the oval.</p>
+      <p class="hint mono" id="photoHint" aria-live="polite"></p>
       <div class="actions">
-        <button class="btn btn--black" id="shootBtn"><span class="ico ico-rec"></span><span class="lbl">Take photo</span></button>
-        <button class="btn btn--gray" id="altBtn"><span class="lbl">Use a picture</span></button>
+        <button class="btn btn--black" id="shootBtn"><span class="lbl">Choose a photo</span></button>
+        <button class="btn btn--gray" id="altBtn" hidden><span class="lbl">Upload a photo</span></button>
       </div>
       <input type="file" id="file" accept="image/*" hidden>
     </section>
@@ -85,7 +89,8 @@
         <div class="before" id="before"><img id="beforeImg" alt="Before"></div>
         <div class="glare" aria-hidden="true"></div>
         <div class="angle mono" id="angleLbl">Front</div>
-        <div class="drag-hint" id="dragHint" aria-hidden="true"><span class="hand"></span><span class="mono">drag to turn</span></div>
+        <div class="improving mono" id="improving" hidden>Checking the details</div>
+        <div class="drag-hint gone" id="dragHint" aria-hidden="true"><span class="hand"></span><span class="mono">drag to turn</span></div>
       </div>
       <div class="views" id="views" role="tablist" aria-label="Views"></div>
       <div class="actions">
@@ -127,16 +132,19 @@
         <input type="password" id="keyInput" autocomplete="off" spellcheck="false" placeholder="Paste key here">
       </label>
       <a class="mono link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a key at aistudio.google.com</a>
-      <label class="field"><span class="mono">Image model</span>
-        <select id="modelInput"></select>
-      </label>
       <button class="btn btn--gray btn--small" type="button" id="checkBtn"><span class="lbl">Check key</span></button>
-      <label class="toggle"><input type="checkbox" id="smartInput"><span class="toggle-ui"></span><span>Plan and check each result (better, a bit slower)</span></label>
-      <label class="toggle"><input type="checkbox" id="viewsInput"><span class="toggle-ui"></span><span>Make side &amp; back views</span></label>
+      <div class="advanced" id="advanced">
+        <label class="field"><span class="mono">Image model</span>
+          <select id="modelInput"></select>
+        </label>
+        <label class="toggle"><input type="checkbox" id="smartInput"><span class="toggle-ui"></span><span>Plan and check each result (better, a bit slower)</span></label>
+        <label class="toggle"><input type="checkbox" id="viewsInput"><span class="toggle-ui"></span><span>Make side &amp; back views</span></label>
+      </div>
       <p class="mono note" id="settingsNote">The key stays on this device only.</p>
       <div class="actions">
         <button class="btn btn--black" type="submit"><span class="ico ico-check"></span><span class="lbl">Save</span></button>
-        <button class="btn btn--ghost" type="button" id="credBtn"><span class="lbl">Photo credits</span></button>
+        <button class="btn btn--ghost" type="button" id="closeSettings"><span class="lbl">Close</span></button>
+        <button class="btn btn--ghost btn--small" type="button" id="credBtn" data-advanced><span class="lbl">Photo credits</span></button>
       </div>
     </form>
   </div>
