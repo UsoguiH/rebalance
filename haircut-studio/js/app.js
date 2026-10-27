@@ -443,7 +443,9 @@
         if (img) { img.classList.remove("swap"); void img.offsetWidth; img.classList.add("swap"); }
         toast("I fixed a small detail");
       }
+      S.refs = refs;
       if (Gemini.settings.views) makeViews(run, refs);
+      else $("#sidesBtn").hidden = false; // on request: three more pictures cost money
     } catch (e) {
       end();
       if (e.name === "AbortError" || run !== S.run) return;
@@ -505,6 +507,11 @@
   });
 
   // Side and back views are made together; each one appears as soon as it is ready.
+  $("#sidesBtn").addEventListener("click", () => {
+    $("#sidesBtn").hidden = true;
+    buzz(8);
+    makeViews(S.run, S.refs || []);
+  });
   function makeViews(run, refs) {
     S.refs = refs;
     const todo = VIEWS.filter((v) => v.id !== "front");
@@ -532,6 +539,7 @@
   const norm = (a) => ((a % 360) + 360) % 360;
 
   function showResult(fresh) {
+    $("#sidesBtn").hidden = true;
     S.yaw = 0;
     $("#beforeImg").src = S.photo;
     go("result");
@@ -830,7 +838,8 @@
     modelSel.value = Gemini.settings.model;
     $("#viewsInput").checked = Gemini.settings.views;
     $("#smartInput").checked = Gemini.settings.smart;
-    $("#settingsNote").textContent = note || "The key stays on this device only. Later, press and hold the top-left button to come back here.";
+    const used = Gemini.usage();
+    $("#settingsNote").textContent = note || `The key stays on this device only. Used on this device so far: ${used.images} picture${used.images === 1 ? "" : "s"} and ${used.checks} quick check${used.checks === 1 ? "" : "s"}.`;
     $("#settings").hidden = false;
     setTimeout(() => (Gemini.settings.key ? modelSel : $("#keyInput")).focus(), 300);
   }

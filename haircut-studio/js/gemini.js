@@ -23,8 +23,9 @@
     set key(v) { write("hs.key", v.trim()); write("hs.route", ""); write("hs.text", ""); noTextModel = false; },
     get model() { return read("hs.model") || MODELS[0][0]; },
     set model(v) { write("hs.model", v); write("hs.route", ""); },
-    get views() { return read("hs.views") !== "0"; },
-    set views(v) { write("hs.views", v ? "1" : "0"); },
+    // Side and back views cost three more pictures, so by default they are made only on request.
+    get views() { return read("hs.views2") === "1"; },
+    set views(v) { write("hs.views2", v ? "1" : "0"); },
     get smart() { return read("hs.smart") !== "0"; }, // plan + check steps
     set smart(v) { write("hs.smart", v ? "1" : "0"); },
   };
@@ -213,6 +214,7 @@
       const [model, route] = mr.split("|");
       return withRetry((p) => IMAGE_ROUTES[route](model, p, signal), prepped, signal, "Reply with the edited photo only.");
     });
+    count("images");
     return jpeg(img, OUT_W, OUT_H, 0.92);
   }
 
@@ -222,10 +224,12 @@
     if (noTextModel) throw new GeminiError("MODEL", "No text model for this key.");
     const prepped = await prepAll(parts);
     try {
-      return await walk("hs.text", TEXT_MODELS, (model) => withRetry((p) => post(`${BASE}/models/${model}:generateContent`, {
+      const out = await walk("hs.text", TEXT_MODELS, (model) => withRetry((p) => post(`${BASE}/models/${model}:generateContent`, {
         contents: asContent(p),
         generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.2 },
       }, signal).then(jsonFromContent), prepped, signal));
+      count("checks");
+      return out;
     } catch (e) {
       if (e.code === "MODEL") noTextModel = true;
       throw e;
@@ -245,5 +249,9 @@
     return images.sort((a, b) => rank(a) - rank(b));
   }
 
-  window.Gemini = { MODELS, settings, GeminiError, image, json, listModels, jpeg };
+  // How much this device has asked Gemini for, so staff can keep an eye on the budget.
+  function count(what) { write("hs.used." + what, String((parseInt(read("hs.used." + what), 10) || 0) + 1)); }
+  const usage = () => ({ images: parseInt(read("hs.used.images"), 10) || 0, checks: parseInt(read("hs.used.checks"), 10) || 0 });
+
+  window.Gemini = { MODELS, settings, GeminiError, image, json, listModels, jpeg, usage };
 })();

@@ -45,8 +45,15 @@ GitHub Pages) and use "Add to Home Screen".
 - **Plan and check each result**: on by default. Adds the plan and check steps (see below).
   It adds about 5 to 10 seconds and two cheap text calls, plus a redraw when a result fails
   the check.
-- **Make side & back views**: on by default. This makes 3 extra images per try (about 4×
-  the cost) so the result can be turned. Turn it off to make only the front view.
+- **Make side & back views every time**: off by default. The views cost 3 extra pictures
+  per try (about 4× the cost), so normally the customer taps **See sides & back** on the
+  result when they want them. Turn this on to make them automatically.
+- Staff settings also show how many pictures and quick checks this device has used, to keep
+  an eye on the budget.
+
+**Cost per try**: one picture (plus a second one only when the check finds a visible
+problem, or the head moved), two cheap text calls for the plan and check, and three more
+pictures only if the side views are requested.
 
 The key is used straight from the browser, so anyone with access to the device could read
 it. That is fine for a shop tablet you control. For a public website, put a small proxy in
