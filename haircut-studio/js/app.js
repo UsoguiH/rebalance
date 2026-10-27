@@ -140,6 +140,7 @@
   function photoUI() {
     const cam = $("#cam"), shoot = $("#shootBtn"), alt = $("#altBtn"), pick = $("#pickBtn"), again = $("#pickAgainBtn"), hint = $("#photoHint");
     const live = !S.photo && S.camera === "on";
+    hint.hidden = false;
     cam.classList.toggle("has-shot", !!S.photo);
     cam.classList.toggle("no-cam", !S.photo && !live);
     video.hidden = !live; // an empty video shows a big "play" placeholder on Android
@@ -159,9 +160,10 @@
       again.hidden = false;
       again.querySelector(".lbl").textContent = "Upload a photo";
     } else {
-      hint.textContent = S.camera === "wait" ? "Starting the camera… or choose a photo." : "Choose a clear photo of your face.";
+      // Simple: just the stadium. The whole of it opens the photo picker.
+      hint.hidden = true;
       shoot.hidden = true; alt.hidden = true; again.hidden = true;
-      pick.hidden = false;
+      pick.hidden = true;
     }
   }
   function setBtn(btn, ico, label) {

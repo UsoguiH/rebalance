@@ -150,25 +150,26 @@ img { display: block; -webkit-user-drag: none; }
 /* no camera (or not allowed yet): the card picks a photo, in the black-stadium style */
 .cam-pick {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 26px; padding: 28px; color: var(--white); text-align: left; cursor: pointer;
+  gap: 18px; padding: 24px; color: var(--white); text-align: left; cursor: pointer;
 }
+/* Without a photo or camera the card is the reference's black stadium: card + round button. */
+.cam.no-cam { aspect-ratio: 1.42; max-height: none; border-radius: 9999px; }
 .pick-card {
-  position: relative; width: min(78%, 320px); aspect-ratio: 1.68; border-radius: 30px; padding: 20px 22px;
+  position: relative; width: min(58%, 300px); aspect-ratio: 1.6; border-radius: 26px; padding: 16px 20px; flex: none;
   display: flex; flex-direction: column; justify-content: flex-end;
   background: linear-gradient(170deg, var(--orange-a), var(--orange-b));
   box-shadow: 0 18px 40px -18px rgba(255, 74, 28, .7);
   transition: transform .5s var(--spring);
   animation: flipIn .8s var(--spring) both;
 }
-.pick-kind { position: absolute; top: 18px; right: 22px; font: italic 700 22px var(--display); letter-spacing: .02em; text-transform: uppercase; }
-.pick-name { font-size: 26px; font-weight: 500; line-height: 1.1; }
-.pick-sub { font-size: 16px; color: rgba(255, 255, 255, .75); margin-top: 4px; }
+.pick-kind { position: absolute; top: 14px; right: 18px; font: italic 700 clamp(15px, 4.4vw, 21px) var(--display); letter-spacing: .02em; text-transform: uppercase; }
+.pick-name { font-size: clamp(18px, 5.2vw, 25px); font-weight: 500; line-height: 1.1; }
+.pick-sub { font-size: clamp(12px, 3.4vw, 15px); color: rgba(255, 255, 255, .72); margin-top: 3px; }
 .pick-go {
-  width: 88px; height: 88px; border-radius: 50%; background: var(--coal); display: grid; place-items: center;
+  flex: none; width: clamp(64px, 18vw, 84px); aspect-ratio: 1; border-radius: 50%; background: var(--coal); display: grid; place-items: center;
   transition: transform .5s var(--spring); animation: breatheGo 2.4s ease-in-out infinite;
 }
 .pick-go .ico { width: 34px; height: 34px; }
-.pick-tip { font-size: 14px; color: rgba(255, 255, 255, .5); text-align: center; }
 .cam-pick:active .pick-card, .cam-pick:active .pick-go { transform: scale(.95); transition-duration: .12s; }
 .cam.drag .pick-card { transform: scale(1.05) rotate(-2deg); }
 @keyframes breatheGo { 50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, .06); } }
