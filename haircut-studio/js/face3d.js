@@ -61,7 +61,7 @@
     return out;
   }
 
-  function create(canvas) {
+  function create(canvas, { scale = 1 } = {}) {
     const g = canvas.getContext("2d");
     let pts = [], born = 0, raf = 0, running = false;
     let yaw = 0, pitch = 0, vy = 0, vp = 0, dragging = false, lastX = 0, lastY = 0, idleAt = 0;
@@ -96,7 +96,7 @@
         pitch += (0 - pitch) * 0.06;
       }
       const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
-      const S = Math.min(W * 0.5, H * 0.5) * 0.78, f = 3.2;
+      const S = Math.min(W * 0.5, H * 0.5) * 0.78 * scale, f = 3.2;
       const scanY = ((t * 0.45) % 1.6) - 0.8; // sweeps top to bottom
       const age = (now - born) / 1700;
       const hot = [];

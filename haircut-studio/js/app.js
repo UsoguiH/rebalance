@@ -61,6 +61,7 @@
     scrollTo({ top: 0, behavior: "instant" in document.documentElement.style ? "instant" : "auto" });
     if (name === "photo") startCamera(); else stopCamera();
     if (name !== "make") face.stop();
+    if (name !== "photo") idleFace.stop();
     updateIsland();
   }
 
@@ -160,11 +161,24 @@
       again.hidden = false;
       again.querySelector(".lbl").textContent = "Upload a photo";
     } else {
-      // Simple: just the stadium. The whole of it opens the photo picker.
+      // Simple: the stadium with a 3D face, and the Choose a photo button.
       hint.hidden = true;
       shoot.hidden = true; alt.hidden = true; again.hidden = true;
-      pick.hidden = true;
+      pick.hidden = false;
     }
+    if (!S.photo && !live && app.dataset.screen === "photo") { idleInit(); idleFace.start(); } else idleFace.stop();
+  }
+
+  // The turning 3D face skeleton shown while waiting for a photo (built from a style photo's face).
+  const idleFace = Face3D.create($("#idleFace"), { scale: 0.82 });
+  let idleLoaded = false;
+  function idleInit() {
+    if (idleLoaded) return;
+    idleLoaded = true;
+    const s = STYLE_BY_ID["buzz-cut"] || window.STYLES[0];
+    loadRef(s).then((url) => new Promise((ok, no) => { const img = new Image(); img.onload = () => ok(img); img.onerror = no; img.src = url; }))
+      .then((img) => idleFace.load(img))
+      .catch(() => { idleLoaded = false; });
   }
   function setBtn(btn, ico, label) {
     btn.querySelector(".lbl").textContent = label;
@@ -247,58 +261,28 @@
       buzz(10);
       loadRef(s);
     } else buzz(4);
-    updateIsland(on ? tile : null);
+    updateIsland();
   });
 
-  function wallet(el, animate) {
-    const ids = [S.pick.hair, S.pick.beard].filter(Boolean);
-    const key = ids.join("+");
+  // The chosen style(s): round photos, the names, and what they are.
+  function picked(el) {
+    const list = [S.pick.hair, S.pick.beard].filter(Boolean).map((id) => STYLE_BY_ID[id]);
+    const key = list.map((x) => x.id).join("+");
     if (el.dataset.key === key) return;
     el.dataset.key = key;
-    el.dataset.n = ids.length;
-    el.innerHTML = "";
-    ids.forEach((id) => {
-      const s = STYLE_BY_ID[id];
-      const list = window.STYLES.filter((x) => x.kind === s.kind);
-      const c = document.createElement("div");
-      c.className = "ocard";
-      if (!animate) c.style.animation = "none";
-      c.innerHTML = `<img class="ocard-img" alt=""><span class="ocard-kind">${s.kind === "hair" ? "Hair" : "Beard"}</span><span class="ocard-name"></span><span class="ocard-sub mono">No. ${String(list.indexOf(s) + 1).padStart(2, "0")} of ${list.length}</span>`;
-      c.querySelector(".ocard-img").src = s.img;
-      c.querySelector(".ocard-name").textContent = s.name;
-      el.appendChild(c);
-    });
+    el.innerHTML = '<span class="picked-thumbs"></span><span class="picked-text"><span class="picked-name"></span><span class="picked-sub"></span></span>';
+    list.forEach((x) => { const img = document.createElement("img"); img.alt = ""; img.src = x.img; el.firstChild.appendChild(img); });
+    // One style: its name and what it is. Two: both names, one per line.
+    el.querySelector(".picked-name").textContent = list[0].name;
+    const sub = el.querySelector(".picked-sub");
+    if (list[1]) { sub.textContent = list[1].name; sub.classList.add("picked-name2"); }
+    else sub.textContent = list[0].kind === "hair" ? "Haircut" : "Beard";
   }
 
-  function updateIsland(fromTile) {
-    const island = $("#island");
+  function updateIsland() {
     const any = S.pick.hair || S.pick.beard;
-    island.classList.toggle("up", !!any && app.dataset.screen === "pick");
-    if (!any) return;
-    const w = $("#wallet");
-    wallet(w, true);
-    if (fromTile) fly(fromTile, w.lastElementChild);
-  }
-
-  // The tapped photo flies down into the orange card.
-  function fly(tile, card) {
-    if (!card || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const img = tile.querySelector("img");
-    const a = img.getBoundingClientRect();
-    const target = card.querySelector(".ocard-img");
-    requestAnimationFrame(() => {
-      const b = target.getBoundingClientRect();
-      if (!b.width) return;
-      const ghost = img.cloneNode();
-      Object.assign(ghost.style, { position: "fixed", left: a.left + "px", top: a.top + "px", width: a.width + "px", height: a.height + "px", objectFit: "cover", borderRadius: "44px", zIndex: 40, pointerEvents: "none", margin: 0, opacity: 1 });
-      document.body.appendChild(ghost);
-      const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
-      ghost.animate([
-        { transform: "translate(0,0) scale(1)", borderRadius: "44px" },
-        { transform: `translate(${dx * 0.55}px, ${dy * 0.45 - 60}px) scale(.55)`, borderRadius: "80px", offset: 0.55 },
-        { transform: `translate(${dx}px, ${dy}px) scale(${b.width / a.width})`, borderRadius: a.width + "px", opacity: 0.2 },
-      ], { duration: 700, easing: "cubic-bezier(.5,0,.3,1)" }).onfinish = () => ghost.remove();
-    });
+    $("#island").classList.toggle("up", !!any && app.dataset.screen === "pick");
+    if (any) picked($("#picked"));
   }
 
   const refCache = {};
@@ -731,8 +715,8 @@
   }
   $("#loveBtn").addEventListener("click", () => {
     $("#showImg").src = currentFrame();
-    $("#showWallet").dataset.key = "";
-    wallet($("#showWallet"), true);
+    $("#showPicked").dataset.key = "";
+    picked($("#showPicked"));
     $("#show").hidden = false;
     buzz([10, 50, 10]);
   });
@@ -772,7 +756,7 @@
     S.run++; S.ctrl && S.ctrl.abort();
     S.pick = { hair: null, beard: null }; S.frames = {};
     Pipeline.clear();
-    turn.innerHTML = ""; $("#wallet").dataset.key = "";
+    turn.innerHTML = ""; $("#picked").dataset.key = "";
     $("#show").hidden = true;
     $("#beforeImg").removeAttribute("src");
     $("#meBtn img").removeAttribute("src");

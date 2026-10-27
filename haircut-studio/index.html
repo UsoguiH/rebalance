@@ -36,12 +36,7 @@
         <div class="flash" id="flash"></div>
         <!-- Labels open the photo picker natively: phones honour a tap on them even inside other apps. -->
         <label class="cam-pick" id="camPick" for="file" hidden>
-          <span class="pick-card">
-            <span class="pick-kind">Photo</span>
-            <span class="pick-name">Your photo</span>
-            <span class="pick-sub mono">Tap to choose</span>
-          </span>
-          <span class="pick-go" aria-hidden="true"><span class="ico ico-plus"></span></span>
+          <canvas class="idle-face" id="idleFace" aria-hidden="true"></canvas>
         </label>
       </div>
       <p class="hint mono" id="photoHint" aria-live="polite"></p>
@@ -109,9 +104,9 @@
 
   </main>
 
-  <!-- Selection island (pick screen) -->
+  <!-- Selection bar (pick screen): what is picked + Try it on -->
   <div class="island" id="island" aria-live="polite">
-    <div class="wallet" id="wallet"></div>
+    <div class="picked" id="picked"></div>
     <button class="go" id="goBtn"><span class="ico ico-check"></span><span class="lbl">Try it on</span></button>
   </div>
 
@@ -119,9 +114,7 @@
   <div class="sheet show" id="show" role="dialog" aria-modal="true" aria-labelledby="t-show" hidden>
     <div class="show-inner">
       <div class="show-photo"><img id="showImg" alt="Your new look"></div>
-      <div class="island island--static">
-        <div class="wallet" id="showWallet"></div>
-      </div>
+      <div class="picked picked--show" id="showPicked"></div>
       <h2 class="title" id="t-show">Show this to your barber</h2>
       <div class="actions">
         <button class="btn btn--black" id="saveBtn"><span class="ico ico-down"></span><span class="lbl">Save picture</span></button>
