@@ -1,8 +1,9 @@
-/* Gemini image editing for the try-on.
-   - generateContent first, the Interactions API as a fallback, walking down the model list
+/* Talking to Gemini: image edits and structured JSON answers.
+   - image: generateContent first, the Interactions API as a fallback, walking down the model list
+   - json: a fast text model with a response schema, for the plan and check steps
    - retries rate limits and server hiccups with backoff, gives up after a timeout
-   - skips "thought" images and reports blocked or refused edits clearly
-   - every result is normalised to the same 3:4 size so the turnable views line up */
+   - skips "thought" parts and reports blocked or refused requests clearly
+   Prompts live in prompts.js, the try-on steps in pipeline.js. */
 (function () {
   const BASE = "https://generativelanguage.googleapis.com/v1beta";
   const MODELS = [
@@ -12,23 +13,25 @@
     ["gemini-3.1-flash-lite-image", "Nano Banana 2 Lite (fastest)"],
     ["gemini-2.5-flash-image", "Nano Banana (legacy)"],
   ];
-  const OUT_W = 960, OUT_H = 1280; // every result, 3:4
+  const TEXT_MODELS = ["gemini-flash-latest", "gemini-3-flash", "gemini-2.5-flash"];
+  const OUT_W = 960, OUT_H = 1280; // every picture, 3:4
   const IN_MAX = 1024; // longest side sent to Gemini
   const TIMEOUT = 120000;
-  const COLOUR_STYLES = new Set(["salt-pepper", "red-full", "wizard"]);
 
   const settings = {
     get key() { return read("hs.key") || window.GEMINI_API_KEY || ""; },
-    set key(v) { write("hs.key", v.trim()); write("hs.route", ""); },
+    set key(v) { write("hs.key", v.trim()); write("hs.route", ""); write("hs.text", ""); noTextModel = false; },
     get model() { return read("hs.model") || MODELS[0][0]; },
     set model(v) { write("hs.model", v); write("hs.route", ""); },
     get views() { return read("hs.views") !== "0"; },
     set views(v) { write("hs.views", v ? "1" : "0"); },
+    get smart() { return read("hs.smart") !== "0"; }, // plan + check steps
+    set smart(v) { write("hs.smart", v ? "1" : "0"); },
   };
   function read(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function write(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
 
-  // code: NO_KEY | KEY | QUOTA | BLOCKED | NO_IMAGE | NETWORK | TIMEOUT | MODEL | SERVER
+  // code: NO_KEY | KEY | QUOTA | BLOCKED | NO_IMAGE | NETWORK | TIMEOUT | MODEL | SERVER | BAD | PHOTO
   class GeminiError extends Error {
     constructor(code, msg, status) { super(msg || code); this.code = code; this.status = status; }
   }
@@ -64,25 +67,31 @@
     return c.toDataURL("image/jpeg", q);
   }
   const split = (url) => ({ mime: url.slice(5, url.indexOf(";")), data: url.slice(url.indexOf(",") + 1) });
+  // Prompt parts are text or image data URLs; images are shrunk and turned into {mime, data}.
+  const isImage = (p) => /^data:image\//.test(p);
+  const prepAll = (parts) => Promise.all(parts.map((p) => isImage(p) ? jpeg(p, IN_MAX).then(split) : p));
 
   /* ---------- responses ---------- */
-  function fromContent(json) {
+  function contentParts(json) {
     const block = json.promptFeedback && json.promptFeedback.blockReason;
     if (block) throw new GeminiError("BLOCKED", block);
     const cand = (json.candidates || [])[0] || {};
-    const parts = (cand.content && cand.content.parts) || [];
-    const images = parts.filter((p) => !p.thought && (p.inlineData || p.inline_data));
+    const parts = ((cand.content && cand.content.parts) || []).filter((p) => !p.thought);
+    return { parts, why: cand.finishReason || "" };
+  }
+  function imageFromContent(json) {
+    const { parts, why } = contentParts(json);
+    const images = parts.filter((p) => p.inlineData || p.inline_data);
     const last = images[images.length - 1];
     if (last) {
       const b = last.inlineData || last.inline_data;
       return "data:" + (b.mimeType || b.mime_type || "image/png") + ";base64," + b.data;
     }
-    const why = cand.finishReason || "";
     if (/SAFETY|PROHIBITED|BLOCKLIST|SPII|RECITATION/.test(why)) throw new GeminiError("BLOCKED", why);
-    const said = parts.filter((p) => !p.thought && p.text).map((p) => p.text).join(" ").trim();
+    const said = parts.filter((p) => p.text).map((p) => p.text).join(" ").trim();
     throw new GeminiError("NO_IMAGE", said || why || "No picture came back.");
   }
-  function fromInteraction(json) {
+  function imageFromInteraction(json) {
     const blocks = [];
     for (const s of json.steps || json.outputs || []) {
       if (s.type && s.type !== "model_output") continue;
@@ -93,6 +102,13 @@
     if (last) return "data:" + (last.mime_type || last.mimeType || "image/png") + ";base64," + last.data;
     if (json.status && /block|safety/i.test(json.status)) throw new GeminiError("BLOCKED", json.status);
     throw new GeminiError("NO_IMAGE", json.output_text || "No picture came back.");
+  }
+  function jsonFromContent(json) {
+    const { parts, why } = contentParts(json);
+    if (/SAFETY|PROHIBITED|BLOCKLIST|SPII/.test(why)) throw new GeminiError("BLOCKED", why);
+    const text = parts.filter((p) => p.text).map((p) => p.text).join("").trim()
+      .replace(/^```(?:json)?\s*/i, "").replace(/```$/, "");
+    try { return JSON.parse(text); } catch (e) { throw new GeminiError("NO_IMAGE", "The answer was not valid JSON."); }
   }
 
   /* ---------- transport ---------- */
@@ -131,34 +147,34 @@
     throw e;
   }
 
-  const ROUTES = {
+  const asContent = (parts) => [{ role: "user", parts: parts.map((p) => typeof p === "string" ? { text: p } : { inline_data: { mime_type: p.mime, data: p.data } }) }];
+  const IMAGE_ROUTES = {
     content(model, parts, signal) {
       return post(`${BASE}/models/${model}:generateContent`, {
-        contents: [{ role: "user", parts: parts.map((p) => typeof p === "string" ? { text: p } : { inline_data: { mime_type: p.mime, data: p.data } }) }],
+        contents: asContent(parts),
         generationConfig: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: "3:4" } },
-      }, signal).then(fromContent);
+      }, signal).then(imageFromContent);
     },
     interactions(model, parts, signal) {
       return post(`${BASE}/interactions`, {
         model,
         input: parts.map((p) => typeof p === "string" ? { type: "text", text: p } : { type: "image", mime_type: p.mime, data: p.data }),
         response_format: { type: "image", aspect_ratio: "3:4", image_size: "1K", mime_type: "image/jpeg" },
-      }, signal).then(fromInteraction);
+      }, signal).then(imageFromInteraction);
     },
   };
 
-  // One call with retries. Rate limits and server errors wait and try again;
-  // a missing picture is retried once with a firmer instruction.
-  async function call(model, route, parts, signal) {
+  // Retries rate limits and server errors; a missing picture is retried once with a firmer instruction.
+  async function withRetry(run, parts, signal, nudge) {
     let nudged = false;
     for (let attempt = 0; ; attempt++) {
       try {
-        return await ROUTES[route](model, parts, signal);
+        return await run(parts);
       } catch (e) {
         if (e.name === "AbortError") throw e;
-        if (e.code === "NO_IMAGE" && !nudged) {
+        if (e.code === "NO_IMAGE" && nudge && !nudged) {
           nudged = true;
-          parts = [...parts, "Reply with the edited photo only."];
+          parts = [...parts, nudge];
           continue;
         }
         const transient = e.code === "SERVER" || e.code === "TIMEOUT" || e.code === "NETWORK" || (e.code === "QUOTA" && e.retryAfter > 0 && e.retryAfter <= 60000);
@@ -168,117 +184,66 @@
     }
   }
 
-  // Finds the route that works for this key once, then sticks to it.
-  async function generate(parts, signal) {
+  // Walks the candidates until one answers; only an unavailable model is worth switching for.
+  async function walk(store, candidates, attempt) {
     if (!settings.key) throw new GeminiError("NO_KEY");
-    const saved = (read("hs.route") || "").split("|");
-    const models = [settings.model, ...MODELS.map((m) => m[0]).filter((m) => m !== settings.model)];
-    const tries = saved.length === 2 ? [saved] : [];
-    for (const m of models) for (const r of ["content", "interactions"]) if (!(m === saved[0] && r === saved[1])) tries.push([m, r]);
+    const saved = read(store);
+    const list = saved ? [saved, ...candidates.filter((c) => c !== saved)] : candidates;
     let last;
-    for (const [model, route] of tries) {
+    for (const c of list) {
       try {
-        const img = await call(model, route, parts, signal);
-        write("hs.route", model + "|" + route);
-        return await jpeg(img, OUT_W, OUT_H, 0.92);
+        const out = await attempt(c);
+        write(store, c);
+        return out;
       } catch (e) {
-        if (e.name === "AbortError") throw e;
+        if (e.name === "AbortError" || e.code !== "MODEL") throw e;
         last = e;
-        if (e.code !== "MODEL") throw e; // only an unavailable model is worth switching for
       }
     }
-    throw last || new GeminiError("MODEL", "No image model is available for this key.");
+    throw last || new GeminiError("MODEL", "No model is available for this key.");
   }
 
-  /* ---------- prompts ---------- */
-  const KEEP = "Keep the exact same person: same face shape, eyes, nose, lips, ears, skin tone, skin texture, age, expression, glasses and clothes. Do not beautify, slim or retouch the face.";
-  const LOOK = "It must look like a real, sharp photo taken right after a visit to a good barber: a natural hairline, individual hair strands, realistic density and shine. No illustration, no text, no watermark.";
-  const BACKDROP = "Plain, soft, light grey studio backdrop with gentle, even light.";
-
-  function lookParts(photo, hair, beard) {
-    const p = ["You are a master barber making a photo-realistic preview of a new look for a customer."];
-    p.push("IMAGE 1, the customer:", photo);
-    if (hair) p.push(`IMAGE ${2}, a real photo showing the haircut "${hair.name}" (style reference only):`, hair.ref);
-    if (beard) p.push(`IMAGE ${hair ? 3 : 2}, a real photo showing the facial hair "${beard.name}" (style reference only):`, beard.ref);
-
-    const t = ["Edit IMAGE 1."];
-    if (hair) t.push(`Give the customer a ${hair.name}: ${hair.desc} Copy the cut's shape, length, texture and styling from the reference photo, adapted to the customer's own head shape and hair type.`);
-    else t.push("Leave the hair on the head exactly as it is.");
-    if (beard) t.push(`Give the customer this facial hair, ${beard.name}: ${beard.desc} Copy its shape, length and edges from the reference photo, adapted to the customer's jaw and face.`);
-    else t.push("Leave the beard, moustache and stubble exactly as they are.");
-    const keep = [];
-    if (hair) keep.push("hair");
-    if (beard && !COLOUR_STYLES.has(beard.id)) keep.push("facial hair");
-    if (keep.length) t.push(`Keep the customer's natural ${keep.join(" and ")} colour.`);
-    t.push("Never copy the reference person's face, skin, age, hair colour or clothes; the reference only shows the style.");
-    t.push(KEEP);
-    t.push("Keep the same head pose and camera angle as IMAGE 1, head and shoulders in frame, portrait 3:4. " + BACKDROP);
-    t.push(LOOK);
-    p.push(t.join("\n"));
-    return p;
+  // parts: strings and data URLs, in order. Returns a 960x1280 JPEG data URL.
+  async function image(parts, signal) {
+    const prepped = await prepAll(parts);
+    const models = [settings.model, ...MODELS.map((m) => m[0]).filter((m) => m !== settings.model)];
+    const routes = [];
+    for (const m of models) for (const r of ["content", "interactions"]) routes.push(m + "|" + r);
+    const img = await walk("hs.route", routes, (mr) => {
+      const [model, route] = mr.split("|");
+      return withRetry((p) => IMAGE_ROUTES[route](model, p, signal), prepped, signal, "Reply with the edited photo only.");
+    });
+    return jpeg(img, OUT_W, OUT_H, 0.92);
   }
 
-  // Turnable views. Directions are given in image terms so they match the drag:
-  // dragging right turns the nose toward the right edge of the picture.
-  const VIEW_TEXT = {
-    right: "turned 90 degrees so the nose points to the RIGHT edge of the picture: a clean side profile showing the right side of the head and the right ear",
-    left: "turned 90 degrees so the nose points to the LEFT edge of the picture: a clean side profile showing the left side of the head and the left ear",
-    back: "seen from directly behind: the back of the head and the neckline, showing how the hair is cut at the back and sides; the face is not visible",
-  };
-  function viewParts(view, result, photo, refs) {
-    const p = [
-      "IMAGE 1, a customer with their new haircut and facial hair:", result,
-      "IMAGE 2, the same customer before the cut (for identity only; ignore their old hair):", photo,
-    ];
-    refs.forEach((r, i) => p.push(`IMAGE ${3 + i}, a real photo of the style (reference for the sides and back):`, r));
-    p.push([
-      `Make a realistic photo of the exact same person from IMAGE 1, with the exact same haircut and facial hair, ${VIEW_TEXT[view]}.`,
-      "Same hair colour, length, fade height, parting and texture as IMAGE 1. Same clothes. Head and shoulders in frame, portrait 3:4, camera at head height.",
-      BACKDROP + " Same lighting as IMAGE 1.",
-      LOOK,
-    ].join("\n"));
-    return p;
+  // A structured answer from a fast text model that can see images.
+  let noTextModel = false; // found out this session that the key has none: stop asking
+  async function json(parts, schema, signal) {
+    if (noTextModel) throw new GeminiError("MODEL", "No text model for this key.");
+    const prepped = await prepAll(parts);
+    try {
+      return await walk("hs.text", TEXT_MODELS, (model) => withRetry((p) => post(`${BASE}/models/${model}:generateContent`, {
+        contents: asContent(p),
+        generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.2 },
+      }, signal).then(jsonFromContent), prepped, signal));
+    } catch (e) {
+      if (e.code === "MODEL") noTextModel = true;
+      throw e;
+    }
   }
 
-  /* ---------- public ---------- */
-  const cache = new Map(); // same photo + same styles = same picture, no second charge
-  function hash(s) { let h = 0; for (let i = 0; i < s.length; i += 97) h = (h * 31 + s.charCodeAt(i)) | 0; return h + ":" + s.length; }
-  const prep = (url) => jpeg(url, IN_MAX).then(split);
-
-  async function cached(key, make) {
-    if (cache.has(key)) return cache.get(key);
-    const p = make();
-    cache.set(key, p);
-    p.catch(() => cache.delete(key));
-    return p;
-  }
-
-  // Lists the image models this key can use, best first.
+  // Lists the image models this key can use, best first, and remembers a fast text model.
   async function listModels(key) {
     const res = await fetch(`${BASE}/models?pageSize=1000`, { headers: { "x-goog-api-key": key } });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new GeminiError(res.status === 429 ? "QUOTA" : "KEY", (json.error && json.error.message) || res.statusText, res.status);
-    const names = (json.models || []).map((m) => m.name.replace(/^models\//, "")).filter((n) => (/image|banana/.test(n) || MODELS.some((m) => m[0] === n)) && !/imagen|embedding|preview-tts/.test(n));
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new GeminiError(res.status === 429 ? "QUOTA" : "KEY", (body.error && body.error.message) || res.statusText, res.status);
+    const all = (body.models || []).map((m) => m.name.replace(/^models\//, ""));
+    const images = all.filter((n) => (/image|banana/.test(n) || MODELS.some((m) => m[0] === n)) && !/imagen|embedding|tts/.test(n));
     const rank = (n) => { const i = MODELS.findIndex((m) => m[0] === n); return i < 0 ? 99 : i; };
-    return names.sort((a, b) => rank(a) - rank(b));
+    const text = TEXT_MODELS.find((t) => all.includes(t)) || all.find((n) => /flash/.test(n) && !/image|tts|live|audio|embedding|lite/.test(n));
+    if (text) write("hs.text", text);
+    return images.sort((a, b) => rank(a) - rank(b));
   }
 
-  window.Gemini = {
-    MODELS, settings, GeminiError, listModels,
-    clear() { cache.clear(); },
-    tryOn({ photo, hair, beard, signal }) {
-      const key = ["look", hash(photo), hair && hair.id, beard && beard.id].join("|");
-      return cached(key, async () => {
-        const [p, h, b] = await Promise.all([prep(photo), hair && prep(hair.ref), beard && prep(beard.ref)]);
-        return generate(lookParts(p, hair && { ...hair, ref: h }, beard && { ...beard, ref: b }), signal);
-      });
-    },
-    view({ result, photo, view, refs = [], signal }) {
-      const key = ["view", view, hash(result)].join("|");
-      return cached(key, async () => {
-        const [r, p, ...x] = await Promise.all([prep(result), prep(photo), ...refs.map(prep)]);
-        return generate(viewParts(view, r, p, x), signal);
-      });
-    },
-  };
+  window.Gemini = { MODELS, settings, GeminiError, image, json, listModels, jpeg };
 })();

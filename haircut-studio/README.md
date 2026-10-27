@@ -1,7 +1,7 @@
 # Try a New Look
 
-A barbershop try-on app. The customer takes a selfie, taps one of **50 haircuts** or
-**50 beards**, and Gemini shows them with that style. Each style is shown with a real
+A barbershop try-on app. The customer takes a selfie, taps one of **haircuts** or
+**beards** (42 haircuts and 21 beards for now; the list is easy to grow), and Gemini shows them with that style. Each style is shown with a real
 photo of someone wearing it (from Unsplash), and that photo is also sent to Gemini as the
 style reference. The result can be turned with a finger (front, left, back, right), and while
 the AI works the customer can spin a 3D dot model of their own face.
@@ -38,8 +38,13 @@ GitHub Pages) and use "Add to Home Screen".
 
 - **Gemini API key**: get one at <https://aistudio.google.com/apikey>. It is stored only
   in this browser (`localStorage`).
+- **Check key**: confirms the key works and fills the model list with the image models
+  this key can actually use, best first.
 - **Image model**: Nano Banana 2.1 by default. If a model is not available to your key,
-  the app falls back through the others automatically.
+  the app falls back through the others automatically and remembers what worked.
+- **Plan and check each result**: on by default. Adds the plan and check steps (see below).
+  It adds about 5 to 10 seconds and two cheap text calls, plus a redraw when a result fails
+  the check.
 - **Make side & back views**: on by default. This makes 3 extra images per try (about 4×
   the cost) so the result can be turned. Turn it off to make only the front view.
 
@@ -47,21 +52,72 @@ The key is used straight from the browser, so anyone with access to the device c
 it. That is fine for a shop tablet you control. For a public website, put a small proxy in
 front of the Gemini API and keep the key on the server.
 
+## The AI pipeline
+
+Each try-on runs three steps (`js/pipeline.js`). All prompts are in `js/prompts.js`.
+
+1. **Plan** (fast text model, JSON answer). It looks at the customer and the style photo
+   like a senior barber. It checks the photo is usable (one face, close enough, not too
+   dark or blurry), so a bad photo is caught before any image is paid for. Then it writes
+   a brief for this person: hair colour and texture, hairline, face shape, what must not
+   change (glasses, earrings, clothes), and exact instructions for the cut (guard numbers,
+   fade height, cm on top, parting side). It also writes one friendly line for the
+   customer, shown while they wait.
+2. **Draw** (image model). It gets the customer photo and the style photo, each labelled,
+   plus the style description, the barber's brief, and strict identity rules: same face,
+   skin, age and expression, no beautifying, natural colour, plain grey backdrop.
+3. **Check** (fast text model, JSON answer). It compares before, after and the style photo
+   and scores same person, style match, realism and kept details. If any score is too low,
+   the picture is redrawn once with the checker's fix notes, and the better of the two is
+   kept.
+
+The plan and check steps are helpers: if the text model is missing or fails, the try-on
+still works with the draw step alone. They can be turned off in Staff settings ("Plan and
+check each result"), which makes it faster and cheaper.
+
+**Side and back views** are drawn in parallel from the finished front picture, the
+original photo, the style photo and the plan's description of the sides and back.
+Directions are given in picture terms ("nose points to the right edge"), so dragging right
+always shows the right side.
+
+**Robustness**: only Gemini's final picture is used (intermediate "thought" images are
+skipped). Every picture is cropped to 960×1280 so the views line up. Rate limits (honouring
+Google's retry delay) and server errors are retried with backoff, and slow calls time out.
+A reply without a picture gets one firmer retry. Blocked edits show a plain message and a
+**Try again** button. Results are cached for the session, so going back to a look is
+instant and free. **Done, next customer** clears the photo and the cache.
+
+### Tuning the prompts
+
+`tools/eval.mjs` runs the real prompts against Gemini on a folder of test faces and writes
+`eval-out/report.html`: before, style photo and result side by side, with the plan and the
+check scores, plus average scores for the run.
+
+```sh
+GEMINI_API_KEY=... node tools/eval.mjs --faces ./test-faces --styles pompadour,low-fade,goatee
+GEMINI_API_KEY=... node tools/eval.mjs --faces ./test-faces --styles pompadour,low-fade,goatee --no-plan --out eval-noplan
+```
+
+Change a prompt in `js/prompts.js`, run it again, and compare the averages. Use photos of
+people who agreed to it.
+
 ## Files
 
 | Path | What it is |
 |---|---|
 | `index.html`, `css/app.css` | The four screens and the components (black stadiums, gray cards, orange accent) |
 | `js/app.js` | Screens, camera, picking, the turnable result, settings |
-| `js/gemini.js` | Prompts and Gemini calls (`generateContent`, falling back to the Interactions API) |
+| `js/prompts.js` | Every prompt and JSON schema (plan, draw, check, side and back views) |
+| `js/pipeline.js` | The try-on steps: plan, draw, check, redraw once, cache |
+| `js/gemini.js` | Gemini calls: image edits and JSON answers, retries, model fallback, model discovery |
 | `js/face3d.js` | The 3D face dot cloud |
-| `js/styles.js` | The 100 styles with their photo links and Gemini descriptions (generated) |
+| `js/styles.js` | The styles with their photo links and Gemini descriptions (generated) |
 | `credits.html` | Photographer and license for every photo (also linked from Staff settings) |
 | `tools/` | Scripts used to find, pick and build the reference photos |
 
 ## The reference photos
 
-All 100 are real photos from [Unsplash](https://unsplash.com), free to use under the
+All of them are real photos from [Unsplash](https://unsplash.com), free to use under the
 [Unsplash License](https://unsplash.com/license), including commercially. Each one was
 picked by hand from the search results for its style. As the Unsplash API terms require,
 the app loads them straight from Unsplash's image servers (cropped around the face) rather

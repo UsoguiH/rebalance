@@ -330,20 +330,20 @@
     log.innerHTML = "";
     face.start();
 
-    const script = [
-      "Hello! Let me have a look at you.",
-      "Reading the shape of your face.",
-      `Studying the ${names[0]} photo.`,
-      hair ? "Trimming the sides." : "Shaping the beard line.",
-      hair && beard ? `Now the ${beard.name}.` : "Blending it all together.",
-      "Matching your natural colour.",
-      "Checking the light.",
-      "Almost there. Looking sharp.",
-      "Final touches.",
+    // The lines follow the real steps of the pipeline; while the picture is drawn
+    // (the long step) they cycle through what a barber would be doing.
+    const drawing = [
+      ...(hair ? ["Trimming the sides.", "Shaping the top.", "Blending it all in."] : []),
+      ...(beard ? [`Shaping the ${beard.name.toLowerCase()}.`, "Cleaning up the lines."] : []),
+      "Matching the light.", "Almost there.",
     ];
-    let line = 0;
-    say(script[line++]);
-    const talk = setInterval(() => { if (line < script.length) say(script[line++]); }, 3200);
+    let talk = 0;
+    const talkThrough = (lines) => {
+      clearInterval(talk);
+      let i = 0;
+      talk = setInterval(() => { if (i < lines.length) say(lines[i++]); }, 3800);
+    };
+    say("Hello! Let me have a look at you.");
 
     const t0 = performance.now(), EST = estimate();
     $("#makeEta").textContent = "~" + clock(EST);
@@ -354,13 +354,26 @@
     }, 250);
     const end = () => { clearInterval(talk); clearInterval(timer); };
 
+    const onStep = (stage, info) => {
+      if (run !== S.run) return;
+      if (stage === "plan") say("Reading your hair and the shape of your face.");
+      if (stage === "planned" && info) {
+        if (info.greeting) say(info.greeting);
+        if (info.hair_colour && hair) setTimeout(() => run === S.run && say(`I will keep your natural ${info.hair_colour.toLowerCase()} colour.`), 1800);
+      }
+      if (stage === "draw") { say(`Now the ${names.join(" and the ")}.`); talkThrough(drawing); }
+      if (stage === "check") { clearInterval(talk); say("Checking it still looks just like you."); }
+      if (stage === "fix") { say("Fixing a small detail. One moment."); talkThrough(["Redoing the edges.", "Matching the light.", "Almost there."]); }
+    };
+
     try {
       const [hRef, bRef] = await Promise.all([hair && loadRef(hair), beard && loadRef(beard)]);
-      const url = await Gemini.tryOn({
+      const out = await Pipeline.tryOn({
         photo: S.photo,
         hair: hair && { ...hair, ref: hRef },
         beard: beard && { ...beard, ref: bRef },
         signal: S.ctrl.signal,
+        onStep,
       });
       if (run !== S.run) return;
       end();
@@ -370,7 +383,8 @@
       buzz([15, 60, 30]);
       await wait(700);
       if (run !== S.run) return;
-      S.frames = { front: url };
+      S.frames = { front: out.url };
+      S.plan = out.plan;
       showResult(true);
       if (Gemini.settings.views) makeViews(run, [hRef, bRef].filter(Boolean));
     } catch (e) {
@@ -380,14 +394,26 @@
       if (e.code === "NO_KEY") { openSettings("Add the Gemini API key first."); go("pick", true); return; }
       say(friendly(e), "err");
       buzz([40, 60, 40]);
-      S.failed = true;
-      setBtn($("#stopBtn"), "ico-again", "Try again");
+      S.failed = e.code === "PHOTO" ? "photo" : "retry";
+      if (S.failed === "photo") setBtn($("#stopBtn"), "ico-rec", "Take a new photo");
+      else setBtn($("#stopBtn"), "ico-again", "Try again");
     }
   }
+
+  const PHOTO_TIPS = {
+    no_face: "I cannot see a face in this photo. Let's take a new one.",
+    several_faces: "I see more than one person. Please take a photo of just you.",
+    face_too_small: "Your face is too far away. Please come closer and take a new photo.",
+    face_turned_away: "Please look straight at the camera and take a new photo.",
+    too_dark: "The photo is too dark. Please find more light and take a new one.",
+    too_blurry: "The photo is blurry. Please hold still and take a new one.",
+    face_covered: "Part of your face is covered. Please take a new photo.",
+  };
 
   function friendly(e) {
     if (!navigator.onLine || e.code === "NETWORK") return "No internet. Please check the connection.";
     switch (e.code) {
+      case "PHOTO": return PHOTO_TIPS[e.message] || "This photo will not work well. Let's take a new one.";
       case "QUOTA": return "The AI is busy. Please wait one minute and try again.";
       case "KEY": return "The AI key is not working. Please ask the staff.";
       case "BLOCKED": return "The AI would not edit this photo. Try another photo or style.";
@@ -399,11 +425,13 @@
   }
 
   // The time estimate learns from real runs on this device.
+  const etaKey = () => "hs.eta." + (Gemini.settings.smart ? "smart" : "fast");
   function estimate() {
-    try { return Math.max(8, Math.min(90, parseFloat(localStorage.getItem("hs.eta")) || 25)); } catch (e) { return 25; }
+    const fallback = Gemini.settings.smart ? 35 : 25;
+    try { return Math.max(8, Math.min(120, parseFloat(localStorage.getItem(etaKey())) || fallback)); } catch (e) { return fallback; }
   }
   function learn(s) {
-    try { localStorage.setItem("hs.eta", String(Math.round(estimate() * 0.6 + s * 0.4))); } catch (e) { /* private mode */ }
+    try { localStorage.setItem(etaKey(), String(Math.round(estimate() * 0.6 + s * 0.4))); } catch (e) { /* private mode */ }
   }
   const clock = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 
@@ -415,7 +443,8 @@
     go("pick", true);
   }
   $("#stopBtn").addEventListener("click", () => {
-    if (S.failed) { buzz(10); make(); } else stopMaking();
+    if (S.failed === "photo") { S.failed = false; clearPhoto(); go("photo", true); }
+    else if (S.failed) { buzz(10); make(); } else stopMaking();
   });
 
   // Side and back views are made together; each one appears as soon as it is ready.
@@ -427,7 +456,7 @@
     return Promise.all(todo.map(async (v, i) => {
       await new Promise((r) => setTimeout(r, i * 400)); // stagger to be gentle on rate limits
       try {
-        const url = await Gemini.view({ result: S.frames.front, photo: S.photo, view: v.id, refs, signal: S.ctrl.signal });
+        const url = await Pipeline.view({ result: S.frames.front, photo: S.photo, view: v.id, refs, plan: S.plan, signal: S.ctrl.signal });
         if (run !== S.run) return;
         S.frames[v.id] = url;
         buzz(6);
@@ -528,7 +557,7 @@
   async function retryView(v) {
     const run = S.run;
     S.frames[v.id] = "wait"; renderViews();
-    try { S.frames[v.id] = await Gemini.view({ result: S.frames.front, photo: S.photo, view: v.id, refs: S.refs || [], signal: S.ctrl.signal }); }
+    try { S.frames[v.id] = await Pipeline.view({ result: S.frames.front, photo: S.photo, view: v.id, refs: S.refs || [], plan: S.plan, signal: S.ctrl.signal }); }
     catch (e) { S.frames[v.id] = "fail"; }
     if (run === S.run) { renderFrames(); renderViews(); }
   }
@@ -653,7 +682,7 @@
   function reset() {
     S.run++; S.ctrl && S.ctrl.abort();
     S.pick = { hair: null, beard: null }; S.frames = {};
-    Gemini.clear();
+    Pipeline.clear();
     turn.innerHTML = ""; $("#wallet").dataset.key = "";
     $("#show").hidden = true;
     $("#beforeImg").removeAttribute("src");
@@ -716,6 +745,7 @@
     if (![...modelSel.options].some((o) => o.value === Gemini.settings.model)) fillModels([Gemini.settings.model, ...Gemini.MODELS.map((m) => m[0]).filter((m) => m !== Gemini.settings.model)]);
     modelSel.value = Gemini.settings.model;
     $("#viewsInput").checked = Gemini.settings.views;
+    $("#smartInput").checked = Gemini.settings.smart;
     $("#settingsNote").textContent = note || "The key stays on this device only.";
     $("#settings").hidden = false;
     setTimeout(() => (Gemini.settings.key ? modelSel : $("#keyInput")).focus(), 300);
@@ -725,6 +755,7 @@
     Gemini.settings.key = $("#keyInput").value;
     if (modelSel.value !== Gemini.settings.model) Gemini.settings.model = modelSel.value;
     Gemini.settings.views = $("#viewsInput").checked;
+    Gemini.settings.smart = $("#smartInput").checked;
     $("#settings").hidden = true;
     toast(Gemini.settings.key ? "Saved" : "No key saved");
   });

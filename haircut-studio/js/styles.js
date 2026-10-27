@@ -629,5 +629,320 @@ window.STYLES = [
    "authorUrl": "https://unsplash.com/@davidtoddmccarty?utm_source=try_a_new_look&utm_medium=referral",
    "source": "https://unsplash.com/photos/man-in-black-leather-jacket-9n96o2SieUs?utm_source=try_a_new_look&utm_medium=referral"
   }
+ },
+ {
+  "id": "light-stubble",
+  "kind": "beard",
+  "name": "Light Stubble",
+  "desc": "A few days of short even stubble across the jaw, cheeks and upper lip.",
+  "img": "https://images.unsplash.com/photo-1768565422698-2faaefa61fcc?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fG1hbiUyMHN0dWJibGUlMjBwb3J0cmFpdHxlbnwxfHx8fDE3OTMwNTkyNjF8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1768565422698-2faaefa61fcc?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fG1hbiUyMHN0dWJibGUlMjBwb3J0cmFpdHxlbnwxfHx8fDE3OTMwNTkyNjF8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Osama Madlom",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@skyinferno?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/bald-man-with-intense-gaze-looks-away-from-camera-o6330jXVJXo?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "heavy-stubble",
+  "kind": "beard",
+  "name": "Heavy Stubble",
+  "desc": "Dense short stubble about a week long, neatly edged.",
+  "img": "https://images.unsplash.com/photo-1742783107507-dc8bcd8fc30d?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8OHx8bWFuJTIwaGVhdnklMjBzdHViYmxlfGVufDF8fHx8MTc5MzA1OTI4MHww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1742783107507-dc8bcd8fc30d?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8OHx8bWFuJTIwaGVhdnklMjBzdHViYmxlfGVufDF8fHx8MTc5MzA1OTI4MHww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Sergio Kian",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@sergiokian?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-is-looking-directly-at-the-camera-OfwvAqjTENc?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "short-boxed",
+  "kind": "beard",
+  "name": "Short Boxed",
+  "desc": "Short full beard trimmed close with clean sharp cheek and neck lines.",
+  "img": "https://images.unsplash.com/photo-1790270492178-fd5024dcf03e?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fG1hbiUyMHNob3J0JTIwYmVhcmQlMjBwb3J0cmFpdHxlbnwxfHx8fDE3OTMwNTkzMDB8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1790270492178-fd5024dcf03e?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fG1hbiUyMHNob3J0JTIwYmVhcmQlMjBwb3J0cmFpdHxlbnwxfHx8fDE3OTMwNTkzMDB8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Felipe Souza",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@dszlipe?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-with-beard-in-black-sweatshirt-ymkosnvcHRI?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "full-beard",
+  "kind": "beard",
+  "name": "Full Beard",
+  "desc": "Thick full beard covering jaw, chin and cheeks, connected to the mustache, medium length.",
+  "img": "https://images.unsplash.com/photo-1612214095364-c92c983ced91?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fG1hbiUyMGZ1bGwlMjBiZWFyZCUyMHBvcnRyYWl0fGVufDF8fHx8MTc5MzA1OTMxN3ww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1612214095364-c92c983ced91?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTR8fG1hbiUyMGZ1bGwlMjBiZWFyZCUyMHBvcnRyYWl0fGVufDF8fHx8MTc5MzA1OTMxN3ww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Kingsley Osei-Abrah",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@kingsleyoseiabrah?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/topless-man-wearing-silver-necklace-7hRN_3pThf8?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "garibaldi",
+  "kind": "beard",
+  "name": "Garibaldi",
+  "desc": "Wide, full natural beard with a rounded bottom, about 15-20 cm long, with a natural mustache.",
+  "img": "https://images.unsplash.com/photo-1577632585381-c50d2d100116?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Nnx8bWFuJTIwYmlnJTIwcm91bmQlMjBmdWxsJTIwYmVhcmR8ZW58MXx8fHwxNzkzMDU5MzMzfDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1577632585381-c50d2d100116?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Nnx8bWFuJTIwYmlnJTIwcm91bmQlMjBmdWxsJTIwYmVhcmR8ZW58MXx8fHwxNzkzMDU5MzMzfDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Igor Rodrigues",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@igorrodrigues?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/topless-man-with-black-beard-7H0geRnholA?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "bandholz",
+  "kind": "beard",
+  "name": "Bandholz",
+  "desc": "Very long, full, untrimmed beard reaching the chest with a full mustache.",
+  "img": "https://images.unsplash.com/photo-1660183848850-9fffc07e2815?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NHx8bWFuJTIwdmVyeSUyMGxvbmclMjBiZWFyZHxlbnwxfHx8fDE3OTMwNTkzNTR8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1660183848850-9fffc07e2815?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NHx8bWFuJTIwdmVyeSUyMGxvbmclMjBiZWFyZHxlbnwxfHx8fDE3OTMwNTkzNTR8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Ruben Daniel",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@rubendaniel480?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-beard-m2t1fKdqAXo?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "ducktail",
+  "kind": "beard",
+  "name": "Ducktail",
+  "desc": "Full beard with the chin hair grown longer and shaped to a point, like a duck's tail.",
+  "img": "https://images.unsplash.com/photo-1586368395174-63c01048d855?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Nnx8bWFuJTIwcG9pbnRlZCUyMGZ1bGwlMjBiZWFyZHxlbnwxfHx8fDE3OTMwNTkzNzN8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1586368395174-63c01048d855?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8Nnx8bWFuJTIwcG9pbnRlZCUyMGZ1bGwlMjBiZWFyZHxlbnwxfHx8fDE3OTMwNTkzNzN8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Erik Mclean",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@introspectivedsgn?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-yellow-crew-neck-shirt-wearing-black-hat-dcIqKDmY-3Q?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "verdi",
+  "kind": "beard",
+  "name": "Verdi",
+  "desc": "Short rounded full beard (no longer than 10 cm) with a separate, styled, prominent mustache.",
+  "img": "https://images.unsplash.com/photo-1600364768707-1385e68a48f6?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NHx8bWFuJTIwYmVhcmQlMjBoYW5kbGViYXIlMjBtdXN0YWNoZXxlbnwxfHx8fDE3OTMwNTkzODd8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1600364768707-1385e68a48f6?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NHx8bWFuJTIwYmVhcmQlMjBoYW5kbGViYXIlMjBtdXN0YWNoZXxlbnwxfHx8fDE3OTMwNTkzODd8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Gursimrat Ganda",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@gurysimrat?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-blue-tank-top-ICZWButbZx4?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "goatee",
+  "kind": "beard",
+  "name": "Goatee",
+  "desc": "Hair only on the chin, cheeks and upper lip clean shaven.",
+  "img": "https://images.unsplash.com/photo-1563241838-1734b7a0aba4?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8bWFuJTIwZ29hdGVlfGVufDF8fHx8MTc5MzA1OTQwNHww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1563241838-1734b7a0aba4?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8bWFuJTIwZ29hdGVlfGVufDF8fHx8MTc5MzA1OTQwNHww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Jonas Kakaroto",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@jkakaroto?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-blue-tank-top-jxmto0s4G04?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "circle-beard",
+  "kind": "beard",
+  "name": "Circle Beard",
+  "desc": "Mustache connected to a chin goatee forming a rounded circle around the mouth.",
+  "img": "https://images.unsplash.com/photo-1768693480279-5e1a5a5b2590?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NHx8bWFuJTIwZ29hdGVlfGVufDF8fHx8MTc5MzA1OTQwNHww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1768693480279-5e1a5a5b2590?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NHx8bWFuJTIwZ29hdGVlfGVufDF8fHx8MTc5MzA1OTQwNHww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Andrew Lvov",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@lvovandrewph?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-beard-and-mustache-looks-up-q5dNNKNScMc?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "van-dyke",
+  "kind": "beard",
+  "name": "Van Dyke",
+  "desc": "Pointed chin goatee with a separate mustache that does not connect, cheeks clean shaven.",
+  "img": "https://images.unsplash.com/photo-1788055650503-84b6361002d3?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8bWFuJTIwZ29hdGVlfGVufDF8fHx8MTc5MzA1OTQwNHww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1788055650503-84b6361002d3?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8bWFuJTIwZ29hdGVlfGVufDF8fHx8MTc5MzA1OTQwNHww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "nicola dowie",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@nickynoodles13?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-with-grey-hair-and-goatee-ZqlCYra-rBc?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "anchor",
+  "kind": "beard",
+  "name": "Anchor",
+  "desc": "Pointed beard along the jawline under the chin shaped like an anchor, with a mustache.",
+  "img": "https://images.unsplash.com/photo-1508908324153-d1a219719814?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8N3x8bWFuJTIwYW5jaG9yJTIwYmVhcmR8ZW58MXx8fHwxNzkzMDU5NDU5fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1508908324153-d1a219719814?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8N3x8bWFuJTIwYW5jaG9yJTIwYmVhcmR8ZW58MXx8fHwxNzkzMDU5NDU5fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Taylor",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@xoutcastx?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/shallow-focus-of-man-nhIbH2OwB7M?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "balbo",
+  "kind": "beard",
+  "name": "Balbo",
+  "desc": "Floating mustache with a chin beard extending under the lower lip, no sideburns.",
+  "img": "https://images.unsplash.com/photo-1568290696106-ace229a158a6?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fG1hbiUyMGJlYXJkJTIwbm8lMjBtdXN0YWNoZXxlbnwxfHx8fDE3OTMwNTk0OTZ8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1568290696106-ace229a158a6?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fG1hbiUyMGJlYXJkJTIwbm8lMjBtdXN0YWNoZXxlbnwxfHx8fDE3OTMwNTk0OTZ8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Jonas Kakaroto",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@jkakaroto?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-gray-shirt-Swr_3Lym7mw?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "chin-strap",
+  "kind": "beard",
+  "name": "Chin Strap",
+  "desc": "Thin line of beard following the jawline from ear to ear, no mustache.",
+  "img": "https://images.unsplash.com/photo-1547558345-af5db4fe45ec?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fG1hbiUyMGNoaW4lMjBzdHJhcCUyMGJlYXJkfGVufDF8fHx8MTc5MzA1OTQ4N3ww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1547558345-af5db4fe45ec?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fG1hbiUyMGNoaW4lMjBzdHJhcCUyMGJlYXJkfGVufDF8fHx8MTc5MzA1OTQ4N3ww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "francois serazin",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@francoisraw?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-coat-in-selective-focus-photo-Y1Xdrf19XNk?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "mutton-chops",
+  "kind": "beard",
+  "name": "Mutton Chops",
+  "desc": "Thick sideburns extending down the cheeks to the jaw corners, chin and mustache shaved.",
+  "img": "https://images.unsplash.com/photo-1602699994654-b2f34a84668e?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8bXV0dG9uJTIwY2hvcHMlMjBzaWRlYnVybnN8ZW58MXx8fHwxNzkzMDU5NTExfDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1602699994654-b2f34a84668e?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8M3x8bXV0dG9uJTIwY2hvcHMlMjBzaWRlYnVybnN8ZW58MXx8fHwxNzkzMDU5NTExfDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "De'Andre Bush",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@deandre?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-jacket-wearing-gray-knit-cap-and-black-sunglasses-UsEIPJMeZ6g?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "friendly-chops",
+  "kind": "beard",
+  "name": "Friendly Chops",
+  "desc": "Mutton chops connected to a mustache, chin clean shaven.",
+  "img": "https://images.unsplash.com/photo-1661517642082-a2c760935a31?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fG1hbiUyMG11dHRvbiUyMGNob3BzJTIwbXVzdGFjaGV8ZW58MXx8fHwxNzkzMDU5NTI5fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1661517642082-a2c760935a31?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTV8fG1hbiUyMG11dHRvbiUyMGNob3BzJTIwbXVzdGFjaGV8ZW58MXx8fHwxNzkzMDU5NTI5fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Marc Pell",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@blinky264?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-beard-ZdjyIQIkmmg?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "sideburns",
+  "kind": "beard",
+  "name": "Long Sideburns",
+  "desc": "Long, thick, neat sideburns down to the earlobes or lower, rest of the face clean shaven.",
+  "img": "https://images.unsplash.com/photo-1635567818469-e28cdf45c1f5?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8N3x8bWFuJTIwbG9uZyUyMHNpZGVidXJuc3xlbnwxfHx8fDE3OTMwNTk1NDB8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1635567818469-e28cdf45c1f5?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8N3x8bWFuJTIwbG9uZyUyMHNpZGVidXJuc3xlbnwxfHx8fDE3OTMwNTk1NDB8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Gahara Putra",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@garpputra?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-long-hair-wearing-a-green-shirt-aoPiT3iUrpc?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "chevron",
+  "kind": "beard",
+  "name": "Chevron",
+  "desc": "Thick, wide mustache covering the upper lip, trimmed in a chevron shape, rest shaven.",
+  "img": "https://images.unsplash.com/photo-1638699941024-07f7b432f739?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NXx8bWFuJTIwdGhpY2slMjBtdXN0YWNoZXxlbnwxfHx8fDE3OTMwNTk1NzJ8MA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1638699941024-07f7b432f739?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8NXx8bWFuJTIwdGhpY2slMjBtdXN0YWNoZXxlbnwxfHx8fDE3OTMwNTk1NzJ8MA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Hamid Tajik",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@hamidtajikph?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/a-man-with-a-mustache-and-a-hat-SSrV93gHS64?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "handlebar",
+  "kind": "beard",
+  "name": "Handlebar",
+  "desc": "Mustache with long ends curled upward and waxed, rest of the face clean shaven.",
+  "img": "https://images.unsplash.com/photo-1626742015297-211b5a94f676?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8aGFuZGxlYmFyJTIwbXVzdGFjaGV8ZW58MXx8fHwxNzkzMDU5NTc5fDA&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1626742015297-211b5a94f676?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MXx8aGFuZGxlYmFyJTIwbXVzdGFjaGV8ZW58MXx8fHwxNzkzMDU5NTc5fDA&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Pedro Braga",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@p_braga?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-jacket-carrying-brown-long-coated-dog-zTEZBtNq7f8?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "walrus",
+  "kind": "beard",
+  "name": "Walrus",
+  "desc": "Very thick, bushy mustache drooping over the mouth, rest of the face shaven.",
+  "img": "https://images.unsplash.com/photo-1590410411742-2b5734d48772?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fGhvcnNlc2hvZSUyMG11c3RhY2hlfGVufDF8fHx8MTc5MzA1OTYwMXww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1590410411742-2b5734d48772?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTF8fGhvcnNlc2hvZSUyMG11c3RhY2hlfGVufDF8fHx8MTc5MzA1OTYwMXww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Zahra Amiri",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@zahraamiri_?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-white-dress-shirt-wearing-black-fedora-hat-NY48mV2GS-0?utm_source=try_a_new_look&utm_medium=referral"
+  }
+ },
+ {
+  "id": "pencil",
+  "kind": "beard",
+  "name": "Pencil Mustache",
+  "desc": "Very thin, narrow, precisely trimmed mustache just above the lip.",
+  "img": "https://images.unsplash.com/photo-1601732280332-a37969ce8a52?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTJ8fHBlbmNpbCUyMG11c3RhY2hlfGVufDF8fHx8MTc5MzA1OTYxNXww&ixlib=rb-4.1.0&w=480&h=640&fit=crop&crop=faces&q=80&fm=jpg",
+  "ref": "https://images.unsplash.com/photo-1601732280332-a37969ce8a52?ixid=M3wxMTE0NjI0fDB8MXxzZWFyY2h8MTJ8fHBlbmNpbCUyMG11c3RhY2hlfGVufDF8fHx8MTc5MzA1OTYxNXww&ixlib=rb-4.1.0&w=768&h=1024&fit=crop&crop=faces&q=80&fm=jpg",
+  "credit": {
+   "author": "Baran Lotfollahi",
+   "license": "Unsplash License",
+   "licenseUrl": "https://unsplash.com/license?utm_source=try_a_new_look&utm_medium=referral",
+   "authorUrl": "https://unsplash.com/@baranlotfollahi?utm_source=try_a_new_look&utm_medium=referral",
+   "source": "https://unsplash.com/photos/man-in-black-jacket-in-grayscale-photography-5UU9Zdmj1FU?utm_source=try_a_new_look&utm_medium=referral"
+  }
  }
 ];
