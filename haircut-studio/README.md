@@ -54,7 +54,14 @@ front of the Gemini API and keep the key on the server.
 
 ## The AI pipeline
 
-Each try-on runs three steps (`js/pipeline.js`). All prompts are in `js/prompts.js`.
+The rule that matters most: **the AI must not change the person's face or anything else.**
+That is enforced twice: by the prompts, and by a face lock on the device that puts the
+original pixels back, so it holds even when the model drifts.
+
+Each try-on runs these steps (`js/pipeline.js`). All prompts are in `js/prompts.js`.
+
+0. **Look** (on the device, free). It checks the photo has one face, close enough and
+   facing the camera, before anything is sent.
 
 1. **Plan** (fast text model, JSON answer). It looks at the customer and the style photo
    like a senior barber. It checks the photo is usable (one face, close enough, not too
@@ -64,18 +71,28 @@ Each try-on runs three steps (`js/pipeline.js`). All prompts are in `js/prompts.
    fade height, cm on top, parting side). It also writes one friendly line for the
    customer, shown while they wait.
 2. **Draw** (image model). It gets the customer photo and the style photo, each labelled,
-   plus the style description, the barber's brief, and strict identity rules: same face,
-   skin, age and expression, no beautifying, natural colour, plain grey backdrop.
-3. **Check** (fast text model, JSON answer). It compares before, after and the style photo
+   plus the style description, the barber's brief, and strict rules: change only the hair, keep the same face,
+   skin, age, expression, clothes, background, light and framing, no beautifying.
+3. **Face lock** (on the device, `js/facelock.js`). It finds the face landmarks in the
+   original and the AI picture and lines the AI picture up with the original (from the eyes
+   and nose). Then it builds the only area allowed to change: the hair in either picture
+   (so new hair can appear and old hair can go), the scalp, and the beard area if a beard
+   was picked. The original photo is used everywhere else, so the eyes, nose, mouth, skin,
+   ears, clothes and background are the customer's own pixels. The AI picture's colours are
+   matched to the original first, so there is no seam. A haircut alone never touches the
+   beard, and a beard alone never touches the hair. If the AI moved, turned or reshaped the
+   head too much to line up, the picture is redrawn with a "keep the head where it is" note.
+4. **Check** (fast text model, JSON answer). It compares before, after and the style photo
    and scores same person, style match, realism and kept details. If any score is too low,
    the picture is redrawn once with the checker's fix notes, and the better of the two is
-   kept.
+   kept. At most two image calls per look.
 
-The plan and check steps are helpers: if the text model is missing or fails, the try-on
-still works with the draw step alone. They can be turned off in Staff settings ("Plan and
+The look, plan, lock and check steps are helpers: if the text model is missing or fails, the try-on
+still works with the draw step alone. (The lock needs the MediaPipe files from the
+internet; if they cannot load, the AI picture is shown as it is.) They can be turned off in Staff settings ("Plan and
 check each result"), which makes it faster and cheaper.
 
-**Side and back views** are drawn in parallel from the finished front picture, the
+**Side and back views** are new angles, so they cannot be locked pixel for pixel; they are drawn in parallel from the finished front picture, the
 original photo, the style photo and the plan's description of the sides and back.
 Directions are given in picture terms ("nose points to the right edge"), so dragging right
 always shows the right side.
@@ -110,6 +127,8 @@ people who agreed to it.
 | `js/prompts.js` | Every prompt and JSON schema (plan, draw, check, side and back views) |
 | `js/pipeline.js` | The try-on steps: plan, draw, check, redraw once, cache |
 | `js/gemini.js` | Gemini calls: image edits and JSON answers, retries, model fallback, model discovery |
+| `js/facelock.js` | The face lock: alignment, the "allowed to change" mask, colour match, local photo check |
+| `js/vision.js` | On-device MediaPipe face landmarks and hair segmentation, loaded on demand |
 | `js/face3d.js` | The 3D face dot cloud |
 | `js/styles.js` | The styles with their photo links and Gemini descriptions (generated) |
 | `credits.html` | Photographer and license for every photo (also linked from Staff settings) |

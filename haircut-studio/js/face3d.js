@@ -1,27 +1,7 @@
 /* A dot-cloud 3D model of the customer's face. Real landmarks come from
-   MediaPipe Face Landmarker; if that can't load, an egg-shaped head stands in.
+   MediaPipe Face Landmarker (vision.js); if that can't load, an egg-shaped head stands in.
    Drag to spin it; it settles back into a gentle sway on its own. */
 (function () {
-  const VISION = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-  const MODEL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
-  let landmarkerP = null;
-
-  function landmarker() {
-    if (!landmarkerP) {
-      landmarkerP = (async () => {
-        const vision = await import(VISION + "/vision_bundle.mjs");
-        const files = await vision.FilesetResolver.forVisionTasks(VISION + "/wasm");
-        const lm = await vision.FaceLandmarker.createFromOptions(files, {
-          baseOptions: { modelAssetPath: MODEL },
-          runningMode: "IMAGE", numFaces: 1,
-        });
-        return { lm, edges: vision.FaceLandmarker.FACE_LANDMARKS_TESSELATION };
-      })();
-      landmarkerP.catch(() => { landmarkerP = null; });
-    }
-    return landmarkerP;
-  }
-
   function pixels(img) {
     const c = document.createElement("canvas");
     c.width = 160; c.height = Math.round(160 * img.height / img.width);
@@ -171,7 +151,7 @@
         setPoints(fallback(lum));
         try {
           const { lm, edges } = await Promise.race([
-            landmarker(), new Promise((_, no) => setTimeout(() => no(new Error("slow")), 15000)),
+            Vision.landmarker(), new Promise((_, no) => setTimeout(() => no(new Error("slow")), 15000)),
           ]);
           const r = lm.detect(img);
           const L = r.faceLandmarks && r.faceLandmarks[0];
@@ -183,5 +163,5 @@
     };
   }
 
-  window.Face3D = { create, warm: () => landmarker().catch(() => {}) };
+  window.Face3D = { create };
 })();

@@ -771,5 +771,5 @@
   renderGrid();
   go("photo");
   if (!Gemini.settings.key) setTimeout(() => toast("Staff: press and hold the top-left button to add the key"), 1200);
-  setTimeout(() => Face3D.warm(), 4000);
+  setTimeout(() => Vision.warm(), 4000);
 })();

@@ -12,6 +12,9 @@
   const COLOUR_STYLES = new Set(["salt-pepper", "red-full", "wizard"]);
 
   /* ---------- 1. plan ---------- */
+  // Sent when the face lock found the head moved: the edit must stay in place.
+  const MOVED_FIX = "The head moved, turned or changed size compared with IMAGE 1. Keep the head, face and shoulders exactly where they are in IMAGE 1, same size and angle; only change what you were asked to change.";
+
   const PLAN_SCHEMA = {
     type: "OBJECT",
     properties: {
@@ -57,15 +60,16 @@ greeting is shown to the customer while they wait: friendly, plain words, about 
 
   /* ---------- 2. draw ---------- */
   const KEEP = "Keep the exact same person: same face shape, eyes, eyebrows, nose, lips, ears, skin tone, skin texture, freckles, age, expression, glasses, jewellery and clothes. Do not beautify, slim, smooth or retouch the face.";
+  const SAME_PHOTO = "This is a local edit of IMAGE 1, not a new photo: keep the same background, lighting, colours, framing and crop, and the head in exactly the same position, size and angle. Change nothing outside the hair you were asked to change.";
   const LOOK = "The result must look like a real, sharp photo taken right after a visit to a good barber: a natural hairline, individual hair strands, realistic density and shine, hair that sits naturally on the head. No illustration, no text, no watermark.";
-  const BACKDROP = "Plain, soft, light grey studio backdrop with gentle, even light that matches the light on the face.";
+  const BACKDROP = "The same background as IMAGE 1 where it would be visible, with the same light.";
 
   function drawParts({ photo, hair, beard, plan, fix }) {
-    const p = ["You are a master barber making a photo-realistic preview of a new look for a customer.", "IMAGE 1, the customer:", photo];
+    const p = ["You are a master barber and photo retoucher making a photo-realistic preview of a new look for a customer.", "IMAGE 1, the customer:", photo];
     if (hair) p.push(`IMAGE 2, a real photo showing the haircut "${hair.name}" (style reference only):`, hair.ref);
     if (beard) p.push(`IMAGE ${hair ? 3 : 2}, a real photo showing the facial hair "${beard.name}" (style reference only):`, beard.ref);
 
-    const t = ["Edit IMAGE 1."];
+    const t = [`Edit IMAGE 1. Change ONLY ${hair && beard ? "the hair on the head and the facial hair" : hair ? "the hair on the head" : "the facial hair"}.`];
     if (hair) {
       t.push(`HAIR: give the customer a ${hair.name}. ${hair.desc}`);
       if (plan && plan.hair_brief) t.push(`Barber's notes for this customer: ${plan.hair_brief}`);
@@ -83,7 +87,7 @@ greeting is shown to the customer while they wait: friendly, plain words, about 
     if (colour.length) t.push(`COLOUR: keep the customer's natural ${colour.join(" and ")} colour${plan && plan.hair_colour ? ` (${plan.hair_colour})` : ""}.`);
     t.push("Never copy the reference person's face, skin, age, hair colour or clothes; the reference only shows the style.");
     t.push("KEEP: " + KEEP + (plan && plan.keep ? ` In this photo that includes: ${plan.keep}.` : ""));
-    t.push("FRAMING: same head pose and camera angle as IMAGE 1, head and shoulders in frame, portrait 3:4. " + BACKDROP);
+    t.push("EVERYTHING ELSE: " + SAME_PHOTO);
     t.push(LOOK);
     if (fix) t.push(`A previous attempt had these problems, fix them: ${fix}`);
     p.push(t.join("\n"));
@@ -109,8 +113,8 @@ greeting is shown to the customer while they wait: friendly, plain words, about 
     const refs = [hair, beard].filter(Boolean);
     refs.forEach((s, i) => p.push(`IMAGE ${3 + i}, a real photo of the requested ${s.kind === "hair" ? "haircut" : "facial hair"} "${s.name}":`, s.ref));
     p.push(`You are a strict quality inspector for a barbershop's AI preview app. The customer asked for ${refs.map((s) => `${s.name} (${s.desc})`).join(" and ")}.
-${hair ? "" : "The hair on the head was supposed to stay unchanged. "}${beard ? "" : "The facial hair was supposed to stay unchanged. "}The background was supposed to become a plain light grey studio backdrop; that change is correct, do not count it as a problem.
-Score IMAGE 2 honestly. Give a low same_person score if the face looks like a different person, younger, smoothed or "beautified". Give a low realism score for painted-looking hair, a blurry or fake hairline, or any distortion.`);
+${hair ? "" : "The hair on the head was supposed to stay unchanged. "}${beard ? "" : "The facial hair was supposed to stay unchanged. "}Everything else (face, skin, clothes, background, lighting, framing) was supposed to stay exactly as in IMAGE 1.
+Score IMAGE 2 honestly. Give a low same_person score if the face looks like a different person, younger, smoothed or "beautified". Give a low realism score for painted-looking hair, a blurry or fake hairline, a visible seam or halo around the hair, or any distortion. Give a low kept_details score if anything outside the hair and facial hair changed.`);
     return p;
   }
   // Higher is better; who the person is matters most.
@@ -134,11 +138,11 @@ Score IMAGE 2 honestly. Give a low same_person score if the face looks like a di
       `Make a realistic photo of the exact same person from IMAGE 1, with the exact same haircut and facial hair, ${VIEW_TEXT[view]}.`,
       plan && plan.fade_and_back ? `How the cut looks around the sides and back: ${plan.fade_and_back}` : "",
       "Same hair colour, length, fade height, parting and texture as IMAGE 1. Same clothes. Head and shoulders in frame, portrait 3:4, camera at head height.",
-      BACKDROP + " Same lighting as IMAGE 1.",
+      BACKDROP,
       LOOK,
     ].filter(Boolean).join("\n"));
     return p;
   }
 
-  root.Prompts = { PLAN_SCHEMA, CHECK_SCHEMA, planParts, drawParts, checkParts, checkScore, checkPassed, viewParts, VIEW_TEXT };
+  root.Prompts = { MOVED_FIX, PLAN_SCHEMA, CHECK_SCHEMA, planParts, drawParts, checkParts, checkScore, checkPassed, viewParts, VIEW_TEXT };
 })(typeof window !== "undefined" ? window : globalThis);
