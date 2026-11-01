@@ -48,6 +48,8 @@
     border-radius: calc(var(--w) * 0.142);
     background: #020003;
     color: #fff;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none; touch-action: manipulation;
   }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
@@ -83,9 +85,42 @@
     letter-spacing: -0.052em;
     color: #8f8d8e;
   }
+  .headline { transition: opacity .18s ease, transform .18s ease, filter .18s ease; }
+  .headline.swap { opacity: 0; transform: translateY(calc(var(--w) * 0.012)); filter: blur(3px); }
   .headline .hi  { color: #ffffff; }
   .headline .mid { color: #8f8d8e; }
   .headline .low { color: #d8d7da; }
+
+  /* ---------- mood controls ---------- */
+  .moods {
+    position: absolute; left: 0; right: 0; top: calc(var(--w) * 1.25);
+    display: flex; justify-content: center; gap: calc(var(--w) * 0.025);
+  }
+  .mood {
+    font: 500 calc(var(--w) * 0.038)/1 "Inter", system-ui, sans-serif;
+    letter-spacing: -0.01em;
+    color: #e9e8ec; background: #18151b;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 999px;
+    padding: calc(var(--w) * 0.026) calc(var(--w) * 0.042);
+    display: inline-flex; align-items: center; gap: calc(var(--w) * 0.018);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: background .2s, border-color .2s, transform .12s, box-shadow .2s;
+  }
+  .mood:hover { background: #221e27; }
+  .mood:active { transform: scale(.95); }
+  .mood:focus-visible { outline: 2px solid #8b84ff; outline-offset: 2px; }
+  .mood .emo { font-size: 1.15em; line-height: 1; }
+  .mood[aria-pressed="true"] { background: #26212c; border-color: var(--tint); box-shadow: 0 0 calc(var(--w) * 0.05) -4px var(--tint); }
+  .mood[data-mood="laugh"] { --tint: #ffb36b; }
+  .mood[data-mood="cry"]   { --tint: #6f8cff; }
+  .mood[data-mood="angry"] { --tint: #ff5a4f; }
+  .hint {
+    position: absolute; left: 0; right: 0; top: calc(var(--w) * 1.39);
+    text-align: center; color: #5d5a63;
+    font-size: calc(var(--w) * 0.032); letter-spacing: -0.01em;
+  }
+  canvas { cursor: pointer; }
 
   /* ---------- full-bleed on phones ---------- */
   body.bleed .phone { padding: 0; border-radius: 0; background: none; box-shadow: none; }
@@ -113,7 +148,14 @@
       <svg viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 8H1.5M8 1.5L1.5 8 8 14.5"/></svg>
     </button>
 
-    <h1 class="headline"><span class="hi">Hey There!</span> <span class="mid">What’s On</span><br><span class="low">Your Mind Today</span></h1>
+    <h1 class="headline" id="headline" aria-live="polite"><span class="hi">Hey There!</span> <span class="mid">What’s On</span><br><span class="low">Your Mind Today</span></h1>
+
+    <div class="moods" role="group" aria-label="Mascot mood">
+      <button class="mood" data-mood="laugh" aria-pressed="false"><span class="emo" aria-hidden="true">😂</span>Laugh</button>
+      <button class="mood" data-mood="cry" aria-pressed="false"><span class="emo" aria-hidden="true">😢</span>Cry</button>
+      <button class="mood" data-mood="angry" aria-pressed="false"><span class="emo" aria-hidden="true">😠</span>Angry</button>
+    </div>
+    <p class="hint">Tap him to tickle · keys 1 2 3</p>
   </div>
 </div>
 
@@ -300,6 +342,10 @@ uniform vec4  uDrop;
 uniform vec4  uSpeck;
 uniform float uGhost;
 uniform vec4  uStars[24];
+uniform vec3  uMood;     // laugh, cry, angry weights
+uniform float uT;        // free-running seconds (mood animation)
+uniform vec2  uSquash;   // body squash & stretch
+uniform vec4  uTears[8]; // x, y, radius, alpha
 
 const vec2  C  = vec2(${BLOB_X.toFixed(3)}, ${BLOB_Y.toFixed(3)});
 const float RR = ${BLOB_R.toFixed(3)};
@@ -351,6 +397,8 @@ void main(){
   vec3 haloCol = vec3(0.012, 0.008, 0.017) * (0.25 + 0.75 * smoothstep(0.8, -0.3, nh.y))
                + vec3(0.072, 0.067, 0.078) * top * smoothstep(0.62, 0.99, dh)
                + vec3(0.020, 0.018, 0.022) * top;
+  haloCol += vec3(0.11, 0.012, 0.01) * uMood.z * (0.35 + 0.65 * top) * smoothstep(0.55, 0.99, dh);
+  haloCol += vec3(0.00, 0.012, 0.05) * uMood.y * top * smoothstep(0.55, 0.99, dh);
   col = mix(col, haloCol, hin);
   col += vec3(0.030, 0.027, 0.033) * exp(-pow((dh - 0.992) / 0.02, 2.0)) * (0.6 + 0.4*top);
 
@@ -392,11 +440,14 @@ void main(){
   if (!dropFront) col = mix(col, dcol, dmask);
 
   // ---- body
-  vec2  q  = (p - uBody.xy) / uBody.z;
+  vec2  q  = (p - uBody.xy) / (uBody.z * uSquash);
   float a  = atan(q.y, q.x);
-  float rb = shapeBody(a, L);
+  float rb = shapeBody(a, L)
+           + uMood.z * (0.030 * cos(9.0 * a + 7.0 * uT) + 0.018 * cos(13.0 * a - 11.0 * uT));
   float d  = length(q) / rb;
-  float aa = 1.3 * px / (uBody.z * rb);
+  float aa = 1.3 * px / (uBody.z * min(uSquash.x, uSquash.y) * rb);
+  float beat = pow(0.5 + 0.5 * sin(uT * 9.0), 3.0);           // angry heartbeat
+  float msum = clamp(uMood.x + uMood.y + uMood.z, 0.0, 1.0);
   float inside = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
 
   if (inside > 0.0){
@@ -404,11 +455,30 @@ void main(){
     float rim = pow(clamp((d - 0.50) / 0.50, 0.0, 1.0), 1.05);
     float lit = 0.64 + 0.44 * dot(nb, normalize(vec2(-0.75, -0.65)));
     vec3 base = vec3(0.86, 0.83, 0.92);
-    vec3 bc = base * (0.74 * rim + 0.14 * smoothstep(0.90, 1.0, d)) * lit * uBody.w;
+    base = mix(base, vec3(1.00, 0.88, 0.76), uMood.x * 0.40);
+    base = mix(base, vec3(0.62, 0.72, 1.00), uMood.y * 0.75);
+    base = mix(base, vec3(1.00, 0.55, 0.48), uMood.z * 0.60);
+    vec3 bc = base * (0.74 * rim + 0.14 * smoothstep(0.90, 1.0, d)) * lit * uBody.w * (1.0 - 0.15 * uMood.y);
     for (int i = 0; i < 6; i++){
-      float g = min(glw[i], 1.0);
+      float g = min(glw[i], 1.0) * (1.0 - 0.55 * msum);
       bc = bc * (1.0 - 0.62 * g) + uLC[i] * g * (0.62 + 0.12 * rim);
     }
+    // mood glows inside the glass
+    vec2 g1 = q - vec2(0.0, 0.62);
+    float gl1 = uMood.x * (0.45 + 0.20 * sin(uT * 17.0)) * exp(-dot(g1, g1) / 0.10);
+    vec2 g1b = q - vec2(0.45, -0.62);
+    gl1 += uMood.x * 0.35 * exp(-dot(g1b, g1b) / 0.06);
+    bc = bc * (1.0 - 0.5 * gl1) + vec3(1.00, 0.62, 0.22) * gl1 * (0.75 + 0.2 * rim);
+    vec2 g2 = q - vec2(0.0, 0.78);
+    float gl2 = uMood.y * 0.80 * exp(-dot(g2, g2) / 0.16);
+    vec2 g2b = q - vec2(-0.5, -0.25);
+    gl2 += uMood.y * 0.55 * exp(-dot(g2b, g2b) / 0.06);
+    bc = bc * (1.0 - 0.5 * gl2) + vec3(0.20, 0.33, 1.00) * gl2 * (0.75 + 0.2 * rim);
+    vec2 g3 = q - vec2(0.0, 0.22);
+    float gl3 = uMood.z * (0.35 + 0.45 * beat) * exp(-dot(g3, g3) / 0.22);
+    vec2 g3b = q - vec2(0.15, -0.82);
+    gl3 += uMood.z * 0.8 * exp(-dot(g3b, g3b) / 0.15);
+    bc = bc * (1.0 - 0.5 * gl3) + vec3(1.00, 0.10, 0.05) * gl3 * (0.75 + 0.2 * rim);
 
     // eyes (body-local units)
     float m = clamp(uEye.z, 0.0, 1.1);
@@ -417,15 +487,36 @@ void main(){
     float sc = uEye.w;
     hs *= sc; sp *= sc;
     vec2 e = p - uEye.xy;                                           // eyes measured in world R units
-    e.x = abs(e.x) - sp;
+    e.x = abs(e.x) - sp;                                            // +x points away from the face centre
     float sd = sdRoundBox(e, hs, min(hs.x, hs.y) * 0.98);
+
+    // laugh: closed happy "^ ^" arcs
+    vec2  ac = vec2(0.0, 0.05 * sc);
+    float ar = 0.088 * sc, at = 0.025 * sc;
+    float arc = e.y < ac.y ? abs(length(e - ac) - ar) - at
+                           : length(vec2(abs(e.x) - ar, e.y - ac.y)) - at;
+    sd = mix(sd, arc, uMood.x);
+    // cry: lids droop towards the outside; angry: lids slam down towards the middle
+    float lidC = mix(-1.3 * hs.y, -0.40 * hs.y, uMood.y) + 0.55 * uMood.y * e.x;
+    float lidA = mix(-1.3 * hs.y, -0.25 * hs.y, uMood.z) - 0.75 * uMood.z * e.x;
+    sd = max(sd, (lidC - e.y) * 0.85);
+    sd = max(sd, (lidA - e.y) * 0.78);
+
+    // laugh: rosy cheeks
+    vec2 bd = (e - vec2(0.05 * sc, 0.17 * sc)) / vec2(0.095 * sc, 0.048 * sc);
+    bc = mix(bc, vec3(1.00, 0.42, 0.55), exp(-dot(bd, bd)) * uMood.x * 0.75);
     float eaa = 1.2 * px;
     float emask = 1.0 - smoothstep(-eaa, eaa, sd);
     float border = 0.024 * sc;
     float yy = e.y / hs.y;
     float inner = 0.51 + 0.10 * smoothstep(-0.2, 0.4, yy) + 0.33 * smoothstep(0.35, 0.92, yy);
-    vec3 ecol = mix(vec3(0.97), vec3(inner, inner*0.99, inner*1.02),
-                    smoothstep(0.45, 1.0, m) * smoothstep(-border*0.4, -border*1.2, sd));
+    vec3 icol = vec3(inner, inner*0.99, inner*1.02);
+    icol = mix(icol, vec3(0.45, 0.62, 1.00), uMood.y * smoothstep(-0.1, 0.9, yy) * 0.8);   // welling up
+    icol = mix(icol, vec3(0.75, 0.42, 0.42), uMood.z * 0.45);
+    vec2 hl = e - vec2(0.028 * sc, -0.03 * sc);
+    icol += vec3(0.9) * uMood.y * exp(-dot(hl, hl) / pow(0.02 * sc, 2.0));                // wet glint
+    vec3 ecol = mix(vec3(0.97), icol,
+                    smoothstep(0.45, 1.0, m) * (1.0 - uMood.x) * smoothstep(-border*0.4, -border*1.2, sd));
     // soft glow around eyes
     bc += vec3(0.12) * exp(-max(sd, 0.0) / (0.010 * sc)) * (1.0 - emask);
     bc = mix(bc, ecol, emask);
@@ -434,6 +525,34 @@ void main(){
   }
 
   if (dropFront) col = mix(col, dcol, dmask);
+
+  // ---- tears
+  for (int i = 0; i < 8; i++){
+    vec4 t = uTears[i];
+    if (t.w <= 0.0) continue;
+    vec2 tq = (p - t.xy) / t.z;
+    if (tq.y < 0.0) { tq.x *= 1.0 - tq.y * 0.55; tq.y *= 0.55; }   // pointed top
+    float td = length(tq);
+    float taa = 1.5 * px / t.z;
+    float tm = (1.0 - smoothstep(1.0 - taa, 1.0 + taa, td)) * t.w;
+    vec3 tcol = mix(vec3(0.30, 0.55, 1.00), vec3(0.80, 0.92, 1.00), clamp(0.45 - tq.x * 0.35 - tq.y * 0.45, 0.0, 1.0));
+    vec2 th = tq - vec2(-0.35, -0.25);
+    tcol += vec3(0.8) * exp(-dot(th, th) / 0.05);
+    col = mix(col, tcol, tm * 0.92);
+  }
+
+  // ---- anger mark
+  float as = 0.15 * (1.0 + 0.12 * beat) * smoothstep(0.0, 1.0, uMood.z);
+  if (as > 0.002){
+    vec2 v = (p - (uBody.xy + vec2(0.64, -0.66) * uBody.z)) / as;
+    vec2 av = abs(v);
+    float vd = abs(length(av - vec2(1.0)) - 0.62) - 0.12;
+    float vaa = 1.5 * px / as;
+    float clip = 1.0 - smoothstep(0.92, 1.0, max(av.x, av.y));
+    float vm = (1.0 - smoothstep(-vaa, vaa, vd)) * clip;
+    col += vec3(0.30, 0.03, 0.02) * exp(-max(vd, 0.0) / 0.10) * (1.0 - smoothstep(0.8, 1.25, max(av.x, av.y))) * uMood.z;
+    col = mix(col, vec3(1.0, 0.24, 0.22), vm);
+  }
 
   // ---- violet speck
   vec2 sq = (p - uSpeck.xy) / max(uSpeck.z, 1e-3);
@@ -468,6 +587,7 @@ void main(){
   const u = {
     res: U('uRes'), w: U('uW'), L: U('uL'), body: U('uBody'), eye: U('uEye'),
     lp: U('uLP'), lc: U('uLC'), drop: U('uDrop'), speck: U('uSpeck'), ghost: U('uGhost'), stars: U('uStars'),
+    mood: U('uMood'), t: U('uT'), squash: U('uSquash'), tears: U('uTears'),
   };
   gl.uniform4fv(u.stars, new Float32Array(STARS.flat()));
   gl.uniform3fv(u.lc, new Float32Array(lights.flatMap(l => l.c)));
@@ -483,29 +603,171 @@ void main(){
   }
   resize();
 
-  function render(L) {
+  // ------------------------------------------------------------------
+  // Moods
+  // ------------------------------------------------------------------
+  const REST = 1.75;                       // calm idle pose the moods start from
+  const MOOD_SECONDS = 5;
+  const MOODS = ['laugh', 'cry', 'angry'];
+  const LINES = {
+    idle:  ['Hey There!', 'What’s On', 'Your Mind Today'],
+    laugh: ['Haha!', 'Stop It,', 'That Tickles!'],
+    cry:   ['Oh No…', 'I Feel', 'So Blue Today'],
+    angry: ['Grrr!', 'I’m So', 'Mad Right Now'],
+  };
+  const mixv = (a, b, k) => a.map((x, i) => x + (b[i] - x) * k);
+  const w = { laugh: 0, cry: 0, angry: 0 };
+  let mood = null, moodUntil = 0, T = 0, idleT = 0, tears = [], lastTear = 0, tearSide = 1;
+  const look = { x: 0, y: 0, tx: 0, ty: 0 };
+  const tearBuf = new Float32Array(32);
+
+  function draw(L, W, extra) {
+    const bodyV = mixv(body(L), body(REST), W);
+    const eyeV  = mixv(eyes(L), eyes(REST), W);
+    const lp = lights.flatMap(l => mixv(l.k(L), l.k(REST), W));
+    const dr = drop(L); dr[3] *= 1 - W;
+    const sk = speck(L); sk[3] *= 1 - W;
+    if (extra) extra(bodyV, eyeV);
     gl.uniform2f(u.res, canvas.width, canvas.height);
     gl.uniform1f(u.w, cssW);
     gl.uniform1f(u.L, L);
-    gl.uniform4fv(u.body, body(L));
-    gl.uniform4fv(u.eye, eyes(L));
-    gl.uniform4fv(u.lp, new Float32Array(lights.flatMap(l => l.k(L))));
-    gl.uniform4fv(u.drop, drop(L));
-    gl.uniform4fv(u.speck, speck(L));
-    gl.uniform1f(u.ghost, ghost(L));
+    gl.uniform4fv(u.body, bodyV);
+    gl.uniform4fv(u.eye, eyeV);
+    gl.uniform4fv(u.lp, new Float32Array(lp));
+    gl.uniform4fv(u.drop, dr);
+    gl.uniform4fv(u.speck, sk);
+    gl.uniform1f(u.ghost, ghost(L) * (1 - W));
+    gl.uniform3f(u.mood, w.laugh, w.cry, w.angry);
+    gl.uniform1f(u.t, T);
+    gl.uniform4fv(u.tears, tearBuf);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  // ?t=1.25 freezes the animation on one loop time (handy for comparing frames)
-  const fixed = new URLSearchParams(location.search).get('t');
-  window.__renderAt = render;
-  if (fixed !== null) { render(parseFloat(fixed) % LOOP); return; }
+  // idle-only render at a fixed loop time (used by ?t= and frame comparisons)
+  function render(L) {
+    gl.uniform2f(u.squash, 1, 1);
+    draw(L, 0);
+  }
 
-  const start = performance.now();
+  function step(dt) {
+    T += dt;
+    if (mood && T > moodUntil) setMood(null);
+    for (const m of MOODS) w[m] += ((mood === m ? 1 : 0) - w[m]) * (1 - Math.exp(-dt * 6));
+    const W = Math.min(1, w.laugh + w.cry + w.angry);
+    // the idle loop pauses while a mood is showing and resumes from the calm pose
+    idleT = W > 0.97 ? REST : (idleT + dt * (1 - W)) % LOOP;
+
+    // body motion
+    const lw = w.laugh, cw = w.cry, aw = w.angry;
+    let ox = 0, oy = 0, sx = 1, sy = 1, sc = 1;
+    const ph = T * 8.5, hop = Math.abs(Math.sin(ph)), land = Math.pow(1 - hop, 3);
+    oy -= 0.075 * hop * lw;
+    sx += (0.075 * land - 0.025 * hop) * lw;
+    sy -= (0.075 * land - 0.03 * hop) * lw;
+    const sob = Math.exp(-6 * ((T * 0.9) % 1));
+    sx += (0.045 + 0.025 * sob) * cw;
+    sy -= (0.055 + 0.035 * sob) * cw;
+    oy += (0.045 + 0.03 * sob) * cw;
+    ox += 0.014 * Math.sin(T * 63) * aw;
+    oy += 0.009 * Math.sin(T * 47) * aw;
+    sc *= 1 + aw * (0.02 + 0.03 * (0.5 + 0.5 * Math.sin(T * 9)));
+
+    look.x += (look.tx - look.x) * (1 - Math.exp(-dt * 8));
+    look.y += (look.ty - look.y) * (1 - Math.exp(-dt * 8));
+
+    // tears
+    if (cw > 0.5 && T - lastTear > 0.3) { lastTear = T; tearSide = -tearSide; tears.push({ t0: T, side: tearSide, x: 0, y: 0 }); }
+    tears = tears.filter(t => T - t.t0 < 1.8);
+    tearBuf.fill(0);
+
+    gl.uniform2f(u.squash, sx, sy);
+    draw(idleT, W, (bodyV, eyeV) => {
+      bodyV[0] += ox; bodyV[1] += oy; bodyV[2] *= sc;
+      eyeV[1] += -0.02 * lw + 0.06 * cw + 0.03 * aw;
+      eyeV[0] = eyeV[0] + ox + look.x * 0.05;
+      eyeV[1] = eyeV[1] * sy + oy + look.y * 0.035;
+      eyeV[3] *= sc;
+      tears.slice(-8).forEach((t, i) => {
+        const age = T - t.t0;
+        if (age < 0.02) { t.x = eyeV[0] + t.side * 0.19; t.y = eyeV[1] + 0.09; }
+        let x = t.x, y = t.y, r = 0.036, a = 1;
+        if (age < 0.25) r *= ease(age / 0.25);
+        else if (age < 1.1) {
+          const k = (age - 0.25) / 0.85;
+          x += t.side * 0.2 * k; y += (0.86 - t.y) * Math.pow(k, 1.6);
+          r = 0.036 + 0.006 * k;
+        } else {
+          const f = age - 1.1;
+          x += t.side * (0.2 + 0.08 * f); y = 0.86 + 0.35 * f + 2.6 * f * f;
+          r = 0.042; a = 1 - ease(Math.max(0, (f - 0.35) / 0.35));
+        }
+        tearBuf.set([x, y, r, a], i * 4);
+      });
+    });
+  }
+
+  // ---- headline swap
+  const headline = document.getElementById('headline');
+  let shown = 'idle', swapTimer = 0;
+  function showLines(key) {
+    if (key === shown) return;
+    shown = key;
+    clearTimeout(swapTimer);
+    headline.classList.add('swap');
+    swapTimer = setTimeout(() => {
+      const [hi, mid, low] = LINES[key];
+      headline.querySelector('.hi').textContent = hi;
+      headline.querySelector('.mid').textContent = mid;
+      headline.querySelector('.low').textContent = low;
+      headline.classList.remove('swap');
+    }, 180);
+  }
+
+  // ---- controls
+  const buttons = [...document.querySelectorAll('.mood')];
+  function setMood(m) {
+    mood = m;
+    moodUntil = T + MOOD_SECONDS;
+    buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mood === m)));
+    showLines(m || 'idle');
+  }
+  buttons.forEach(b => b.addEventListener('click', () => setMood(mood === b.dataset.mood ? null : b.dataset.mood)));
+  addEventListener('keydown', e => {
+    const i = ['1', '2', '3'].indexOf(e.key);
+    if (i >= 0) setMood(mood === MOODS[i] ? null : MOODS[i]);
+    if (e.key === 'Escape') setMood(null);
+  });
+  function blobPoint(e) {
+    const r = screen.getBoundingClientRect();
+    const W = r.width;
+    return { x: ((e.clientX - r.left) / W - BLOB_X) / BLOB_R, y: ((e.clientY - r.top) / W - BLOB_Y) / BLOB_R };
+  }
+  canvas.addEventListener('click', e => {
+    const p = blobPoint(e);
+    if (Math.hypot(p.x, p.y) < 1.15) setMood('laugh');        // tickle!
+  });
+  screen.addEventListener('pointermove', e => {
+    const p = blobPoint(e);
+    look.tx = Math.max(-1, Math.min(1, p.x / 2.5));
+    look.ty = Math.max(-1, Math.min(1, p.y / 2.5));
+  });
+  screen.addEventListener('pointerleave', () => { look.tx = 0; look.ty = 0; });
+
+  // ?t=1.25 freezes the idle animation on one loop time (handy for comparing frames)
+  const params = new URLSearchParams(location.search);
+  const fixed = params.get('t');
+  window.__renderAt = render;
+  window.__setMood = setMood;
+  if (fixed !== null) { render(parseFloat(fixed) % LOOP); return; }
+  if (MOODS.includes(params.get('mood'))) setMood(params.get('mood'));
+
+  let last = performance.now();
   (function frame(now) {
-    render(((now - start) / 1000) % LOOP);
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    step(dt);
     requestAnimationFrame(frame);
-  })(start);
+  })(last);
 })();
 </script>
 </body>
