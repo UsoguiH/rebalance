@@ -343,6 +343,8 @@ uniform vec4  uEye;      // x, y, morph, scale
 uniform vec4  uLP[6];
 uniform vec3  uLC[6];
 uniform vec4  uDrop;
+uniform float uDropFront;  // 1: drop passes in front of the mascot
+uniform vec4  uTrail[4];   // motion trail: x, y, r, alpha (negative alpha = behind)
 uniform vec4  uSpeck;
 uniform float uGhost;
 uniform vec4  uStars[24];
@@ -370,13 +372,22 @@ float sdRoundBox(vec2 p, vec2 b, float r){
   vec2 q = abs(p) - b + r;
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
 }
-// radial brightness of the glass, measured from the reference: black core, a quick
-// rise to an inner reflection plateau, a slight dip, then the bright outer band + edge line
-float glassProfile(float d){
-  float v = 0.37 * smoothstep(0.56, 0.75, d);
-  v += 0.33 * smoothstep(0.76, 0.985, d);
-  v += 0.08 * exp(-abs(1.0 - d) / 0.014);
-  return v;
+// glossy red droplet lit from the mascot's side, with a soft glow; returns rgb + coverage
+vec4 dropShade(vec2 p, vec4 D, vec2 toward, float px, float gloss){
+  if (D.z < 0.001 || D.w <= 0.0) return vec4(0.0);
+  vec2  dq = (p - D.xy) / D.z;
+  float dd = length(dq);
+  float soft = 0.045 + 1.5 * px / D.z;
+  float m = 1.0 - smoothstep(1.0 - soft, 1.0 + soft, dd);
+  vec3  n = vec3(dq, sqrt(max(1.0 - dd * dd, 0.0)));
+  vec3  ld = normalize(vec3(toward * 0.85, 0.55));
+  float diff = clamp(dot(n, ld), 0.0, 1.0);
+  vec3  c = mix(vec3(0.70, 0.05, 0.04), vec3(1.00, 0.46, 0.30), diff);
+  float spec = pow(max(dot(reflect(-ld, n), vec3(0.0, 0.0, 1.0)), 0.0), 18.0);
+  c += vec3(1.0, 0.85, 0.78) * spec * 0.55 * gloss;
+  c = mix(c, vec3(1.0, 0.55, 0.45), smoothstep(0.75, 1.0, dd) * 0.25);           // soft lit rim
+  float glow = exp(-max(dd - 1.0, 0.0) / 0.45) * (1.0 - m) * 0.30;
+  return vec4(c, (m + glow) * D.w);
 }
 float bgLevel(float y){
   float v = mix(15.0, 18.0, smoothstep(0.0, 0.35, y));
@@ -413,6 +424,15 @@ void main(){
   col = mix(col, haloCol, hin);
   col += vec3(0.030, 0.027, 0.033) * exp(-pow((dh - 0.992) / 0.02, 2.0)) * (0.6 + 0.4*top);
 
+  // ---- star specks
+  float sr = max(0.0016 * uW, 0.9);
+  for (int i = 0; i < 24; i++){
+    vec4 st = uStars[i];
+    float tw = st.w > 0.5 ? 0.35 + 0.65 * step(0.0, sin(uT * 3.14159 * 2.0 + float(i) * 2.1) + 0.2) : 1.0;
+    float d = length(frag - st.xy * uW);
+    col += vec3(st.z * tw) * exp(-d*d / (sr*sr));
+  }
+
   // ---- coloured lights (shared by body + ghosts)
   vec3 ghostCol = vec3(0.0);
   float glw[6];
@@ -423,23 +443,23 @@ void main(){
     ghostCol += uLC[i] * g;
   }
 
-  // ---- droplet (helper values)
-  vec2  dq  = (p - uDrop.xy) / max(uDrop.z, 1e-3);
-  vec2  tob = normalize(uBody.xy - uDrop.xy + vec2(1e-4));        // towards the mascot
-  float along = dot(dq, tob);
-  vec2  dq2 = vec2(along * (along > 0.0 ? 0.86 : 1.0), dot(dq, vec2(-tob.y, tob.x)));
-  float dd  = length(dq2);
-  float daa = 0.14 + 1.5 * px / max(uDrop.z, 1e-3);
-  float dmask = (1.0 - smoothstep(1.0 - daa, 1.0 + daa, dd)) * uDrop.w * step(0.001, uDrop.z);
-  float dl = clamp(0.5 + 0.5 * along, 0.0, 1.0);
-  vec3  dcol = mix(vec3(0.90, 0.13, 0.08), vec3(1.00, 0.55, 0.42), smoothstep(0.35, 0.85, dl));
-  dcol = mix(dcol, vec3(1.0, 0.86, 0.80), smoothstep(0.80, 1.0, dl) * 0.6);
-  bool dropFront = uL < 0.215;
+  // ---- droplet + trail
+  vec2 tob = normalize(uBody.xy - uDrop.xy + vec2(1e-4));         // towards the mascot
+  vec4 dropC = dropShade(p, uDrop, tob, px, 1.0);
+  bool dropFront = uDropFront > 0.5;
+  vec4 trailF = vec4(0.0), trailB = vec4(0.0);
+  for (int i = 0; i < 4; i++){
+    vec4 tr = uTrail[i];
+    vec4 tc = dropShade(p, vec4(tr.xy, tr.z, abs(tr.w)), tob, px, 0.0);
+    if (tr.w > 0.0) trailF = vec4(mix(trailF.rgb, tc.rgb, tc.a), max(trailF.a, tc.a));
+    else            trailB = vec4(mix(trailB.rgb, tc.rgb, tc.a), max(trailB.a, tc.a));
+  }
 
   // ghosts of the lights visible outside the collapsed body
   col += ghostCol * uGhost * 0.28;
 
-  if (!dropFront) col = mix(col, dcol, dmask);
+  col = mix(col, trailB.rgb, trailB.a);
+  if (!dropFront) col = mix(col, dropC.rgb, dropC.a);
 
   // ---- body
   vec2  q  = (p - uBody.xy) / (uBody.z * uSquash);
@@ -456,21 +476,11 @@ void main(){
     vec2 nb = q / max(length(q), 1e-4);
     float rim = pow(clamp((d - 0.50) / 0.50, 0.0, 1.0), 1.05);
     float lit = 0.64 + 0.44 * dot(nb, normalize(vec2(-0.75, -0.65)));
-    vec3 base = vec3(0.88, 0.86, 0.90);
+    vec3 base = vec3(0.86, 0.83, 0.92);
     base = mix(base, vec3(1.00, 0.88, 0.76), uMood.x * 0.40);
     base = mix(base, vec3(0.62, 0.72, 1.00), uMood.y * 0.75);
     base = mix(base, vec3(1.00, 0.55, 0.48), uMood.z * 0.60);
-    // the inner reflection is not concentric in the reference: warp it, keep the outer edge exact
-    float dw = d + (0.040 * sin(3.0 * a + uS * 0.3) + 0.025 * sin(5.0 * a - uS * 0.5 + 1.0)
-                  + 0.015 * sin(8.0 * a + uS * 0.7 + 2.0))
-                 * (1.0 - smoothstep(0.84, 0.98, d));
-    vec3 prof = vec3(glassProfile(dw * 1.008), glassProfile(dw), glassProfile(dw * 0.992));   // slight colour fringing
-    float shimmer = 1.0 + 0.05 * sin(a * 7.0 + d * 18.0 + uS * 0.6) * sin(a * 11.0 - d * 9.0 - uS * 0.4) * rim;
-    vec3 iri = 0.5 + 0.5 * cos(6.2832 * (vec3(0.0, 0.33, 0.67) + a * 0.16 + d * 0.9 + uS * 0.05));
-    vec3 bc = base * prof * lit * shimmer * mix(vec3(1.0), 0.82 + 0.36 * iri, 0.16 * rim)
-            * uBody.w * (1.0 - 0.15 * uMood.y) * 1.13;
-    vec2 spq = q - vec2(-0.50, -0.62);
-    bc += vec3(0.08) * exp(-dot(spq, spq) / 0.022) * uBody.w * (1.0 - 0.5 * msum);
+    vec3 bc = base * (0.74 * rim + 0.14 * smoothstep(0.90, 1.0, d)) * lit * uBody.w * (1.0 - 0.15 * uMood.y);
     for (int i = 0; i < 6; i++){
       float g = min(glw[i], 1.0) * (1.0 - 0.55 * msum);
       bc = bc * (1.0 - 0.62 * g) + uLC[i] * g * (0.62 + 0.12 * rim);
@@ -534,7 +544,8 @@ void main(){
     col = mix(col, bc, inside);
   }
 
-  if (dropFront) col = mix(col, dcol, dmask);
+  col = mix(col, trailF.rgb, trailF.a);
+  if (dropFront) col = mix(col, dropC.rgb, dropC.a);
 
 
   // ---- violet speck
@@ -542,15 +553,6 @@ void main(){
   float sdd = length(sq);
   float sm = (1.0 - smoothstep(0.7, 1.15, sdd)) * uSpeck.w;
   col = mix(col, mix(vec3(0.52, 0.22, 0.80), vec3(0.80, 0.55, 0.95), clamp(-sq.y*0.6 + 0.3, 0.0, 1.0)), sm);
-
-  // ---- star specks
-  float sr = max(0.0016 * uW, 0.9);
-  for (int i = 0; i < 24; i++){
-    vec4 st = uStars[i];
-    float tw = st.w > 0.5 ? 0.35 + 0.65 * step(0.0, sin(uT * 3.14159 * 2.0 + float(i) * 2.1) + 0.2) : 1.0;
-    float d = length(frag - st.xy * uW);
-    col += vec3(st.z * tw) * exp(-d*d / (sr*sr));
-  }
 
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
@@ -580,6 +582,7 @@ void main(){
     res: U('uRes'), w: U('uW'), L: U('uL'), body: U('uBody'), eye: U('uEye'),
     lp: U('uLP'), lc: U('uLC'), drop: U('uDrop'), speck: U('uSpeck'), ghost: U('uGhost'), stars: U('uStars'),
     mood: U('uMood'), t: U('uT'), squash: U('uSquash'), S: U('uS'), blink: U('uBlink'),
+    dropFront: U('uDropFront'), trail: U('uTrail'),
   };
   gl.uniform4fv(u.stars, new Float32Array(STARS.flat()));
   gl.uniform3fv(u.lc, new Float32Array(lights.flatMap(l => l.c)));
@@ -598,7 +601,9 @@ void main(){
   // ------------------------------------------------------------------
   // Moods
   // ------------------------------------------------------------------
-  const HOLD = 1.72;                       // the intro plays once up to here, then he lives on
+  const HOLD = 1.72;                       // the reference timeline is followed up to here
+  const ORBIT = 1.5;                       // seconds the droplet circles the small mascot (2.5 turns)
+  const INTRO = ORBIT + (HOLD - 0.19);     // full intro length, played once
   const MOOD_SECONDS = 5;
   const MOODS = ['laugh', 'cry', 'angry'];
   const LINES = {
@@ -611,46 +616,86 @@ void main(){
   const w = { laugh: 0, cry: 0, angry: 0 };
   let mood = null, moodUntil = 0, T = 0, introT = 0, ambT = 0;
   const look = { x: 0, y: 0, tx: 0, ty: 0, pointerAt: -99, nextGlance: 0 };
-  let blinkAt = 3.2;
+  let blinkAt = 4.5;
+  const NO_TRAIL = new Float32Array(16);
 
   function poseAt(L) {
-    return { L, body: body(L), eyes: eyes(L), lp: lights.map(l => l.k(L)),
-             drop: drop(L), speck: speck(L), ghost: ghost(L) };
+    return { L, shape: L, body: body(L), eyes: eyes(L), lp: lights.map(l => l.k(L)),
+             drop: drop(L), dropFront: L < 0.215 ? 1 : 0, trail: NO_TRAIL,
+             speck: speck(L), ghost: ghost(L) };
   }
-  // the settled pose after the intro: breathing, drifting colours, no loop
+
+  // ---- the droplet's orbit: a tilted ellipse through the measured lower-left and
+  // upper-right turning points, passing in front of the mascot on the way up
+  const OC = [0.11, 0.07], OU = [0.939, -0.344], OV = [0.344, 0.939], OA = 0.756, OB = 0.13;
+  function orbitAt(u) {
+    u = Math.max(0, Math.min(1, u));
+    const k = 0.5 * u + 0.5 * ease(u);                // eases in and out of the spin
+    const phi = Math.PI + 5 * Math.PI * k;            // 2.5 turns: lower-left -> ... -> upper-right
+    const c = Math.cos(phi), sn = Math.sin(phi);
+    const z = -sn;                                     // > 0 in front of the mascot
+    return { x: OC[0] + OU[0] * OA * c + OV[0] * OB * sn, y: OC[1] + OU[1] * OA * c + OV[1] * OB * sn, z };
+  }
+
+  function introPose(t) {
+    if (t >= ORBIT) return poseAt(0.19 + (t - ORBIT));
+    const P = poseAt(0.19 * t / ORBIT);
+    const o = orbitAt(t / ORBIT);
+    P.drop = [o.x, o.y, 0.165 * (1 + 0.22 * o.z), 1];
+    P.dropFront = o.z > 0 ? 1 : 0;
+    // the small mascot sways against the droplet and follows it with its eyes
+    P.body[0] -= 0.05 * (o.x - OC[0]); P.body[1] -= 0.05 * (o.y - OC[1]);
+    P.eyes[0] += 0.03 * (o.x - OC[0]) / OA - 0.05 * (o.x - OC[0]);
+    P.eyes[1] += 0.015 * (o.y - OC[1]) / OA - 0.05 * (o.y - OC[1]);
+    const tr = new Float32Array(16);
+    for (let j = 1; j <= 4; j++) {
+      const q = orbitAt((t - j * 0.028) / ORBIT);
+      const al = [0.30, 0.18, 0.10, 0.05][j - 1] * Math.min(1, t / 0.15);
+      tr.set([q.x, q.y, 0.165 * (1 + 0.22 * q.z) * (1 - 0.06 * j), q.z > 0 ? al : -al], (j - 1) * 4);
+    }
+    P.trail = tr;
+    return P;
+  }
+
+  // ---- after the intro he keeps moving like the reference: the shape morphs at the
+  // same speed, the colour lights sweep, the violet speck visits, the eyes dip and pop
+  const eyeHop = track([[0, 0], [0.40, 0.09], [0.52, 0.12], [0.60, -0.17], [0.68, -0.13], [0.85, 0.0], [1, 0]]);
+  const HOP = 4.4;
   function ambientPose(t, amp) {
+    const S = 1.15 + 0.85 * Math.sin(1.2 * t + 0.734);    // starts at HOLD, sweeps the reference range
     const P = poseAt(HOLD);
-    P.L = 99;
+    P.L = 99; P.shape = S; P.dropFront = 0;
+    const lpS = lights.map(l => l.k(S));
+    P.lp = P.lp.map((v, i) => mixv(v, lpS[i], amp));
+    const sk = speck(S); P.speck = [sk[0], sk[1], sk[2], sk[3] * amp];
     P.body[2] *= 1 + 0.012 * amp * Math.sin(t * 1.6);
     P.body[1] += 0.008 * amp * Math.sin(t * 1.1);
-    P.eyes[1] += 0.008 * amp * Math.sin(t * 1.1);
-    P.lp = P.lp.map((v, i) => [
-      v[0] + 0.06 * amp * Math.sin(t * 0.50 + i * 1.3),
-      v[1] + 0.05 * amp * Math.cos(t * 0.43 + i * 0.9),
-      v[2],
-      Math.max(0, v[3] * (1 + 0.3 * amp * Math.sin(t * 0.7 + i * 2.1)) + (i === 3 ? 0.15 * amp * (0.5 + 0.5 * Math.sin(t * 0.37)) : 0)),
-    ]);
-    P.drop[3] = 0; P.speck[3] = 0; P.ghost = 0;
+    P.eyes[1] += (0.008 * Math.sin(t * 1.1) + eyeHop((t % HOP) / HOP)) * amp;
+    P.drop[3] = 0; P.ghost = 0;
     return P;
   }
   function mixPose(A, B, k) {
     if (k <= 0) return A;
-    return { L: k > 0.5 ? B.L : A.L, body: mixv(A.body, B.body, k), eyes: mixv(A.eyes, B.eyes, k),
+    return { L: k > 0.5 ? B.L : A.L, shape: A.shape + (B.shape - A.shape) * k,
+             body: mixv(A.body, B.body, k), eyes: mixv(A.eyes, B.eyes, k),
              lp: A.lp.map((v, i) => mixv(v, B.lp[i], k)),
-             drop: [...A.drop.slice(0, 3), A.drop[3] * (1 - k)], speck: [...A.speck.slice(0, 3), A.speck[3] * (1 - k)],
-             ghost: A.ghost * (1 - k) };
+             drop: [...A.drop.slice(0, 3), A.drop[3] * (1 - k)], dropFront: A.dropFront,
+             trail: A.trail.map((v, i) => (i % 4 === 3 ? v * (1 - k) : v)),
+             speck: [...A.speck.slice(0, 3), A.speck[3] * (1 - k) + B.speck[3] * k], ghost: A.ghost * (1 - k) };
   }
 
-  function draw(P, S, blink, t = T) {
+  function draw(P, blink, t = T) {
     gl.uniform2f(u.res, canvas.width, canvas.height);
     gl.uniform1f(u.w, cssW);
     gl.uniform1f(u.L, P.L);
-    gl.uniform1f(u.S, S);
+    gl.uniform1f(u.S, P.shape);
     gl.uniform1f(u.blink, blink);
     gl.uniform4fv(u.body, P.body);
     gl.uniform4fv(u.eye, P.eyes);
     gl.uniform4fv(u.lp, new Float32Array(P.lp.flat()));
     gl.uniform4fv(u.drop, P.drop);
+    gl.uniform1f(u.dropFront, P.dropFront);
+    gl.uniform4fv(u.trail, P.trail);
     gl.uniform4fv(u.speck, P.speck);
     gl.uniform1f(u.ghost, P.ghost);
     gl.uniform3f(u.mood, w.laugh, w.cry, w.angry);
@@ -658,10 +703,10 @@ void main(){
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  // render one moment of the intro (used by ?t= and frame comparisons)
+  // render one moment of the reference timeline (used by ?t= and frame comparisons)
   function render(L) {
     gl.uniform2f(u.squash, 1, 1);
-    draw(poseAt(L), L, 1, L);
+    draw(poseAt(L), 1, L);
   }
 
   function replayIntro() { introT = 0; ambT = 0; setMood(null); }
@@ -673,11 +718,11 @@ void main(){
     const W = Math.min(1, w.laugh + w.cry + w.angry);
 
     // intro plays once; a mood skips whatever is left of it
-    if (introT < HOLD) introT = W > 0.97 ? HOLD : Math.min(HOLD, introT + dt * (1 - W));
-    const live = introT >= HOLD;
+    if (introT < INTRO) introT = W > 0.97 ? INTRO : Math.min(INTRO, introT + dt * (1 - W));
+    const live = introT >= INTRO;
     if (live) ambT += dt;
-    const amb = ambientPose(T, Math.min(1, ambT / 1.5));
-    const P = mixPose(live ? amb : poseAt(introT), amb, W);
+    const amb = ambientPose(ambT, Math.min(1, ambT / 1.2));
+    const P = mixPose(live ? amb : introPose(introT), amb, W);
 
     // body motion for moods
     const lw = w.laugh, cw = w.cry, aw = w.angry;
@@ -693,6 +738,8 @@ void main(){
     ox += 0.014 * Math.sin(T * 63) * aw;
     oy += 0.009 * Math.sin(T * 47) * aw;
     sc *= 1 + aw * (0.02 + 0.03 * (0.5 + 0.5 * Math.sin(T * 9)));
+    // a little squash when his eyes pop up in the idle
+    if (live) { const hp = (ambT % HOP) / HOP; const pop = Math.exp(-Math.pow((hp - 0.6) / 0.05, 2)) * (1 - W); sx += 0.02 * pop; sy -= 0.025 * pop; }
 
     // glances around on his own when nobody is pointing at him
     if (live && T - look.pointerAt > 3 && T > look.nextGlance) {
@@ -716,11 +763,8 @@ void main(){
     const e = P.eyes;
     e[1] += -0.02 * lw + 0.06 * cw + 0.03 * aw;
     P.eyes = [e[0] + ox + look.x * 0.05 * la, e[1] * sy + oy + look.y * 0.035 * la, e[2], e[3] * sc];
-    // shape phase: follows the intro, then sways slowly inside the range the reference shows
-    // (running it forever drifts into lopsided shapes the original never has)
-    const shapeS = live ? 1.2 + 0.52 * Math.cos(0.35 * ambT) : introT;
     gl.uniform2f(u.squash, sx, sy);
-    draw(P, shapeS, blink);
+    draw(P, blink);
   }
 
   // ---- headline swap
@@ -776,6 +820,8 @@ void main(){
   const params = new URLSearchParams(location.search);
   const fixed = params.get('t');
   window.__renderAt = render;
+  window.__introAt = t => { gl.uniform2f(u.squash, 1, 1); draw(introPose(t), 1, t); };
+  window.__ambAt = t => { gl.uniform2f(u.squash, 1, 1); draw(ambientPose(t, 1), 1, t); };
   window.__setMood = setMood;
   if (fixed !== null) { render(parseFloat(fixed) % LOOP); return; }
   if (MOODS.includes(params.get('mood'))) setMood(params.get('mood'));
