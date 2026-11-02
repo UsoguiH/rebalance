@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mascot Splash Screen</title>
+<title>Glass Blob Mascot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
@@ -13,12 +13,13 @@
     --bezel: #0b0a0d;
     --frame-a: #e9e8ec;
     --frame-b: #9f9ea5;
+    --screen: #020003;
     --w: 393px;            /* logical screen width; everything scales off it */
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --page: #0d0c10; }
+    :root:not([data-theme="light"]) { --page: #0d0c10; color-scheme: dark; }
   }
-  :root[data-theme="dark"] { --page: #0d0c10; }
+  :root[data-theme="dark"] { --page: #0d0c10; color-scheme: dark; }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -125,9 +126,10 @@
   /* ---------- full-bleed on phones ---------- */
   body.bleed .phone { padding: 0; border-radius: 0; background: none; box-shadow: none; }
   body.bleed .phone::before { display: none; }
-  body.bleed .screen { border-radius: 0; height: 100vh; height: 100dvh; }
+  body.bleed .phone { width: 100%; height: 100%; }
+  body.bleed .screen { border-radius: 0; width: 100%; height: 100%; }
   body.bleed .status { display: none; }
-  body.bleed { background: #020003; }
+  body.bleed { background: var(--screen); }
 </style>
 </head>
 <body>
@@ -345,7 +347,6 @@ uniform vec4  uStars[24];
 uniform vec3  uMood;     // laugh, cry, angry weights
 uniform float uT;        // free-running seconds (mood animation)
 uniform vec2  uSquash;   // body squash & stretch
-uniform vec4  uTears[8]; // x, y, radius, alpha
 
 const vec2  C  = vec2(${BLOB_X.toFixed(3)}, ${BLOB_Y.toFixed(3)});
 const float RR = ${BLOB_R.toFixed(3)};
@@ -502,9 +503,6 @@ void main(){
     sd = max(sd, (lidC - e.y) * 0.85);
     sd = max(sd, (lidA - e.y) * 0.78);
 
-    // laugh: rosy cheeks
-    vec2 bd = (e - vec2(0.05 * sc, 0.17 * sc)) / vec2(0.095 * sc, 0.048 * sc);
-    bc = mix(bc, vec3(1.00, 0.42, 0.55), exp(-dot(bd, bd)) * uMood.x * 0.75);
     float eaa = 1.2 * px;
     float emask = 1.0 - smoothstep(-eaa, eaa, sd);
     float border = 0.024 * sc;
@@ -526,33 +524,6 @@ void main(){
 
   if (dropFront) col = mix(col, dcol, dmask);
 
-  // ---- tears
-  for (int i = 0; i < 8; i++){
-    vec4 t = uTears[i];
-    if (t.w <= 0.0) continue;
-    vec2 tq = (p - t.xy) / t.z;
-    if (tq.y < 0.0) { tq.x *= 1.0 - tq.y * 0.55; tq.y *= 0.55; }   // pointed top
-    float td = length(tq);
-    float taa = 1.5 * px / t.z;
-    float tm = (1.0 - smoothstep(1.0 - taa, 1.0 + taa, td)) * t.w;
-    vec3 tcol = mix(vec3(0.30, 0.55, 1.00), vec3(0.80, 0.92, 1.00), clamp(0.45 - tq.x * 0.35 - tq.y * 0.45, 0.0, 1.0));
-    vec2 th = tq - vec2(-0.35, -0.25);
-    tcol += vec3(0.8) * exp(-dot(th, th) / 0.05);
-    col = mix(col, tcol, tm * 0.92);
-  }
-
-  // ---- anger mark
-  float as = 0.15 * (1.0 + 0.12 * beat) * smoothstep(0.0, 1.0, uMood.z);
-  if (as > 0.002){
-    vec2 v = (p - (uBody.xy + vec2(0.64, -0.66) * uBody.z)) / as;
-    vec2 av = abs(v);
-    float vd = abs(length(av - vec2(1.0)) - 0.62) - 0.12;
-    float vaa = 1.5 * px / as;
-    float clip = 1.0 - smoothstep(0.92, 1.0, max(av.x, av.y));
-    float vm = (1.0 - smoothstep(-vaa, vaa, vd)) * clip;
-    col += vec3(0.30, 0.03, 0.02) * exp(-max(vd, 0.0) / 0.10) * (1.0 - smoothstep(0.8, 1.25, max(av.x, av.y))) * uMood.z;
-    col = mix(col, vec3(1.0, 0.24, 0.22), vm);
-  }
 
   // ---- violet speck
   vec2 sq = (p - uSpeck.xy) / max(uSpeck.z, 1e-3);
@@ -587,7 +558,7 @@ void main(){
   const u = {
     res: U('uRes'), w: U('uW'), L: U('uL'), body: U('uBody'), eye: U('uEye'),
     lp: U('uLP'), lc: U('uLC'), drop: U('uDrop'), speck: U('uSpeck'), ghost: U('uGhost'), stars: U('uStars'),
-    mood: U('uMood'), t: U('uT'), squash: U('uSquash'), tears: U('uTears'),
+    mood: U('uMood'), t: U('uT'), squash: U('uSquash'),
   };
   gl.uniform4fv(u.stars, new Float32Array(STARS.flat()));
   gl.uniform3fv(u.lc, new Float32Array(lights.flatMap(l => l.c)));
@@ -617,9 +588,8 @@ void main(){
   };
   const mixv = (a, b, k) => a.map((x, i) => x + (b[i] - x) * k);
   const w = { laugh: 0, cry: 0, angry: 0 };
-  let mood = null, moodUntil = 0, T = 0, idleT = 0, tears = [], lastTear = 0, tearSide = 1;
+  let mood = null, moodUntil = 0, T = 0, idleT = 0;
   const look = { x: 0, y: 0, tx: 0, ty: 0 };
-  const tearBuf = new Float32Array(32);
 
   function draw(L, W, extra) {
     const bodyV = mixv(body(L), body(REST), W);
@@ -639,7 +609,6 @@ void main(){
     gl.uniform1f(u.ghost, ghost(L) * (1 - W));
     gl.uniform3f(u.mood, w.laugh, w.cry, w.angry);
     gl.uniform1f(u.t, T);
-    gl.uniform4fv(u.tears, tearBuf);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
@@ -675,10 +644,6 @@ void main(){
     look.x += (look.tx - look.x) * (1 - Math.exp(-dt * 8));
     look.y += (look.ty - look.y) * (1 - Math.exp(-dt * 8));
 
-    // tears
-    if (cw > 0.5 && T - lastTear > 0.3) { lastTear = T; tearSide = -tearSide; tears.push({ t0: T, side: tearSide, x: 0, y: 0 }); }
-    tears = tears.filter(t => T - t.t0 < 1.8);
-    tearBuf.fill(0);
 
     gl.uniform2f(u.squash, sx, sy);
     draw(idleT, W, (bodyV, eyeV) => {
@@ -687,22 +652,6 @@ void main(){
       eyeV[0] = eyeV[0] + ox + look.x * 0.05;
       eyeV[1] = eyeV[1] * sy + oy + look.y * 0.035;
       eyeV[3] *= sc;
-      tears.slice(-8).forEach((t, i) => {
-        const age = T - t.t0;
-        if (age < 0.02) { t.x = eyeV[0] + t.side * 0.19; t.y = eyeV[1] + 0.09; }
-        let x = t.x, y = t.y, r = 0.036, a = 1;
-        if (age < 0.25) r *= ease(age / 0.25);
-        else if (age < 1.1) {
-          const k = (age - 0.25) / 0.85;
-          x += t.side * 0.2 * k; y += (0.86 - t.y) * Math.pow(k, 1.6);
-          r = 0.036 + 0.006 * k;
-        } else {
-          const f = age - 1.1;
-          x += t.side * (0.2 + 0.08 * f); y = 0.86 + 0.35 * f + 2.6 * f * f;
-          r = 0.042; a = 1 - ease(Math.max(0, (f - 0.35) / 0.35));
-        }
-        tearBuf.set([x, y, r, a], i * 4);
-      });
     });
   }
 
