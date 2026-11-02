@@ -92,34 +92,94 @@
   .headline .mid { color: #8f8d8e; }
   .headline .low { color: #d8d7da; }
 
-  /* ---------- mood controls ---------- */
-  .moods {
-    position: absolute; left: 0; right: 0; top: calc(var(--w) * 1.25);
-    display: flex; justify-content: center; gap: calc(var(--w) * 0.025);
+  /* ---------- agent: answer, state chips, ask box ---------- */
+  .agent {
+    position: absolute; left: 0; right: 0;
+    top: calc(var(--w) * 1.19); bottom: calc(var(--w) * 0.055 + env(safe-area-inset-bottom, 0px));
+    display: flex; flex-direction: column; gap: calc(var(--w) * 0.03);
+    padding: 0 calc(var(--w) * 0.06);
   }
-  .mood {
-    font: 500 calc(var(--w) * 0.038)/1 "Inter", system-ui, sans-serif;
-    letter-spacing: -0.01em;
+  .answer {
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    text-align: center; color: #d2d0d6;
+    font-size: calc(var(--w) * 0.043); line-height: 1.45; letter-spacing: -0.012em;
+    padding: calc(var(--w) * 0.02) calc(var(--w) * 0.02);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
+            mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
+    scrollbar-width: none; -webkit-user-select: text; user-select: text;
+  }
+  .answer::-webkit-scrollbar { display: none; }
+  .answer .you { display: block; color: #6f6b76; font-size: calc(var(--w) * 0.035); margin-bottom: calc(var(--w) * 0.02); }
+  .answer .note { display: block; color: #8a8592; font-size: calc(var(--w) * 0.034); margin-top: calc(var(--w) * 0.02); }
+  .answer .caret { display: inline-block; width: 0.5ch; animation: blinkc 1s steps(1) infinite; color: #8b84ff; }
+  @keyframes blinkc { 50% { opacity: 0; } }
+
+  .chips {
+    display: flex; gap: calc(var(--w) * 0.02); overflow-x: auto; scrollbar-width: none;
+    margin: 0 calc(var(--w) * -0.06); padding: 2px calc(var(--w) * 0.06);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none;
+    font: 500 calc(var(--w) * 0.034)/1 "Inter", system-ui, sans-serif; letter-spacing: -0.01em;
     color: #e9e8ec; background: #18151b;
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 999px;
-    padding: calc(var(--w) * 0.026) calc(var(--w) * 0.042);
-    display: inline-flex; align-items: center; gap: calc(var(--w) * 0.018);
+    border: 1px solid rgba(255,255,255,.08); border-radius: 999px;
+    padding: calc(var(--w) * 0.021) calc(var(--w) * 0.032);
+    display: inline-flex; align-items: center; gap: calc(var(--w) * 0.014);
     cursor: pointer; -webkit-tap-highlight-color: transparent;
     transition: background .2s, border-color .2s, transform .12s, box-shadow .2s;
   }
-  .mood:hover { background: #221e27; }
-  .mood:active { transform: scale(.95); }
-  .mood:focus-visible { outline: 2px solid #8b84ff; outline-offset: 2px; }
-  .mood .emo { font-size: 1.15em; line-height: 1; }
-  .mood[aria-pressed="true"] { background: #26212c; border-color: var(--tint); box-shadow: 0 0 calc(var(--w) * 0.05) -4px var(--tint); }
-  .mood[data-mood="laugh"] { --tint: #ffb36b; }
-  .mood[data-mood="cry"]   { --tint: #6f8cff; }
-  .mood[data-mood="angry"] { --tint: #ff5a4f; }
-  .hint {
-    position: absolute; left: 0; right: 0; top: calc(var(--w) * 1.39);
-    text-align: center; color: #5d5a63;
-    font-size: calc(var(--w) * 0.032); letter-spacing: -0.01em;
+  .chip:hover { background: #221e27; }
+  .chip:active { transform: scale(.95); }
+  .chip:focus-visible, .send:focus-visible { outline: 2px solid #8b84ff; outline-offset: 2px; }
+  .chip .emo { font-size: 1.1em; line-height: 1; }
+  .chip[aria-pressed="true"] { background: #26212c; border-color: var(--tint); box-shadow: 0 0 calc(var(--w) * 0.05) -4px var(--tint); }
+
+  .ask {
+    display: flex; align-items: center; gap: calc(var(--w) * 0.02);
+    background: #18151b; border: 1px solid rgba(255,255,255,.09); border-radius: 999px;
+    padding: calc(var(--w) * 0.012) calc(var(--w) * 0.012) calc(var(--w) * 0.012) calc(var(--w) * 0.048);
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .ask:focus-within { border-color: rgba(139,132,255,.55); box-shadow: 0 0 calc(var(--w) * 0.06) -6px #8b84ff; }
+  .ask input {
+    flex: 1; min-width: 0; background: transparent; border: 0; outline: none;
+    color: #f2f1f5; font: 400 max(16px, calc(var(--w) * 0.042)) "Inter", system-ui, sans-serif; letter-spacing: -0.01em;
+    padding: calc(var(--w) * 0.018) 0;
+  }
+  .ask input::placeholder { color: #6f6b76; }
+  .send {
+    flex: none; width: calc(var(--w) * 0.1); height: calc(var(--w) * 0.1); border-radius: 50%;
+    border: 0; background: #f2f1f5; color: #0b0a0d; display: grid; place-items: center; cursor: pointer;
+    transition: background .2s, color .2s, transform .12s;
+  }
+  .send:active { transform: scale(.92); }
+  .send svg { width: calc(var(--w) * 0.044); height: auto; }
+  .send .stop { display: none; }
+  .send[data-busy="true"] { background: #2a2530; color: #f2f1f5; }
+  .send[data-busy="true"] .go { display: none; }
+  .send[data-busy="true"] .stop { display: block; }
+
+  .zzz {
+    position: absolute; pointer-events: none;
+    left: calc(var(--w) * 0.69); top: calc(var(--w) * 0.33);
+    font: 600 calc(var(--w) * 0.05)/1 "Inter", system-ui, sans-serif; color: #b9b4ff;
+    opacity: 0; transition: opacity .6s;
+  }
+  .zzz.on { opacity: 1; }
+  .zzz span { position: absolute; left: 0; top: 0; opacity: 0; animation: zfloat 3s ease-out infinite; }
+  .zzz span:nth-child(2) { animation-delay: 1s; font-size: 0.8em; }
+  .zzz span:nth-child(3) { animation-delay: 2s; font-size: 0.65em; }
+  @keyframes zfloat {
+    0%   { transform: translate(0, 0) scale(.6); opacity: 0; }
+    20%  { opacity: .9; }
+    100% { transform: translate(calc(var(--w) * 0.08), calc(var(--w) * -0.16)) scale(1.25); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .zzz span, .answer .caret { animation: none; }
+    .zzz span:first-child { opacity: .8; }
   }
   canvas { cursor: pointer; }
 
@@ -152,12 +212,19 @@
 
     <h1 class="headline" id="headline" aria-live="polite"><span class="hi">Hey There!</span> <span class="mid">What’s On</span><br><span class="low">Your Mind Today</span></h1>
 
-    <div class="moods" role="group" aria-label="Mascot mood">
-      <button class="mood" data-mood="laugh" aria-pressed="false"><span class="emo" aria-hidden="true">😂</span>Laugh</button>
-      <button class="mood" data-mood="cry" aria-pressed="false"><span class="emo" aria-hidden="true">😢</span>Cry</button>
-      <button class="mood" data-mood="angry" aria-pressed="false"><span class="emo" aria-hidden="true">😠</span>Angry</button>
+    <div class="zzz" id="zzz" aria-hidden="true"><span>z</span><span>z</span><span>z</span></div>
+
+    <div class="agent">
+      <div class="answer" id="answer" aria-live="polite"></div>
+      <div class="chips" id="chips" role="group" aria-label="Show a state"></div>
+      <form class="ask" id="ask" autocomplete="off">
+        <input id="askInput" type="text" maxlength="500" placeholder="Ask me anything…" aria-label="Ask the mascot">
+        <button class="send" id="send" type="submit" aria-label="Send" data-busy="false">
+          <svg class="go" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16V4M4.5 9.5L10 4l5.5 5.5"/></svg>
+          <svg class="stop" viewBox="0 0 20 20"><rect x="5" y="5" width="10" height="10" rx="2" fill="currentColor"/></svg>
+        </button>
+      </form>
     </div>
-    <p class="hint">Tap him to tickle · keys 1 2 3</p>
   </div>
 </div>
 
@@ -349,6 +416,8 @@ uniform vec4  uSpeck;
 uniform float uGhost;
 uniform vec4  uStars[24];
 uniform vec3  uMood;     // laugh, cry, angry weights
+uniform vec4  uMood2;    // think, happy, surprised, confused weights
+uniform vec4  uMood3;    // sleep, listen, speak weights, voice-ring age (0..1, 1 = none)
 uniform float uT;        // free-running seconds (mood animation)
 uniform vec2  uSquash;   // body squash & stretch
 
@@ -388,6 +457,27 @@ vec4 dropShade(vec2 p, vec4 D, vec2 toward, float px, float gloss){
   c = mix(c, vec3(1.0, 0.55, 0.45), smoothstep(0.75, 1.0, dd) * 0.25);           // soft lit rim
   float glow = exp(-max(dd - 1.0, 0.0) / 0.45) * (1.0 - m) * 0.30;
   return vec4(c, (m + glow) * D.w);
+}
+// three glowing thought sparks orbiting the mascot on a tilted ring (front or back half)
+vec4 thoughtSparks(vec2 p, vec2 c, float s, float t, float front, float px){
+  vec4 acc = vec4(0.0);
+  for (int i = 0; i < 3; i++){
+    float th = t * 2.4 + float(i) * 2.0944;
+    float z = sin(th);
+    if ((z > 0.0) != (front > 0.5)) continue;
+    vec2 o = vec2(cos(th) * 1.32, sin(th) * 0.30);
+    float ca = cos(-0.32), sa = sin(-0.32);
+    o = vec2(ca * o.x - sa * o.y, sa * o.x + ca * o.y) * s;
+    float r = 0.045 * s * (1.0 + 0.3 * z);
+    float d = length(p - c - o);
+    float core = 1.0 - smoothstep(r * 0.75 - px, r + px, d);
+    float glow = exp(-max(d - r, 0.0) / (r * 1.3)) * 0.55;
+    vec3 tint = i == 0 ? vec3(0.55, 0.85, 1.0) : (i == 1 ? vec3(0.78, 0.62, 1.0) : vec3(1.0, 0.95, 1.0));
+    float a = max(core, glow) * (0.75 + 0.25 * z);
+    acc.rgb = mix(acc.rgb, mix(tint, vec3(1.0), core * 0.6), a);
+    acc.a = max(acc.a, a);
+  }
+  return acc;
 }
 float bgLevel(float y){
   float v = mix(15.0, 18.0, smoothstep(0.0, 0.35, y));
@@ -459,6 +549,14 @@ void main(){
   col += ghostCol * uGhost * 0.28;
 
   col = mix(col, trailB.rgb, trailB.a);
+  vec4 sparkB = thoughtSparks(p, uBody.xy, uBody.z, uT, 0.0, px);
+  sparkB.a *= uMood2.x;
+  col = mix(col, sparkB.rgb, sparkB.a);
+  // voice ring: a soft ring that rolls outward when he hears a keystroke or speaks
+  float vr = length((p - uBody.xy) / uBody.z);
+  float va = uMood3.w;
+  col += vec3(0.72, 0.78, 1.0) * exp(-pow((vr - (1.04 + 0.42 * va)) / 0.022, 2.0)) * (1.0 - va) * 0.32
+       * clamp(uMood3.y + uMood3.z, 0.0, 1.0);
   if (!dropFront) col = mix(col, dropC.rgb, dropC.a);
 
   // ---- body
@@ -469,7 +567,7 @@ void main(){
   float d  = length(q) / rb;
   float aa = 1.3 * px / (uBody.z * min(uSquash.x, uSquash.y) * rb);
   float beat = pow(0.5 + 0.5 * sin(uT * 9.0), 3.0);           // angry heartbeat
-  float msum = clamp(uMood.x + uMood.y + uMood.z, 0.0, 1.0);
+  float msum = clamp(uMood.x + uMood.y + uMood.z + uMood2.x + uMood2.y + uMood2.z + uMood2.w + uMood3.x, 0.0, 1.0);
   float inside = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
 
   if (inside > 0.0){
@@ -480,9 +578,9 @@ void main(){
     base = mix(base, vec3(1.00, 0.88, 0.76), uMood.x * 0.40);
     base = mix(base, vec3(0.62, 0.72, 1.00), uMood.y * 0.75);
     base = mix(base, vec3(1.00, 0.55, 0.48), uMood.z * 0.60);
-    vec3 bc = base * (0.74 * rim + 0.14 * smoothstep(0.90, 1.0, d)) * lit * uBody.w * (1.0 - 0.15 * uMood.y);
+    vec3 bc = base * (0.74 * rim + 0.14 * smoothstep(0.90, 1.0, d)) * lit * uBody.w * (1.0 - 0.15 * uMood.y) * (1.0 - 0.32 * uMood3.x);
     for (int i = 0; i < 6; i++){
-      float g = min(glw[i], 1.0) * (1.0 - 0.55 * msum);
+      float g = min(glw[i], 1.0) * (1.0 - 0.55 * msum) * (1.0 - 0.6 * uMood3.x);
       bc = bc * (1.0 - 0.62 * g) + uLC[i] * g * (0.62 + 0.12 * rim);
     }
     // mood glows inside the glass
@@ -510,13 +608,16 @@ void main(){
     hs *= sc; sp *= sc;
     hs.y *= mix(1.0, uBlink, step(0.5, m));
     vec2 e = p - uEye.xy;                                           // eyes measured in world R units
+    float side = e.x >= 0.0 ? 1.0 : -1.0;                           // +1 his left eye (screen right)
     e.x = abs(e.x) - sp;                                            // +x points away from the face centre
     float sd = sdRoundBox(e, hs, min(hs.x, hs.y) * 0.98);
 
     // ---- expression eyes: same glossy pill style, rounded everywhere
-    float wsum = max(1.0, uMood.x + uMood.y + uMood.z);
+    float wsum = max(1.0, uMood.x + uMood.y + uMood.z + uMood2.x + uMood2.y + uMood2.z + uMood2.w + uMood3.x);
     vec3  mw = uMood / wsum;
-    float msw = mw.x + mw.y + mw.z;
+    vec4  m2 = uMood2 / wsum;
+    float mz = uMood3.x / wsum;
+    float msw = mw.x + mw.y + mw.z + m2.x + m2.y + m2.z + m2.w + mz;
 
     // laugh: smiling eyes - the pill pushed shut from below by his cheeks, leaving a thick
     // rounded arch; tilted slightly outward and squeezing in time with the laugh
@@ -545,7 +646,32 @@ void main(){
     float aLid = (-0.012 * sc - 0.52 * e.x - e.y) / sqrt(1.0 + 0.52 * 0.52);
     float sdA = max(aBox, aLid + arr) - arr;
 
-    sd = sd * (1.0 - msw) + sdL * mw.x + sdC * mw.y + sdA * mw.z;
+    // happy: the same smiling arch as laugh, calm (no squeeze)
+    vec2  hp = vec2(lc * lq.x + ls * lq.y, -ls * lq.x + lc * lq.y);
+    float sdH = max(sdRoundBox(hp, lhs - lrr, min(lhs.x, lhs.y) - lrr),
+                    -(length(hp - vec2(0.0, 0.078 * sc)) - 0.108 * sc) - lrr) - lrr;
+
+    // think: pills looking up, his left eye narrowed as if weighing something
+    vec2  ths = vec2(0.070, 0.098) * sc;
+    float trr = 0.032 * sc;
+    float tBox = sdRoundBox(e, ths - trr, (min(ths.x, ths.y) - trr) * 0.9);
+    float tLid = (side > 0.0 ? (-0.048 * sc + 0.22 * e.x) : -0.2) - e.y;
+    float sdT = max(tBox, tLid + trr) - trr;
+
+    // surprised: big round eyes
+    float sdS = length(e - vec2(0.0, -0.012 * sc)) - 0.096 * sc;
+
+    // confused: one eye shrinks and lifts, the other stays big
+    vec2  qhs = (side > 0.0 ? vec2(0.054, 0.074) : vec2(0.080, 0.112)) * sc;
+    float sdQ = sdRoundBox(e - vec2(0.0, side > 0.0 ? -0.035 * sc : 0.0), qhs, min(qhs.x, qhs.y) * 0.98);
+
+    // sleep: closed eyes, relaxed downward curves
+    vec2  zq = e - vec2(0.0, -0.030 * sc);
+    float zr = 0.068 * sc, zt = 0.016 * sc;
+    float sdZ = zq.y > 0.0 ? abs(length(zq) - zr) - zt : length(vec2(abs(zq.x) - zr, zq.y)) - zt;
+
+    sd = sd * (1.0 - msw) + sdL * mw.x + sdC * mw.y + sdA * mw.z
+       + sdT * m2.x + sdH * m2.y + sdS * m2.z + sdQ * m2.w + sdZ * mz;
 
     float eaa = 1.2 * px;
     float emask = 1.0 - smoothstep(-eaa, eaa, sd);
@@ -563,8 +689,11 @@ void main(){
     vec2 hl3 = e - vec2(0.022 * sc, 0.035 * sc);
     icol = mix(icol, vec3(1.0, 0.9, 0.9), mw.z * exp(-dot(hl3, hl3) / pow(0.012 * sc, 2.0)) * 0.9);
     vec3 ecol = mix(vec3(0.97), icol,
-                    smoothstep(0.45, 1.0, m) * (1.0 - mw.x) * smoothstep(-border*0.4, -border*1.2, sd));
-    ecol = mix(ecol, vec3(1.0) * (0.90 + 0.10 * smoothstep(0.0, 0.06, -lp.y / sc)), mw.x);    // laugh: solid white
+                    smoothstep(0.45, 1.0, m) * (1.0 - mw.x - m2.y - mz) * smoothstep(-border*0.4, -border*1.2, sd));
+    ecol = mix(ecol, vec3(1.0) * (0.90 + 0.10 * smoothstep(0.0, 0.06, -lp.y / sc)), mw.x + m2.y);   // laugh/happy: solid white
+    ecol = mix(ecol, vec3(0.93, 0.92, 0.98), mz);                                                    // sleep: soft white lines
+    vec2 hs4 = e - vec2(0.03 * sc, -0.045 * sc);
+    ecol = mix(ecol, vec3(1.0), m2.z * exp(-dot(hs4, hs4) / pow(0.02 * sc, 2.0)) * 0.9);            // surprised glint
     // soft glow around eyes
     bc += vec3(0.12) * exp(-max(sd, 0.0) / (0.010 * sc)) * (1.0 - emask);
     bc = mix(bc, ecol, emask);
@@ -573,6 +702,9 @@ void main(){
   }
 
   col = mix(col, trailF.rgb, trailF.a);
+  vec4 sparkF = thoughtSparks(p, uBody.xy, uBody.z, uT, 1.0, px);
+  sparkF.a *= uMood2.x;
+  col = mix(col, sparkF.rgb, sparkF.a);
   if (dropFront) col = mix(col, dropC.rgb, dropC.a);
 
 
@@ -610,7 +742,7 @@ void main(){
     res: U('uRes'), w: U('uW'), L: U('uL'), body: U('uBody'), eye: U('uEye'),
     lp: U('uLP'), lc: U('uLC'), drop: U('uDrop'), speck: U('uSpeck'), ghost: U('uGhost'), stars: U('uStars'),
     mood: U('uMood'), t: U('uT'), squash: U('uSquash'), S: U('uS'), blink: U('uBlink'),
-    dropFront: U('uDropFront'), trail: U('uTrail'),
+    dropFront: U('uDropFront'), trail: U('uTrail'), mood2: U('uMood2'), mood3: U('uMood3'),
   };
   gl.uniform4fv(u.stars, new Float32Array(STARS.flat()));
   gl.uniform3fv(u.lc, new Float32Array(lights.flatMap(l => l.c)));
@@ -634,19 +766,35 @@ void main(){
   const DROP_R = 0.11;                     // red ball radius (R units)
   const INTRO = ORBIT + (HOLD - 0.19);     // full intro length, played once
   const MOOD_SECONDS = 5;
-  const MOODS = ['laugh', 'cry', 'angry'];
+  // every state he can be in; the first three are the original moods
+  const STATES = ['laugh', 'cry', 'angry', 'think', 'happy', 'surprised', 'confused', 'sleep', 'listen', 'speak'];
+  const CHIPS = [
+    ['listen', '👂', 'Listen', '#8fb3ff'], ['think', '🤔', 'Think', '#b49cff'], ['speak', '💬', 'Speak', '#9fe0ff'],
+    ['happy', '😊', 'Happy', '#ffd27a'], ['laugh', '😂', 'Laugh', '#ffb36b'], ['surprised', '😮', 'Surprised', '#ffe08a'],
+    ['confused', '😕', 'Confused', '#c9b6ff'], ['cry', '😢', 'Cry', '#6f8cff'], ['angry', '😠', 'Angry', '#ff5a4f'],
+    ['sleep', '😴', 'Sleep', '#9d97c9'],
+  ];
   const LINES = {
-    idle:  ['Hey There!', 'What’s On', 'Your Mind Today'],
-    laugh: ['Haha!', 'Stop It,', 'That Tickles!'],
-    cry:   ['Oh No…', 'I Feel', 'So Blue Today'],
-    angry: ['Grrr!', 'I’m So', 'Mad Right Now'],
+    idle:      ['Hey There!', 'What’s On', 'Your Mind Today'],
+    listen:    ['I’m', 'All Ears,', 'Go On…'],
+    think:     ['Hmm…', 'Let Me', 'Think About It'],
+    speak:     ['Okay,', 'Here’s', 'What I Think'],
+    happy:     ['Yay!', 'That', 'Made My Day'],
+    laugh:     ['Haha!', 'Stop It,', 'That Tickles!'],
+    surprised: ['Whoa!', 'I Did Not', 'See That Coming'],
+    confused:  ['Huh?', 'I’m Not', 'Sure I Follow'],
+    cry:       ['Oh No…', 'I Feel', 'So Blue Today'],
+    angry:     ['Grrr!', 'I’m So', 'Mad Right Now'],
+    sleep:     ['Zzz…', 'Wake Me', 'When You Need Me'],
   };
   const mixv = (a, b, k) => a.map((x, i) => x + (b[i] - x) * k);
-  const w = { laugh: 0, cry: 0, angry: 0 };
+  const w = Object.fromEntries(STATES.map(k => [k, 0]));
   let mood = null, moodUntil = 0, T = 0, introT = 0, ambT = 0;
   const look = { x: 0, y: 0, tx: 0, ty: 0, pointerAt: -99, nextGlance: 0 };
   let blinkAt = 4.5;
   const NO_TRAIL = new Float32Array(16);
+  // agent bookkeeping
+  let lastActivity = 0, pulseAt = -9, kick = 0, talk = 0, lastTalkPulse = 0, spinExtra = 0, swirl = 0;
 
   function poseAt(L) {
     return { L, shape: L, body: body(L), eyes: eyes(L), lp: lights.map(l => l.k(L)),
@@ -747,6 +895,8 @@ void main(){
     gl.uniform4fv(u.speck, P.speck);
     gl.uniform1f(u.ghost, P.ghost);
     gl.uniform3f(u.mood, w.laugh, w.cry, w.angry);
+    gl.uniform4f(u.mood2, w.think, w.happy, w.surprised, w.confused);
+    gl.uniform4f(u.mood3, w.sleep, w.listen, w.speak, Math.min(1, (T - pulseAt) / 0.7));
     gl.uniform1f(u.t, t);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
@@ -754,26 +904,47 @@ void main(){
   // render one moment of the reference timeline (used by ?t= and frame comparisons)
   function render(L) {
     gl.uniform2f(u.squash, 1, 1);
+    pulseAt = -9;
     draw(poseAt(L), 1, L);
   }
 
-  function replayIntro() { introT = 0; ambT = 0; setMood(null); }
+  function replayIntro() { introT = 0; ambT = 0; setMood(null); lastActivity = T; }
 
   function step(dt) {
     T += dt;
     if (mood && T > moodUntil) setMood(null);
-    for (const m of MOODS) w[m] += ((mood === m ? 1 : 0) - w[m]) * (1 - Math.exp(-dt * 6));
-    const W = Math.min(1, w.laugh + w.cry + w.angry);
+    for (const m of STATES) w[m] += ((mood === m ? 1 : 0) - w[m]) * (1 - Math.exp(-dt * 6));
+    const W = Math.min(1, STATES.reduce((a, k) => a + w[k], 0));
 
-    // intro plays once; a mood skips whatever is left of it
+    // intro plays once; a state skips whatever is left of it
     if (introT < INTRO) introT = W > 0.97 ? INTRO : Math.min(INTRO, introT + dt * (1 - W));
     const live = introT >= INTRO;
     if (live) ambT += dt;
+
+    // dozes off when nobody does anything for a while
+    if (live && !mood && !agent.busy && T - lastActivity > 30) setMood('sleep', 0);
+    zzz.classList.toggle('on', w.sleep > 0.5);
+
     const amb = ambientPose(ambT, Math.min(1, ambT / 1.2));
     const P = mixPose(live ? amb : introPose(introT), amb, W);
 
-    // body motion for moods
-    const lw = w.laugh, cw = w.cry, aw = w.angry;
+    // thinking: the colour lights swirl around inside him and his hexagon spins faster
+    swirl += dt * 1.8 * w.think;
+    spinExtra += dt * 1.4 * w.think;
+    if (w.think > 0.01) {
+      const ca = Math.cos(swirl), sa = Math.sin(swirl);
+      P.lp = P.lp.map(v => [v[0] * ca - v[1] * sa, v[0] * sa + v[1] * ca, v[2], v[3] * (1 + 0.25 * w.think)]);
+    }
+
+    // speaking energy: driven by the words as they appear (or a soft babble in preview)
+    if (w.speak > 0.5 && !agent.revealing) talk = Math.max(talk, 0.45 + 0.35 * Math.sin(T * 7.3) * Math.sin(T * 3.1));
+    talk *= Math.exp(-dt * 6);
+    if (w.speak > 0.5 && talk > 0.25 && T - lastTalkPulse > 0.55) { lastTalkPulse = T; pulseAt = T; }
+    kick *= Math.exp(-dt * 10);
+
+    // body motion for every state
+    const lw = w.laugh, cw = w.cry, aw = w.angry, tw = w.think, hw = w.happy, sw = w.surprised,
+          qw = w.confused, zw = w.sleep, iw = w.listen, kw = w.speak;
     let ox = 0, oy = 0, sx = 1, sy = 1, sc = 1;
     const ph = T * 8.5, hop = Math.abs(Math.sin(ph)), land = Math.pow(1 - hop, 3);
     oy -= 0.075 * hop * lw;
@@ -786,11 +957,19 @@ void main(){
     ox += 0.014 * Math.sin(T * 63) * aw;
     oy += 0.009 * Math.sin(T * 47) * aw;
     sc *= 1 + aw * (0.02 + 0.03 * (0.5 + 0.5 * Math.sin(T * 9)));
+    ox += 0.014 * Math.sin(T * 1.3) * tw;                                   // think: slow sway
+    oy -= 0.035 * Math.abs(Math.sin(T * 5)) * hw;                           // happy: little bounces
+    sy += 0.06 * sw; sx -= 0.04 * sw; oy -= 0.03 * sw;                      // surprised: stretched up
+    ox += 0.02 * Math.sin(T * 2.4) * qw;                                    // confused: wobble
+    sc *= 1 + 0.03 * Math.sin(T * 1.3) * zw; oy += 0.03 * zw;              // sleep: deep slow breaths
+    oy -= 0.012 * kick;                                                     // listen: perks up on each key
+    sc *= 1 + 0.03 * talk * Math.sin(T * 22) * kw;                          // speak: pulses with the words
+    sy -= 0.02 * talk * Math.abs(Math.sin(T * 17)) * kw;
     // a little squash when his eyes pop up in the idle
     if (live) { const hp = (ambT % HOP) / HOP; const pop = Math.exp(-Math.pow((hp - 0.6) / 0.05, 2)) * (1 - W); sx += 0.02 * pop; sy -= 0.025 * pop; }
 
-    // glances around on his own when nobody is pointing at him
-    if (live && T - look.pointerAt > 3 && T > look.nextGlance) {
+    // glances around on his own when nobody is pointing at him (not while asleep)
+    if (live && T - look.pointerAt > 3 && T > look.nextGlance && zw < 0.5) {
       const center = Math.random() < 0.35;
       look.tx = center ? 0 : (Math.random() * 2 - 1) * 0.6;
       look.ty = center ? 0 : (Math.random() * 2 - 1) * 0.4;
@@ -798,22 +977,26 @@ void main(){
     }
     look.x += (look.tx - look.x) * (1 - Math.exp(-dt * 9));
     look.y += (look.ty - look.y) * (1 - Math.exp(-dt * 9));
-    const la = live ? 1 : 0;
+    const la = (live ? 1 : 0) * (1 - zw) * (1 - 0.7 * tw) * (1 - 0.6 * iw);
 
     // blinking
     let blink = 1;
-    if (live) {
+    if (live && zw < 0.5) {
       if (T > blinkAt + 0.18) blinkAt = T + 2.6 + Math.random() * 2.8;
       if (T >= blinkAt) blink = 1 - 0.9 * Math.sin(Math.PI * (T - blinkAt) / 0.18);
     }
 
     P.body = [P.body[0] + ox, P.body[1] + oy, P.body[2] * sc, P.body[3]];
     const e = P.eyes;
-    e[1] += -0.02 * lw + 0.06 * cw + 0.03 * aw;
-    P.eyes = [e[0] + ox + look.x * 0.05 * la, e[1] * sy + oy + look.y * 0.035 * la, e[2], e[3] * sc];
-    P.shape = T;                                   // the hexagon keeps spinning, no loop needed
+    e[1] += -0.02 * lw + 0.06 * cw + 0.03 * aw - 0.02 * hw - 0.03 * sw + 0.05 * zw;
+    e[0] += (0.05 + 0.02 * Math.sin(T * 2.1)) * tw + 0.02 * Math.sin(T * 1.2) * qw;   // think: looks up and away
+    e[1] += (-0.07 + 0.012 * Math.sin(T * 3.3)) * tw;
+    e[1] += 0.06 * iw - 0.02 * kick;                                                   // listen: looks at the box
+    P.eyes = [e[0] + ox + look.x * 0.05 * la, e[1] * sy + oy + look.y * 0.035 * la, e[2], e[3] * sc * (1 + 0.06 * iw)];
+    P.shape = T + spinExtra;                       // the hexagon keeps spinning, no loop needed
     gl.uniform2f(u.squash, sx, sy);
     draw(P, blink);
+    agent.tick(dt);
   }
 
   // ---- headline swap
@@ -834,18 +1017,33 @@ void main(){
   }
 
   // ---- controls
-  const buttons = [...document.querySelectorAll('.mood')];
-  function setMood(m) {
+  const zzz = document.getElementById('zzz');
+  const chipsEl = document.getElementById('chips');
+  const buttons = CHIPS.map(([key, emo, label, tint]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.dataset.mood = key;
+    b.style.setProperty('--tint', tint);
+    b.setAttribute('aria-pressed', 'false');
+    const i = document.createElement('span'); i.className = 'emo'; i.setAttribute('aria-hidden', 'true'); i.textContent = emo;
+    b.append(i, label);
+    b.addEventListener('click', () => { wake(); setMood(mood === key ? null : key); });
+    chipsEl.append(b);
+    return b;
+  });
+  // dur: seconds to hold the state; 0 holds it until something else changes it
+  function setMood(m, dur = MOOD_SECONDS) {
     mood = m;
-    moodUntil = T + MOOD_SECONDS;
+    moodUntil = dur ? T + dur : Infinity;
     buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mood === m)));
     showLines(m || 'idle');
   }
-  buttons.forEach(b => b.addEventListener('click', () => setMood(mood === b.dataset.mood ? null : b.dataset.mood)));
+  function wake() {
+    lastActivity = T;
+    if (mood === 'sleep') setMood('surprised', 1.1);
+  }
   addEventListener('keydown', e => {
-    const i = ['1', '2', '3'].indexOf(e.key);
-    if (i >= 0) setMood(mood === MOODS[i] ? null : MOODS[i]);
-    if (e.key === 'Escape') setMood(null);
+    wake();
+    if (e.key === 'Escape' && document.activeElement !== input) setMood(null);
   });
   function blobPoint(e) {
     const r = screen.getBoundingClientRect();
@@ -854,16 +1052,159 @@ void main(){
   }
   canvas.addEventListener('click', e => {
     const p = blobPoint(e);
-    if (Math.hypot(p.x, p.y) < 1.15) setMood('laugh');        // tickle!
+    const wasAsleep = mood === 'sleep';
+    wake();
+    if (!wasAsleep && !agent.busy && Math.hypot(p.x, p.y) < 1.15) setMood('laugh');   // tickle!
   });
   screen.addEventListener('pointermove', e => {
     const p = blobPoint(e);
     look.pointerAt = T;
     look.tx = Math.max(-1, Math.min(1, p.x / 2.5));
     look.ty = Math.max(-1, Math.min(1, p.y / 2.5));
+    if (e.pointerType !== 'mouse' || Math.abs(e.movementX) + Math.abs(e.movementY) > 2) wake();
   });
   screen.addEventListener('pointerleave', () => { look.tx = 0; look.ty = 0; });
   document.querySelector('.back').addEventListener('click', replayIntro);
+
+  // ------------------------------------------------------------------
+  // The agent: listens while you type, thinks, then speaks (answers come from
+  // Claude through the viewer's own account) and picks his own expression
+  // ------------------------------------------------------------------
+  const form = document.getElementById('ask');
+  const input = document.getElementById('askInput');
+  const sendBtn = document.getElementById('send');
+  const answerEl = document.getElementById('answer');
+  const TAGS = { happy: 'happy', laugh: 'laugh', sad: 'cry', angry: 'angry', surprised: 'surprised',
+                 confused: 'confused', thinking: 'think', neutral: null };
+  const RULES = 'You are a small, friendly glass-blob mascot who lives on a phone screen. You have big glossy '
+    + 'eyes and no mouth, and your words appear on the screen under you. Reply to the latest message '
+    + 'helpfully in at most three short sentences (under 60 words): warm, a little playful, plain text, '
+    + 'no markdown, no emoji, no lists. Begin your reply with exactly one expression tag on its own first '
+    + 'line that matches how you feel about what you are saying: [happy], [laugh], [sad], [angry], '
+    + '[surprised], [confused], [thinking] or [neutral]. Example:\n[happy]\nThat sounds like a lovely plan!';
+  const OFFLINE = 'I can only think out loud when this page is open in Claude, but this is exactly how I look while I work on an answer!';
+  const ERRORS = {
+    rate_limited: 'I’m out of breath. Give me a moment and ask again.',
+    session_expired: 'Please sign in to Claude again, then ask me.',
+    refused: 'I’d rather not answer that one. Try asking another way?',
+    empty_completion: 'I drew a blank. Try asking another way?',
+    upstream_error: 'Something glitched while I was thinking. Try again?',
+  };
+  const BLOCKED = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'];
+
+  let sample = null;
+  (async () => {
+    try { sample = window.claude && window.claude.use ? await window.claude.use('sample') : null; }
+    catch { sample = null; }
+  })();
+
+  const agent = {
+    busy: false, revealing: false, ctl: null, turns: [],
+    target: '', shown: 0, reveal: 0, startAt: 0, done: false, tag: null, out: null, note: '',
+    tick(dt) {
+      if (!this.revealing || T < this.startAt) return;
+      if (mood !== 'speak' && this.shown < this.target.length) setMood('speak', 0);
+      this.reveal += dt * 46;
+      const n = Math.min(Math.floor(this.reveal), this.target.length);
+      if (n > this.shown) {
+        talk = Math.min(1, talk + (n - this.shown) / 8);
+        this.shown = n;
+        this.out.textContent = this.target.slice(0, n);
+        answerEl.scrollTop = answerEl.scrollHeight;
+      }
+      if (this.done && this.shown >= this.target.length) this.finish();
+    },
+    finish() {
+      this.revealing = false;
+      this.caret?.remove();
+      if (this.note) { const n = document.createElement('span'); n.className = 'note'; n.textContent = this.note; answerEl.append(n); }
+      setBusy(false);
+      const next = this.tag in TAGS ? TAGS[this.tag] : null;
+      setMood(next, 4.5);
+      lastActivity = T;
+    },
+  };
+  function setBusy(b) {
+    agent.busy = b;
+    sendBtn.dataset.busy = String(b);
+    sendBtn.setAttribute('aria-label', b ? 'Stop' : 'Send');
+  }
+  function parseReply(text) {
+    const m = text.match(/^\s*\[([a-zA-Z]+)\]\s*/);
+    if (m) return { tag: m[1].toLowerCase(), body: text.slice(m[0].length) };
+    if (/^\s*\[[a-zA-Z]*$/.test(text)) return { tag: null, body: '' };       // tag still arriving
+    return { tag: null, body: text };
+  }
+
+  async function ask(q) {
+    wake();
+    setBusy(true);
+    answerEl.textContent = '';
+    const you = document.createElement('span'); you.className = 'you'; you.textContent = q;
+    const out = document.createElement('span');
+    const caret = document.createElement('span'); caret.className = 'caret'; caret.textContent = '▍';
+    answerEl.append(you, out, caret);
+    Object.assign(agent, { revealing: true, target: '', shown: 0, reveal: 0, done: false, tag: null, out, caret, note: '',
+                           startAt: T + 0.9 });                                  // think for at least a moment
+    setMood('think', 0);
+
+    if (!sample) {
+      await new Promise(r => setTimeout(r, 1400));
+      Object.assign(agent, { target: OFFLINE, tag: 'happy', done: true });
+      return;
+    }
+    const ctl = agent.ctl = new AbortController();
+    agent.turns.push({ role: 'user', content: q });
+    agent.turns = agent.turns.slice(-8);
+    try {
+      const { text } = await sample([{ role: 'user', content: RULES }, ...agent.turns], {
+        modelTier: 'quick', cache: false, signal: ctl.signal,
+        onText: ({ text }) => { const r = parseReply(text); agent.target = r.body; if (r.tag) agent.tag = r.tag; },
+      });
+      const r = parseReply(text);
+      agent.target = r.body.trim() || agent.target; agent.tag = r.tag;
+      agent.turns.push({ role: 'assistant', content: text });
+      agent.done = true;
+    } catch (e) {
+      agent.turns.pop();                                        // forget the unanswered question
+      const code = e && e.code;
+      if (code === 'cancelled') {
+        agent.target = agent.target.slice(0, agent.shown); agent.tag = null; agent.done = true;
+        return;
+      }
+      if (BLOCKED.includes(code)) {
+        sample = null;
+        agent.target = OFFLINE; agent.tag = 'confused';
+      } else {
+        agent.target = agent.target.slice(0, Math.max(agent.shown, 0));
+        agent.note = ERRORS[code] || ERRORS.upstream_error;
+        agent.tag = 'confused';
+      }
+      agent.done = true;
+    }
+  }
+
+  const hint = document.createElement('span');
+  hint.className = 'note';
+  hint.textContent = 'Ask me something below, or tap a state to see it.';
+  answerEl.append(hint);
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    if (agent.busy) { agent.ctl?.abort(); return; }
+    const q = input.value.trim();
+    if (!q) { input.focus(); return; }
+    input.value = '';
+    ask(q);
+  });
+  input.addEventListener('input', () => {
+    wake();
+    pulseAt = T; kick = 1;
+    if (!agent.busy) setMood(input.value ? 'listen' : null, 0);
+    if (!agent.busy && !input.value) setMood(null);
+  });
+  input.addEventListener('focus', () => { wake(); if (!agent.busy && input.value) setMood('listen', 0); });
+  input.addEventListener('blur', () => { if (!agent.busy && mood === 'listen') setMood(null); });
 
   // ?t=1.25 freezes the idle animation on one loop time (handy for comparing frames)
   const params = new URLSearchParams(location.search);
@@ -873,7 +1214,7 @@ void main(){
   window.__ambAt = t => { gl.uniform2f(u.squash, 1, 1); const P = ambientPose(t, 1); P.shape = t + 3; draw(P, 1, t); };
   window.__setMood = setMood;
   if (fixed !== null) { render(parseFloat(fixed) % LOOP); return; }
-  if (MOODS.includes(params.get('mood'))) setMood(params.get('mood'));
+  if (STATES.includes(params.get('mood'))) setMood(params.get('mood'));
 
   let last = performance.now();
   (function frame(now) {
