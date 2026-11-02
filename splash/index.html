@@ -602,7 +602,7 @@ void main(){
   // Moods
   // ------------------------------------------------------------------
   const HOLD = 1.72;                       // the reference timeline is followed up to here
-  const ORBIT = 1.2;                       // seconds the droplet circles the small mascot (2 turns)
+  const ORBIT = 0.9;                       // seconds the red ball circles the small mascot (1 turn)
   const DROP_R = 0.11;                     // red ball radius (R units)
   const INTRO = ORBIT + (HOLD - 0.19);     // full intro length, played once
   const MOOD_SECONDS = 5;
@@ -632,36 +632,46 @@ void main(){
   function orbitAt(u) {
     u = Math.max(0, Math.min(1, u));
     const k = 0.5 * u + 0.5 * ease(u);                // eases in and out of the spin
-    const phi = Math.PI + 4 * Math.PI * k;            // 2 full turns, starting and ending lower-left
+    const phi = Math.PI + 2 * Math.PI * k;            // one full turn, starting and ending lower-left
     const c = Math.cos(phi), sn = Math.sin(phi);
     const z = -sn;                                     // > 0 in front of the mascot
     return { x: OC[0] + OU[0] * OA * c + OV[0] * OB * sn, y: OC[1] + OU[1] * OA * c + OV[1] * OB * sn, z };
   }
 
-  function introPose(t) {
-    if (t >= ORBIT) {
-      // the red ball rests where its second turn ends and the growing mascot swallows it
-      const L = 0.19 + (t - ORBIT);
-      const P = poseAt(L);
-      const o = orbitAt(1), k = ease(Math.min(1, Math.max(0, (L - 0.19) / 0.08)));
-      P.drop = [o.x, o.y, DROP_R * (1 - 0.7 * k), 1 - k];
-      P.dropFront = 0;
-      return P;
+  // where the red ball is at intro time t: one turn around the small mascot, then it
+  // glides into him as he grows and dissolves inside like a glow (it never just vanishes)
+  function dropAt(t) {
+    if (t < ORBIT) {
+      const o = orbitAt(t / ORBIT);
+      return { x: o.x, y: o.y, r: DROP_R * (1 + 0.22 * o.z), a: 1, front: o.z > 0, z: o.z };
     }
-    const P = poseAt(0.19 * t / ORBIT);
-    const o = orbitAt(t / ORBIT);
-    P.drop = [o.x, o.y, DROP_R * (1 + 0.22 * o.z), 1];
-    P.dropFront = o.z > 0 ? 1 : 0;
-    // the small mascot sways against the red ball and follows it with its eyes
-    const sw = 1 - ease(Math.max(0, (t / ORBIT - 0.85) / 0.15));
-    P.body[0] -= 0.05 * (o.x - OC[0]) * sw; P.body[1] -= 0.05 * (o.y - OC[1]) * sw;
-    P.eyes[0] += (0.03 * (o.x - OC[0]) / OA - 0.05 * (o.x - OC[0])) * sw;
-    P.eyes[1] += (0.015 * (o.y - OC[1]) / OA - 0.05 * (o.y - OC[1])) * sw;
+    const o = orbitAt(1);
+    const L = 0.19 + (t - ORBIT);
+    const g = ease(Math.min(1, Math.max(0, (L - 0.19) / 0.16)));     // glide towards his middle
+    const f = ease(Math.min(1, Math.max(0, (L - 0.30) / 0.35)));     // then melt away inside
+    return { x: o.x + (-0.04 - o.x) * g, y: o.y + (0.26 - o.y) * g,
+             r: DROP_R * (1 - 0.35 * g) * (1 - 0.4 * f), a: 1 - f, front: true, z: 0 };
+  }
+
+  function introPose(t) {
+    const L = t < ORBIT ? 0.19 * t / ORBIT : 0.19 + (t - ORBIT);
+    const P = poseAt(L);
+    const d = dropAt(t);
+    P.drop = [d.x, d.y, d.r, d.a];
+    P.dropFront = d.front ? 1 : 0;
+    if (t < ORBIT) {
+      // the small mascot sways against the red ball and follows it with its eyes
+      const sw = 1 - ease(Math.max(0, (t / ORBIT - 0.8) / 0.2));
+      P.body[0] -= 0.05 * (d.x - OC[0]) * sw; P.body[1] -= 0.05 * (d.y - OC[1]) * sw;
+      P.eyes[0] += (0.03 * (d.x - OC[0]) / OA - 0.05 * (d.x - OC[0])) * sw;
+      P.eyes[1] += (0.015 * (d.y - OC[1]) / OA - 0.05 * (d.y - OC[1])) * sw;
+    }
+    // a short fading trail keeps the motion smooth
     const tr = new Float32Array(16);
     for (let j = 1; j <= 4; j++) {
-      const q = orbitAt((t - j * 0.028) / ORBIT);
-      const al = [0.30, 0.18, 0.10, 0.05][j - 1] * Math.min(1, t / 0.15);
-      tr.set([q.x, q.y, DROP_R * (1 + 0.22 * q.z) * (1 - 0.06 * j), q.z > 0 ? al : -al], (j - 1) * 4);
+      const q = dropAt(Math.max(0, t - j * 0.03));
+      const al = [0.30, 0.18, 0.10, 0.05][j - 1] * Math.min(1, t / 0.15) * q.a;
+      tr.set([q.x, q.y, q.r * (1 - 0.06 * j), q.front ? al : -al], (j - 1) * 4);
     }
     P.trail = tr;
     return P;
