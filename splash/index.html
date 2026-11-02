@@ -513,17 +513,39 @@ void main(){
     e.x = abs(e.x) - sp;                                            // +x points away from the face centre
     float sd = sdRoundBox(e, hs, min(hs.x, hs.y) * 0.98);
 
-    // laugh: closed happy "^ ^" arcs
-    vec2  ac = vec2(0.0, 0.05 * sc);
-    float ar = 0.088 * sc, at = 0.025 * sc;
-    float arc = e.y < ac.y ? abs(length(e - ac) - ar) - at
-                           : length(vec2(abs(e.x) - ar, e.y - ac.y)) - at;
-    sd = mix(sd, arc, uMood.x);
-    // cry: lids droop towards the outside; angry: lids slam down towards the middle
-    float lidC = mix(-1.3 * hs.y, -0.40 * hs.y, uMood.y) + 0.55 * uMood.y * e.x;
-    float lidA = mix(-1.3 * hs.y, -0.25 * hs.y, uMood.z) - 0.75 * uMood.z * e.x;
-    sd = max(sd, (lidC - e.y) * 0.85);
-    sd = max(sd, (lidA - e.y) * 0.78);
+    // ---- expression eyes: same glossy pill style, rounded everywhere
+    float wsum = max(1.0, uMood.x + uMood.y + uMood.z);
+    vec3  mw = uMood / wsum;
+    float msw = mw.x + mw.y + mw.z;
+
+    // laugh: smiling eyes - the pill pushed shut from below by his cheeks, leaving a thick
+    // rounded arch; tilted slightly outward and squeezing in time with the laugh
+    vec2  lq = e - vec2(0.0, 0.01 * sc);
+    float lc = cos(0.12), ls = sin(0.12);
+    vec2  lp = vec2(lc * lq.x + ls * lq.y, -ls * lq.x + lc * lq.y);
+    lp.y *= 1.0 + 0.14 * abs(sin(uT * 8.5));
+    float lrr = 0.016 * sc;
+    vec2  lhs = vec2(0.092, 0.070) * sc;
+    float lPill = sdRoundBox(lp, lhs - lrr, min(lhs.x, lhs.y) - lrr);
+    float lCheek = length(lp - vec2(0.0, 0.078 * sc)) - 0.108 * sc;
+    float sdL = max(lPill, -lCheek - lrr) - lrr;
+
+    // cry: big soft eyes whose tops droop to the outside, trembling a little
+    vec2  cq = e + vec2(0.0, 0.004 * sc * sin(uT * 45.0) * mw.y);
+    vec2  chs = vec2(0.086, 0.116) * sc;
+    float crr = 0.034 * sc;
+    float cBox = sdRoundBox(cq, chs - crr, (min(chs.x, chs.y) - crr) * 0.9);
+    float cLid = (-0.045 * sc + 0.50 * cq.x - cq.y) / sqrt(1.0 + 0.50 * 0.50);
+    float sdC = max(cBox, cLid + crr) - crr;
+
+    // angry: squinting eyes whose tops slant down to the middle
+    vec2  ahs = vec2(0.088, 0.104) * sc;
+    float arr = 0.030 * sc;
+    float aBox = sdRoundBox(e - vec2(0.0, 0.012 * sc), ahs - arr, (min(ahs.x, ahs.y) - arr) * 0.9);
+    float aLid = (-0.012 * sc - 0.52 * e.x - e.y) / sqrt(1.0 + 0.52 * 0.52);
+    float sdA = max(aBox, aLid + arr) - arr;
+
+    sd = sd * (1.0 - msw) + sdL * mw.x + sdC * mw.y + sdA * mw.z;
 
     float eaa = 1.2 * px;
     float emask = 1.0 - smoothstep(-eaa, eaa, sd);
@@ -531,12 +553,18 @@ void main(){
     float yy = e.y / hs.y;
     float inner = 0.51 + 0.10 * smoothstep(-0.2, 0.4, yy) + 0.33 * smoothstep(0.35, 0.92, yy);
     vec3 icol = vec3(inner, inner*0.99, inner*1.02);
-    icol = mix(icol, vec3(0.45, 0.62, 1.00), uMood.y * smoothstep(-0.1, 0.9, yy) * 0.8);   // welling up
-    icol = mix(icol, vec3(0.75, 0.42, 0.42), uMood.z * 0.45);
-    vec2 hl = e - vec2(0.028 * sc, -0.03 * sc);
-    icol += vec3(0.9) * uMood.y * exp(-dot(hl, hl) / pow(0.02 * sc, 2.0));                // wet glint
+    // cry: watery blue pooling at the bottom plus two wet glints
+    icol = mix(icol, vec3(0.40, 0.58, 1.00), mw.y * smoothstep(0.0, 0.9, yy) * 0.85);
+    vec2 hl1 = e - vec2(0.026 * sc, -0.022 * sc), hl2 = e - vec2(-0.03 * sc, 0.045 * sc);
+    icol = mix(icol, vec3(1.0), mw.y * (exp(-dot(hl1, hl1) / pow(0.022 * sc, 2.0)) * 0.95
+                                      + exp(-dot(hl2, hl2) / pow(0.011 * sc, 2.0)) * 0.8));
+    // angry: hot red-grey inside with one small hard glint
+    icol = mix(icol, vec3(0.66, 0.30, 0.32) * (0.85 + 0.3 * smoothstep(0.2, 0.9, yy)), mw.z * 0.75);
+    vec2 hl3 = e - vec2(0.022 * sc, 0.035 * sc);
+    icol = mix(icol, vec3(1.0, 0.9, 0.9), mw.z * exp(-dot(hl3, hl3) / pow(0.012 * sc, 2.0)) * 0.9);
     vec3 ecol = mix(vec3(0.97), icol,
-                    smoothstep(0.45, 1.0, m) * (1.0 - uMood.x) * smoothstep(-border*0.4, -border*1.2, sd));
+                    smoothstep(0.45, 1.0, m) * (1.0 - mw.x) * smoothstep(-border*0.4, -border*1.2, sd));
+    ecol = mix(ecol, vec3(1.0) * (0.90 + 0.10 * smoothstep(0.0, 0.06, -lp.y / sc)), mw.x);    // laugh: solid white
     // soft glow around eyes
     bc += vec3(0.12) * exp(-max(sd, 0.0) / (0.010 * sc)) * (1.0 - emask);
     bc = mix(bc, ecol, emask);
