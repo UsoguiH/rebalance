@@ -355,18 +355,18 @@ uniform vec2  uSquash;   // body squash & stretch
 const vec2  C  = vec2(${BLOB_X.toFixed(3)}, ${BLOB_Y.toFixed(3)});
 const float RR = ${BLOB_R.toFixed(3)};
 
-float shapeBody(float a, float L){
-  return 1.0 + 0.028*cos(6.0*a + 0.60 + 0.90*L)
-             + 0.022*cos(3.0*a + 1.70 - 1.30*L)
-             + 0.020*cos(2.0*a + 0.40 + 1.10*L)
-             + 0.012*cos(4.0*a + 2.90 + 0.70*L)
-             + 0.010*cos(5.0*a + 2.20 - 1.90*L);
+// Outline traced from the reference at 180 angles per frame: a rounded hexagon
+// (6th harmonic, 2.9% of the radius; every other harmonic is ~0) spinning clockwise
+// at a steady 11.5 rad/s of phase = 1.92 rad/s of rotation.
+float shapeBody(float a, float t){
+  return 0.985 + 0.029 * cos(6.0 * a + 6.86 - 11.5 * t);
 }
-float shapeHalo(float a, float L){
-  return 1.265*(1.0 + 0.024*cos(5.0*a + 1.00 + 0.60*L)
-                    + 0.020*cos(3.0*a + 2.50 - 0.80*L)
-                    + 0.014*cos(2.0*a + 0.30 + 0.50*L)
-                    + 0.010*cos(7.0*a + 0.90 - 0.40*L));
+float shapeHalo(float a, float t){
+  float b = a + 0.45 * t;                      // the halo turns slowly, as one rigid shape
+  return 1.265*(1.0 + 0.024*cos(5.0*b + 1.00)
+                    + 0.020*cos(3.0*b + 2.50)
+                    + 0.014*cos(2.0*b + 0.30)
+                    + 0.010*cos(7.0*b + 0.90));
 }
 float sdRoundBox(vec2 p, vec2 b, float r){
   vec2 q = abs(p) - b + r;
@@ -602,7 +602,8 @@ void main(){
   // Moods
   // ------------------------------------------------------------------
   const HOLD = 1.72;                       // the reference timeline is followed up to here
-  const ORBIT = 1.5;                       // seconds the droplet circles the small mascot (2.5 turns)
+  const ORBIT = 1.2;                       // seconds the droplet circles the small mascot (2 turns)
+  const DROP_R = 0.11;                     // red ball radius (R units)
   const INTRO = ORBIT + (HOLD - 0.19);     // full intro length, played once
   const MOOD_SECONDS = 5;
   const MOODS = ['laugh', 'cry', 'angry'];
@@ -631,27 +632,36 @@ void main(){
   function orbitAt(u) {
     u = Math.max(0, Math.min(1, u));
     const k = 0.5 * u + 0.5 * ease(u);                // eases in and out of the spin
-    const phi = Math.PI + 5 * Math.PI * k;            // 2.5 turns: lower-left -> ... -> upper-right
+    const phi = Math.PI + 4 * Math.PI * k;            // 2 full turns, starting and ending lower-left
     const c = Math.cos(phi), sn = Math.sin(phi);
     const z = -sn;                                     // > 0 in front of the mascot
     return { x: OC[0] + OU[0] * OA * c + OV[0] * OB * sn, y: OC[1] + OU[1] * OA * c + OV[1] * OB * sn, z };
   }
 
   function introPose(t) {
-    if (t >= ORBIT) return poseAt(0.19 + (t - ORBIT));
+    if (t >= ORBIT) {
+      // the red ball rests where its second turn ends and the growing mascot swallows it
+      const L = 0.19 + (t - ORBIT);
+      const P = poseAt(L);
+      const o = orbitAt(1), k = ease(Math.min(1, Math.max(0, (L - 0.19) / 0.08)));
+      P.drop = [o.x, o.y, DROP_R * (1 - 0.7 * k), 1 - k];
+      P.dropFront = 0;
+      return P;
+    }
     const P = poseAt(0.19 * t / ORBIT);
     const o = orbitAt(t / ORBIT);
-    P.drop = [o.x, o.y, 0.165 * (1 + 0.22 * o.z), 1];
+    P.drop = [o.x, o.y, DROP_R * (1 + 0.22 * o.z), 1];
     P.dropFront = o.z > 0 ? 1 : 0;
-    // the small mascot sways against the droplet and follows it with its eyes
-    P.body[0] -= 0.05 * (o.x - OC[0]); P.body[1] -= 0.05 * (o.y - OC[1]);
-    P.eyes[0] += 0.03 * (o.x - OC[0]) / OA - 0.05 * (o.x - OC[0]);
-    P.eyes[1] += 0.015 * (o.y - OC[1]) / OA - 0.05 * (o.y - OC[1]);
+    // the small mascot sways against the red ball and follows it with its eyes
+    const sw = 1 - ease(Math.max(0, (t / ORBIT - 0.85) / 0.15));
+    P.body[0] -= 0.05 * (o.x - OC[0]) * sw; P.body[1] -= 0.05 * (o.y - OC[1]) * sw;
+    P.eyes[0] += (0.03 * (o.x - OC[0]) / OA - 0.05 * (o.x - OC[0])) * sw;
+    P.eyes[1] += (0.015 * (o.y - OC[1]) / OA - 0.05 * (o.y - OC[1])) * sw;
     const tr = new Float32Array(16);
     for (let j = 1; j <= 4; j++) {
       const q = orbitAt((t - j * 0.028) / ORBIT);
       const al = [0.30, 0.18, 0.10, 0.05][j - 1] * Math.min(1, t / 0.15);
-      tr.set([q.x, q.y, 0.165 * (1 + 0.22 * q.z) * (1 - 0.06 * j), q.z > 0 ? al : -al], (j - 1) * 4);
+      tr.set([q.x, q.y, DROP_R * (1 + 0.22 * q.z) * (1 - 0.06 * j), q.z > 0 ? al : -al], (j - 1) * 4);
     }
     P.trail = tr;
     return P;
@@ -662,9 +672,9 @@ void main(){
   const eyeHop = track([[0, 0], [0.40, 0.09], [0.52, 0.12], [0.60, -0.17], [0.68, -0.13], [0.85, 0.0], [1, 0]]);
   const HOP = 4.4;
   function ambientPose(t, amp) {
-    const S = 1.15 + 0.85 * Math.sin(1.2 * t + 0.734);    // starts at HOLD, sweeps the reference range
+    const S = 1.15 + 0.85 * Math.sin(1.2 * t + 0.734);    // colour lights: starts at HOLD, sweeps the reference range
     const P = poseAt(HOLD);
-    P.L = 99; P.shape = S; P.dropFront = 0;
+    P.L = 99; P.dropFront = 0;
     const lpS = lights.map(l => l.k(S));
     P.lp = P.lp.map((v, i) => mixv(v, lpS[i], amp));
     const sk = speck(S); P.speck = [sk[0], sk[1], sk[2], sk[3] * amp];
@@ -763,6 +773,7 @@ void main(){
     const e = P.eyes;
     e[1] += -0.02 * lw + 0.06 * cw + 0.03 * aw;
     P.eyes = [e[0] + ox + look.x * 0.05 * la, e[1] * sy + oy + look.y * 0.035 * la, e[2], e[3] * sc];
+    P.shape = T;                                   // the hexagon keeps spinning, no loop needed
     gl.uniform2f(u.squash, sx, sy);
     draw(P, blink);
   }
@@ -820,8 +831,8 @@ void main(){
   const params = new URLSearchParams(location.search);
   const fixed = params.get('t');
   window.__renderAt = render;
-  window.__introAt = t => { gl.uniform2f(u.squash, 1, 1); draw(introPose(t), 1, t); };
-  window.__ambAt = t => { gl.uniform2f(u.squash, 1, 1); draw(ambientPose(t, 1), 1, t); };
+  window.__introAt = t => { gl.uniform2f(u.squash, 1, 1); const P = introPose(t); P.shape = t; draw(P, 1, t); };
+  window.__ambAt = t => { gl.uniform2f(u.squash, 1, 1); const P = ambientPose(t, 1); P.shape = t + 3; draw(P, 1, t); };
   window.__setMood = setMood;
   if (fixed !== null) { render(parseFloat(fixed) % LOOP); return; }
   if (MOODS.includes(params.get('mood'))) setMood(params.get('mood'));
