@@ -183,74 +183,6 @@
   }
   canvas { cursor: pointer; }
 
-  /* ---------- state props: frosted-glass companions for each state ---------- */
-  .props { position: absolute; inset: 0; pointer-events: none; }
-  .prop {
-    position: absolute; opacity: 0;
-    transform: scale(.55) translateY(calc(var(--w) * 0.03));
-    transition: opacity .35s ease, transform .5s cubic-bezier(.3, 1.6, .5, 1);
-  }
-  .prop.on { opacity: 1; transform: none; }
-  .prop svg { display: block; width: 100%; height: auto; overflow: visible; }
-
-  /* think: a glass bulb that flickers, then lights up with an idea */
-  .p-think { left: calc(var(--w) * 0.565); top: calc(var(--w) * 0.06); width: calc(var(--w) * 0.175); }
-  .p-think .bob { animation: bob 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
-  .p-think .lit { animation: idea 3.4s linear infinite; }
-  .p-think .filament { animation: filament 3.4s linear infinite; }
-  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-4%) rotate(4deg); } }
-  @keyframes idea {
-    0%, 34% { opacity: 0; } 37% { opacity: .9; } 40% { opacity: .1; } 43% { opacity: 1; } 46% { opacity: .25; }
-    50%, 88% { opacity: 1; } 100% { opacity: 0; }
-  }
-  @keyframes filament {
-    0%, 34% { stroke: #a9a3d9; } 37% { stroke: #ffd27a; } 40% { stroke: #a9a3d9; } 43% { stroke: #ffd27a; }
-    46% { stroke: #a9a3d9; } 50%, 88% { stroke: #ffe6a6; } 100% { stroke: #a9a3d9; }
-  }
-
-  /* listen: sound waves rolling in from both sides */
-  .p-listen { top: calc(var(--w) * 0.43); width: calc(var(--w) * 0.075); }
-  .p-listen.left { left: calc(var(--w) * 0.09); }
-  .p-listen.right { right: calc(var(--w) * 0.09); }
-  .p-listen.left svg { transform: scaleX(-1); }
-  .p-listen .arc { animation: wave 1.3s ease-in-out infinite; }
-  .p-listen .arc.a2 { animation-delay: .18s; }
-  .p-listen .arc.a3 { animation-delay: .36s; }
-  @keyframes wave { 0%, 100% { opacity: .25; } 40% { opacity: 1; } }
-
-  /* speak: a speech bubble with typing dots */
-  .p-speak { left: calc(var(--w) * 0.66); top: calc(var(--w) * 0.155); width: calc(var(--w) * 0.19); }
-  .p-speak .dot { animation: hop 1.1s ease-in-out infinite; }
-  .p-speak .dot.d2 { animation-delay: .15s; }
-  .p-speak .dot.d3 { animation-delay: .3s; }
-  @keyframes hop { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-14%); } }
-
-  /* happy: twinkling glass sparkles */
-  .p-happy { inset: 0; }
-  .p-happy .spark { position: absolute; animation: twinkle 1.8s ease-in-out infinite; }
-  .p-happy .s1 { left: calc(var(--w) * 0.22); top: calc(var(--w) * 0.25); width: calc(var(--w) * 0.075); }
-  .p-happy .s2 { left: calc(var(--w) * 0.71); top: calc(var(--w) * 0.2); width: calc(var(--w) * 0.1); animation-delay: .6s; }
-  .p-happy .s3 { left: calc(var(--w) * 0.79); top: calc(var(--w) * 0.47); width: calc(var(--w) * 0.055); animation-delay: 1.1s; }
-  .p-happy .s4 { left: calc(var(--w) * 0.17); top: calc(var(--w) * 0.55); width: calc(var(--w) * 0.05); animation-delay: .3s; }
-  @keyframes twinkle { 0%, 100% { transform: scale(.6) rotate(0deg); opacity: .45; } 50% { transform: scale(1.1) rotate(25deg); opacity: 1; } }
-
-  /* surprised: an exclamation mark that pops and shakes */
-  .p-surprised { left: calc(var(--w) * 0.65); top: calc(var(--w) * 0.085); width: calc(var(--w) * 0.095); }
-  .p-surprised .pop { animation: pop .5s cubic-bezier(.3, 1.8, .5, 1) both, shake 1.6s ease-in-out .5s infinite; transform-origin: 50% 90%; }
-  @keyframes pop { 0% { transform: scale(0) rotate(-20deg); } 100% { transform: scale(1) rotate(-8deg); } }
-  @keyframes shake { 0%, 100% { transform: rotate(-8deg); } 10% { transform: rotate(4deg); } 20% { transform: rotate(-12deg); } 30% { transform: rotate(-8deg); } }
-
-  /* confused: a wobbling question mark and a small one that drifts */
-  .p-confused { left: calc(var(--w) * 0.645); top: calc(var(--w) * 0.1); width: calc(var(--w) * 0.11); }
-  .p-confused .q1 { animation: wobble 2.4s ease-in-out infinite; transform-origin: 50% 85%; }
-  .p-confused .q2 { position: absolute; left: -55%; top: 38%; width: 55%; animation: drift 2.4s ease-in-out infinite; }
-  @keyframes wobble { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
-  @keyframes drift { 0%, 100% { opacity: .2; transform: translateY(8%) rotate(-14deg); } 50% { opacity: .85; transform: translateY(-8%) rotate(-4deg); } }
-
-  @media (prefers-reduced-motion: reduce) {
-    .prop, .prop * { animation: none !important; transition: opacity .2s !important; }
-    .p-think .lit { opacity: 1; }
-  }
 
   /* ---------- full-bleed on phones ---------- */
   body.bleed .phone { padding: 0; border-radius: 0; background: none; box-shadow: none; }
@@ -280,105 +212,6 @@
     </button>
 
     <h1 class="headline" id="headline" aria-live="polite"><span class="hi">Hey There!</span> <span class="mid">What’s On</span><br><span class="low">Your Mind Today</span></h1>
-
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="gFill" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#ffffff" stop-opacity=".95"/>
-          <stop offset=".55" stop-color="#dcd8f4" stop-opacity=".6"/>
-          <stop offset="1" stop-color="#8f86e8" stop-opacity=".6"/>
-        </linearGradient>
-        <linearGradient id="gSolid" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#ffffff"/>
-          <stop offset=".6" stop-color="#d6d1f7"/>
-          <stop offset="1" stop-color="#9b92ef"/>
-        </linearGradient>
-        <linearGradient id="gEdge" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#ffffff"/>
-          <stop offset="1" stop-color="#b9b4ff"/>
-        </linearGradient>
-        <radialGradient id="gWarm" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stop-color="#fff6d6" stop-opacity=".95"/>
-          <stop offset=".45" stop-color="#ffd27a" stop-opacity=".55"/>
-          <stop offset="1" stop-color="#ffb84d" stop-opacity="0"/>
-        </radialGradient>
-        <radialGradient id="gSpark" cx=".5" cy=".5" r=".5">
-          <stop offset="0" stop-color="#ffffff"/>
-          <stop offset=".5" stop-color="#fff0c4"/>
-          <stop offset="1" stop-color="#b9b4ff"/>
-        </radialGradient>
-        <filter id="gGlow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="2.4" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
-    </svg>
-
-    <div class="props" aria-hidden="true">
-      <div class="prop p-think" data-state="think">
-        <svg viewBox="-14 -14 92 100"><g class="bob">
-          <circle class="lit" cx="32" cy="29" r="40" fill="url(#gWarm)"/>
-          <g class="lit" stroke="url(#gEdge)" stroke-width="3.2" stroke-linecap="round" filter="url(#gGlow)">
-            <path d="M32 -10v6M7 1l4.5 4.5M57 1l-4.5 4.5M-8 29h6M72 29h-6"/>
-          </g>
-          <path d="M32 6C17 6 8 17 8 30c0 9 5 15 10 20 3 3 4 6 4 10h20c0-4 1-7 4-10 5-5 10-11 10-20C56 17 47 6 32 6z"
-                fill="url(#gFill)" stroke="url(#gEdge)" stroke-width="2" filter="url(#gGlow)"/>
-          <path d="M17 24c1-7 6-11 11-12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>
-          <path class="filament" d="M25 48l3-12 4 8 4-8 3 12" fill="none" stroke="#a9a3d9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          <rect x="21" y="61" width="22" height="5" rx="2.5" fill="#d6d1f0"/>
-          <rect x="22" y="67" width="20" height="5" rx="2.5" fill="#b3add8"/>
-          <path d="M27 73h10a5 5 0 0 1-10 0z" fill="#9d97c9"/>
-        </g></svg>
-      </div>
-
-      <div class="prop p-listen left" data-state="listen">
-        <svg viewBox="0 0 40 64"><g fill="none" stroke="url(#gEdge)" stroke-width="3.6" stroke-linecap="round" filter="url(#gGlow)">
-          <path class="arc a3" d="M6 22a12 12 0 0 1 0 20"/><path class="arc a2" d="M13 13a24 24 0 0 1 0 38"/><path class="arc" d="M20 4a36 36 0 0 1 0 56"/>
-        </g></svg>
-      </div>
-      <div class="prop p-listen right" data-state="listen">
-        <svg viewBox="0 0 40 64"><g fill="none" stroke="url(#gEdge)" stroke-width="3.6" stroke-linecap="round" filter="url(#gGlow)">
-          <path class="arc a3" d="M6 22a12 12 0 0 1 0 20"/><path class="arc a2" d="M13 13a24 24 0 0 1 0 38"/><path class="arc" d="M20 4a36 36 0 0 1 0 56"/>
-        </g></svg>
-      </div>
-
-      <div class="prop p-speak" data-state="speak">
-        <svg viewBox="0 0 84 64">
-          <path d="M14 4h56a10 10 0 0 1 10 10v22a10 10 0 0 1-10 10H32L17 58l3-12h-6A10 10 0 0 1 4 36V14A10 10 0 0 1 14 4z"
-                fill="url(#gFill)" stroke="url(#gEdge)" stroke-width="2" filter="url(#gGlow)"/>
-          <path d="M12 16c1-4 4-6 8-6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>
-          <circle class="dot" cx="28" cy="25" r="5" fill="#fff"/><circle class="dot d2" cx="42" cy="25" r="5" fill="#fff"/><circle class="dot d3" cx="56" cy="25" r="5" fill="#fff"/>
-        </svg>
-      </div>
-
-      <div class="prop p-happy" data-state="happy">
-        <svg class="spark s1" viewBox="0 0 40 40"><path d="M20 2c2 12 6 16 18 18-12 2-16 6-18 18-2-12-6-16-18-18 12-2 16-6 18-18z" fill="url(#gSpark)" filter="url(#gGlow)"/></svg>
-        <svg class="spark s2" viewBox="0 0 40 40"><path d="M20 2c2 12 6 16 18 18-12 2-16 6-18 18-2-12-6-16-18-18 12-2 16-6 18-18z" fill="url(#gSpark)" filter="url(#gGlow)"/></svg>
-        <svg class="spark s3" viewBox="0 0 40 40"><path d="M20 2c2 12 6 16 18 18-12 2-16 6-18 18-2-12-6-16-18-18 12-2 16-6 18-18z" fill="url(#gSpark)" filter="url(#gGlow)"/></svg>
-        <svg class="spark s4" viewBox="0 0 40 40"><path d="M20 2c2 12 6 16 18 18-12 2-16 6-18 18-2-12-6-16-18-18 12-2 16-6 18-18z" fill="url(#gSpark)" filter="url(#gGlow)"/></svg>
-      </div>
-
-      <div class="prop p-surprised" data-state="surprised">
-        <svg viewBox="-12 -6 54 92"><g class="pop" data-restart>
-          <path d="M9 8a6 6 0 0 1 12 0l-2 44a4 4 0 0 1-8 0z" fill="url(#gSolid)" stroke="url(#gEdge)" stroke-width="1.6" filter="url(#gGlow)"/>
-          <circle cx="15" cy="67" r="7" fill="url(#gSolid)" stroke="url(#gEdge)" stroke-width="1.6" filter="url(#gGlow)"/>
-          <path d="M12 6v16" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
-          <g stroke="url(#gEdge)" stroke-width="2.6" stroke-linecap="round" opacity=".8"><path d="M-8 10l6 5M38 10l-6 5M-9 24h6M39 24h-6"/></g>
-        </g></svg>
-      </div>
-
-      <div class="prop p-confused" data-state="confused">
-        <svg class="q1" viewBox="0 0 56 84">
-          <path d="M12 22C12 10 22 4 29 4c10 0 17 7 17 17 0 10-8 13-13 18-3 3-4 6-4 11" fill="none" stroke="url(#gSolid)" stroke-width="10" stroke-linecap="round" filter="url(#gGlow)"/>
-          <path d="M15 18c1-6 6-10 12-10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".9"/>
-          <circle cx="29" cy="68" r="7" fill="url(#gSolid)" filter="url(#gGlow)"/>
-        </svg>
-        <svg class="q2" viewBox="0 0 56 84">
-          <path d="M12 22C12 10 22 4 29 4c10 0 17 7 17 17 0 10-8 13-13 18-3 3-4 6-4 11" fill="none" stroke="url(#gSolid)" stroke-width="10" stroke-linecap="round" filter="url(#gGlow)"/>
-          <circle cx="29" cy="68" r="7" fill="url(#gSolid)" filter="url(#gGlow)"/>
-        </svg>
-      </div>
-    </div>
 
     <div class="zzz" id="zzz" aria-hidden="true"><span>z</span><span>z</span><span>z</span></div>
 
@@ -586,6 +419,8 @@ uniform vec4  uStars[24];
 uniform vec3  uMood;     // laugh, cry, angry weights
 uniform vec4  uMood2;    // think, happy, surprised, confused weights
 uniform vec4  uMood3;    // sleep, listen, speak weights, voice-ring age (0..1, 1 = none)
+uniform vec4  uPropA;    // how far each glass prop has budded out: think (bulb), listen (waves), speak (bubble), happy (sparkles)
+uniform vec4  uPropB;    // surprised (!), confused (?), bulb light 0..1, listen keystroke kick
 uniform float uT;        // free-running seconds (mood animation)
 uniform vec2  uSquash;   // body squash & stretch
 
@@ -626,6 +461,125 @@ vec4 dropShade(vec2 p, vec4 D, vec2 toward, float px, float gloss){
   float glow = exp(-max(dd - 1.0, 0.0) / 0.45) * (1.0 - m) * 0.30;
   return vec4(c, (m + glow) * D.w);
 }
+// ---------- glass props: signed distance shapes in R units ----------
+float smin(float a, float b, float k){ float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0); return mix(b, a, h) - k * h * (1.0 - h); }
+float sdCapsule(vec2 p, vec2 a, vec2 b, float r){ vec2 pa = p - a, ba = b - a; float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0); return length(pa - ba * h) - r; }
+float ndot(vec2 a, vec2 b){ return a.x * b.x - a.y * b.y; }
+float sdRhombus(vec2 p, vec2 b){
+  p = abs(p); float h = clamp(ndot(b - 2.0 * p, b) / dot(b, b), -1.0, 1.0);
+  float d = length(p - 0.5 * b * vec2(1.0 - h, 1.0 + h));
+  return d * sign(p.x * b.y + p.y * b.x - b.x * b.y);
+}
+// arc stroke centred on +x, spanning +-ap radians
+float sdArcStroke(vec2 p, float ra, float ap, float th){
+  float an = atan(p.y, p.x);
+  if (abs(an) < ap) return abs(length(p) - ra) - th;
+  vec2 e1 = ra * vec2(cos(ap), sin(ap)), e2 = ra * vec2(cos(ap), -sin(ap));
+  return min(length(p - e1), length(p - e2)) - th;
+}
+vec2 rot(vec2 p, float a){ float c = cos(a), s = sin(a); return vec2(c * p.x - s * p.y, s * p.x + c * p.y); }
+
+float sdBulb(vec2 l, float lit){
+  float g = length(l - vec2(0.0, -0.04)) - 0.17;
+  g = smin(g, sdRoundBox(l - vec2(0.0, 0.15), vec2(0.075, 0.06), 0.03), 0.06);
+  float b = min(sdRoundBox(l - vec2(0.0, 0.235), vec2(0.072, 0.022), 0.02), sdRoundBox(l - vec2(0.0, 0.285), vec2(0.06, 0.02), 0.02));
+  b = min(b, length(l - vec2(0.0, 0.325)) - 0.032);
+  float d = min(g, b);
+  if (lit > 0.05){                                   // light rays pop out when the idea arrives
+    for (int i = 0; i < 5; i++){
+      float an = -1.5708 + (float(i) - 2.0) * 0.55;
+      vec2 dir = vec2(cos(an), sin(an));
+      d = min(d, sdCapsule(l - vec2(0.0, -0.04), dir * 0.25, dir * (0.25 + 0.075 * lit), 0.019 * lit));
+    }
+  }
+  return d;
+}
+float sdBang(vec2 l){
+  vec2 a = vec2(0.0, -0.17), b = vec2(0.0, 0.05);
+  vec2 pa = l - a, ba = b - a; float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+  float bar = length(pa - ba * h) - mix(0.056, 0.036, h);
+  return min(bar, length(l - vec2(0.0, 0.15)) - 0.05);
+}
+float sdQuestion(vec2 l){
+  vec2 c = vec2(0.0, -0.08);
+  float hook = sdArcStroke(rot(l - c, 0.785), 0.095, 2.0, 0.038);
+  vec2 e = c + 0.095 * vec2(0.342, 0.94);
+  float stem = sdCapsule(l, e, vec2(0.0, 0.07), 0.038);
+  return min(smin(hook, stem, 0.03), length(l - vec2(0.0, 0.17)) - 0.046);
+}
+float sdBubble(vec2 l){
+  float b = sdRoundBox(l, vec2(0.25, 0.15), 0.11);
+  return smin(b, sdCapsule(l, vec2(-0.12, 0.10), vec2(-0.21, 0.245), 0.035), 0.05);
+}
+float sdSparkle(vec2 l){
+  return smin(sdRhombus(l, vec2(0.036, 0.15)), sdRhombus(l, vec2(0.15, 0.036)), 0.025);
+}
+float sdWaves(vec2 l, float a, float t, float kick){
+  float d = 1e3;
+  for (int i = 0; i < 3; i++){
+    float fi = float(i);
+    float pulse = 0.55 + 0.45 * sin(t * 5.0 - fi * 1.1);
+    float r = (0.32 + 0.14 * fi) * mix(0.7, 1.0, a);
+    d = min(d, sdArcStroke(l, r, 0.72 - 0.08 * fi, (0.016 + 0.014 * pulse + 0.01 * kick) * min(a, 1.0)));
+  }
+  return d;
+}
+// where a prop sits while it buds out: from just inside his skin out to its spot
+vec2 budPos(vec2 target, float a){ vec2 anc = normalize(target) * 0.8; return anc + (target - anc) * a; }
+
+// all props in one field; reports the nearest prop's centre, glass thickness and id
+float propField(vec2 p, vec2 bc, float bs, float t, out vec2 pc, out float ts, out float pid){
+  float d = 1e3; pc = bc; ts = 0.1; pid = -1.0;
+  float a;
+  a = uPropA.x;                                       // think: light bulb
+  if (a > 0.01){
+    vec2 c = bc + budPos(vec2(0.42, -1.48), a) * bs; float s = bs * mix(0.3, 1.0, a);
+    float dl = sdBulb(rot((p - c) / s, 0.07 * sin(t * 2.6)), uPropB.z) * s;
+    if (dl < d){ d = dl; pc = c; ts = 0.13 * s; pid = 0.0; }
+  }
+  a = uPropB.x;                                       // surprised: !
+  if (a > 0.01){
+    vec2 c = bc + budPos(vec2(0.62, -1.36), a) * bs; float s = bs * mix(0.3, 1.0, a);
+    float sh = 0.14 * sin(t * 9.0) * exp(-mod(t, 1.6) * 3.0) - 0.12;
+    float dl = sdBang(rot((p - c) / s, sh)) * s;
+    if (dl < d){ d = dl; pc = c; ts = 0.085 * s; pid = 4.0; }
+  }
+  a = uPropB.y;                                       // confused: ? and a small ?
+  if (a > 0.01){
+    vec2 c = bc + budPos(vec2(0.6, -1.38), a) * bs; float s = bs * mix(0.3, 1.0, a);
+    float dl = sdQuestion(rot((p - c) / s, 0.17 * sin(t * 2.6))) * s;
+    if (dl < d){ d = dl; pc = c; ts = 0.08 * s; pid = 5.0; }
+    vec2 c2 = bc + budPos(vec2(0.12, -1.3), a) * bs; float s2 = s * 0.55;
+    float dl2 = sdQuestion(rot((p - c2) / s2, -0.25 + 0.12 * sin(t * 2.6 + 1.5))) * s2;
+    if (dl2 < d){ d = dl2; pc = c2; ts = 0.08 * s2; pid = 5.0; }
+  }
+  a = uPropA.z;                                       // speak: speech bubble
+  if (a > 0.01){
+    vec2 c = bc + budPos(vec2(0.98, -1.12), a) * bs; float s = bs * mix(0.3, 1.0, a);
+    float dl = sdBubble((p - c) / s) * s;
+    if (dl < d){ d = dl; pc = c; ts = 0.12 * s; pid = 2.0; }
+  }
+  a = uPropA.w;                                       // happy: sparkles
+  if (a > 0.01){
+    for (int i = 0; i < 4; i++){
+      vec2 tg = i == 0 ? vec2(-1.0, -0.95) : (i == 1 ? vec2(0.95, -1.05) : (i == 2 ? vec2(1.3, 0.15) : vec2(-1.32, 0.38)));
+      float sz = i == 0 ? 0.8 : (i == 1 ? 1.05 : (i == 2 ? 0.62 : 0.55));
+      float tw = 0.78 + 0.28 * sin(t * 3.6 + float(i) * 1.7);
+      vec2 c = bc + budPos(tg, a) * bs; float s = bs * mix(0.3, 1.0, a) * sz * tw;
+      float dl = sdSparkle(rot((p - c) / s, 0.25 * sin(t * 1.8 + float(i)))) * s;
+      if (dl < d){ d = dl; pc = c; ts = 0.075 * s; pid = 3.0; }
+    }
+  }
+  a = uPropA.y;                                       // listen: sound waves on both sides
+  if (a > 0.01){
+    vec2 l = (p - bc) / bs;
+    vec2 lr = vec2(abs(l.x) - 0.98, l.y);
+    float dl = sdWaves(lr, a, t, uPropB.w) * bs;
+    if (dl < d){ d = dl; pc = bc + vec2(sign(l.x) * 1.2, 0.0) * bs; ts = 0.055 * bs; pid = 1.0; }
+  }
+  return d;
+}
+
 float bgLevel(float y){
   float v = mix(15.0, 18.0, smoothstep(0.0, 0.35, y));
   v = mix(v, 9.0, smoothstep(0.35, 0.68, y));
@@ -707,7 +661,15 @@ void main(){
   float aa = 1.3 * px / (uBody.z * min(uSquash.x, uSquash.y) * rb);
   float beat = pow(0.5 + 0.5 * sin(uT * 9.0), 3.0);           // angry heartbeat
   float msum = clamp(uMood.x + uMood.y + uMood.z + uMood2.x + uMood2.y + uMood2.z + uMood2.w + uMood3.x, 0.0, 1.0);
-  float inside = 1.0 - smoothstep(1.0 - aa, 1.0 + aa, d);
+  // glass props share the body's field through a smooth union, so they bud out of
+  // him like goo, stretch a neck and snap free (and get sucked back in)
+  float dBody = (length(q) - rb) * uBody.z * min(uSquash.x, uSquash.y);
+  vec2 pcen; float pts, pid;
+  float dP = propField(p, uBody.xy, uBody.z, uT, pcen, pts, pid);
+  float kG = 0.16 * uBody.z;
+  float hB = clamp(0.5 + 0.5 * (dP - dBody) / kG, 0.0, 1.0);       // 1 = body, 0 = prop
+  float F = mix(dP, dBody, hB) - kG * hB * (1.0 - hB);
+  float inside = 1.0 - smoothstep(-1.3 * px, 1.3 * px, F);
 
   if (inside > 0.0){
     vec2 nb = q / max(length(q), 1e-4);
@@ -837,12 +799,49 @@ void main(){
     bc += vec3(0.12) * exp(-max(sd, 0.0) / (0.010 * sc)) * (1.0 - emask);
     bc = mix(bc, ecol, emask);
 
+    // glass shading for the props: same recipe as his body, scaled to each prop's thickness
+    if (hB < 0.999){
+      float depth = max(-F, 0.0);
+      float rr = clamp(1.0 - depth / max(pts, 1e-3), 0.0, 1.0);
+      vec2  nl = normalize(p - pcen + vec2(1e-4));
+      float plit = 0.64 + 0.44 * dot(nl, normalize(vec2(-0.75, -0.65)));
+      vec3  pb = vec3(0.86, 0.83, 0.92);
+      if (pid > 2.5 && pid < 3.5) pb = mix(pb, vec3(1.0, 0.9, 0.7), 0.35);        // sparkles run a little warm
+      vec3 pcol = pb * (0.74 * pow(rr, 1.05) + 0.14 * smoothstep(0.85, 1.0, rr)) * plit;
+      vec2 hq = p - pcen - vec2(-0.4, -0.5) * pts * 1.6;
+      pcol += vec3(0.25) * exp(-dot(hq, hq) / pow(pts * 0.55, 2.0));                 // little specular
+      if (pid < 0.5){                                                              // bulb: warm core + filament when lit
+        vec2 lb = rot((p - pcen) / (pts / 0.13), 0.07 * sin(uT * 2.6));
+        float fil = min(min(sdCapsule(lb, vec2(-0.06, 0.06), vec2(-0.03, -0.05), 0.011), sdCapsule(lb, vec2(-0.03, -0.05), vec2(0.0, 0.03), 0.011)),
+                        min(sdCapsule(lb, vec2(0.0, 0.03), vec2(0.03, -0.05), 0.011), sdCapsule(lb, vec2(0.03, -0.05), vec2(0.06, 0.06), 0.011)));
+        float fm = 1.0 - smoothstep(-0.004, 0.006, fil);
+        pcol += vec3(1.0, 0.72, 0.32) * (1.0 - rr) * uPropB.z * 0.9 * step(lb.y, 0.13);
+        pcol = mix(pcol, mix(vec3(0.55, 0.52, 0.72), vec3(1.0, 0.92, 0.65), uPropB.z), fm);
+      }
+      if (pid > 1.5 && pid < 2.5){                                                 // bubble: typing dots
+        vec2 lb = (p - pcen) / (pts / 0.12);
+        float dm = 0.0;
+        for (int i = 0; i < 3; i++){
+          float bounce = 0.03 * max(0.0, sin(uT * 7.0 - float(i) * 0.9));
+          dm = max(dm, 1.0 - smoothstep(0.03, 0.04, length(lb - vec2(-0.1 + 0.1 * float(i), -0.005 - bounce))));
+        }
+        pcol = mix(pcol, vec3(1.0), dm);
+      }
+      bc = mix(pcol, bc, hB);
+    }
     col = mix(col, bc, inside);
   }
 
   col = mix(col, trailF.rgb, trailF.a);
   if (dropFront) col = mix(col, dropC.rgb, dropC.a);
 
+
+  // ---- bulb glow
+  if (uPropA.x > 0.01 && uPropB.z > 0.01){
+    vec2 bcn = uBody.xy + budPos(vec2(0.42, -1.48), uPropA.x) * uBody.z + vec2(0.0, -0.04) * uBody.z;
+    float gd = length(p - bcn);
+    col += vec3(1.0, 0.75, 0.38) * exp(-gd / (0.28 * uBody.z)) * 0.38 * uPropB.z * min(uPropA.x, 1.0) * (1.0 - inside * 0.6);
+  }
 
   // ---- violet speck
   vec2 sq = (p - uSpeck.xy) / max(uSpeck.z, 1e-3);
@@ -879,6 +878,7 @@ void main(){
     lp: U('uLP'), lc: U('uLC'), drop: U('uDrop'), speck: U('uSpeck'), ghost: U('uGhost'), stars: U('uStars'),
     mood: U('uMood'), t: U('uT'), squash: U('uSquash'), S: U('uS'), blink: U('uBlink'),
     dropFront: U('uDropFront'), trail: U('uTrail'), mood2: U('uMood2'), mood3: U('uMood3'),
+    propA: U('uPropA'), propB: U('uPropB'),
   };
   gl.uniform4fv(u.stars, new Float32Array(STARS.flat()));
   gl.uniform3fv(u.lc, new Float32Array(lights.flatMap(l => l.c)));
@@ -931,6 +931,11 @@ void main(){
   const NO_TRAIL = new Float32Array(16);
   // agent bookkeeping
   let lastActivity = 0, pulseAt = -9, kick = 0, talk = 0, lastTalkPulse = 0, spinExtra = 0, swirl = 0;
+  // each glass prop rides a slightly bouncy spring: it buds out, overshoots, wobbles, settles
+  const PROPS = ['think', 'listen', 'speak', 'happy', 'surprised', 'confused'];
+  const bud = Object.fromEntries(PROPS.map(k => [k, { a: 0, v: 0 }]));
+  let thinkSince = 0, waveKick = 0;
+  const bulbLight = track([[0, 0], [0.34, 0], [0.37, 0.9], [0.40, 0.1], [0.43, 1], [0.46, 0.25], [0.50, 1], [0.88, 1], [1, 0]]);
 
   function poseAt(L) {
     return { L, shape: L, body: body(L), eyes: eyes(L), lp: lights.map(l => l.k(L)),
@@ -1033,6 +1038,8 @@ void main(){
     gl.uniform3f(u.mood, w.laugh, w.cry, w.angry);
     gl.uniform4f(u.mood2, w.think, w.happy, w.surprised, w.confused);
     gl.uniform4f(u.mood3, w.sleep, w.listen, w.speak, Math.min(1, (T - pulseAt) / 0.7));
+    gl.uniform4f(u.propA, bud.think.a, bud.listen.a, bud.speak.a, bud.happy.a);
+    gl.uniform4f(u.propB, bud.surprised.a, bud.confused.a, bulbLight(((T - thinkSince) % 3.4) / 3.4), waveKick);
     gl.uniform1f(u.t, t);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
@@ -1060,13 +1067,15 @@ void main(){
     // dozes off when nobody does anything for a while
     if (live && !mood && !agent.busy && T - lastActivity > 30) setMood('sleep', 0);
     zzz.classList.toggle('on', w.sleep > 0.5);
-    for (const el of propEls) {
-      const on = w[el.dataset.state] > 0.5;
-      if (on === el._on) continue;
-      el._on = on;
-      el.classList.toggle('on', on);
-      if (on) el.querySelectorAll('[data-restart]').forEach(n => { n.style.animation = 'none'; void n.getBoundingClientRect(); n.style.animation = ''; });
+    for (const k of PROPS) {
+      if (window.__budHold) break;
+      const b = bud[k], target = mood === k ? 1 : 0;
+      b.v += (70 * (target - b.a) - 9.5 * b.v) * dt;
+      b.a += b.v * dt;
+      if (b.a < 0) { b.a = 0; b.v = 0; }
     }
+    if (mood !== 'think') thinkSince = T;
+    waveKick *= Math.exp(-dt * 9);
 
     const amb = ambientPose(ambT, Math.min(1, ambT / 1.2));
     const P = mixPose(live ? amb : introPose(introT), amb, W);
@@ -1161,7 +1170,6 @@ void main(){
 
   // ---- controls
   const zzz = document.getElementById('zzz');
-  const propEls = [...document.querySelectorAll('.prop')];
   const chipsEl = document.getElementById('chips');
   const buttons = CHIPS.map(([key, emo, label, tint]) => {
     const b = document.createElement('button');
@@ -1344,8 +1352,7 @@ void main(){
   input.addEventListener('input', () => {
     wake();
     pulseAt = T; kick = 1;
-    if (mood === 'listen' || !agent.busy) document.querySelectorAll('.p-listen svg').forEach(sv =>
-      sv.animate([{ scale: '1.15' }, { scale: '1' }], { duration: 240, easing: 'ease-out' }));
+    waveKick = 1;
     if (!agent.busy) setMood(input.value ? 'listen' : null, 0);
     if (!agent.busy && !input.value) setMood(null);
   });
@@ -1359,6 +1366,7 @@ void main(){
   window.__introAt = t => { gl.uniform2f(u.squash, 1, 1); const P = introPose(t); P.shape = t; draw(P, 1, t); };
   window.__ambAt = t => { gl.uniform2f(u.squash, 1, 1); const P = ambientPose(t, 1); P.shape = t + 3; draw(P, 1, t); };
   window.__setMood = setMood;
+  window.__bud = bud;
   if (fixed !== null) { render(parseFloat(fixed) % LOOP); return; }
   if (STATES.includes(params.get('mood'))) setMood(params.get('mood'));
 
