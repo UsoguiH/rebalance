@@ -1,0 +1,122 @@
+[
+ {
+  "file": "pose01.png",
+  "sheet": [
+   67,
+   75,
+   219,
+   423
+  ],
+  "floorY": 415.5,
+  "shadowW": 210,
+  "shadowCx": 104.0
+ },
+ {
+  "file": "pose02.png",
+  "sheet": [
+   295,
+   73,
+   279,
+   425
+  ],
+  "floorY": 417.5,
+  "shadowW": 298,
+  "shadowCx": 110.0
+ },
+ {
+  "file": "pose03.png",
+  "sheet": [
+   613,
+   35,
+   335,
+   439
+  ],
+  "floorY": 455.0,
+  "shadowW": 304,
+  "shadowCx": 221.0
+ },
+ {
+  "file": "pose04.png",
+  "sheet": [
+   966,
+   87,
+   196,
+   411
+  ],
+  "floorY": 404.0,
+  "shadowW": 196,
+  "shadowCx": 92.0
+ },
+ {
+  "file": "pose05.png",
+  "sheet": [
+   1207,
+   76,
+   280,
+   422
+  ],
+  "floorY": 414.0,
+  "shadowW": 264,
+  "shadowCx": 139.0
+ },
+ {
+  "file": "pose06.png",
+  "sheet": [
+   14,
+   519,
+   336,
+   422
+  ],
+  "floorY": 414.0,
+  "shadowW": 218,
+  "shadowCx": 211.0
+ },
+ {
+  "file": "pose07.png",
+  "sheet": [
+   374,
+   528,
+   253,
+   413
+  ],
+  "floorY": 406.0,
+  "shadowW": 332,
+  "shadowCx": 126.0
+ },
+ {
+  "file": "pose08.png",
+  "sheet": [
+   625,
+   544,
+   254,
+   397
+  ],
+  "floorY": 390.0,
+  "shadowW": 332,
+  "shadowCx": 127.0
+ },
+ {
+  "file": "pose09.png",
+  "sheet": [
+   905,
+   564,
+   274,
+   377
+  ],
+  "floorY": 359.0,
+  "shadowW": 352,
+  "shadowCx": 137.0
+ },
+ {
+  "file": "pose10.png",
+  "sheet": [
+   1208,
+   505,
+   303,
+   435
+  ],
+  "floorY": 428.0,
+  "shadowW": 240,
+  "shadowCx": 114.0
+ }
+]

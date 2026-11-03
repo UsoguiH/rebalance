@@ -1,30 +1,41 @@
-// render.js: export every pose as a looping MP4 and GIF (and optionally PNG frames).
+// render.js: export every pose loop as MP4 and GIF (and optionally transparent WebM + PNG frames).
 //
-//   node mascot/tools/render.js                 # all clips → mascot/renders/
+//   node mascot/tools/render.js                 # all loops → mascot/renders/
 //   node mascot/tools/render.js jump wave       # just these
-//   FPS=60 SIZE=720 BG=transparent FRAMES=1 node mascot/tools/render.js
+//   FPS=60 SIZE=900 BG=transparent FRAMES=1 node mascot/tools/render.js
 //
-// Needs Playwright (Chromium) and ffmpeg. MP4s are rendered at 60 fps by default;
-// GIFs at 30 fps (GIF can't hold 60 cleanly). BG=transparent keeps PNG frames and
-// writes a transparent WebM instead of the MP4.
+// Needs Playwright (Chromium) and ffmpeg. The page is served from a tiny local server,
+// because WebGL won't read textures from file:// URLs. MP4s are 60 fps by default;
+// GIFs 30 fps. BG=transparent writes a transparent WebM (VP9 with alpha) instead of MP4.
 const { chromium } = require('playwright');
 const { execFileSync } = require('child_process');
+const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'renders');
 const FPS = +(process.env.FPS || 60);
-const SIZE = +(process.env.SIZE || 640);
-const W = Math.round(SIZE * 0.8 / 2) * 2, H = SIZE;
+const SIZE = +(process.env.SIZE || 800);
+const H = Math.round(SIZE / 2) * 2, W = Math.round((SIZE * 0.75) / 2) * 2;
 const BG = process.env.BG || '#faeddd';
 const transparent = BG === 'transparent';
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.json': 'application/json' };
 
 (async () => {
+  const server = http.createServer((req, res) => {
+    const file = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
+    if (!file.startsWith(ROOT) || !fs.existsSync(file)) { res.writeHead(404); return res.end(); }
+    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream' });
+    fs.createReadStream(file).pipe(res);
+  }).listen(0);
+  const port = server.address().port;
+
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  await page.goto('file://' + path.join(ROOT, 'tools', 'frame.html'));
+  page.on('pageerror', (e) => console.error('page error:', e.message));
+  await page.goto(`http://localhost:${port}/tools/frame.html`);
   await page.evaluate(() => window.ready);
   let list = await page.evaluate(() => window.clipList());
   const only = process.argv.slice(2);
@@ -43,9 +54,9 @@ const transparent = BG === 'transparent';
     if (transparent) {
       execFileSync('ffmpeg', [...input, '-c:v', 'libvpx-vp9', '-pix_fmt', 'yuva420p', '-b:v', '0', '-crf', '30', path.join(OUT, id + '.webm')]);
     } else {
-      execFileSync('ffmpeg', [...input, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'slow', '-crf', '20', '-movflags', '+faststart', path.join(OUT, id + '.mp4')]);
+      execFileSync('ffmpeg', [...input, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'slow', '-crf', '18', '-movflags', '+faststart', path.join(OUT, id + '.mp4')]);
     }
-    const gw = Math.round(W * 0.6 / 2) * 2;
+    const gw = Math.round((W * 0.6) / 2) * 2;
     execFileSync('ffmpeg', [...input, '-vf',
       `fps=30,scale=${gw}:-1:flags=lanczos,split[a][b];[a]palettegen=reserve_transparent=${transparent ? 1 : 0}:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4`,
       '-loop', '0', path.join(OUT, id + '.gif')]);
@@ -54,4 +65,5 @@ const transparent = BG === 'transparent';
   }
   if (!process.env.FRAMES) fs.rmSync(path.join(OUT, 'frames'), { recursive: true, force: true });
   await browser.close();
+  server.close();
 })();

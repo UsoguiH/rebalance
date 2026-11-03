@@ -110,7 +110,7 @@ Progress saves automatically to `localStorage`.
 
 ## Also in this repo: the Qudrat teacher mascot
 
-`mascot/` holds a separate project: a Duolingo-style animation library for the Qudrat teacher
-character (17 looping poses, drawn and animated in code). Open `mascot/index.html`; see
-`mascot/README.md`. The animation method comes from the rossark-motion-skill, installed in
-`.claude/skills/rossark-motion-skill/`.
+`mascot/` holds a separate project: the 10 poses of the Qudrat teacher from the reference
+sheet, animated in a Duolingo style by bending the original drawings on a mesh (no redraw).
+Serve `mascot/` and open `index.html`; see `mascot/README.md`. The animation method comes from
+the rossark-motion-skill, installed in `.claude/skills/rossark-motion-skill/`.

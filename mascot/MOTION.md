@@ -108,28 +108,27 @@
 
 ## Part 2. This project
 
-### Where the code is
-- **Platform:** web, plain JS on `<canvas>`, no build step. Open `mascot/index.html`.
-- **Motion engine:** `mascot/js/motion.js`, a port of the skill's `motion.ts` (`track`, `flow`, `seg`, `wave`, `loop`, `bell`, `seeded`, `blinks`), plus `lw` (a wave whose period divides the loop) and `boing` (a damped spring accent).
-- **The rig:** `mascot/js/rig.js`. World units: the floor is `y = 0` under the feet, `y` grows down, the face is 100 wide. The `B` object holds the build (hips at −98, neck at −180, face centre 58 above the neck, arms 34 + 32, legs 41 + 41). The `C` object holds the palette, sampled from the reference sheet's pixels.
-- **Layers and pivots:** legs (2-bone IK to planted or hanging feet) → body (squash about the floor, lean about the hips) → pelvis, torso → head (tilt about the neck, 2.5D `yaw` slides the features) → cane and book → arms (2-bone IK in torso space) with hands on top → effects.
-- **The poses:** `mascot/js/clips.js`. One object per clip: key poses `[ms, {channels}]` read with `flow`, then idle life, follow-through, blinks and `fx` accents. Every channel and its rest value is in `Rig.BASE`.
-- **The page:** `mascot/js/app.js` (one clock per canvas, paused off screen and in hidden tabs; switching poses blends from the pose on screen over 380 ms).
-- **Checking and export:** `mascot/tools/sheet.html` (contact sheet of a clip), `mascot/tools/render.js` (MP4 and GIF of every clip, see the README).
-
 ### The owner's rules
-- 2026-11-03: "create lot of وضعيات like duolingo animation … recreate it exactly like duolingo animations." So this project **wants the bouncy brand**: Part 1's "calm, no overshoot" does not apply to the acting. Landings and take-offs squash and stretch 10–20 % and overshoot once; badges and props pop to about 1.22× and settle; reactions are snappy (anticipation 150–260 ms, action 120–200 ms).
-- The character must match the reference sheet: black afro with grey highlights, clear peach glasses, black beard with a grey goatee, white shirt, tan sweater vest, dark trousers, black shoes, the purple «قدرات» book and the black cane/pointer.
+- 2026-11-03: "i want exactly like this photo and this exact character, exactly this one, dont create another one." **Never redraw the teacher.** Every frame shows the original drawings from the reference sheet (`mascot/art/poseNN.png`), only bent, moved and blinked. New poses need new drawings in the same style, not code-drawn look-alikes.
+- 2026-11-03: "recreate it exactly like duolingo animations." This project **wants the bouncy brand**: Part 1's "calm, no overshoot" does not apply to the acting. Squash and stretch 5–10 % (keep volume), pops overshoot once, hops have hang time, the afro trails the body.
+
+### Where the code is
+- **Platform:** web, plain JS, no build step. Open `mascot/index.html` through a local server (WebGL won't read textures from `file://`).
+- **The art:** `mascot/art/pose01.png` … `pose10.png`, cut out of the sheet by `mascot/tools/extract.py` (paper flood-filled from outside, drop shadows removed, 2 px matte with the paper colour taken back out, pose 6's spark strokes lifted so they can be redrawn live). `art/poses.json` has each crop's place on the sheet and its floor line.
+- **Motion engine:** `mascot/js/motion.js`, a port of the skill's `motion.ts` (`track`, `flow`, `seg`, `wave`, `loop`, `bell`, `seeded`, `blinks`, plus `lw`, a wave whose period divides the loop).
+- **The rig:** `mascot/js/sprite-rig.js`. Each drawing is a 4 px triangle mesh bent by deformers with soft weight maps (pupils, brows, mouth, hands/props, a 2.5D face slide, head on the neck, body on the hips, root squash about the floor). Order is local → root. Blinks reveal an eyes-closed copy of the same drawing (skin sampled from just above each eye) inside the eye ellipses, top-down, in the shader. One shared WebGL context renders every canvas.
+- **Rig points and loops:** `mascot/js/poses.js`. All coordinates are in the drawing's own pixels, read off grid overlays; eye ellipses were fitted to the eye whites automatically. A loop is `flow` key poses + `fx` accents + idle life + follow-through (head lags the lean 120 ms, afro squash lags the body).
+- **Stage and effects:** `mascot/js/stage.js` (live shadow, sparkles, Zzz, sweat drop, dust, pose 6's sparks). `mascot/js/app.js` is the page: one clock per canvas, paused off screen; switching drawings is a squash-pop (110 ms down, 90 ms swap inside the squash, 300 ms spring up).
 
 ### Rig limits
-- Arms are short (Duolingo proportions), so truly crossed arms can't reach: "arms folded" is done low, elbows out, hands meeting under the hugged book (`HUG` in clips.js).
-- Front view only. Head turns are 2.5D slides (`yaw`, up to about ±0.35 reads well).
-- Seated poses foreshorten the thighs (the knees read as caps); set `seat: 14` with `stack: 1`.
-- Hands are mittens that grow fingers with `palmL`/`palmR` (0 → 1).
-- When a hand touches the face (thinking), head tilt is damped (`idleHead: 0.3`).
+- Only the 10 drawn poses exist. Motion between drawings is a pop, not an in-between (there are no in-between drawings).
+- Bends stay small: head ±6°, hands ±15°, limbs ±10°. Past that the art visibly stretches.
+- Mouths can open a little more and close a little (a vertical scale); they can't change shape.
+- Pupils glide about a quarter of the eye; the half-lidded poses (4, 8) keep their drawn lids.
+- The sheet is 1536 × 1024, so each pose is about 430 px tall: shown much larger it softens. A higher-resolution sheet of the same drawings drops straight in (re-run `extract.py`, scale the rig points).
 
 ### How changes are checked
-- Contact sheets: open `mascot/tools/sheet.html#clip=jump&n=12&cols=6` (served or as a file) and read every frame.
-- Loop seams and frame steps: every clip's last frame equals its first (the effects that differ at the seam, such as dust and sweat, are invisible at both ends).
-- Renders: `node mascot/tools/render.js` writes MP4s (60 fps) and GIFs (30 fps) to `mascot/renders/`.
-- Not yet seen on a real phone; checked in headless Chromium at desktop and 390 px widths, light and dark.
+- Contact sheets: `mascot/tools/sheet.html#clip=teaching&n=12&cols=6` (served).
+- Loop seams: every loop's last frame equals its first (checked numerically on every deformer).
+- Renders: `node mascot/tools/render.js` writes MP4s (60 fps) and GIFs (30 fps) to `mascot/renders/`; `BG=transparent` gives transparent WebM.
+- Checked in headless Chromium at desktop and 390 px widths, light and dark. Not yet seen on a real phone.

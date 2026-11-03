@@ -1,63 +1,65 @@
 # أستاذ قدرات: the teacher's animations
 
-A Duolingo-style animation library for the Qudrat teacher mascot (afro, glasses, grey goatee,
-sweater vest, the purple «قدرات» book and a cane). The character is drawn entirely in code on a
-`<canvas>` and animated with the [rossark-motion-skill](../.claude/skills/rossark-motion-skill/SKILL.md)
-method: one clock per character, poses that flow into each other, idle life that never stops,
-follow-through on the hands, head, afro and crown, and bouncy squash and stretch.
+The 10 poses from the reference sheet, animated in a Duolingo style. **Every frame is the
+original drawing**: each pose is cut out of the sheet and bent on a fine mesh (the way Rive or
+Spine rig a painted character), so the teacher is exactly the character in the image, not a
+redraw. The motion follows the [rossark-motion-skill](../.claude/skills/rossark-motion-skill/SKILL.md)
+method: one clock per character, poses that flow, idle life that never stops, follow-through on
+the head and afro, squash and stretch, and blinks inside the drawing.
 
-Open `index.html` in a browser (or serve the folder) to see every pose live. Tap the teacher on
-the stage for a reaction; switch poses with the chips.
+Serve the folder (WebGL won't load textures from `file://`) and open `index.html`:
+
+```sh
+cd mascot && python3 -m http.server 8080   # then visit http://localhost:8080
+```
+
+Tap the teacher on the stage and he jumps for joy, then goes back to the pose you chose.
 
 ## The poses (وضعيات)
 
-| id | Arabic | What he does | Loop |
+| id | Drawing | Arabic | What moves |
 |---|---|---|---|
-| `idle` | وقفة الأستاذ | breathes, glances at the book, shifts his weight, a small happy bob | 6.0 s |
-| `wave` | أهلاً! | pops up and waves with an open hand, the cane tucked under the book arm | 3.4 s |
-| `jump` | احتفال | crouch, big jump with the cane and book up, eyes ^ ^, squash on landing, dust | 2.4 s |
-| `confident` | واثق | arms folded round the book, half-lidded smirk, eyebrow wiggle, foot tap, nods | 4.4 s |
-| `determined` | جاهز للتحدي | stern brows, lifts and stamps the cane down, nods | 3.4 s |
-| `teaching` | يشرح الدرس | open book, pointer up with two taps and sparks, talks, glances at the pointer | 4.4 s |
-| `worried` | أوه لا! | jumps back with a hand up, worried brows, «!» pops, a sweat drop, trembling | 3.2 s |
-| `reading` | يقرأ | sits on a stack of books, eyes scan line by line, looks up, turns a page | 5.6 s |
-| `sleeping` | نائم | sits hugging the book, slow breaths, Zzz, head droops and jerks up | 5.0 s |
-| `champion` | البطل | crown on, raises the book high and shakes it, sparkles | 3.8 s |
-| `correct` | إجابة صحيحة | hop and double book-pump, a green check badge pops | 2.6 s |
-| `wrong` | إجابة خاطئة | sighs, slumps, shakes his head, a sweat drop | 3.6 s |
-| `thinking` | يفكّر | strokes his goatee looking up, «؟» bubble, then a light-bulb «aha!» | 5.2 s |
-| `talking` | يتكلم | talks to you with open-hand gestures and head bobs | 4.8 s |
-| `dance` | يرقص | side-to-side hop dance, cane and book overhead, music notes | 2.4 s |
-| `surprised` | مندهش | jumps back stretched tall, the afro puffs up, «!», then a relieved sigh | 3.0 s |
-| `laughing` | يضحك | eyes shut, throws his head back then bends over, shoulders shaking | 3.0 s |
+| `idle` | 1 | وقفة الأستاذ | breathing, blinks, a glance to the side with a face turn, a happy squash-and-stretch bob |
+| `wave` | 2 | أهلاً! | the hand waves on the elbow, the body bounces on each wave, head tilts, mouth chatters |
+| `jump` | 3 | احتفال | hops in the air with stretch on the way up and squash at the bottom, arms pump, legs kick, sparkles |
+| `confident` | 4 | واثق | chin up, a one-eyebrow wiggle, side glances, two nods, a slow half-lidded blink |
+| `determined` | 5 | جاهز للتحدي | lifts the cane and stamps it down with a body squash and dust, nods |
+| `teaching` | 6 | يشرح الدرس | two pointer taps with the spark lines popping, talking, a glance up at the pointer |
+| `worried` | 7 | أوه لا! | trembling, the raised hand shakes, nervous glances, worried brows, a sweat drop |
+| `reading` | 8 | يقرأ | eyes scan the lines, head follows each line, looks up with raised brows, book bobs |
+| `sleeping` | 9 | نائم | slow deep breaths, mouth opens with each breath, head nods off and jerks back, Zzz |
+| `champion` | 10 | البطل | shakes the book overhead, the crown wobbles behind the head, sparkles, little bounces |
 
 ## Files
 
 | File | What it does |
 |---|---|
+| `art/pose01.png` … `pose10.png` | The drawings cut out of the sheet (transparent PNG) |
+| `js/sprite-rig.js` | Mesh-warp renderer (WebGL): deformers with soft weights, blinks in the shader |
+| `js/poses.js` | Rig points for each drawing and every loop as data |
+| `js/stage.js` | Shadow, the bent drawing, and effects (sparkles, Zzz, sweat, dust, sparks) |
 | `js/motion.js` | The motion engine (port of the skill's `motion.ts`) |
-| `js/rig.js` | The character: palette, build, IK limbs, live face, props, effects |
-| `js/clips.js` | Every pose as data, plus idle life, follow-through and blinks |
-| `js/app.js` | The showcase page: one clock per canvas, blended pose switching |
+| `js/app.js` | The showcase page |
 | `MOTION.md` | The motion rules for this project (read first before changing motion) |
-| `tools/sheet.html` | Contact sheet of one clip: `sheet.html#clip=jump&n=12&cols=6` |
-| `tools/render.js` | Exports every pose to `renders/` as MP4 (60 fps) and GIF (30 fps) |
+| `tools/extract.py` | Cuts the poses out of the sheet: `python3 -I mascot/tools/extract.py SHEET.png mascot/art/` |
+| `tools/sheet.html` | Contact sheet of one loop: `tools/sheet.html#clip=jump&n=12&cols=6` |
+| `tools/render.js` | Exports every loop to `renders/` as MP4 (60 fps) and GIF (30 fps) |
 
 ## Export videos and GIFs
 
 ```sh
-node mascot/tools/render.js                       # every pose → mascot/renders/*.mp4 + *.gif
-node mascot/tools/render.js jump wave             # only these
-SIZE=1080 node mascot/tools/render.js             # bigger
-BG=transparent FRAMES=1 node mascot/tools/render.js   # transparent WebM + PNG frames to keep
+node mascot/tools/render.js                           # every loop → mascot/renders/*.mp4 + *.gif
+node mascot/tools/render.js jump wave                 # only these
+BG=transparent node mascot/tools/render.js            # transparent WebM for apps
+BG=transparent FRAMES=1 node mascot/tools/render.js   # also keep the PNG frames
 ```
 
-Needs Playwright (Chromium) and ffmpeg. `renders/all-poses.mp4` shows every pose at once.
-The MP4s are committed; GIFs are regenerated by the tool (they are large).
+Needs Playwright (Chromium) and ffmpeg. `renders/all-poses.mp4` shows all ten at once. The MP4s
+are committed; GIFs are regenerated by the tool (they are large).
 
-## Adding a pose
+## More poses
 
-Copy a clip in `js/clips.js`, give it an `id`, Arabic and English names and a `dur`, and write key
-poses as `[ms, { channel: value }]`. A key only lists what changes; everything else holds. Use
-`fx(t, P)` for accents (waving, talking, shaking) and the helpers `pop`, `hop`, `talk`, `win`.
-Then check it with `tools/sheet.html#clip=<id>`.
+Only these 10 drawings exist, so only these 10 poses can be animated without inventing art.
+To add one, draw it in the same style on the same paper colour, add it to the sheet (or cut it
+with `extract.py`), give it rig points in `js/poses.js` (read them off a grid overlay), and
+write its loop. A higher-resolution sheet of the same drawings also drops straight in.

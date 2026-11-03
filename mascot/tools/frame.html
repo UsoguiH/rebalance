@@ -1,25 +1,27 @@
 <!doctype html><meta charset="utf-8">
-<!-- Used by render.js: draws one frame of a clip into a square canvas on request. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@800;900&display=swap">
+<!-- Used by render.js: draws one frame of a loop into a canvas on request. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@900&display=swap">
 <body style="margin:0">
 <canvas id="c"></canvas>
 <script src="../js/motion.js"></script>
-<script src="../js/rig.js"></script>
-<script src="../js/clips.js"></script>
+<script src="../js/sprite-rig.js"></script>
+<script src="../js/poses.js"></script>
+<script src="../js/stage.js"></script>
 <script>
   const cv = document.getElementById('c');
-  const ctx = cv.getContext('2d');
-  /** Draws clip `id` at time t on a w×h canvas; bg is a CSS color or '' for transparent. */
+  /** Draws loop `id` at time t on a w×h canvas; bg is a CSS colour or '' for transparent. */
   window.drawAt = (id, t, w, h, bg) => {
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-    if (bg) { ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h); }
-    const s = Math.min(w / 400, h / 500);
-    ctx.setTransform(s, 0, 0, s, w / 2, h - 38 * s);
-    Rig.draw(ctx, Clips.pose(Clips.byId[id], t), t);
+    const g = cv.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
+    if (bg) { g.fillStyle = bg; g.fillRect(0, 0, w, h); }
+    Stage.draw(cv, Poses.byId[id], t, { clear: false });
     return cv.toDataURL('image/png').split(',')[1];
   };
-  window.clipList = () => Clips.list.map((c) => ({ id: c.id, dur: c.dur }));
-  window.ready = (async () => { try { await document.fonts.load('800 15px Tajawal'); } catch (e) {} return true; })();
+  window.clipList = () => Poses.CLIPS.map((c) => ({ id: c.id, dur: c.dur }));
+  window.ready = (async () => {
+    try { await document.fonts.load('900 16px Tajawal'); } catch (e) {}
+    await Stage.load('../art/');
+    return true;
+  })();
 </script>
