@@ -109,26 +109,34 @@
 ## Part 2. This project
 
 ### The owner's rules
-- 2026-11-03: "i want exactly like this photo and this exact character, exactly this one, dont create another one." **Never redraw the teacher.** Every frame shows the original drawings from the reference sheet (`mascot/art/poseNN.png`), only bent, moved and blinked. New poses need new drawings in the same style, not code-drawn look-alikes.
-- 2026-11-03: "recreate it exactly like duolingo animations." This project **wants the bouncy brand**: Part 1's "calm, no overshoot" does not apply to the acting. Squash and stretch 5–10 % (keep volume), pops overshoot once, hops have hang time, the afro trails the body.
+- 2026-11-03: "i want exactly like this photo and this exact character, exactly this one, dont create another one." **Never redraw the teacher.** Every frame shows the original drawings (`mascot/art/poseNN.png`), only moved and blinked. New poses need new drawings in the same style.
+- 2026-11-03: "recreate it exactly like duolingo animations." The project **wants the bouncy brand**: squash and stretch 5–10 % (volume kept), pops overshoot once, hops have hang time, the afro trails the body.
+- 2026-11-03 (after seeing the phone): "Why is he like this … make him move right and not have this fault poses." Smeared hair, bent glasses, a book cut off by the frame and blur are **bugs**. The rules below exist to prevent them.
+
+### Rules learned from that round (they override Part 1 where they differ)
+1. **Parts are rigid.** The head (hair, face, glasses, beard), each hand and each prop move as one piece. Soft blending is allowed only across flat colour: the collar under the beard, a white sleeve, the trousers at the hips.
+2. **Never slide features inside the head** (no 2.5D face slide on a flat drawing): it bends the glasses. A glance is the pupils leading, then a small head tilt and shift, with a blink on the turn.
+3. **Put a hinge at the contact point.** Where a moving part touches a still one (the waving thumb by the ear, the book's edge against the afro), pivot right there, so the part swings away instead of sliding across and smearing the gap.
+4. **Small amplitudes:** head ±4°, hands ±10°, props ±6°, mouth ≤ +22 %, brows ≤ 3 units.
+5. **Frame every pose by its own bounding box**, with one shared scale and floor, so nothing (the raised book, the cane, the pointer) leaves the stage.
+6. **Sharp art:** the sheet is sharpened 2x (`tools/upscale.py`, Real-ESRGAN anime model) and colour-matched back to the original before cutting. Rig units stay the original sheet's pixels.
 
 ### Where the code is
-- **Platform:** web, plain JS, no build step. Open `mascot/index.html` through a local server (WebGL won't read textures from `file://`).
-- **The art:** `mascot/art/pose01.png` … `pose10.png`, cut out of the sheet by `mascot/tools/extract.py` (paper flood-filled from outside, drop shadows removed, 2 px matte with the paper colour taken back out, pose 6's spark strokes lifted so they can be redrawn live). `art/poses.json` has each crop's place on the sheet and its floor line.
-- **Motion engine:** `mascot/js/motion.js`, a port of the skill's `motion.ts` (`track`, `flow`, `seg`, `wave`, `loop`, `bell`, `seeded`, `blinks`, plus `lw`, a wave whose period divides the loop).
-- **The rig:** `mascot/js/sprite-rig.js`. Each drawing is a 4 px triangle mesh bent by deformers with soft weight maps (pupils, brows, mouth, hands/props, a 2.5D face slide, head on the neck, body on the hips, root squash about the floor). Order is local → root. Blinks reveal an eyes-closed copy of the same drawing (skin sampled from just above each eye) inside the eye ellipses, top-down, in the shader. One shared WebGL context renders every canvas.
-- **Rig points and loops:** `mascot/js/poses.js`. All coordinates are in the drawing's own pixels, read off grid overlays; eye ellipses were fitted to the eye whites automatically. A loop is `flow` key poses + `fx` accents + idle life + follow-through (head lags the lean 120 ms, afro squash lags the body).
-- **Stage and effects:** `mascot/js/stage.js` (live shadow, sparkles, Zzz, sweat drop, dust, pose 6's sparks). `mascot/js/app.js` is the page: one clock per canvas, paused off screen; switching drawings is a squash-pop (110 ms down, 90 ms swap inside the squash, 300 ms spring up).
+- **Platform:** web, plain JS, no build step. Serve `mascot/` (WebGL won't read textures from `file://`) and open `index.html`.
+- **Art pipeline:** `tools/upscale.py` (2x sharpen) → colour match → `tools/extract.py SHARP.png art/ 2 ORIGINAL.png` (paper flood-filled from outside, drop shadows removed, 2 px matte, the open books' pages sealed, pose 6's spark strokes lifted so they can be redrawn live). Crops use `art/boxes.json` (original-sheet pixels), so rig points never move.
+- **Motion engine:** `js/motion.js` (port of the skill's `motion.ts`, plus `lw`, a wave whose period divides the loop).
+- **The rig:** `js/sprite-rig.js`: a 3-unit triangle mesh per drawing, deformers with weight maps (`Wt.poly` rigid outlines, `Wt.hinge`, ellipses for pupils/brows/mouth), applied local → root. Blinks reveal an eyes-closed copy of the same drawing in the shader. One shared WebGL context renders every canvas.
+- **Rig points and loops:** `js/poses.js`: outlines traced on 10-unit grids over each drawing; `keepOffHead` lists things above the neck that are not the head (canes, books). A loop is `flow` key poses + `fx` accents + idle life + follow-through.
+- **Stage and page:** `js/stage.js` (shadow, effects, framing), `js/app.js` (one clock per canvas, paused off screen; pose switches are a squash-pop).
 
 ### Rig limits
-- Only the 10 drawn poses exist. Motion between drawings is a pop, not an in-between (there are no in-between drawings).
-- Bends stay small: head ±6°, hands ±15°, limbs ±10°. Past that the art visibly stretches.
-- Mouths can open a little more and close a little (a vertical scale); they can't change shape.
-- Pupils glide about a quarter of the eye; the half-lidded poses (4, 8) keep their drawn lids.
-- The sheet is 1536 × 1024, so each pose is about 430 px tall: shown much larger it softens. A higher-resolution sheet of the same drawings drops straight in (re-run `extract.py`, scale the rig points).
+- Only the 10 drawn poses exist; switching between them is a pop, not an in-between.
+- Mouths open and close a little; they can't change shape. Half-lidded poses (4, 8) keep their drawn lids.
+- Parts that overlap in the drawing can't move far apart: nothing is drawn behind them.
 
 ### How changes are checked
 - Contact sheets: `mascot/tools/sheet.html#clip=teaching&n=12&cols=6` (served).
 - Loop seams: every loop's last frame equals its first (checked numerically on every deformer).
 - Renders: `node mascot/tools/render.js` writes MP4s (60 fps) and GIFs (30 fps) to `mascot/renders/`; `BG=transparent` gives transparent WebM.
-- Checked in headless Chromium at desktop and 390 px widths, light and dark. Not yet seen on a real phone.
+- Close-ups at full size of every seam where a moving part touches a still one (book/afro, thumb/ear, stick/hair).
+- Checked in headless Chromium at desktop and a 390 px phone width at 3x, light and dark.

@@ -1,9 +1,10 @@
 # أستاذ قدرات: the teacher's animations
 
 The 10 poses from the reference sheet, animated in a Duolingo style. **Every frame is the
-original drawing**: each pose is cut out of the sheet and bent on a fine mesh (the way Rive or
-Spine rig a painted character), so the teacher is exactly the character in the image, not a
-redraw. The motion follows the [rossark-motion-skill](../.claude/skills/rossark-motion-skill/SKILL.md)
+original drawing**: each pose is cut out of the sheet (sharpened 2x) and moved by rigid parts,
+the head on the neck, hands from the wrist, props from where they're held, the way Rive or
+Spine rig a cut-out character. Nothing detailed is ever stretched, so the teacher stays
+exactly the character in the image. The motion follows the [rossark-motion-skill](../.claude/skills/rossark-motion-skill/SKILL.md)
 method: one clock per character, poses that flow, idle life that never stops, follow-through on
 the head and afro, squash and stretch, and blinks inside the drawing.
 
@@ -19,8 +20,8 @@ Tap the teacher on the stage and he jumps for joy, then goes back to the pose yo
 
 | id | Drawing | Arabic | What moves |
 |---|---|---|---|
-| `idle` | 1 | وقفة الأستاذ | breathing, blinks, a glance to the side with a face turn, a happy squash-and-stretch bob |
-| `wave` | 2 | أهلاً! | the hand waves on the elbow, the body bounces on each wave, head tilts, mouth chatters |
+| `idle` | 1 | وقفة الأستاذ | breathing, blinks, a glance (pupils lead, head follows), a happy squash-and-stretch bob |
+| `wave` | 2 | أهلاً! | the hand waves from the wrist, the body bounces on each wave, head tilts, mouth chatters |
 | `jump` | 3 | احتفال | hops in the air with stretch on the way up and squash at the bottom, arms pump, legs kick, sparkles |
 | `confident` | 4 | واثق | chin up, a one-eyebrow wiggle, side glances, two nods, a slow half-lidded blink |
 | `determined` | 5 | جاهز للتحدي | lifts the cane and stamps it down with a body squash and dust, nods |
@@ -35,13 +36,14 @@ Tap the teacher on the stage and he jumps for joy, then goes back to the pose yo
 | File | What it does |
 |---|---|
 | `art/pose01.png` … `pose10.png` | The drawings cut out of the sheet (transparent PNG) |
-| `js/sprite-rig.js` | Mesh-warp renderer (WebGL): deformers with soft weights, blinks in the shader |
+| `js/sprite-rig.js` | Cut-out renderer (WebGL): rigid parts on a mesh, soft only across flat colour, blinks in the shader |
 | `js/poses.js` | Rig points for each drawing and every loop as data |
 | `js/stage.js` | Shadow, the bent drawing, and effects (sparkles, Zzz, sweat, dust, sparks) |
 | `js/motion.js` | The motion engine (port of the skill's `motion.ts`) |
 | `js/app.js` | The showcase page |
 | `MOTION.md` | The motion rules for this project (read first before changing motion) |
-| `tools/extract.py` | Cuts the poses out of the sheet: `python3 -I mascot/tools/extract.py SHEET.png mascot/art/` |
+| `tools/upscale.py` | Sharpens the sheet 4x with a Real-ESRGAN anime model (ONNX, CPU); downscale to 2x and colour-match to the original |
+| `tools/extract.py` | Cuts the poses out: `python3 -I mascot/tools/extract.py SHARP_2x.png mascot/art/ 2 ORIGINAL.png` |
 | `tools/sheet.html` | Contact sheet of one loop: `tools/sheet.html#clip=jump&n=12&cols=6` |
 | `tools/render.js` | Exports every loop to `renders/` as MP4 (60 fps) and GIF (30 fps) |
 

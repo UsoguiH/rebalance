@@ -15,10 +15,12 @@
     return rigs;
   }
 
-  function viewFor(canvas, d, zoom) {
+  /** Same scale and floor for every pose; each is centred on its own drawing's box. */
+  function viewFor(canvas, d, zoom, rig) {
     const W = canvas.width, H = canvas.height;
     const s = Math.min(W / VIEW.w, H / VIEW.h) * (zoom || 1);
-    return { scale: s, ox: W / 2, oy: H - VIEW.floorPad * s, ax: d.hip[0], ay: d.floor };
+    const cx = rig ? (rig.bbox[0] + rig.bbox[2]) / 2 : d.hip[0];
+    return { scale: s, ox: W / 2, oy: H - VIEW.floorPad * s, ax: cx, ay: d.floor };
   }
 
   function star4(g, x, y, r, col) {
@@ -41,7 +43,7 @@
     if (opts.clear !== false) { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, canvas.width, canvas.height); }
     const { P, c } = root.Poses.params(clip, t);
     if (opts.squash) { P.root.sy *= opts.squash; P.root.sx /= Math.pow(opts.squash, 0.6); }
-    const v = viewFor(canvas, d, opts.zoom);
+    const v = viewFor(canvas, d, opts.zoom, rig);
     const toPx = (x, y) => [(x - v.ax) * v.scale + v.ox, (y - v.ay) * v.scale + v.oy];
     const alpha = opts.alpha == null ? 1 : opts.alpha;
 

@@ -11,7 +11,7 @@
 
   function fit(canvas) {
     const r = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   }
@@ -39,14 +39,16 @@
 
   // ── the stage ─────────────────────────────────────────────────────────────
   const hero = { canvas: document.getElementById('hero'), clip: Poses.byId.idle, t: 0, prev: null, prevT: 0, swapAt: -1e9, back: null, visible: true };
-  const chips = document.getElementById('chips');
+  // the pose picker: one tile per drawing, showing the drawing itself
+  const picker = document.getElementById('picker');
   const chipEls = {};
   clips.forEach((clip) => {
     const c = document.createElement('button');
-    c.className = 'chip'; c.type = 'button'; c.textContent = clip.ar;
+    c.className = 'tile'; c.type = 'button';
     c.setAttribute('aria-pressed', 'false');
+    c.innerHTML = `<span class="thumb"><img alt="" loading="lazy" src="${base}art/${clip.d.file}"></span><span>${clip.ar}</span>`;
     c.addEventListener('click', () => select(clip.id));
-    chips.appendChild(c); chipEls[clip.id] = c;
+    picker.appendChild(c); chipEls[clip.id] = c;
   });
   new IntersectionObserver((es) => { hero.visible = es[0].isIntersecting; kick(); }).observe(hero.canvas);
 
@@ -54,8 +56,8 @@
   function label(clip) {
     document.getElementById('now-name').textContent = clip.ar;
     document.getElementById('now-en').textContent = clip.en;
-    document.getElementById('now-meta').textContent = `حلقة مدتها ${(clip.dur / 1000).toFixed(1)} ث`;
     for (const id in chipEls) chipEls[id].setAttribute('aria-pressed', String(id === clip.id));
+    chipEls[clip.id].scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
   }
   // the pop between two drawings, in ms from the switch
   const POP = { down: 110, swap: 90, up: 300 };
@@ -72,14 +74,16 @@
     label(Poses.byId[id]);
     try { localStorage.setItem('qudrat-pose', id); } catch (e) { /* storage may be blocked */ }
   }
-  hero.canvas.addEventListener('click', () => {
+  function cheer() {
     if (hero.back) return;
     const back = hero.clip;
     const react = back.id === 'jump' ? Poses.byId.champion : Poses.byId.jump;
     hero.back = { clip: back, until: null };
     switchTo(react, 0);
     hero.back.until = react.dur * 2; // two hops, then home
-  });
+  }
+  hero.canvas.addEventListener('click', cheer);
+  document.getElementById('cheer').addEventListener('click', cheer);
 
   const playBtn = document.getElementById('play');
   playBtn.addEventListener('click', () => {
@@ -102,19 +106,19 @@
     if (!still && T < POP.down + POP.swap + POP.up && hero.prev) {
       if (T < POP.down) {
         const sq = 1 - 0.1 * EASE_IN(T / POP.down);
-        Stage.draw(hero.canvas, hero.prev, tOf(hero.prev, hero.prevT), { squash: sq, zoom: 1.04 });
+        Stage.draw(hero.canvas, hero.prev, tOf(hero.prev, hero.prevT), { squash: sq, zoom: 1 });
       } else if (T < POP.down + POP.swap) {
         const p = (T - POP.down) / POP.swap;
-        Stage.draw(hero.canvas, hero.prev, tOf(hero.prev, hero.prevT), { squash: 0.9, alpha: 1 - p, zoom: 1.04 });
-        Stage.draw(hero.canvas, hero.clip, tOf(hero.clip, hero.t), { squash: 0.9, alpha: p, clear: false, zoom: 1.04 });
+        Stage.draw(hero.canvas, hero.prev, tOf(hero.prev, hero.prevT), { squash: 0.9, alpha: 1 - p, zoom: 1 });
+        Stage.draw(hero.canvas, hero.clip, tOf(hero.clip, hero.t), { squash: 0.9, alpha: p, clear: false, zoom: 1 });
       } else {
         const sq = track(T - POP.down - POP.swap, [[0, 0.9], [130, 1.06, 'out'], [300, 1]]);
-        Stage.draw(hero.canvas, hero.clip, tOf(hero.clip, hero.t), { squash: sq, zoom: 1.04 });
+        Stage.draw(hero.canvas, hero.clip, tOf(hero.clip, hero.t), { squash: sq, zoom: 1 });
       }
       return true;
     }
     hero.prev = null;
-    Stage.draw(hero.canvas, hero.clip, tOf(hero.clip, hero.t), { zoom: 1.04 });
+    Stage.draw(hero.canvas, hero.clip, tOf(hero.clip, hero.t), { zoom: 1 });
     return false;
   }
 
