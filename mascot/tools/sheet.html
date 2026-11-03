@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8">
+<!-- Contact sheet of one clip: sheet.html#clip=jump&n=12&cols=6 (frames evenly over the loop),
+     or #clip=jump&from=300&step=33&n=12 for a window at a fixed step. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;800;900&display=swap">
+<body style="margin:0;background:#faeddd;font:12px system-ui">
+<canvas id="c"></canvas>
+<script src="../js/motion.js"></script>
+<script src="../js/rig.js"></script>
+<script src="../js/clips.js"></script>
+<script>
+(async () => {
+  try { await document.fonts.load('800 15px Tajawal'); } catch (e) {}
+  const q = Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
+  const clip = Clips.byId[q.clip || 'idle'];
+  const n = +(q.n || 12), cols = +(q.cols || 6), cw = 240, ch = 270, s = +(q.scale || 0.5);
+  const rows = Math.ceil(n / cols);
+  const cv = document.getElementById('c');
+  cv.width = cols * cw * 2; cv.height = rows * ch * 2;
+  const ctx = cv.getContext('2d');
+  for (let i = 0; i < n; i++) {
+    const t = q.step ? +(q.from || 0) + i * +q.step : (clip.dur * i) / n;
+    const x = (i % cols) * cw, y = Math.floor(i / cols) * ch;
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    ctx.fillStyle = (i % 2) ? '#f7e8d6' : '#faeddd'; ctx.fillRect(x, y, cw, ch);
+    ctx.fillStyle = '#7a6a5a'; ctx.fillText(clip.id + ' ' + Math.round(t) + 'ms', x + 6, y + 14);
+    ctx.setTransform(2 * s, 0, 0, 2 * s, 2 * (x + cw / 2), 2 * (y + ch - 14));
+    Rig.draw(ctx, Clips.pose(clip, t), t);
+  }
+  document.title = 'done';
+})();
+</script>

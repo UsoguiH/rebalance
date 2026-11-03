@@ -107,3 +107,10 @@ Open `tools/viewer.html` (served over http) to play each animation.
 | `tools/bake.js`, `tools/bake.html` | Bakes the sprite sheets to `assets/` |
 
 Progress saves automatically to `localStorage`.
+
+## Also in this repo: the Qudrat teacher mascot
+
+`mascot/` holds a separate project: a Duolingo-style animation library for the Qudrat teacher
+character (17 looping poses, drawn and animated in code). Open `mascot/index.html`; see
+`mascot/README.md`. The animation method comes from the rossark-motion-skill, installed in
+`.claude/skills/rossark-motion-skill/`.

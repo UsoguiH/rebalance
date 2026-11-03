@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حركات أستاذ قدرات</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;800&family=Tajawal:wght@400;500;700;800;900&display=swap">
+<style>
+  /* Layout: a big live stage beside its pose chips, then a contact grid of every loop.
+     Color: the book's purple is the one accent; the stage keeps the reference sheet's paper. */
+  :root {
+    --bg: #f5f2fa;
+    --ink: #241b33;
+    --muted: #6d6380;
+    --line: #e3dcef;
+    --accent: #6a22c9;
+    --accent-ink: #ffffff;
+    --accent-soft: #ece3fb;
+    --stage: #faeddd;
+    --stage-2: #f6e5d1;
+    --card: #ffffff;
+    --display: "Baloo Bhaijaan 2", "Tajawal", system-ui, sans-serif;
+    --body: "Tajawal", "Noto Sans Arabic", system-ui, sans-serif;
+    --radius: 22px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17121f; --ink: #f1ecf8; --muted: #a99fbb; --line: #2f2740;
+      --accent: #a777f5; --accent-ink: #160f22; --accent-soft: #2d2142;
+      --stage: #2a2234; --stage-2: #241d2e; --card: #1f1929; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17121f; --ink: #f1ecf8; --muted: #a99fbb; --line: #2f2740;
+    --accent: #a777f5; --accent-ink: #160f22; --accent-soft: #2d2142;
+    --stage: #2a2234; --stage-2: #241d2e; --card: #1f1929; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 56px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 40px; }
+  header { display: grid; gap: 6px; }
+  .eyebrow { font-weight: 800; font-size: 14px; color: var(--accent); letter-spacing: 0.02em; }
+  h1 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 6vw, 56px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .lede { margin: 0; max-width: 62ch; color: var(--muted); font-size: 17px; }
+
+  .studio { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 820px) { .studio { grid-template-columns: 1fr; } }
+  .stage {
+    position: relative; background: radial-gradient(120% 80% at 50% 100%, var(--stage-2), var(--stage) 60%);
+    border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 5; max-width: 100%;
+  }
+  .stage canvas { width: 100%; height: 100%; display: block; cursor: pointer; }
+  .stage .hint {
+    position: absolute; inset-inline-start: 14px; bottom: 12px; font-size: 13px; color: var(--muted);
+    background: color-mix(in srgb, var(--card) 80%, transparent); padding: 4px 10px; border-radius: 99px;
+  }
+  .panel { display: grid; gap: 18px; min-width: 0; }
+  .now { display: grid; gap: 2px; }
+  .now .name { font-family: var(--display); font-weight: 800; font-size: 32px; line-height: 1.2; }
+  .now .en { color: var(--muted); font-size: 15px; direction: ltr; text-align: end; }
+  .now .meta { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font: 700 15px/1 var(--body); color: var(--ink); background: var(--card); border: 2px solid var(--line);
+    border-bottom-width: 4px; padding: 10px 14px; border-radius: 14px; cursor: pointer;
+    transition: transform 120ms ease-out, background-color 160ms ease-out, border-color 160ms ease-out;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip:active { transform: scale(0.97); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: color-mix(in srgb, var(--accent) 70%, #000); color: var(--accent-ink); }
+  .chip:focus-visible, .tool:focus-visible, .card:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 10px; }
+  .tool {
+    font: 800 15px/1 var(--body); background: var(--accent-soft); color: var(--ink); border: 0; border-radius: 14px;
+    padding: 12px 16px; cursor: pointer; transition: transform 120ms ease-out;
+  }
+  .tool:active { transform: scale(0.97); }
+  .tool[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  h2 { font-family: var(--display); font-weight: 800; font-size: 28px; margin: 0; text-wrap: balance; }
+  .gridhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; }
+  .gridhead p { margin: 0; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+  @media (max-width: 460px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+  .card {
+    display: grid; gap: 0; background: var(--card); border: 2px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; cursor: pointer; padding: 0; text-align: start; color: inherit; font: inherit;
+    transition: transform 140ms ease-out, border-color 160ms ease-out;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card:active { transform: scale(0.97); }
+  .card .cv { background: radial-gradient(120% 80% at 50% 100%, var(--stage-2), var(--stage) 60%); aspect-ratio: 4 / 5; max-width: 100%; }
+  .card canvas { width: 100%; height: 100%; display: block; }
+  .card .label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 10px 14px 12px; }
+  .card .label b { font-weight: 800; font-size: 17px; }
+  .card .label span { color: var(--muted); font-size: 13px; direction: ltr; }
+
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; border-top: 2px solid var(--line); padding-top: 28px; }
+  .notes h3 { font-family: var(--display); font-size: 20px; margin: 0 0 4px; }
+  .notes p { margin: 0; color: var(--muted); max-width: 60ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">مكتبة حركات الشخصية</span>
+    <h1>أستاذ قدرات</h1>
+    <p class="lede">كل وضعيات الأستاذ متحركة بأسلوب دولينجو: نَفَس وارتداد وتمدد عند القفز، ورمش للعين، وشعر يهتز بعد الحركة. اختر وضعية لتشاهدها كبيرة، أو انقر على الأستاذ ليحتفل.</p>
+  </header>
+
+  <section class="studio" aria-label="المسرح">
+    <div class="stage">
+      <canvas id="hero" aria-label="الأستاذ يتحرك"></canvas>
+      <span class="hint">انقر عليه</span>
+    </div>
+    <div class="panel">
+      <div class="now">
+        <div class="name" id="now-name">وقفة الأستاذ</div>
+        <div class="en" id="now-en">Idle</div>
+        <div class="meta" id="now-meta"></div>
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="الوضعيات"></div>
+      <div class="tools">
+        <button class="tool" id="play" type="button" aria-pressed="false">إيقاف مؤقت</button>
+        <button class="tool" id="slow" type="button" aria-pressed="false">حركة بطيئة ×¼</button>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:grid;gap:18px" aria-labelledby="all-h">
+    <div class="gridhead">
+      <h2 id="all-h">كل الوضعيات</h2>
+      <p id="count"></p>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h3>مرسوم بالكود</h3>
+      <p>الشخصية مرسومة بالكامل على canvas بألوان مأخوذة من صورة المرجع: الشعر الأفرو، النظارة، اللحية مع الشيب، الصديري، الكتاب البنفسجي والعصا.</p>
+    </div>
+    <div>
+      <h3>لا شيء يقفز فجأة</h3>
+      <p>كل وضعية مكتوبة كإطارات مفتاحية تنساب بينها الحركة، وفوقها نَفَس وتمايل دائم، واليدان والرأس والشعر تتأخر قليلاً عن الجسم.</p>
+    </div>
+    <div>
+      <h3>جاهزة للتطبيق</h3>
+      <p>كل حركة حلقة مستمرة. أداة التصدير في المجلد تحوّلها إلى فيديو أو صور متتابعة لتستخدمها في تطبيقك.</p>
+    </div>
+  </section>
+</div>
+
+<script src="js/motion.js"></script>
+<script src="js/rig.js"></script>
+<script src="js/clips.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
