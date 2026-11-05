@@ -386,20 +386,15 @@ function drawEye(g, e, so, st, side) {
   const edgeMid = shut >= 0 ? rest + shut * (so.sy1 + 3 - rest) : rest + shut * (rest - (so.sy0 - 3));
   const slope = so.edgeB * (1 - Math.abs(shut));
   const ey = X => edgeMid + slope * (X - mid) + 2.5 * (1 - Math.abs(shut)) * (1 - ((X - mid) / ((so.sx1 - so.sx0) / 2)) ** 2);
-  // a happy closed eye is skin, not the heavy brown lid
-  const hk = clamp(happy * 1.6), lc = e.lid.map((v, i) => Math.round(v + (RIG.skin[i] - v) * hk));
-  y.fillStyle = `rgb(${lc})`;
+  // the lid is his skin (the owner asked for no brown lid, 2026-11-05)
+  y.fillStyle = `rgb(${so.skin || RIG.skin})`;
   y.beginPath(); y.moveTo(0, 0); y.lineTo(w, 0);
   for (let X = w; X >= 0; X -= 4) y.lineTo(X, ey(X + ox) - oy);
   y.closePath(); y.fill();
-  if (shut > -0.95 && shut < 0.93) {               // the lash edge
-    y.strokeStyle = 'rgba(70,40,25,.7)'; y.lineWidth = 2;
-    y.beginPath(); for (let X = 0; X <= w; X += 4) y.lineTo(X, ey(X + ox) - oy); y.stroke();
-  }
   const ch = clamp(st.cheek + 0.6 * happy);         // cheeks push up from below in a smile
   if (ch > 0) {
     const top = so.sy1 + 4 - ch * (so.sy1 - so.sy0) * 0.42;
-    y.fillStyle = `rgb(${RIG.skin})`;
+    y.fillStyle = `rgb(${so.skin || RIG.skin})`;
     y.beginPath(); y.moveTo(0, h); y.lineTo(0, top - oy + 6);
     y.quadraticCurveTo(w / 2, top - oy - 8, w, top - oy + 6); y.lineTo(w, h); y.closePath(); y.fill();
   }
