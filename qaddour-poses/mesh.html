@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>قدّور: نطة الفرح</title>
+<style>
+  html, body { margin: 0; background: #FAECDD; }
+  canvas { display: block; width: min(100vw, 100vh); margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script>
+// قدّور hops for joy. Rigid layers turning at pivots read as a puppet, so here every layer is a mesh
+// bent by bones (linear blend skinning, as Spine and DragonBones do): the knee folds, the elbows flex,
+// the torso squashes and stretches, the hair lags the head. Timing is a real hop: contact, compress,
+// push, a parabola under gravity that hangs at the top, then contact again. The rossark-motion-skill
+// rules still hold (follow-through by delay, nothing frozen, volume kept, loops that close).
+const LOOP = 4, HOP = 1.0, P = 'p3m';
+
+// ---------- engine
+const bez = (x1, y1, x2, y2) => p => {
+  if (p <= 0) return 0; if (p >= 1) return 1;
+  let a = 0, b = 1, s = p;
+  for (let i = 0; i < 22; i++) { s = (a + b) / 2; const x = 3*(1-s)*(1-s)*s*x1 + 3*(1-s)*s*s*x2 + s*s*s; if (x < p) a = s; else b = s; }
+  return 3*(1-s)*(1-s)*s*y1 + 3*(1-s)*s*s*y2 + s*s*s;
+};
+const EASE_IO = bez(0.77, 0, 0.175, 1), EASE_OUT = bez(0.23, 1, 0.32, 1);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const wave = (t, period, phase = 0) => Math.sin((t / period + phase) * Math.PI * 2);
+function flow(t, k) {                                // through every key, continuous speed, no overshoot
+  const n = k.length; if (t <= k[0][0]) return k[0][1]; if (t >= k[n-1][0]) return k[n-1][1];
+  let i = 0; while (k[i+1][0] < t) i++;
+  const slope = j => (k[j+1][1] - k[j][1]) / (k[j+1][0] - k[j][0]);
+  const tan = j => { if (j === 0 || j === n-1) return 0; const a = slope(j-1), b = slope(j); if (a*b <= 0) return 0;
+    const h0 = k[j][0]-k[j-1][0], h1 = k[j+1][0]-k[j][0], w0 = 2*h1+h0, w1 = h1+2*h0; return (w0+w1)/(w0/a+w1/b); };
+  const h = k[i+1][0]-k[i][0], s = (t-k[i][0])/h, s2 = s*s, s3 = s2*s;
+  return (2*s3-3*s2+1)*k[i][1] + (s3-2*s2+s)*h*tan(i) + (-2*s3+3*s2)*k[i+1][1] + (s3-s2)*h*tan(i+1);
+}
+// a periodic channel: keys over one hop, read so the end meets the start
+const cyc = (t, keys) => { const p = ((t % HOP) + HOP) % HOP / HOP; return flow(p, keys); };
+
+// ---------- the skeleton (crop pixels of the pose; the layers are 3x)
+const K = 3;
+const BONES = {
+  root:   { parent: null,     pivot: [125, 437] },              // the landing foot's sole
+  hips:   { parent: 'root',   pivot: [165, 338], end: [165, 318] },
+  chest:  { parent: 'hips',   pivot: [165, 300], end: [165, 250] },
+  neck:   { parent: 'chest',  pivot: [165, 250], end: [165, 160] },
+  hair:   { parent: 'neck',   pivot: [165, 150], end: [165, 55] },
+  armLu:  { parent: 'chest',  pivot: [104, 246], end: [78, 186] },   // the stick arm: shoulder → elbow
+  armLf:  { parent: 'armLu',  pivot: [78, 186],  end: [45, 125] },   //                elbow → hand (and stick)
+  armRu:  { parent: 'chest',  pivot: [214, 246], end: [266, 206] },  // the book arm
+  armRf:  { parent: 'armRu',  pivot: [266, 206], end: [300, 130] },
+  legLt:  { parent: 'hips',   pivot: [128, 342], end: [88, 378] },   // landing leg: hip → knee
+  legLs:  { parent: 'legLt',  pivot: [88, 378],  end: [128, 422] },  //               knee → foot
+  legRt:  { parent: 'hips',   pivot: [192, 342], end: [198, 388] },  // kicking leg
+  legRs:  { parent: 'legRt',  pivot: [198, 388], end: [232, 372] },
+};
+// each layer and the bones that bend it
+const LAYERS = [
+  // trousers and legs stay one picture, bent from inside: no cut line at the hips
+  { name: 'body',     bones: ['chest', 'hips', 'legLt', 'legLs', 'legRt', 'legRs'] },
+  { name: 'head',     bones: ['neck', 'hair'] },
+  { name: 'mouth',    bones: ['neck'], mouth: true },
+  { name: 'stickArm', bones: ['armLu', 'armLf'] },
+  { name: 'bookArm',  bones: ['armRu', 'armRf'] },
+];
+
+// ---------- acting: one hop, read every HOP seconds; small differences between hops come from the hop index
+// p: 0 contact · 0.16 deepest · 0.26 off the ground · 0.63 the top · 1 contact again
+const HOPK = { contact: 0, deep: 0.15, off: 0.26 };
+function pose(t) {
+  const hopI = Math.floor(t / HOP) % 4, p = ((t % HOP) + HOP) % HOP / HOP;
+  const side = hopI % 2 ? 1 : -1, big = hopI === 3 ? 1.15 : 1;        // every fourth hop is the big one
+  // height: a parabola while in the air (gravity: slow at the top, fast near the ground)
+  const s = clamp((p - HOPK.off) / (1 - HOPK.off));
+  const air = p > HOPK.off ? 4 * s * (1 - s) : 0;
+  const lift = 96 * big * air;
+  // the landing leg folds to absorb, then extends to push
+  const crouch = flow(p, [[0, 0], [0.07, 0.75], [0.15, 1], [0.21, 0.55], [0.26, 0], [0.55, 0.15], [0.85, 0.05], [1, 0]]);
+  const sy = 1 - 0.13 * crouch + 0.07 * flow(p, [[0, 0], [0.2, 0], [0.27, 1], [0.42, 0.25], [0.6, 0], [0.9, 0.35], [1, 0]]);
+  const drop = 16 * crouch;                                            // the body sinks into the bent knee
+  // arms: thrown up on the push, they keep rising a beat after the body, fall on the landing (follow-through)
+  const fling = cyc(t - 0.06, [[0, -0.6], [0.12, -1], [0.22, -0.2], [0.34, 1], [0.6, 0.6], [0.85, 0.1], [1, -0.6]]);
+  const pump = (p > 0.38 && p < 0.86) ? Math.sin((p - 0.38) / 0.48 * Math.PI * 3) * Math.sin((p - 0.38) / 0.48 * Math.PI) : 0;
+  return {
+    lift, sy, drop, lean: 2.2 * side * Math.sin(Math.PI * air) + 1.2 * crouch * -side,
+    hips: 0, chest: 2.5 * crouch * side + 1.5 * side * air,
+    // the head arrives late: it keeps going down after contact and rights itself after the push
+    neck: -3 * side * air + 2 * wave(t, 0.5) * air + flow(p, [[0, 0], [0.12, 2.5], [0.3, -2], [0.6, 0], [1, 0]]),
+    headDy: cyc(t - 0.07, [[0, 6], [0.16, 14], [0.3, -6], [0.6, -2], [0.9, 2], [1, 6]]),
+    hair: cyc(t - 0.11, [[0, 3], [0.16, 5], [0.32, -4], [0.6, -1], [1, 3]]),
+    armLu: 10 * fling + 4 * pump, armLf: -14 * fling + 9 * pump,
+    armRu: -9 * fling - 4 * pump, armRf: 13 * fling - 8 * pump,
+    legLt: 9 * crouch - 6 * air, legLs: -16 * crouch + 8 * air,
+    // the free leg kicks back on the push and swings in under him before he lands
+    legRt: cyc(t - 0.05, [[0, -4], [0.18, -9], [0.4, 8], [0.7, 4], [0.9, -6], [1, -4]]),
+    legRs: cyc(t - 0.1, [[0, 6], [0.2, 14], [0.45, -10], [0.75, -2], [1, 6]]),
+    mouth: 0.84 + 0.2 * Math.abs(Math.sin(Math.PI * t / 0.25)) * (0.5 + 0.5 * air),
+  };
+}
+
+// ---------- matrices (2D affine as [a, b, c, d, e, f])
+const mul = (m, n) => [m[0]*n[0] + m[2]*n[1], m[1]*n[0] + m[3]*n[1], m[0]*n[2] + m[2]*n[3], m[1]*n[2] + m[3]*n[3], m[0]*n[4] + m[2]*n[5] + m[4], m[1]*n[4] + m[3]*n[5] + m[5]];
+const T = (x, y) => [1, 0, 0, 1, x, y], R = d => { const a = d * Math.PI / 180; return [Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0]; };
+const S = (x, y) => [x, 0, 0, y, 0, 0];
+const about = (pv, m) => mul(mul(T(pv[0] * K, pv[1] * K), m), T(-pv[0] * K, -pv[1] * K));
+function boneMatrices(st) {
+  const W = {};
+  for (const [n, b] of Object.entries(BONES)) {
+    let local;
+    if (n === 'root') local = mul(T(0, (st.drop - st.lift + BASE_DROP) * K), about(b.pivot, mul(R(st.lean), S(1 / Math.pow(st.sy, 0.6), st.sy))));
+    else if (n === 'neck') local = mul(T(0, st.headDy), about(b.pivot, R(st.neck)));
+    else local = about(b.pivot, R(st[n] || 0));
+    W[n] = b.parent ? mul(W[b.parent], local) : local;
+  }
+  return W;
+}
+let BASE_DROP = 0;                                   // set at load: lowers him so the landing sole meets the floor
+
+// ---------- meshes with skinning weights
+function segDist(px, py, a, b) {
+  const vx = b[0] - a[0], vy = b[1] - a[1], wx = px - a[0], wy = py - a[1];
+  const t = clamp((wx * vx + wy * vy) / (vx * vx + vy * vy || 1));
+  return Math.hypot(px - a[0] - t * vx, py - a[1] - t * vy);
+}
+function buildMesh(img, bones, step = 12) {
+  const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d'); g.drawImage(img, 0, 0); const A = g.getImageData(0, 0, c.width, c.height).data;
+  const alpha = (x, y) => (x < 0 || y < 0 || x >= c.width || y >= c.height) ? 0 : A[(y * c.width + x) * 4 + 3];
+  const nx = Math.ceil(c.width / step) + 1, ny = Math.ceil(c.height / step) + 1;
+  const used = new Uint8Array((nx - 1) * (ny - 1));
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    let any = 0; for (let y = j * step - 4; y <= (j + 1) * step + 4 && !any; y += 4) for (let x = i * step - 4; x <= (i + 1) * step + 4 && !any; x += 4) any = alpha(x, y) > 0;
+    used[j * (nx - 1) + i] = any;
+  }
+  const idx = new Int32Array(nx * ny).fill(-1), pos = [], uv = [], wts = [], tri = [];
+  const vert = (i, j) => {
+    const k = j * nx + i; if (idx[k] >= 0) return idx[k];
+    const x = Math.min(i * step, c.width), y = Math.min(j * step, c.height);
+    idx[k] = pos.length / 2; pos.push(x, y); uv.push(x / c.width, y / c.height);
+    // weights: inverse distance to each bone's segment, sharpened so a bone is rigid and only the joint blends
+    const ws = bones.map(n => { const b = BONES[n]; const d = segDist(x / K, y / K, b.pivot, b.end || b.pivot); return 1 / Math.pow(d + 2, 4); });
+    const sum = ws.reduce((a, b) => a + b, 0); wts.push(ws.map(w => w / sum));
+    return idx[k];
+  };
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) if (used[j * (nx - 1) + i]) {
+    const a = vert(i, j), b = vert(i + 1, j), cc = vert(i, j + 1), d = vert(i + 1, j + 1);
+    tri.push(a, b, cc, b, d, cc);
+  }
+  return { pos: new Float32Array(pos), uv: new Float32Array(uv), wts, tri: new Uint16Array(tri), n: pos.length / 2 };
+}
+
+// ---------- WebGL
+const cv = document.getElementById('c');
+const gl = cv.getContext('webgl', { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: true });
+const vs = `attribute vec2 p; attribute vec2 u; uniform vec3 m0; uniform vec3 m1; varying vec2 v;
+  void main(){ vec2 q = vec2(dot(m0, vec3(p,1.)), dot(m1, vec3(p,1.))); gl_Position = vec4(q.x/540.-1., 1.-q.y/540., 0., 1.); v = u; }`;
+const fs = `precision mediump float; varying vec2 v; uniform sampler2D t; uniform float a;
+  void main(){ vec4 c = texture2D(t, v); gl_FragColor = vec4(c.rgb * c.a, c.a) * a; }`;
+function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+const prog = gl.createProgram(); gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(prog); gl.useProgram(prog);
+const loc = { p: gl.getAttribLocation(prog, 'p'), u: gl.getAttribLocation(prog, 'u'), m0: gl.getUniformLocation(prog, 'm0'), m1: gl.getUniformLocation(prog, 'm1'), a: gl.getUniformLocation(prog, 'a') };
+gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+function texture(img) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+}
+const buf = { p: gl.createBuffer(), u: gl.createBuffer(), i: gl.createBuffer() };
+function drawMesh(tex, pos, uv, tri, view, alpha = 1) {
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf.p); gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STREAM_DRAW); gl.enableVertexAttribArray(loc.p); gl.vertexAttribPointer(loc.p, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf.u); gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STREAM_DRAW); gl.enableVertexAttribArray(loc.u); gl.vertexAttribPointer(loc.u, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf.i); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, tri, gl.STREAM_DRAW);
+  gl.uniform3f(loc.m0, view[0], view[2], view[4]); gl.uniform3f(loc.m1, view[1], view[3], view[5]); gl.uniform1f(loc.a, alpha);
+  gl.drawElements(gl.TRIANGLES, tri.length, gl.UNSIGNED_SHORT, 0);
+}
+
+let RIG, MESH = {}, TEX = {}, VIEW, SHADOW;
+function render(tt) {
+  const t = ((tt % LOOP) + LOOP) % LOOP, st = pose(t), Wm = boneMatrices(st);
+  const bg = RIG.bg.map(v => v / 255); gl.clearColor(bg[0], bg[1], bg[2], 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  // the shadow stays on the floor: smaller and lighter as he rises
+  const k = clamp(1 - st.lift / 260, 0.45, 1), [sx, sy] = [RIG.shadow.cx, RIG.shadow.cy];
+  drawMesh(TEX.shadow, SHADOW.pos.map((v, i) => i % 2 ? (v - sy) * (0.8 + 0.2 * k) + sy : (v - sx) * k + sx), SHADOW.uv, SHADOW.tri, VIEW, 0.65 + 0.35 * k);
+  for (const L of LAYERS) {
+    const M = MESH[L.name]; if (!M) continue;
+    const out = new Float32Array(M.n * 2), mats = L.bones.map(n => Wm[n]);
+    // the mouth opens from its top lip, inside the head's bones
+    let pre = null;
+    if (L.mouth) { const m = RIG.mouth; pre = mul(T(m.cx, m.top), mul(S(1 + 0.08 * (st.mouth - 1), st.mouth), T(-m.cx, -m.top))); }
+    for (let v = 0; v < M.n; v++) {
+      let x = M.pos[2 * v], y = M.pos[2 * v + 1];
+      if (pre) { const xx = pre[0] * x + pre[2] * y + pre[4], yy = pre[1] * x + pre[3] * y + pre[5]; x = xx; y = yy; }
+      let ox = 0, oy = 0; const w = M.wts[v];
+      for (let b = 0; b < mats.length; b++) { const m = mats[b], wb = w[b]; if (!wb) continue; ox += wb * (m[0] * x + m[2] * y + m[4]); oy += wb * (m[1] * x + m[3] * y + m[5]); }
+      out[2 * v] = ox; out[2 * v + 1] = oy;
+    }
+    drawMesh(TEX[L.name], out, M.uv, M.tri, VIEW);
+  }
+}
+
+async function load() {
+  RIG = await fetch(`${P}/rig.json`).then(r => r.json());
+  const imgs = {};
+  await Promise.all([...LAYERS.map(l => l.name), 'shadow'].map(n => new Promise(res => { const im = new Image(); im.onload = () => { imgs[n] = im; res(); }; im.onerror = res; im.src = `${P}/${n}.png`; })));
+  for (const L of LAYERS) if (imgs[L.name]) { MESH[L.name] = buildMesh(imgs[L.name], L.bones); TEX[L.name] = texture(imgs[L.name]); }
+  SHADOW = buildMesh(imgs.shadow, ['root'], 24); TEX.shadow = texture(imgs.shadow);
+  // the landing sole is drawn above the floor: lower him so it touches the shadow's top at contact
+  BASE_DROP = (RIG.shadow.cy / K - 4) - BONES.root.pivot[1];
+  // frame: as big as the square allows, the floor low
+  // room above for the highest hop (lift 140 crop px) and for the stick's tip
+  const [W, H] = RIG.size, Sc = 1030 / (H + 112 * K);
+  VIEW = [Sc, 0, 0, Sc, 540 - W * Sc / 2, 1055 - RIG.shadow.cy * Sc];
+  window.READY = true; render(0);
+  if (!navigator.webdriver) { const t0 = performance.now(); const tick = () => { render((performance.now() - t0) / 1000); requestAnimationFrame(tick); }; tick(); }
+}
+window.render = render;
+load();
+</script>
+</body>
+</html>
