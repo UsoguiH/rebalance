@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>قدّور: الوضعيات</title>
+<style>
+  html, body { margin: 0; background: #FAECDD; }
+  canvas { display: block; width: min(100vw, 100vh); margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script>
+// قدّور's poses, each cut from the character sheet into a few layers and acted on one 4 s loop.
+// Method: rossark-motion-skill (pinned 9b20964). One clock; every wave's period divides the loop so it
+// closes without a jump; one main action per pose plus two or three idle loops; follow-through by delay;
+// blinks close in ~110 ms and reopen in ~190 ms; the shadow stays on the floor and breathes with height.
+const LOOP = 4;
+const P = new URLSearchParams(location.search).get('p') || 'p1';
+
+// ---------- the engine (as in qaddour-talk, from the skill's motion.ts)
+const bez = (x1, y1, x2, y2) => p => {
+  if (p <= 0) return 0; if (p >= 1) return 1;
+  let a = 0, b = 1, s = p;
+  for (let i = 0; i < 22; i++) { s = (a + b) / 2; const x = 3*(1-s)*(1-s)*s*x1 + 3*(1-s)*s*s*x2 + s*s*s; if (x < p) a = s; else b = s; }
+  return 3*(1-s)*(1-s)*s*y1 + 3*(1-s)*s*s*y2 + s*s*s;
+};
+const EASE_IO = bez(0.77, 0, 0.175, 1), EASE_OUT = bez(0.23, 1, 0.32, 1);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const wave = (t, period, phase = 0) => Math.sin((t / period + phase) * Math.PI * 2);
+const pulse = (t, t0, amp, a = 0.12, d = 0.38) => t < t0 || t > t0 + a + d ? 0
+  : t < t0 + a ? amp * EASE_OUT((t - t0) / a) : amp * (1 - EASE_IO((t - t0 - a) / d));
+function flow(t, k) {
+  const n = k.length; if (t <= k[0][0]) return k[0][1]; if (t >= k[n-1][0]) return k[n-1][1];
+  let i = 0; while (k[i+1][0] < t) i++;
+  const slope = j => (k[j+1][1] - k[j][1]) / (k[j+1][0] - k[j][0]);
+  const tan = j => { if (j === 0 || j === n-1) return 0; const a = slope(j-1), b = slope(j); if (a*b <= 0) return 0;
+    const h0 = k[j][0]-k[j-1][0], h1 = k[j+1][0]-k[j][0], w0 = 2*h1+h0, w1 = h1+2*h0; return (w0+w1)/(w0/a+w1/b); };
+  const h = k[i+1][0]-k[i][0], s = (t-k[i][0])/h, s2 = s*s, s3 = s2*s;
+  return (2*s3-3*s2+1)*k[i][1] + (s3-2*s2+s)*h*tan(i) + (-2*s3+3*s2)*k[i+1][1] + (s3-s2)*h*tan(i+1);
+}
+function blinkAt(t, times) {                         // close 110 ms, hold 40, open 190 with ease-out
+  let v = 0;
+  for (const b of times) { const x = ((t - b) % LOOP + LOOP) % LOOP;
+    v = Math.max(v, x < 0.11 ? EASE_IO(x / 0.11) : x < 0.15 ? 1 : x < 0.34 ? 1 - EASE_OUT((x - 0.15) / 0.19) : 0); }
+  return v;
+}
+
+// ---------- acting: each pose returns its channels at time t (0 ≤ t < LOOP)
+// lift (px up), sy (body height), lean (deg, about the feet), head {tilt, dy}, parts {name: deg or {r, dx, dy}},
+// brows {dy, r}, look {x, y}, blink, mouth (scale of the drawn mouth's height)
+const ACTS = {
+  // standing: calm and friendly. He glances aside, looks back at you with a lift of the brows, and taps his cane.
+  p1(t) {
+    const glance = flow(t, [[0, 0], [1.1, 0], [1.45, -9], [1.95, -9], [2.25, 0], [4, 0]]);
+    const tap = pulse(t, 2.3, 1, 0.16, 0.22) + 0.6 * pulse(t, 2.72, 1, 0.12, 0.2);
+    return {
+      lift: 0, sy: 1 + 0.012 * wave(t, 2), lean: 0.9 * wave(t, 4),
+      head: { tilt: 2.2 * wave(t, 4, 0.25) + 0.8 * wave(t, 2, 0.6) - 0.15 * glance + pulse(t, 2.25, 2.5, 0.14, 0.45), dy: pulse(t, 2.25, 4, 0.12, 0.4) },
+      parts: { caneArm: { r: -2.5 * tap + 0.8 * wave(t, 2, 0.3), dy: -9 * tap } },
+      brows: { dy: pulse(t, 2.18, -13, 0.14, 0.6), r: 0 },
+      look: { x: glance + 1.2 * wave(t, 4, 0.1), y: 0.8 * wave(t, 2, 0.4) },
+      blink: blinkAt(t, [1.08, 3.35]), mouth: 1,
+    };
+  },
+  // waving: the hand waves on a steady beat, the head leans into it, the mouth says «هلا!» twice, then a warm smile.
+  p2(t) {
+    const w = wave(t, 0.5);
+    const talk = t < 1.6 ? 0.5 + 0.5 * Math.cos(2 * Math.PI * t / 0.4) : 0;
+    return {
+      lift: 0, sy: 1 + 0.012 * wave(t, 2) + 0.006 * wave(t, 0.5, 0.25), lean: -0.8 + 0.6 * wave(t, 1, 0.1),
+      head: { tilt: -2.5 + 1.6 * wave(t, 1, 0.22) + 1.2 * wave(t, 4), dy: 1.5 * wave(t, 0.5, 0.3) },
+      // the hand trails the forearm's swing (a tiny delay reads as a loose wrist)
+      parts: { waveArm: 13 * w + 3 * wave(t, 4, 0.5) },
+      brows: { dy: -6 * (0.5 + 0.5 * wave(t, 2, 0.25)) + pulse(t, 0.05, -6, 0.15, 0.6), r: 0 },
+      look: { x: 1.5 * wave(t, 4, 0.2), y: 0.8 * wave(t, 2) },
+      blink: blinkAt(t, [1.75, 3.45]), mouth: 0.8 + 0.22 * talk + (t >= 1.6 ? 0.2 + 0.03 * wave(t, 2) : 0),   // never shut: the drawn mouth is all there is
+    };
+  },
+  // jumping for joy: he bounces in the air, arms pumping out of phase, legs kicking, laughing «ههه».
+  p3(t) {
+    const p = (t % 1), lift = 62 * Math.sin(Math.PI * p);           // four hops a loop, never touching down
+    const sq = Math.cos(2 * Math.PI * p);
+    return {
+      lift, sy: 1 - 0.045 * Math.max(0, sq) ** 3 + 0.03 * Math.sin(2 * Math.PI * p) ** 2, lean: 1.5 * wave(t, 2),
+      head: { tilt: 0.6 * wave(t, 0.5), dy: 0 },          // his head sits between his raised arms: it rides with the body
+      // the arms and legs follow the body a beat late (inertia), each on its own phase
+      parts: { stickArm: 7 * wave(t, 1, 0.12), bookArm: -6 * wave(t, 1, 0.32), legL: 6 * wave(t, 1, 0.3), legR: -5 * wave(t, 1, 0.45) },
+      brows: { dy: 0, r: 0 }, look: { x: 0, y: 0 }, blink: 0,
+      mouth: 0.82 + 0.22 * Math.abs(Math.sin(2 * Math.PI * t / 0.5)),
+    };
+  },
+};
+
+// ---------- drawing
+let RIG, IMG = {};
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const off = {};
+function scratch(k, w, h) { if (!off[k]) { const c = document.createElement('canvas'); c.width = w; c.height = h; off[k] = c; } return off[k]; }
+function rot(g, [px, py], deg) { g.translate(px, py); g.rotate(deg * Math.PI / 180); g.translate(-px, -py); }
+
+function drawEye(g, e, i, st) {
+  const ox = e.x0 - 8, oy = e.y0 - 8, w = e.x1 - e.x0 + 16, h = e.y1 - e.y0 + 16;
+  const c = scratch('e' + i, w, h), x = c.getContext('2d');
+  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, w, h); x.globalCompositeOperation = 'source-over';
+  x.drawImage(IMG['eye' + i], -ox, -oy);
+  x.globalCompositeOperation = 'source-atop';
+  x.fillStyle = `rgb(${e.white})`; x.fillRect(0, 0, w, h);
+  const px = e.px + st.look.x * 2 - ox, py = e.py + st.look.y * 2 - oy;
+  x.fillStyle = '#17120F'; x.beginPath(); x.arc(px, py, e.pr, 0, 7); x.fill();
+  x.fillStyle = '#fff'; x.beginPath(); x.arc(px - e.pr * 0.35, py - e.pr * 0.38, e.pr * 0.28, 0, 7); x.fill();
+  g.drawImage(c, ox, oy);
+  if (st.blink > 0) {                                // the lid: skin from above, clipped to the white grown by 2
+    const L = scratch('l' + i, w, h), y = L.getContext('2d');
+    y.setTransform(1, 0, 0, 1, 0, 0); y.clearRect(0, 0, w, h); y.globalCompositeOperation = 'source-over';
+    y.fillStyle = `rgb(${e.skin})`; y.fillRect(0, 0, w, 6 + st.blink * (h - 4));
+    y.globalCompositeOperation = 'destination-in'; y.drawImage(IMG['eye' + i + 'g'], -ox, -oy);
+    g.drawImage(L, ox, oy);
+    if (st.blink > 0.9) {
+      const cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2 + 6, hw = (e.x1 - e.x0) * 0.38;
+      g.strokeStyle = 'rgba(40,28,20,.9)'; g.lineWidth = 7; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(cx - hw, cy); g.quadraticCurveTo(cx, cy + 12, cx + hw, cy); g.stroke();
+    }
+  }
+}
+
+function render(tt) {
+  const t = ((tt % LOOP) + LOOP) % LOOP, st = ACTS[P](t), R = RIG, parts = R.parts;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = `rgb(${R.bg})`; ctx.fillRect(0, 0, 1080, 1080);
+  ctx.imageSmoothingQuality = 'high';
+  // frame the character: as big as the square allows, feet low
+  const [W, H] = R.size, S = Math.min(980 / H, 980 / W), feetY = R.shadow ? R.shadow.cy : H * 0.95;
+  const ox = 540 - W * S / 2, oy = 1040 - feetY * S;
+  ctx.setTransform(S, 0, 0, S, ox, oy);
+  if (R.shadow) {                                     // the shadow stays on the floor and shrinks with height
+    const k = clamp(1 - st.lift / 330, 0.4, 1);
+    ctx.save(); ctx.translate(R.shadow.cx, R.shadow.cy); ctx.scale(k, k); ctx.translate(-R.shadow.cx, -R.shadow.cy);
+    ctx.drawImage(IMG.shadow, 0, 0); ctx.restore();
+  }
+  const fx = R.shadow ? R.shadow.cx : W / 2, fy = feetY;
+  ctx.save();
+  ctx.translate(0, -st.lift * 3 / 3);
+  ctx.translate(fx, fy); ctx.rotate(st.lean * Math.PI / 180); ctx.scale(1 / Math.pow(st.sy, 0.6), st.sy); ctx.translate(-fx, -fy);
+  ctx.drawImage(IMG.body, 0, 0);
+  const order = Object.keys(parts).filter(n => parts[n].parent === 'body' && n !== 'head');
+  const drawPart = n => {
+    const v = st.parts[n] ?? 0, r = typeof v === 'number' ? v : v.r || 0;
+    ctx.save(); if (typeof v === 'object') ctx.translate((v.dx || 0) * 3, (v.dy || 0) * 3);
+    rot(ctx, parts[n].pivot, r); ctx.drawImage(IMG[n], 0, 0); ctx.restore();
+  };
+  order.filter(n => n.startsWith('leg')).forEach(drawPart);
+  // head, with its live face
+  ctx.save();
+  ctx.translate(0, st.head.dy * 3);
+  rot(ctx, parts.head.pivot, st.head.tilt);
+  ctx.drawImage(IMG.head, 0, 0);
+  if (IMG.mouth) {                                    // the drawn mouth opens and closes from its top lip
+    const m = R.mouth; ctx.save(); ctx.translate(m.cx, m.top); ctx.scale(1 + 0.08 * (st.mouth - 1), st.mouth); ctx.translate(-m.cx, -m.top);
+    ctx.drawImage(IMG.mouth, 0, 0); ctx.restore();
+  }
+  R.eyes.forEach((e, i) => drawEye(ctx, e, i, st));
+  for (const b of ['browL', 'browR']) if (IMG[b]) {
+    ctx.save(); ctx.translate(0, st.brows.dy * 3); rot(ctx, parts[b].pivot, st.brows.r * (b === 'browL' ? 1 : -1));
+    ctx.drawImage(IMG[b], 0, 0); ctx.restore();
+  }
+  ctx.restore();
+  order.filter(n => !n.startsWith('leg')).forEach(drawPart);
+  ctx.restore();
+}
+
+async function load() {
+  RIG = await fetch(`${P}/rig.json`).then(r => r.json());
+  const names = ['body', 'shadow', ...Object.keys(RIG.parts), ...RIG.eyes.flatMap((_, i) => [`eye${i}`, `eye${i}g`]), ...(RIG.mouth ? ['mouth'] : [])];
+  await Promise.all(names.map(n => new Promise(res => { const im = new Image(); im.onload = res; im.onerror = res; im.src = `${P}/${n}.png`; IMG[n] = im; })));
+  if (!RIG.mouth) delete IMG.mouth;
+  window.READY = true; render(0);
+  if (!navigator.webdriver) { const t0 = performance.now(); const tick = () => { render((performance.now() - t0) / 1000); requestAnimationFrame(tick); }; tick(); }
+}
+window.render = render;
+load();
+</script>
+</body>
+</html>
