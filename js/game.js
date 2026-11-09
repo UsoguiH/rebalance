@@ -126,14 +126,14 @@
     requestAnimationFrame(frame);
   };
 
-  // wait for the vintage fonts, but never hang if they are blocked
+  // wait for Figtree, but never hang if they are blocked
   const start = () => {
     if (G.started) return;
     G.started = true;
     G.boot();
   };
   window.addEventListener('load', () => {
-    const fonts = ['40px Chango', '20px Limelight', '20px "Special Elite"'];
+    const fonts = ['800 40px Figtree', '600 20px Figtree', '400 20px Figtree'];
     if (document.fonts && document.fonts.load) {
       Promise.all(fonts.map((f) => document.fonts.load(f))).then(start, start);
       setTimeout(start, 2500);

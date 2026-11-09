@@ -27,11 +27,15 @@
     gold: '#e9b739',
     sky: '#9fc6d4',
   };
+  // One family (Figtree), three roles told apart by weight.
   K.F = {
-    shout: '"Chango", "Arial Black", Impact, sans-serif',
-    deco: '"Limelight", "Georgia", serif',
-    type: '"Special Elite", "Courier New", monospace',
+    shout: '"Figtree", "Arial Black", sans-serif',
+    deco: '"Figtree", "Helvetica Neue", Arial, sans-serif',
+    type: '"Figtree", system-ui, sans-serif',
   };
+  K.FW = { [K.F.shout]: 800, [K.F.deco]: 600, [K.F.type]: 400 };
+  // CSS font shorthand: "<weight> <size>px <family>"; explicit weight wins over the role default
+  K.font = (size, font, weight) => `${weight || K.FW[font] || ''} ${size}px ${font}`;
 
   let seedBase = 0,
     seedN = 0;
@@ -282,7 +286,7 @@
     c.translate(x, y);
     if (o.rot) c.rotate(o.rot);
     if (o.alpha != null) c.globalAlpha = o.alpha;
-    c.font = `${o.weight || ''} ${size}px ${font}`;
+    c.font = K.font(size, font, o.weight);
     c.textAlign = o.align || 'center';
     c.textBaseline = o.baseline || 'middle';
     c.lineJoin = 'round';
@@ -335,7 +339,7 @@
   K.para = (str, x, y, maxW, size, o = {}) => {
     const c = ctx();
     c.save();
-    c.font = `${size}px ${o.font || K.F.type}`;
+    c.font = K.font(size, o.font || K.F.type, o.weight);
     c.fillStyle = o.fill || K.INK;
     c.textAlign = o.align || 'left';
     c.textBaseline = 'top';
@@ -348,7 +352,7 @@
   K.wrap = (str, maxW, size, font) => {
     const c = ctx();
     c.save();
-    c.font = `${size}px ${font || K.F.type}`;
+    c.font = K.font(size, font || K.F.type);
     const out = [];
     str.split('\n').forEach((para) => {
       let line = '';
