@@ -54,7 +54,7 @@ function ffmpeg(args) {
 const audio = path.join(outDir, 'soundtrack.wav');
 const audioIn = () => (fs.existsSync(audio) ? ['-i', audio] : []);
 const audioOut = () => (fs.existsSync(audio) ? ['-af', 'loudnorm=I=-15:TP=-1.5:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-shortest'] : []);
-const x264 = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', String(arg('crf', 18)), '-preset', 'slow', '-movflags', '+faststart'];
+const x264 = ['-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', String(arg('crf', 22)), '-preset', 'slow', '-movflags', '+faststart'];
 
 async function encode(m) {
   const { dir, f0 } = await renderFrames(m);
