@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Gateway — promo film</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; margin: 0; background: #08070b; color: #eee; font: 14px/1.4 system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+  canvas { max-width: 96vw; max-height: 82vh; border-radius: 14px; background: #000; }
+  .bar { display: flex; gap: 10px; align-items: center; width: min(96vw, 1100px); }
+  .bar input[type=range] { flex: 1; accent-color: #f2317f; }
+  button, select { background: #1b1826; color: #eee; border: 1px solid #3a3550; border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  #time { font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<canvas id="view" width="1920" height="1080" aria-label="MCP Gateway promo film"></canvas>
+<div class="bar">
+  <button id="play">Pause</button>
+  <input id="seek" type="range" min="0" max="1" step="0.001" value="0" aria-label="Seek">
+  <span id="time">0.00 s</span>
+  <button id="sound">Sound off</button>
+  <select id="mode" aria-label="Render mode"><option value="final">Final</option><option value="viewport">Viewport</option></select>
+</div>
+<script type="module" src="./src/player.js"></script>
+</body>
+</html>

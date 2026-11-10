@@ -1,0 +1,12 @@
+{
+  "name": "mcp-gateway-promo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Code-generated motion-design promo film for Secure MCP Gateway",
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs 8080",
+    "render": "node tools/render.mjs --mode all",
+    "render:final": "node tools/render.mjs --mode final"
+  }
+}
