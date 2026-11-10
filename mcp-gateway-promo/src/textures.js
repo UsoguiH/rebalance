@@ -170,6 +170,10 @@ export function fileCardTex(label, tint) {
   });
 }
 
+export function labelTex(label) {
+  return canvasTex(720, 180, (g, w, h) => { text(g, label, 20, 122, { size: 96, weight: 800, color: C.ink, ls: -2 }); });
+}
+
 export function logoTex(color = '#c2185b') {
   return canvasTex(512, 512, (g, w, h) => { drawLogo(g, w / 2, h / 2 + 6, 2.1, 1, color, 15); });
 }

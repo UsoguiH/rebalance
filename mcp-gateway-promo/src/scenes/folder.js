@@ -47,8 +47,7 @@ export default function folderScene(ctx) {
     folder.scale.setScalar(Math.max(0.001, 1.38 * s));
     folder.position.set(0.05, -0.1 - leave * 2.5 + Math.sin(t * 2) * 0.04, 0);
     folder.rotation.set(-0.25 - open * 0.25, kf(lt, [[0, -2.6], [0.45, 0.42, E.outCubic], [0.8, 0.3], [1.36, -0.25], [1.6, -2.4, E.inCubic]]), -0.2 + open * 0.1);
-    folder.userData.flap.rotation.x = open * 0.95;
-    folder.userData.files.forEach((f, i) => { const k = E.outBack(prog(lt, 0.86 + i * 0.07, 1.2 + i * 0.07), 1.4); f.position.y = k * (0.34 + i * 0.2); f.rotation.z = k * (i - 1) * 0.07; });
+    folder.userData.open(E.outCubic(prog(lt, 0.78, 1.15)));
 
     cards.forEach((c) => {
       const i = c.userData.i, k = E.outCubic(prog(lt, 1.34 + i * 0.025, 1.7 + i * 0.025)), gather = E.inCubic(prog(lt, 1.66, 1.86));

@@ -4,6 +4,7 @@ import { loadFonts, makeCanvas, makeGrain, halftone, Layers, C, text } from './d
 import { Kit, VP_BG } from './kit3d.js';
 import { clamp } from './util.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { loadModels } from './models.js';
 import deskScene from './scenes/desk.js';
 import roomScene from './scenes/room.js';
 import flashA from './scenes/flashes.js';
@@ -23,6 +24,7 @@ export async function createPromo(o = {}) {
   await loadFonts(o.fontBase);
   const s3 = o.scale3d ?? 1;
   const kit = new Kit(Math.round(W * s3), Math.round(H * s3));
+  await loadModels(kit, o.assetBase);
   const out = o.canvas || makeCanvas(W, H), og = out.getContext('2d');
   const frame = makeCanvas(W, H), fg = frame.getContext('2d');
   const acc = makeCanvas(W, H), ag = acc.getContext('2d');
