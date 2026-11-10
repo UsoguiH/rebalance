@@ -57,7 +57,7 @@ export default function folderScene(ctx) {
     // folder: spins in small and low-left, settles centre, opens, then drops away
     const leave = E.inQuad(prog(lt, 1.05, 1.27));
     const f = kf(lt, [[0, [0.42, 0.6, 0.17, -0.5, -1.2]], [0.3, [0.5, 0.53, 0.29, -0.2, 0.42], E.outCubic], [1.05, [0.5, 0.52, 0.3, -0.16, 0.25], E.lin], [1.4, [0.56, 0.86, 0.2, 0.5, -1.4], E.inCubic]]);
-    folder.visible = leave < 1;
+    folder.visible = leave < (ctx.viewport ? 0.5 : 1);
     screenPlace(folder, cam, f[0], f[1] + Math.sin(t * 2) * 0.004, 8.5);
     folder.scale.setScalar(spanAt(cam, f[2], 8.5) / 1.6);
     folder.rotation.set(-0.3, f[4], f[3]);
