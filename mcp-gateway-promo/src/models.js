@@ -84,7 +84,7 @@ function prepare() {
   // mug: warm white glaze
   src.mug.scene.traverse((o) => { if (o.isMesh) { o.material.color.set(0xfff4ec); o.material.roughness = 0.25; } });
   // clipboard: violet board
-  src.clipboard.scene.traverse((o) => { if (o.isMesh) o.material.color.setRGB(1.25, 0.8, 1.9); });
+  src.clipboard.scene.traverse((o) => { if (o.isMesh) { o.material.map = null; o.material.color.set(0xa860f2); o.material.roughness = 0.5; } });
   // notepads: pink paper
   src.office_notepads.scene.traverse((o) => { if (o.isMesh) o.material.color.setRGB(1.3, 0.85, 1.1); });
 }

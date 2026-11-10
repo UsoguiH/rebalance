@@ -161,6 +161,34 @@ export function setCam(cam, pos, target, roll = 0, fov = null) {
   cam.updateMatrixWorld();
 }
 
+// Top-down camera described the way a layout is read off a frame: the desk point at the centre
+// of frame (cx, cz), how many world units the frame is wide (fw), and how far the picture is
+// rotated counter-clockwise (rot, degrees). lean = [x, z] tips the camera off vertical.
+export function topCam(cam, cx, cz, fw, rot = 0, lean = [0, 0], fov = 30) {
+  const h = fw / (2 * Math.tan(rad(fov / 2)) * cam.aspect);
+  setCam(cam, [cx + lean[0] * h, h, cz + lean[1] * h + 1e-3], [cx, 0, cz], 0, fov);
+  // make "screen up" a fixed world direction so rot is stable even when leaning
+  const a = rad(rot), up = new THREE.Vector3(Math.sin(a), 0, -Math.cos(a));
+  cam.up.copy(up); cam.lookAt(cx, 0, cz); cam.up.set(0, 1, 0); cam.updateMatrixWorld();
+  return h;
+}
+
+// Put an object on the ray through screen point (sx, sy in 0..1, y down) at distance d from the camera.
+const _v = new THREE.Vector3();
+export function screenPlace(obj, cam, sx, sy, d) {
+  _v.set(sx * 2 - 1, 1 - sy * 2, 0.5).unproject(cam).sub(cam.position).normalize();
+  obj.position.copy(cam.position).addScaledVector(_v, d);
+  return obj;
+}
+// World size that spans `frac` of the frame width at distance d.
+export const spanAt = (cam, frac, d) => frac * 2 * d * Math.tan(rad(cam.fov / 2)) * cam.aspect;
+// Desk point (y = 0) seen at screen (sx, sy).
+export function deskAt(cam, sx, sy, y = 0) {
+  _v.set(sx * 2 - 1, 1 - sy * 2, 0.5).unproject(cam).sub(cam.position);
+  const k = (y - cam.position.y) / _v.y;
+  return [cam.position.x + _v.x * k, y, cam.position.z + _v.z * k];
+}
+
 export function makeCam(fov = 35, aspect = 16 / 9) { return new THREE.PerspectiveCamera(fov, aspect, 0.05, 200); }
 
 // Blender-ish viewport dressing: floor grid plus dashed light/camera gizmos.

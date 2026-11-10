@@ -1,6 +1,6 @@
 // Offline renderer: drives the page frame by frame in headless Chromium and encodes with ffmpeg.
 //   node tools/render.mjs [--mode final|viewport|versus|all|audio] [--fps 30] [--workers 4] [--scale3d 1]
-//                         [--from 0] [--to 25.6] [--out out] [--keep-frames]
+//                         [--from 0] [--to 25.57] [--out out] [--keep-frames]
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';

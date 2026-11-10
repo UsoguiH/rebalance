@@ -1,4 +1,4 @@
-// 15.83–18.67  Blue sky: the umbrella floats over "Secured", then the feature panel slides up.
+// 15.77–18.65  Blue sky: the umbrella floats over "Secured", then the feature panel slides up.
 import { THREE, keyLight, setCam, makeCam, vpHelpers } from '../kit3d.js';
 import * as P from '../props.js';
 import { C, text, measure, font, rr, cloudSprite, makeCanvas } from '../draw2d.js';
@@ -34,19 +34,20 @@ export default function skyScene(ctx) {
   }
 
   function word(g, lt) {
-    const inA = prog(lt, 0.12, 0.5), exit = prog(lt, 1.5, 1.72);
+    const inA = prog(lt, 0.08, 0.3), exit = prog(lt, 1.36, 1.5);
     if (inA <= 0 || exit >= 1) return;
-    const size = 290, y = H * 0.585, o = { size, weight: 800, ls: -6 };
-    const scale = lerp(0.72, 1, E.outCubic(prog(lt, 0.12, 0.7))) * (1 + 0.05 * prog(lt, 0.7, 1.5));
-    const full = measure(g, WORD, o);
+    const size = 290, y = H * 0.565, o = { size, weight: 800, ls: -6 };
+    // small at first, then it snaps up to full size (reference: 16.2 s)
+    const scale = (lt < 0.4 ? lerp(0.47, 0.52, prog(lt, 0.08, 0.4)) : lerp(0.9, 1, E.outCubic(prog(lt, 0.4, 0.55)))) * (1 + 0.04 * prog(lt, 0.4, 1.4));
+    const full = measure(g, WORD, o), L = WORD.length - 1;
     // which letter carries the pink accent
-    const hot = lt < 0.5 ? 0 : lt < 0.88 ? WORD.length - 1 : lt < 1.12 ? 2 : -1;
+    const hot = lt < 0.2 ? 2 : lt < 0.3 ? 0 : lt < 0.4 ? L : lt < 0.5 ? -1 : lt < 0.62 ? L : lt < 0.82 ? 2 : -1;
     g.save(); g.translate(W / 2, y); g.scale(scale, scale); g.translate(-full / 2, 0);
     let x = 0;
     [...WORD].forEach((ch, i) => {
       const w = measure(g, ch, o), a = clamp(inA * 2.2 - i * 0.12) * (1 - exit);
       let dx = 0;
-      if (i === WORD.length - 1) dx = (1 - E.outCubic(prog(lt, 0.42, 0.66))) * 160;
+      if (i === WORD.length - 1) dx = (1 - E.outCubic(prog(lt, 0.48, 0.62))) * 140 * (lt >= 0.4 ? 1 : 0);
       text(g, ch, x + dx, 0, { ...o, color: i === hot ? C.hot : '#ffffff', alpha: a });
       x += w - 6;
     });
@@ -62,8 +63,8 @@ export default function skyScene(ctx) {
       text(g, s, 0, 0, { size: 50, weight: 700, color: C.hot, align: 'center' }); g.restore();
       ctx.layers.add(x0 - 130, y + 62 * scale - 44, 260, 60);
     };
-    tag('zero-trust', W / 2 - full * 0.27 * scale, 0.62);
-    tag('on-prem', W / 2 + full * 0.27 * scale, 0.84);
+    tag('zero-trust', W / 2 - full * 0.27 * scale, 0.5);
+    tag('on-prem', W / 2 + full * 0.27 * scale, 0.62);
     ctx.layers.add(W / 2 - full * scale / 2, y - 200 * scale, full * scale, 240 * scale);
   }
 
@@ -81,7 +82,7 @@ export default function skyScene(ctx) {
   }
 
   function panel(g, lt) {
-    const up = E.outExpo(prog(lt, 1.62, 2.05)); if (up <= 0) return;
+    const up = E.outCubic(prog(lt, 1.52, 1.98)); if (up <= 0) return;
     const ph = H * 0.375, y0 = H - ph * up;
     g.fillStyle = '#fbf8f9'; g.fillRect(0, y0, W, ph + 2);
     const words = (list, x, y, t0, size = 64) => {
@@ -95,17 +96,17 @@ export default function skyScene(ctx) {
       return cx - x;
     };
     const pinkThenInk = (a) => (t) => (t < a ? C.pink : C.ink);
-    words([['One', C.ink, 1.84], ['gateway', C.ink, 1.94]], 62, y0 + 92, 0);
-    words([['Guards', C.ink, 2.04], ['Every', C.ink, 2.12], ['Tool', pinkThenInk(2.5), 2.2], ['Call', pinkThenInk(2.5), 2.26]], 62, y0 + 162, 0);
+    words([['One', C.ink, 1.7], ['gateway', C.ink, 1.8]], 62, y0 + 92, 0);
+    words([['Guards', C.ink, 1.9], ['Every', C.ink, 2.0], ['Tool', pinkThenInk(2.22), 2.1], ['Call', pinkThenInk(2.22), 2.13]], 62, y0 + 162, 0);
     for (let i = 0; i < 3; i++) {
-      const p = pop(lt, 1.96 + i * 0.07, 0.3, 1.8); if (p <= 0) continue;
+      const p = pop(lt, 1.68 + i * 0.06, 0.3, 1.8); if (p <= 0) continue;
       g.save(); g.translate(62 + i * 250 + 112, y0 + 262); g.scale(p, p); thumb(g, -112, -62, 224, 124, i); g.restore();
-      text(g, ['On-prem · Docker', 'Zero-trust PEP', '~340 tests green'][i], 62 + i * 250, y0 + 362, { size: 19, weight: 500, color: 'rgba(27,22,64,.45)', family: 'Inter', alpha: prog(lt, 2.2, 2.4) });
+      text(g, ['On-prem · Docker', 'Zero-trust PEP', '~340 tests green'][i], 62 + i * 250, y0 + 362, { size: 19, weight: 500, color: 'rgba(27,22,64,.45)', family: 'Inter', alpha: prog(lt, 2.0, 2.2) });
     }
-    const bx = 1250, a = prog(lt, 1.9, 2.05);
+    const bx = 1250, a = prog(lt, 1.66, 1.8);
     g.fillStyle = `rgba(247,196,160,${a})`; rr(g, bx, y0 + 46, 150, 12, 6); g.fill();
     BULLETS.forEach((s, i) => {
-      const p = prog(lt, 1.98 + i * 0.045, 2.12 + i * 0.045); if (p <= 0) return;
+      const p = prog(lt, 1.7 + i * 0.04, 1.84 + i * 0.04); if (p <= 0) return;
       const y = y0 + 96 + i * 34;
       if (i === BULLETS.length - 1) { g.fillStyle = `rgba(250,214,190,${p})`; rr(g, bx + 24, y - 23, measure(g, s, { size: 25, weight: 500, family: 'Inter' }) + 14, 31, 6); g.fill(); }
       g.fillStyle = `rgba(27,22,64,${0.7 * p})`; g.beginPath(); g.arc(bx + 8, y - 8, 4, 0, 6.283); g.fill();
@@ -116,28 +117,29 @@ export default function skyScene(ctx) {
 
   function render(lt, t) {
     const g = ctx.g;
-    const rise = E.inOutCubic(prog(lt, 1.55, 2.05));
+    const rise = E.inOutCubic(prog(lt, 1.45, 1.98));
     setCam(cam, [0, 0.2, 9.5], [0, 0, 0], 0, 30);
-    umb.position.set(wobble(t, 9, 0.8) * 0.08, lerp(0.3, 1.12, rise) + Math.sin(t * 2.2) * 0.07, 0);
-    umb.rotation.set(0.3, t * 0.55, Math.sin(t * 1.3) * 0.07 - 0.05);
+    umb.position.set(wobble(t, 9, 0.8) * 0.08, lerp(0.5, 1.2, rise) + Math.sin(t * 2.2) * 0.07, 0);
+    umb.rotation.set(-0.22, t * 0.55, Math.sin(t * 1.3) * 0.07 - 0.05);
     umb.scale.setScalar(lerp(1.15, 0.95, rise) * lerp(1.5, 1, E.outCubic(prog(lt, 0, 0.5))));
 
     if (ctx.viewport) { g.fillStyle = '#cfd6dd'; g.fillRect(0, 0, W, H); } else sky(g, lt);
+    if (!ctx.viewport) { const wash = (1 - prog(lt, 0.1, 1.0)) * 0.6; if (wash > 0) { g.fillStyle = `rgba(245,243,246,${wash})`; g.fillRect(0, 0, W, H); } }
     word(g, lt);
     ctx.draw3d(scene, cam);
     panel(g, lt);
 
     // opening: white letterbox + pink swoosh
-    const open = 1 - E.outCubic(prog(lt, 0, 0.3));
+    const open = 1 - E.outCubic(prog(lt, 0.02, 0.2));
     if (open > 0) {
-      const bh = H * 0.25 * open; g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, bh); g.fillRect(0, H - bh, W, bh);
+      const bh = H * 0.22 * open; g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, bh); g.fillRect(0, H - bh, W, bh);
       g.strokeStyle = C.hot; g.lineWidth = 9 * open; g.lineCap = 'round';
       g.beginPath(); g.moveTo(W * 0.25, H * 0.42); g.quadraticCurveTo(W * 0.27, H * 0.62, W * (0.3 + 0.35 * (1 - open)), H * 0.62); g.stroke();
     }
     // closing: small pointer + fade to white
-    const end = prog(lt, 2.66, 2.84);
+    const end = prog(lt, 2.62, 2.86);
     return { glow: 0.22, htw: 0.1, grain: 0.08, flash: Math.max(E.inQuad(end), (1 - prog(lt, 0, 0.12)) * 0.5), markColor: lt > 1.7 ? 'rgba(90,80,120,.4)' : 'rgba(255,255,255,.8)' };
   }
 
-  return [{ id: 'sky', start: 15.83, end: 18.67, render, blur: (lt) => (lt > 1.5 && lt < 2.0 ? { n: 3, shutter: 0.6 } : null) }];
+  return [{ id: 'sky', start: 15.77, end: 18.65, render, blur: (lt) => (lt > 1.5 && lt < 2.1 ? { n: 3, shutter: 0.6 } : null) }];
 }

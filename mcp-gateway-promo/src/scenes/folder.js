@@ -1,14 +1,15 @@
-// 18.67–20.55  "everything": the folder spins in, opens, and its files burst out as cards.
-import { THREE, keyLight, setCam, makeCam, vpHelpers, canvasTex } from '../kit3d.js';
+// 18.65–20.30  "everything": the folder spins in inside a pink ring, opens, and its files
+//              fly out as cards that streak into the console.
+import { THREE, keyLight, setCam, makeCam, vpHelpers, canvasTex, screenPlace, spanAt } from '../kit3d.js';
 import * as P from '../props.js';
-import { C, text, rr, halftone } from '../draw2d.js';
-import { kf, E, prog, pop, lerp, wobble, clamp, TAU } from '../util.js';
+import { C, text, measure, rr, halftone } from '../draw2d.js';
+import { kf, E, prog, pop, lerp, wobble, clamp } from '../util.js';
 
 export default function folderScene(ctx) {
   const { W, H } = ctx;
   const scene = new THREE.Scene(), cam = makeCam(30);
-  scene.userData.envI = 0.55;
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xffe6ef, 1.25));
+  scene.userData.envI = 0.6;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xffe6ef, 1.2));
   keyLight(scene, [-3, 6, 7], { intensity: 1.4, size: 6 });
   const folder = P.folder(); scene.add(folder);
 
@@ -23,56 +24,62 @@ export default function folderScene(ctx) {
   });
   vpHelpers(scene, { size: 20, div: 20, y: -2.2, gizmos: [[-2, 2, 1], [2.2, 2.2, 0.8]] });
 
+  // thick brush ring that is already sweeping round when the shot opens
   function ring(g, lt) {
-    const p = E.outCubic(prog(lt, 0.25, 1.25)); if (p <= 0) return;
-    const out = prog(lt, 1.3, 1.5); if (out >= 1) return;
-    const cx = W * 0.5, cy = H * 0.52, R = 600;
-    g.save(); g.translate(cx, cy); g.rotate(-0.5 + lt * 1.1); g.scale(1, 0.94);
-    const a0 = 1.2 + out * 4.5, a1 = 1.2 + p * 5.6;
-    for (let i = 0; i < 90; i++) {
-      const u0 = i / 90, u1 = (i + 1) / 90; if (lerp(a0, a1, u1) <= a0) continue;
-      g.strokeStyle = C.hot; g.lineCap = 'butt'; g.lineWidth = 6 + 70 * Math.pow(Math.sin(u0 * Math.PI), 1.5);
-      g.beginPath(); g.arc(0, 0, R + Math.sin(u0 * 9) * 14, lerp(a0, a1, u0), lerp(a0, a1, u1) + 0.01); g.stroke();
+    const out = E.inCubic(prog(lt, 0.85, 1.1)); if (out >= 1) return;
+    const cx = W * 0.5, cy = H * 0.52, R = W * 0.4;
+    g.save(); g.translate(cx, cy); g.rotate(-0.6 + lt * 0.9); g.scale(1, 0.92);
+    const a0 = 0.2 + out * 5.2, a1 = 0.2 + lerp(4.6, 6.0, E.outCubic(prog(lt, 0, 0.6)));
+    for (let i = 0; i < 100; i++) {
+      const u0 = i / 100, u1 = (i + 1) / 100; if (lerp(0.2, a1, u1) <= a0) continue;
+      g.strokeStyle = C.hot; g.lineCap = 'butt'; g.lineWidth = 8 + W * 0.075 * Math.pow(Math.sin(u0 * Math.PI), 1.3);
+      g.beginPath(); g.arc(0, 0, R + Math.sin(u0 * 9) * 16, lerp(0.2, a1, u0), lerp(0.2, a1, u1) + 0.01); g.stroke();
     }
     g.restore();
-    ctx.layers.add(cx - R, cy - R * 0.94, R * 2, R * 1.88);
+    ctx.layers.add(cx - R, cy - R * 0.92, R * 2, R * 1.84);
+  }
+
+  // "everything": letters light up left to right behind the folder, then fade
+  function word(g, lt) {
+    const s = 'everything', o = { size: 330, weight: 800, ls: -4 }, full = measure(g, s, o);
+    let x = W / 2 - full / 2;
+    [...s].forEach((ch, i) => {
+      const w = measure(g, ch, o), on = 0.08 + i * 0.037, a = prog(lt, on, on + 0.03) * lerp(1, 0.12, prog(lt, on + 0.08, on + 0.15)) * (1 - prog(lt, 0.6, 0.8));
+      if (a > 0.01) text(g, ch, x, H * 0.63, { ...o, color: C.hot, alpha: a });
+      x += w - 4;
+    });
+    ctx.layers.add(W / 2 - full / 2, H * 0.63 - 250, full, 300);
   }
 
   function render(lt, t) {
     const g = ctx.g;
-    setCam(cam, [0, 0.1, 8.5], [0, 0, 0], kf(lt, [[0, -6], [1.3, 3]]), 30);
-    const open = E.outBack(prog(lt, 0.78, 1.08), 1.2), leave = E.inCubic(prog(lt, 1.36, 1.6));
-    const s = pop(lt, 0.0, 0.42, 1.8) * (1 - leave);
-    folder.visible = s > 0.001;
-    folder.scale.setScalar(Math.max(0.001, 1.38 * s));
-    folder.position.set(0.05, -0.1 - leave * 2.5 + Math.sin(t * 2) * 0.04, 0);
-    folder.rotation.set(-0.25 - open * 0.25, kf(lt, [[0, -2.6], [0.45, 0.42, E.outCubic], [0.8, 0.3], [1.36, -0.25], [1.6, -2.4, E.inCubic]]), -0.2 + open * 0.1);
-    folder.userData.open(E.outCubic(prog(lt, 0.78, 1.15)));
+    setCam(cam, [0, 0.1, 8.5], [0, 0, 0], 0, 30);
+    // folder: spins in small and low-left, settles centre, opens, then drops away
+    const leave = E.inQuad(prog(lt, 1.05, 1.27));
+    const f = kf(lt, [[0, [0.42, 0.6, 0.17, -0.5, -1.2]], [0.3, [0.5, 0.53, 0.29, -0.2, 0.42], E.outCubic], [1.05, [0.5, 0.52, 0.3, -0.16, 0.25], E.lin], [1.4, [0.56, 0.86, 0.2, 0.5, -1.4], E.inCubic]]);
+    folder.visible = leave < 1;
+    screenPlace(folder, cam, f[0], f[1] + Math.sin(t * 2) * 0.004, 8.5);
+    folder.scale.setScalar(spanAt(cam, f[2], 8.5) / 1.6);
+    folder.rotation.set(-0.3, f[4], f[3]);
+    folder.userData.open(E.outCubic(prog(lt, 0.38, 0.62)));
+    folder.traverse((o) => { if (o.isMesh && o.material && !o.userData.finalOnly) { o.material.transparent = leave > 0; o.material.opacity = 1 - leave; } });
 
+    // file cards: up to the right, over to the left, then into the streak
     cards.forEach((c) => {
-      const i = c.userData.i, k = E.outCubic(prog(lt, 1.34 + i * 0.025, 1.7 + i * 0.025)), gather = E.inCubic(prog(lt, 1.66, 1.86));
-      c.visible = k > 0.001 && gather < 1;
-      const a = -0.9 + i * 0.5;
-      c.position.set(lerp(0, Math.cos(a) * 1.9 - 0.4, k) * (1 - gather) + gather * 1.0, lerp(-0.2, 0.9 + Math.sin(a) * 0.7, k) * (1 - gather * 0.9), i * 0.12 + k * 0.6);
-      c.rotation.set(-0.3 + k * 0.2, lerp(-2.2, 0.35 - i * 0.12, k), lerp(0.9, -0.2 + i * 0.08, k));
-      c.scale.setScalar(Math.max(0.001, k * (1 - gather * 0.7)));
+      const i = c.userData.i, d = i * 0.035;
+      const k = kf(lt - d, [[1.05, [0.52, 0.48, 0.0]], [1.22, [0.64 - i * 0.012, 0.24 + i * 0.03, 0.1], E.outCubic], [1.36, [0.44 - i * 0.012, 0.25 + i * 0.045, 0.11], E.inOut], [1.54, [0.3 + i * 0.022, 0.3 + i * 0.055, 0.11], E.inOut], [1.65, [0.34, 0.5, 0.06], E.inCubic]]);
+      c.visible = lt - d > 1.05 && lt < 1.65;
+      screenPlace(c, cam, k[0], k[1], 7);
+      c.quaternion.copy(cam.quaternion); c.rotateZ(-0.25 + i * 0.1 + Math.sin(lt * 5 + i) * 0.15); c.rotateY(0.3 - (lt - 1.05) * 0.8); c.rotateX(-0.2);
+      c.scale.setScalar(Math.max(1e-3, spanAt(cam, k[2], 7) / 1.3));
     });
 
     g.fillStyle = ctx.viewport ? '#f4f6f8' : '#fcf4f7'; g.fillRect(0, 0, W, H);
     ring(g, lt);
-    // "everything" streams past behind the folder
-    const tx = lerp(W * 0.86, -W * 0.5, prog(lt, 0.28, 1.02));
-    if (lt > 0.28 && lt < 1.02) { text(g, 'everything', tx, H * 0.6, { size: 300, weight: 800, color: C.hot, ls: -6 }); ctx.layers.add(tx, H * 0.6 - 230, 1500, 290); }
+    word(g, lt);
     ctx.draw3d(scene, cam);
-    // pink smear that carries us into the UI
-    const sm = prog(lt, 1.74, 1.88);
-    if (sm > 0) {
-      const x0 = lerp(W * 0.52, W * 0.2, sm), x1 = lerp(W * 0.62, W * 1.1, E.outCubic(sm));
-      const grd = g.createLinearGradient(x0, 0, x1, 0); grd.addColorStop(0, 'rgba(255,45,134,0)'); grd.addColorStop(0.5, C.hot); grd.addColorStop(1, '#ff7ab0');
-      g.fillStyle = grd; rr(g, x0, H * 0.4, x1 - x0, H * 0.2, 30); g.fill();
-    }
-    return { glow: 0.26, ht: 0.1, grain: 0.08, flash: (1 - E.outCubic(prog(lt, 0, 0.25))) * 0.9, markColor: 'rgba(120,90,130,.4)' };
+    return { glow: 0.26, ht: 0.1, grain: 0.08, flash: (1 - E.outCubic(prog(lt, 0, 0.15))) * 0.6, markColor: 'rgba(120,90,130,.4)' };
   }
 
-  return [{ id: 'folder', start: 18.67, end: 20.55, render, blur: (lt) => (lt > 1.34 ? { n: 6, shutter: 0.8 } : lt < 1.02 ? { n: 6, shutter: 0.45 } : null) }];
+  return [{ id: 'folder', start: 18.65, end: 20.3, render, blur: (lt) => (lt > 1.05 ? { n: 6, shutter: 0.8 } : lt < 0.3 ? { n: 4, shutter: 0.7 } : null) }];
 }

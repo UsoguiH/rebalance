@@ -16,7 +16,7 @@ import uiScene from './scenes/ui.js';
 import typeScene from './scenes/type.js';
 import logoScene from './scenes/logo.js';
 
-export const W = 1920, H = 1080, FPS = 30, DURATION = 25.6;
+export const W = 1920, H = 1080, FPS = 30, DURATION = 25.57;
 
 const POST = { glow: 0.3, ht: 0, htw: 0, grain: 0.08, bars: 0, barColor: '#08070b', flash: 0, flashColor: '#ffffff', vignette: 0, mark: 1, markColor: 'rgba(255,255,255,.8)' };
 

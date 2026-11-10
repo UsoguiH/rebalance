@@ -2,7 +2,7 @@
 // Everything is synthesised with the Web Audio API; there are no audio files.
 import { DURATION } from './main.js';
 
-const SR = 44100, BPM = 120, BEAT = 60 / BPM, T0 = 1.35; // downbeats land on 3.35, 5.35, 7.35 ...
+const SR = 44100, BPM = 120, BEAT = 60 / BPM, T0 = 1.23; // downbeats land on 3.23, 5.23, 7.23 ...
 const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
 
 export async function renderSoundtrack() {
@@ -53,7 +53,7 @@ export async function renderSoundtrack() {
   const duck = ac.createGain(); duck.connect(music); // side-chain pump on the kick
   const CH = [[53, 57, 60, 64], [55, 59, 62, 64], [52, 55, 59, 62], [57, 60, 64, 67]]; // Fmaj7 G6 Em7 Am7
   const bars = Math.ceil((DURATION - T0) / (BEAT * 4)) + 1;
-  const section = (t) => (t < 3.3 ? 'intro' : t < 7.6 ? 'build' : t < 15.6 ? 'drop' : t < 18.6 ? 'air' : t < 23.3 ? 'drop2' : 'out');
+  const section = (t) => (t < 3.2 ? 'intro' : t < 7.5 ? 'build' : t < 15.55 ? 'drop' : t < 18.6 ? 'air' : t < 23.2 ? 'drop2' : 'out');
   for (let b = -1; b < bars; b++) {
     const t = Math.max(0, T0 + b * BEAT * 4), ch = CH[((b % 4) + 4) % 4], sec = section(t + 0.05);
     if (t >= DURATION) break;
@@ -72,7 +72,7 @@ export async function renderSoundtrack() {
     for (let s = 0; s < 8; s++) { // eighth notes
       const ts = t + s * BEAT / 2; if (ts >= DURATION - 0.05) break;
       const drums = sec === 'drop' || sec === 'drop2', light = sec === 'build';
-      if (ts > 9.0 && ts < 9.5) continue; // leave the impact frames clean
+      if (ts > 9.0 && ts < 9.4) continue; // leave the impact frames clean
       if ((drums && s % 2 === 0) || (light && s % 4 === 0)) { // kick
         tone(ts, 125, 0.22, { vol: drums ? 0.5 : 0.3, to: 42, a: 0.002, dest: music });
         duck.gain.setValueAtTime(0.45, ts); duck.gain.linearRampToValueAtTime(1, ts + 0.22);
@@ -85,31 +85,33 @@ export async function renderSoundtrack() {
     }
   }
 
-  // ---- picture-locked sound design ------------------------------------------------------------
-  buzz(0.9); [0.92, 1.02, 1.5, 1.66].forEach((t, i) => ding(t, 86 + (i % 2) * 2, 0.12, i % 2 ? 0.5 : -0.5));
-  buzz(1.52); ding(2.05, 91, 0.17); whoosh(1.6, 0.6, 0.14);
-  whoosh(3.0, 0.5, 0.32); whoosh(5.25, 0.45, 0.2); whoosh(5.9, 0.5, 0.22, false);
-  pop(5.92, 72, 0.14); riser(6.35, 0.95);
-  tick(7.3, 0.4); tone(7.3, 1900, 0.03, { vol: 0.16, a: 0.001 }); impact(7.31, 0.42); sparkle(7.34, 0.05);
-  whoosh(7.6, 0.4, 0.34); impact(7.66, 0.5);
-  for (let i = 0; i < 13; i++) tick(7.86 + i * 0.035, 0.07, -0.6);
-  whoosh(8.75, 0.35, 0.3); impact(9.05, 0.5); impact(9.2, 0.42); impact(9.36, 0.6);
-  whoosh(9.86, 0.3, 0.2, false); scratch(10.05, 1.25); whoosh(11.3, 0.3, 0.26); impact(11.5, 0.4);
-  scratch(11.78, 0.8); pop(12.6, 79, 0.12); whoosh(12.7, 0.75, 0.24);
-  whoosh(13.45, 0.6, 0.26, false); [13.7, 13.95, 14.2, 14.45].forEach((t, i) => noise(t, 0.2, { vol: 0.09, f0: 1500 + i * 300, q: 1.5, shape: 'swell', p: 0.8, p1: -0.8 }));
-  pop(14.64, 60, 0.3); [15.07, 15.1, 15.14, 15.17].forEach((t, i) => pop(t, 67 + i * 4, 0.2, -0.5 + i * 0.33));
-  whoosh(15.3, 0.4, 0.3); impact(15.67, 0.5); sparkle(15.85, 0.05);
-  pop(16.47, 81, 0.12, -0.4); pop(16.69, 84, 0.12, 0.4); whoosh(17.3, 0.35, 0.16);
-  whoosh(17.45, 0.5, 0.2, false); for (let i = 0; i < 8; i++) tick(17.82 + i * 0.045, 0.06, 0.6);
-  whoosh(18.45, 0.35, 0.24); pop(18.7, 64, 0.22); whoosh(19.0, 0.7, 0.14, false);
-  pop(19.47, 72, 0.18); [19.55, 19.62, 19.69].forEach((t, i) => pop(t, 79 + i * 3, 0.12, i - 1));
-  whoosh(20.0, 0.4, 0.26); whoosh(20.4, 0.3, 0.3, false);
-  [0, 1, 2, 3, 4, 5].forEach((i) => pop(20.99 + i * 0.085, 76 + i * 2, 0.13, -0.6 + i * 0.24));
-  [20.89, 21.03, 21.17].forEach((t) => tick(t, 0.1));
-  impact(21.67, 0.5); impact(21.84, 0.42); impact(22.0, 0.42);
-  pop(22.2, 69, 0.16); whoosh(22.6, 0.5, 0.36); impact(23.17, 0.5);
-  whoosh(23.3, 0.35, 0.16, false); noise(23.74, 0.95, { vol: 0.07, f0: 1800, f1: 3400, q: 1.2, shape: 'swell', p: -0.5, p1: 0.5 });
-  [0, 4, 7, 12].forEach((n, i) => tone(24.63 + i * 0.03, midi(77 + n), 1.1, { vol: 0.1, p: (i - 1.5) * 0.35 })); sparkle(24.66, 0.045);
+  // ---- picture-locked sound design (times are the reference's cut points) -------------------
+  buzz(0.88); [0.92, 0.96].forEach((t, i) => ding(t, 86 + i * 2, 0.12, i ? 0.5 : -0.5));
+  whoosh(1.4, 0.2, 0.2); buzz(1.5); [1.5, 1.6].forEach((t, i) => ding(t, 88 + i * 2, 0.11, i ? 0.4 : -0.4));
+  whoosh(2.2, 0.2, 0.22, false); ding(2.34, 91, 0.17); whoosh(2.95, 0.35, 0.32);
+  impact(3.23, 0.3); whoosh(3.95, 0.16, 0.3, false); whoosh(4.6, 0.6, 0.16);
+  whoosh(5.1, 0.2, 0.22); whoosh(5.6, 0.4, 0.24, false); pop(5.74, 72, 0.16); riser(6.0, 0.86);
+  tick(6.87, 0.4); tone(6.87, 1900, 0.03, { vol: 0.16, a: 0.001 }); impact(6.88, 0.42); sparkle(6.9, 0.05);
+  whoosh(7.42, 0.2, 0.34); impact(7.53, 0.5);
+  for (let i = 0; i < 13; i++) tick(7.72 + i * 0.026, 0.07, -0.6);
+  whoosh(8.25, 0.16, 0.24, false); whoosh(8.72, 0.35, 0.32); impact(9.07, 0.5); impact(9.17, 0.42); impact(9.27, 0.6);
+  whoosh(9.37, 0.3, 0.26); whoosh(9.9, 0.2, 0.22, false); scratch(10.05, 1.25); whoosh(11.1, 0.28, 0.26);
+  impact(11.37, 0.4); impact(11.47, 0.34); impact(11.57, 0.34);
+  scratch(11.76, 0.34); pop(12.1, 79, 0.1); whoosh(12.65, 0.7, 0.24);
+  whoosh(13.35, 0.4, 0.26, false); [13.6, 13.82, 14.05, 14.28].forEach((t, i) => noise(t, 0.2, { vol: 0.09, f0: 1500 + i * 300, q: 1.5, shape: 'swell', p: 0.8, p1: -0.8 }));
+  pop(14.43, 60, 0.3); impact(14.73, 0.3); [14.73, 14.75, 14.77, 14.79].forEach((t, i) => pop(t, 67 + i * 4, 0.2, -0.5 + i * 0.33));
+  whoosh(14.88, 0.4, 0.24); whoosh(15.25, 0.32, 0.3); impact(15.57, 0.5); impact(15.67, 0.36); sparkle(15.8, 0.05);
+  pop(16.17, 62, 0.2); pop(16.27, 81, 0.12, -0.4); pop(16.39, 84, 0.12, 0.4); whoosh(17.12, 0.2, 0.18);
+  whoosh(17.3, 0.45, 0.2, false); for (let i = 0; i < 5; i++) tick(17.47 + i * 0.1, 0.09, -0.5 + i * 0.1);
+  whoosh(18.45, 0.25, 0.24); pop(18.67, 64, 0.22); for (let i = 0; i < 10; i++) tick(18.73 + i * 0.037, 0.06, -0.6 + i * 0.13);
+  pop(19.05, 72, 0.18); [19.1, 19.16, 19.22].forEach((t, i) => pop(t, 79 + i * 3, 0.12, i - 1));
+  whoosh(19.6, 0.3, 0.2); whoosh(19.72, 0.5, 0.24); whoosh(20.2, 0.25, 0.3, false);
+  [0, 1, 2, 3, 4, 5].forEach((i) => pop(20.78 + i * 0.09, 76 + i * 2, 0.13, -0.6 + i * 0.24));
+  [20.68, 20.78, 20.96].forEach((t) => tick(t, 0.1));
+  whoosh(21.45, 0.15, 0.24); impact(21.6, 0.5); impact(21.73, 0.4); impact(21.83, 0.4); impact(21.97, 0.34); impact(22.07, 0.34);
+  pop(22.19, 69, 0.16); whoosh(22.5, 0.25, 0.36); impact(22.6, 0.36); impact(23.17, 0.5);
+  whoosh(23.27, 0.3, 0.16, false); noise(23.69, 0.78, { vol: 0.07, f0: 1800, f1: 3400, q: 1.2, shape: 'swell', p: -0.5, p1: 0.5 });
+  [0, 4, 7, 12].forEach((n, i) => tone(24.44 + i * 0.03, midi(77 + n), 1.1, { vol: 0.1, p: (i - 1.5) * 0.35 })); sparkle(24.47, 0.045);
 
   // fade the tail
   master.gain.setValueAtTime(0.7, DURATION - 0.5); master.gain.linearRampToValueAtTime(0.0001, DURATION);
