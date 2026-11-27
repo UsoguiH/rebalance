@@ -6,7 +6,7 @@
 <title>Sara Hero</title>
 <!-- start the loader's downloads at once, in parallel -->
 <link rel="preload" href="vendor/rive-canvas-lite/rive.js" as="script">
-<link rel="preload" href="vendor/rive-canvas-lite/rive.wasm" as="fetch" type="application/wasm" crossorigin>
+<script>/* the .wasm can only be preloaded when served, not from disk */ if (location.protocol !== "file:") document.write('<link rel="preload" href="vendor/rive-canvas-lite/rive.wasm" as="fetch" type="application/wasm" crossorigin>');</script>
 <link rel="preload" href="slate-assets/rivs.js" as="script">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
