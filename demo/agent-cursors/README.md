@@ -24,10 +24,12 @@ Then open `demo/agent-cursors/index.html`, straight from disk or through any loc
 - `slate-loader.js` ports Slate's `<c-preloader>` script. So the first second is never dead while the
   player loads, it draws the cursor itself from the first frame: it enters from the left with the
   exact path and speed of Slate's opening sweep (recorded from their animation), settles in the
-  middle and spins there, then, after a full turn, hands its position and speed to Slate's cursor. Everything runs through a soft, fully damped spring (`AgentCursor.smooth`), so the
+  middle and spins there. It never goes backward: Slate's own cursor stays hidden while it idles
+  and dives back to the left edge, and when the sweep comes in from the left the last turn is timed
+  to end just as the ribbons' tip reaches the cursor, which then leads them off to the right. Everything runs through a soft, fully damped spring (`AgentCursor.smooth`), so the
   motion flows like honey; it tightens during the opening sweep to stay on the ribbons' tip. The player (Rive's
   canvas-lite, as Slate uses for this loader) is preloaded in the background, and the site opens
-  as soon as it can, after at least 2.3s. `MonikaLoader.replay()` plays it again.
+  as soon as everything is in. `MonikaLoader.replay()` plays it again.
 - `monika.js` patches `CanvasRenderingContext2D.fill/stroke`. When the cursor's marker colour is
   painted, it skips Slate's cursor and draws this one with the same transform and colour, with the
   upright pill trailing on a spring. `CREW` and `FONT` at the top set the names and font; `data-monika-scale`

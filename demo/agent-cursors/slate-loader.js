@@ -6,8 +6,9 @@
 // No dead first second: until the animation player is in, this script draws the cursor itself
 // from the very first frame. It enters from the left with exactly the motion Slate's cursor has
 // when it sweeps in to open the site (recorded from it), reaches the middle and spins there
-// (a new colour and name each turn). After a spin it hands its position and speed to Slate's
-// cursor, which is pulled through a soft spring so its hops run like honey. During the opening sweep the spring
+// (a new colour and name each turn). It never goes backward: Slate's own cursor stays hidden
+// while it idles, spins and dives back to the left edge; when the opening sweep comes in from
+// the left and its tip reaches the cursor in the middle, the cursor joins it and leads it off. During the opening sweep the spring
 // tightens so the cursor rides the ribbons' tip.
 // MonikaLoader.replay() plays it again.
 (function () {
@@ -16,8 +17,8 @@
   const PLAY_DELAY = 150;
   const ENTRY_MS = 820;        // intro: enter from the left to the middle (Slate's sweep motion)
   const TURN_MS = 900;         // intro: one spin
-  const INTRO_MIN = ENTRY_MS + TURN_MS; // at least one full spin before Slate's cursor takes over
-  const MIN_IDLE = 2300;       // the loader shows at least this long, then opens as soon as it can
+  const SWEEP_ETA = 620;       // Slate's sweep takes about this long from the left edge to the cursor
+  const MIN_IDLE = 0;          // open as soon as everything is in: the intro covers the wait
   const GIVE_UP = 12000;       // if the animation never loads, fade to the page anyway
   const HONEY = 5;             // how runny the cursor is while loading (see AgentCursor.smooth)
   const TIGHT = 0.5;           // ...and during the opening sweep, so it stays on the ribbons' tip
@@ -113,7 +114,7 @@
       return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k];
     }
     const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-    let turnFrac = 0;
+    let turnFrac = 0, introTipX = 0, lastSlateX = null, slateDived = false, sweepAt = null, sweepFrom = null, sweepTo = null;
     function introPose(now) {
       const t = reduced.matches ? ENTRY_MS : now - started;
       const cx = W / 2 - 46 * unit, cy = H / 2 - 12 * unit; // tip spot that centres arrow + pill
@@ -123,20 +124,32 @@
         // the recorded path, from the left edge (where Slate's starts) to the middle spot
         const x = rx * cx, y = cy + ry * H;
         const settle = tau <= SPLIT ? 0 : ease((tau - SPLIT) / (1 - SPLIT));
+        introTipX = x;
         return { pose: poseAt(x, y, A_IN * (1 - settle), unit * (rs / 1.001)), variant: 1 };
       }
-      // spin in place about the arrow's middle, easing in and out of each turn
-      const turns = (t - ENTRY_MS) / TURN_MS;
+      // spin in place about the arrow's middle, easing in and out of each turn. Once the opening
+      // sweep starts in from the left, the turns are timed to end, upright, just as its tip
+      // reaches the cursor, so it never stands still
+      let turns = (t - ENTRY_MS) / TURN_MS;
+      if (sweepAt != null) {
+        if (sweepFrom == null) {
+          sweepFrom = Math.max(0, (sweepAt - started - ENTRY_MS) / TURN_MS);
+          sweepTo = Math.max(1, Math.ceil(sweepFrom + 0.35));
+        }
+        turns = sweepFrom + (sweepTo - sweepFrom) * Math.min(1, (now - sweepAt) / SWEEP_ETA);
+      }
       const n = Math.floor(turns);
       turnFrac = turns - n;
       const a = (n + ease(turnFrac)) * Math.PI * 2;
+      introTipX = cx;
       const c = poseAt(cx, cy, 0, unit).transformPoint(new DOMPoint(CENTER[0], CENTER[1]));
       const m = new DOMMatrix().translate(c.x, c.y).rotate((a * 180) / Math.PI).scale(unit).translate(-CENTER[0], -CENTER[1]);
-      return { pose: m, variant: 1 + (n % 4) }; // a new colour (and so a new name) each turn
+      return { pose: m, variant: 1 + (Math.min(n, sweepTo == null ? n : sweepTo - 1) % 4) }; // a new colour (and so a new name) each turn
     }
 
     AC.smooth = HONEY;
     rig.smooth = 0; // the intro follows its own path exactly
+    rig.pillK = 520; rig.pillZ = 0.8; // and its name pill keeps close, as in the original spin
     (function frame(now) {
       if (!introOn || dismissed) { ictx.clearRect(0, 0, W, H); return; }
       requestAnimationFrame(frame);
@@ -149,7 +162,7 @@
     // first sight of Slate's cursor: hand the intro cursor's state (where it is, how fast it is
     // moving, its name, colour and pill) to Slate's canvas; the honey spring carries it on from
     // exactly there toward Slate's cursor, so there is no seam
-    function handOver() {
+    function handOver(variant) {
       introOn = false;
       AC.hook = null;
       const rect = canvas.getBoundingClientRect();
@@ -159,18 +172,28 @@
         sx: rig.sm.sx * k, sy: rig.sm.sy * k, sxV: rig.sm.sxV * k, syV: rig.sm.syV * k,
       });
       AC.setRig(canvas, Object.assign(AC.newRig(), rig, {
-        sm, smooth: undefined, hsl: rig.hsl && rig.hsl.slice(),
+        sm, smooth: undefined, pillK: undefined, pillZ: undefined, hsl: rig.hsl && rig.hsl.slice(),
+        // keep the name it has; only the colour eases over to Slate's
+        v: Math.round(variant), seen: Math.round(variant), seenAt: performance.now(),
         px: (rig.px - ox) * k, py: (rig.py - oy) * k, pxV: (rig.pxV || 0) * k, pyV: (rig.pyV || 0) * k,
       }));
       ictx.clearRect(0, 0, W, H);
       intro.style.display = 'none';
     }
-    AC.hook = (cv) => {
+    AC.hook = (cv, pose, variant) => {
       if (cv !== canvas || !introOn) return true;
-      // let the entrance and a full spin play even when the animation loads instantly, and hand
-      // over at the end of a turn, when the cursor is upright and slow
-      if (performance.now() - started < INTRO_MIN || turnFrac > 0.05) return false;
-      handOver();
+      // hide Slate's cursor while it idles, spins and dives left; take over when the opening
+      // sweep's tip, coming in from the left, reaches the intro cursor in the middle
+      if (!root.classList.contains('is-revealing')) return false;
+      const rect = canvas.getBoundingClientRect(), k = rect.width / canvas.width;
+      const x = (pose.a * AC.TIP.x + pose.c * AC.TIP.y + pose.e) * k + rect.left;
+      // Slate's cursor first dives back to the left edge; only after that is it the sweep coming in
+      if (x < innerWidth * 0.08) slateDived = true;
+      const forward = lastSlateX != null && x > lastSlateX;
+      lastSlateX = x;
+      if (slateDived && forward && sweepAt == null) sweepAt = performance.now(); // the sweep has started
+      if (!slateDived || !forward || x * dpr < introTipX) return false;
+      handOver(variant);
       return true;
     };
 

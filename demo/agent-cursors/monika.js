@@ -162,8 +162,8 @@
       rig.px = tx; rig.py = ty; rig.pxV = rig.pyV = 0;
     } else {
       // honey: soft and fully damped, it flows after the tip and settles without a wobble
-      spring(rig, 'px', tx, 150, 1, dt);
-      spring(rig, 'py', ty, 150, 1, dt);
+      spring(rig, 'px', tx, rig.pillK || 150, rig.pillZ || 1, dt);
+      spring(rig, 'py', ty, rig.pillK || 150, rig.pillZ || 1, dt);
     }
 
     const w = PILL.w * s, h = PILL.h * s;
