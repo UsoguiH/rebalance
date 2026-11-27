@@ -16,6 +16,18 @@ Open `index.html` in a browser, or serve the folder:
 npx http-server -p 8080   # then visit http://localhost:8080
 ```
 
+### Loading screen
+
+The loading screen is Slate's own Rive animation (slateteams.com), played with the
+bundled Rive runtime in `vendor/rive/`. Slate's file is **not** in this repo: fetch it
+once on each machine with
+
+```sh
+node tools/fetch-slate-loader.js   # saves it to assets/slate/ (git-ignored)
+```
+
+Without it the game simply starts without the animation.
+
 ## The story
 
 Flickerton's Picture House hides Grandpa Tallow's **Lost Reels**: four cartoons that

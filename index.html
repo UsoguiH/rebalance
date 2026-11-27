@@ -14,13 +14,26 @@
   /* bigger cursors: a 48px inked crosshair over the game, a 40px arrow elsewhere */
   html { cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'> <path d='M3 3v28l7.5-6.5 5 11.2 5-2.2-5-11h10.5z' fill='%23fbf1d9' stroke='%231d1510' stroke-width='3' stroke-linejoin='round'/> </svg>") 3 3, auto; }
   canvas { display: block; background: var(--ink); image-rendering: auto; outline: none; cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'> <g fill='none' stroke-linecap='round'> <g stroke='%231d1510' stroke-width='7'><circle cx='24' cy='24' r='13'/><path d='M24 3v11M24 34v11M3 24h11M34 24h11'/></g> <g stroke='%23fbf1d9' stroke-width='3'><circle cx='24' cy='24' r='13'/><path d='M24 3v11M24 34v11M3 24h11M34 24h11'/></g> </g> <circle cx='24' cy='24' r='3.6' fill='%23d4392b' stroke='%231d1510' stroke-width='2'/> </svg>") 24 24, crosshair; }
-  #loader { position: fixed; inset: 0; z-index: 10; background: transparent; }
-  #loader canvas { position: absolute; inset: 0; width: 100%; height: 100%; background: none; cursor: inherit; }
+  /* Slate's preloader layout (slateteams.com), see js/loader.js */
+  .c-preloader { z-index: 300; position: fixed; inset: 0; overflow: hidden; }
+  .c-preloader.is-revealing { pointer-events: none; }
+  .c-preloader_placeholder { position: fixed; inset: 0; z-index: 300; background-color: rgb(12, 50, 79); }
+  .c-preloader.is-playing .c-preloader_placeholder { display: none; }
+  .c-preloader_stage { z-index: 0; width: 100%; position: absolute; top: 50%; left: 0; transform: translateY(-50%); }
+  .c-preloader_rive { width: 100%; height: auto; display: block; background: none; cursor: inherit; }
+  .c-preloader[data-orientation="portrait"] .c-preloader_stage { width: auto; height: 100%; top: 0; left: 50%; transform: translate(-50%); }
+  .c-preloader[data-orientation="portrait"] .c-preloader_rive { width: auto; height: 100%; }
 </style>
 </head>
 <body>
 <canvas id="screen" width="960" height="540" tabindex="0" aria-label="Wick and the Lost Reels game screen"></canvas>
-<div id="loader" role="progressbar" aria-label="Loading"><canvas></canvas></div>
+<div id="loader" class="c-preloader" data-orientation="landscape" role="progressbar" aria-label="Loading">
+  <div class="c-preloader_placeholder" aria-hidden="true"></div>
+  <div class="c-preloader_stage"><canvas class="c-preloader_rive"></canvas></div>
+</div>
+<script src="vendor/rive/rive.js"></script>
+<script src="vendor/rive/rive-wasm.js"></script>
+<script src="assets/slate/preloader.riv.js"></script>
 <script src="js/loader.js"></script>
 <script src="js/core.js"></script>
 <script src="js/ink.js"></script>
