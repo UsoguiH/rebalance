@@ -22,12 +22,12 @@ Then open `demo/agent-cursors/index.html`, straight from disk or through any loc
   its `cursor` artboard to marker colours, in place (only colour bytes change).
   `tools/rive-format.json` is the property table it needs, generated from Rive's MIT runtime headers.
 - `slate-loader.js` ports Slate's `<c-preloader>` script. So the first second is never dead while the
-  player loads, it draws the cursor itself from the first frame, flowing round a figure-eight in
-  the middle like a juggled ball, then hands its position and speed to Slate's cursor the moment
-  that appears. Everything runs through a soft, fully damped spring (`AgentCursor.smooth`), so the
+  player loads, it draws the cursor itself from the first frame, spinning in the middle like a
+  juggled club while it drifts round a small figure-eight, then (after at least 1.3s) hands its
+  position, turn and speed to Slate's cursor. Everything runs through a soft, fully damped spring (`AgentCursor.smooth`), so the
   motion flows like honey; it tightens during the opening sweep to stay on the ribbons' tip. The player (Rive's
   canvas-lite, as Slate uses for this loader) is preloaded in the background, and the site opens
-  as soon as it can, after at least 1.6s. `MonikaLoader.replay()` plays it again.
+  as soon as it can, after at least 2s. `MonikaLoader.replay()` plays it again.
 - `monika.js` patches `CanvasRenderingContext2D.fill/stroke`. When the cursor's marker colour is
   painted, it skips Slate's cursor and draws this one with the same transform and colour, with the
   upright pill trailing on a spring. `CREW` and `FONT` at the top set the names and font; `data-monika-scale`

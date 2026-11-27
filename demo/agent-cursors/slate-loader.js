@@ -4,8 +4,8 @@
 // "loaded" state (or after 3.25s, their fallback). Its cursor is drawn by monika.js.
 //
 // No dead first second: until the animation player is in, this script draws the cursor itself
-// from the very first frame, flowing round a figure-eight in the middle of the screen like a
-// juggled ball (a new colour and name at each crossing). Everything is pulled through a soft
+// from the very first frame, spinning in the middle of the screen like a juggled club while it
+// drifts round a small figure-eight (a new colour and name each turn). Everything is pulled through a soft
 // spring, so the motion runs like honey: the intro, the handover to Slate's cursor (which just
 // keeps the same position and speed) and Slate's own hops. During the opening sweep the spring
 // tightens so the cursor rides the ribbons' tip.
@@ -14,9 +14,11 @@
   'use strict';
   const REVEAL_TIMEOUT = 3250; // Slate's values
   const PLAY_DELAY = 150;
-  const MIN_IDLE = 1600;       // the loader shows at least this long, then opens as soon as it can
+  const MIN_IDLE = 2000;       // the loader shows at least this long, then opens as soon as it can
+  const INTRO_MIN = 1300;      // the spinning intro shows at least this long before Slate's cursor takes over
+  const SPIN_MS = 1100;        // intro: one full turn
   const GIVE_UP = 12000;       // if the animation never loads, fade to the page anyway
-  const LOOP_MS = 3400;        // intro: one figure-eight, like a juggling cascade
+  const LOOP_MS = 3400;        // intro: one small figure-eight, like a juggling cascade
   const HONEY = 5;             // how runny the cursor is while loading (see AgentCursor.smooth)
   const TIGHT = 0.5;           // ...and during the opening sweep, so it stays on the ribbons' tip
   const GROW = 2.6;            // matches data-monika-scale on the loader canvas
@@ -72,9 +74,8 @@
   // ---------------------------------------------------------------- pose helpers
   // a pose maps cursor units to canvas pixels: tip at (x, y), turned by a, scaled by s
   const poseAt = (x, y, a, s) => new DOMMatrix().translate(x, y).rotate((a * 180) / Math.PI).scale(s).translate(-AC.TIP.x, -AC.TIP.y);
-  // which way the arrow points in its own drawing (from its middle to its tip), to face its path
+  // the arrow's own middle, which it spins about
   const CENTER = AC.ARROW.reduce((c, p) => [c[0] + p[0] / AC.ARROW.length, c[1] + p[1] / AC.ARROW.length], [0, 0]);
-  const HEADING = Math.atan2(AC.TIP.y - CENTER[1], AC.TIP.x - CENTER[0]);
 
   // ---------------------------------------------------------------- one run
   function run(root) {
@@ -97,22 +98,20 @@
     };
     fitIntro();
 
-    // juggling: the tip flows round a figure-eight (a lemniscate) centred on the screen, starting
-    // from rest and easing up to speed, always facing the way it is going
+    // juggling: the arrow spins about its own middle, like a club in the air, while that middle
+    // drifts round a small figure-eight (a lemniscate) at the centre of the screen. Both start
+    // from rest and ease up to speed.
     const TAU = 0.45; // seconds to ease up to speed from a standstill
-    function phase(t) { const sec = t / 1000; return ((2 * Math.PI) / (LOOP_MS / 1000)) * (sec - TAU * (1 - Math.exp(-sec / TAU))); }
-    function tipAt(t) {
-      const cx = W / 2 - 46 * unit, cy = H / 2 - 12 * unit; // arrow + pill centred together
-      const A = Math.min(W, H) * 0.17, th = phase(t);
-      return { x: cx + A * Math.sin(th), y: cy + A * 0.55 * Math.sin(2 * th) };
-    }
+    const ramp = (t, periodMs) => { const sec = t / 1000; return ((2 * Math.PI) / (periodMs / 1000)) * (sec - TAU * (1 - Math.exp(-sec / TAU))); };
     function introPose(now) {
-      const t = now - started;
-      if (reduced.matches) { const c = tipAt(0); return { pose: poseAt(c.x, c.y, 0, unit), variant: 1 }; }
-      const p = tipAt(t), q = tipAt(t + 16);
-      const face = Math.hypot(q.x - p.x, q.y - p.y) > 0.01 ? Math.atan2(q.y - p.y, q.x - p.x) - HEADING : 0;
-      const n = Math.floor(phase(t) / Math.PI); // each time it crosses the middle
-      return { pose: poseAt(p.x, p.y, face, unit), variant: 1 + (n % 4) };
+      const t = reduced.matches ? 0 : now - started;
+      // centre the arrow and its name pill together
+      const mid = poseAt(W / 2 - 46 * unit, H / 2 - 12 * unit, 0, unit).transformPoint(new DOMPoint(CENTER[0], CENTER[1]));
+      const A = Math.min(W, H) * 0.08, th = ramp(t, LOOP_MS);
+      const cx = mid.x + A * Math.sin(th), cy = mid.y + A * 0.55 * Math.sin(2 * th);
+      const spin = ramp(t, SPIN_MS);
+      const pose = new DOMMatrix().translate(cx, cy).rotate((spin * 180) / Math.PI).scale(unit).translate(-CENTER[0], -CENTER[1]);
+      return { pose, variant: 1 + (Math.floor(spin / (2 * Math.PI)) % 4) }; // a new colour (and name) each turn
     }
 
     AC.smooth = HONEY;
@@ -145,7 +144,10 @@
       intro.style.display = 'none';
     }
     AC.hook = (cv) => {
-      if (cv === canvas && introOn) handOver();
+      if (cv !== canvas || !introOn) return true;
+      // let the spin play for a moment even when the animation loads instantly
+      if (performance.now() - started < INTRO_MIN) return false;
+      handOver();
       return true;
     };
 
