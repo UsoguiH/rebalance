@@ -1,6 +1,6 @@
 // The agent cursor (arrow + name pill) from the reference image, drawn in place of the cursor
 // in Slate's loading screen. Every time Slate's cursor changes colour, the name changes to the
-// next one in the list, each in its own, very different font.
+// next one in the list.
 //
 // How it works: the loader's Rive file is fetched with its cursor recoloured to "marker"
 // colours (tools/fetch-slate-assets.js). Rive's Canvas2D player paints every shape with a
@@ -11,27 +11,28 @@
 (function () {
   'use strict';
 
-  // a different name and a very different font at each colour change, women and men in turn
-  // (all Google Fonts, loaded in index.html). size/dy even out how big and how high each draws.
+  // a different name at each colour change, women and men in turn, all in one font
+  // (IBM Plex Sans Arabic from Google Fonts, loaded in index.html)
+  const FONT = '700 {px}px "IBM Plex Sans Arabic"';
   const CREW = [
-    { name: 'سارة', font: '700 {px}px "Aref Ruqaa"', size: 1.08, dy: 0.02 },             // ruqʿah
-    { name: 'فهد', font: '400 {px}px "Blaka"', size: 1.0, dy: 0.03 },                   // blackletter
-    { name: 'نورة', font: '700 {px}px "Lemonada"', size: 0.74, dy: 0.05 },               // bubbly round
-    { name: 'خالد', font: '400 {px}px "Jomhuria"', size: 1.75, dy: 0.06 },               // ultra heavy
-    { name: 'ليان', font: '400 {px}px "Gulzar"', size: 0.82, dy: -0.02 },                 // nastaʿlīq
-    { name: 'محمد', font: '700 {px}px "Handjet"', size: 1.25, dy: -0.09 },                // pixel
-    { name: 'رهف', font: '700 {px}px "Marhey"', size: 0.88, dy: -0.04 },                  // playful
-    { name: 'سعود', font: '700 {px}px "Reem Kufi"', size: 0.95, dy: -0.03 },              // geometric kufi
-    { name: 'جود', font: '400 {px}px "Vibes"', size: 1.35, dy: 0.0 },                   // script
-    { name: 'ناصر', font: '400 {px}px "Lalezar"', size: 0.95, dy: 0.05 },                // heavy display
-    { name: 'ريم', font: '400 {px}px "Katibeh"', size: 1.2, dy: -0.13 },                 // calligraphic display
-    { name: 'تركي', font: '700 {px}px "Amiri"', size: 1.0, dy: -0.06 },                 // classic naskh
-    { name: 'هيا', font: '700 {px}px "Playpen Sans Arabic"', size: 0.76, dy: 0.06 },     // handwriting
-    { name: 'ماجد', font: '400 {px}px "Rakkas"', size: 0.95, dy: 0.03 },                 // decorative
+    { name: 'سارة', font: FONT, size: 0.86, dy: 0 },
+    { name: 'فهد', font: FONT, size: 0.86, dy: 0 },
+    { name: 'نورة', font: FONT, size: 0.86, dy: 0 },
+    { name: 'خالد', font: FONT, size: 0.86, dy: 0 },
+    { name: 'ليان', font: FONT, size: 0.86, dy: 0 },
+    { name: 'محمد', font: FONT, size: 0.86, dy: 0 },
+    { name: 'رهف', font: FONT, size: 0.86, dy: 0 },
+    { name: 'سعود', font: FONT, size: 0.86, dy: 0 },
+    { name: 'جود', font: FONT, size: 0.86, dy: 0 },
+    { name: 'ناصر', font: FONT, size: 0.86, dy: 0 },
+    { name: 'ريم', font: FONT, size: 0.86, dy: 0 },
+    { name: 'تركي', font: FONT, size: 0.86, dy: 0 },
+    { name: 'هيا', font: FONT, size: 0.86, dy: 0 },
+    { name: 'ماجد', font: FONT, size: 0.86, dy: 0 },
   ];
-  const FALLBACK = ', "Tajawal", "Segoe UI", Tahoma, sans-serif';
-  // ask the browser for every font up front, so each one is ready when its turn comes
-  if (document.fonts) for (const c of CREW) document.fonts.load(c.font.replace('{px}', '40'), c.name).catch(() => {});
+  const FALLBACK = ', "Segoe UI", Tahoma, sans-serif';
+  // ask the browser for the font up front, with every name's letters, so it is ready at once
+  if (document.fonts) document.fonts.load(FONT.replace('{px}', '40'), CREW.map((c) => c.name).join('')).catch(() => {});
   const TEXT = '#ffffff';
 
   // Geometry, measured from the reference image (1536 x 1024: arrow tip at 403,305, arrow
