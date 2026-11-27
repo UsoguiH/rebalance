@@ -3,19 +3,19 @@
 // then plays the ribbon reveal; the overlay goes once the state machine reaches its
 // "loaded" state (or after 3.25s, their fallback). Its cursor is drawn by monika.js.
 //
-// No dead first second: the animation player is ~3 MB, so before it is ready this script draws
-// the cursor itself from the very first frame. It glides to the middle of the screen and spins
-// like a loading spinner, changing name and colour each turn. The moment Slate's cursor first
-// appears, the intro cursor glides into it and hands over, so there is never a jump or a pause.
-// MonikaLoader.replay() plays it all again.
+// No dead first second: until the animation player is in, this script draws the cursor itself
+// from the very first frame, hopping around the middle of the screen the way Slate's cursor
+// does (a new colour and name each hop). The moment Slate's cursor appears, the intro cursor
+// glides into it and hands over, so it all reads as one loading screen from the first frame.
+// MonikaLoader.replay() plays it again.
 (function () {
   'use strict';
   const REVEAL_TIMEOUT = 3250; // Slate's values
   const PLAY_DELAY = 150;
-  const MIN_IDLE = 5200;       // long enough to see several names before the reveal
+  const MIN_IDLE = 1600;       // the loader shows at least this long, then opens as soon as it can
   const GIVE_UP = 12000;       // if the animation never loads, fade to the page anyway
-  const GLIDE_MS = 520;        // intro: glide to the middle
-  const TURN_MS = 900;         // intro: one spin
+  const HOP_MS = [380, 520];   // intro: one hop takes this long (random in the range)
+  const HOP_PAUSE = 90;        // intro: rest between hops
   const HANDOFF_MS = 420;      // intro cursor -> Slate's cursor
   const GROW = 2.6;            // matches data-monika-scale on the loader canvas
   const portrait = matchMedia('(orientation: portrait)');
@@ -43,10 +43,10 @@
         if (!R) return rej(new Error('Rive player missing'));
         R.Rive.suppressDeprecationWarnings = ['state-change-events'];
         if (window.RIVE_WASM_URL_OVERRIDE) { R.RuntimeLoader.setWasmUrl(window.RIVE_WASM_URL_OVERRIDE); return res(R); }
-        if (location.protocol !== 'file:') { R.RuntimeLoader.setWasmUrl(new URL('vendor/rive-canvas/rive.wasm', location.href).href); return res(R); }
+        if (location.protocol !== 'file:') { R.RuntimeLoader.setWasmUrl(new URL('vendor/rive-canvas-lite/rive.wasm', location.href).href); return res(R); }
         // opened straight from disk: the browser will not fetch the .wasm, so use the inlined copy
         const s = document.createElement('script');
-        s.src = 'vendor/rive-canvas/rive-wasm.js';
+        s.src = 'vendor/rive-canvas-lite/rive-wasm.js';
         s.onload = () => { R.RuntimeLoader.setWasmUrl(window.RIVE_CANVAS_WASM_URL); res(R); };
         s.onerror = () => rej(new Error('rive-wasm.js missing'));
         document.head.appendChild(s);
@@ -78,8 +78,9 @@
   const easeOut = (t) => 1 - Math.pow(1 - t, 3);
   const lerp = (a, b, t) => a + (b - a) * t;
   const lerpAngle = (a, b, t) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
-  // the arrow spins around its own middle, not its tip
+  // which way the arrow points in its own drawing (from its middle to its tip), to face its hops
   const CENTER = AC.ARROW.reduce((c, p) => [c[0] + p[0] / AC.ARROW.length, c[1] + p[1] / AC.ARROW.length], [0, 0]);
+  const HEADING = Math.atan2(AC.TIP.y - CENTER[1], AC.TIP.x - CENTER[0]);
 
   // ---------------------------------------------------------------- one run
   function run(root) {
@@ -102,23 +103,23 @@
     };
     fitIntro();
 
+    // Slate-style hopping: glide from spot to spot near the middle, turning to face each hop
+    const hop = { from: null, to: null, at: started, dur: 450, variant: 1, angle: 0 };
+    const spot = () => ({ x: W * (0.36 + Math.random() * 0.28), y: H * (0.36 + Math.random() * 0.24) });
     function introPose(now) {
-      const t = now - started;
-      // tip sits left of the middle so the arrow and its name pill are centred together
-      const cx = W / 2 - 46 * unit, cy = H / 2 - 12 * unit;
-      if (reduced.matches) return { pose: poseAt(cx, cy, 0, unit), variant: 1 };
-      if (t < GLIDE_MS) {
-        const k = easeOut(t / GLIDE_MS);
-        const x = lerp(-0.08 * W, cx, k), y = lerp(H * 0.78, cy, k) - Math.sin(k * Math.PI) * H * 0.08;
-        return { pose: poseAt(x, y, lerp(-0.9, 0, k), unit * lerp(0.7, 1, k)), variant: 1 };
+      if (!hop.from) { hop.from = { x: W * 0.46, y: H * 0.46 }; hop.to = spot(); hop.angle = Math.atan2(hop.to.y - hop.from.y, hop.to.x - hop.from.x) - HEADING; }
+      if (reduced.matches) return { pose: poseAt(W * 0.46, H * 0.46, 0, unit), variant: 1 };
+      let k = (now - hop.at) / hop.dur;
+      if (k > 1 + HOP_PAUSE / hop.dur) {
+        hop.from = hop.to; hop.to = spot(); hop.at = now; k = 0;
+        hop.dur = HOP_MS[0] + Math.random() * (HOP_MS[1] - HOP_MS[0]);
+        hop.variant = (hop.variant % 4) + 1; // a new colour (and so a new name) each hop
       }
-      const turns = (t - GLIDE_MS) / TURN_MS;
-      const n = Math.floor(turns);
-      const a = (n + ease(turns - n)) * Math.PI * 2;
-      // spin about the arrow's middle: that middle stays put, the tip orbits it
-      const c = poseAt(cx, cy, 0, unit).transformPoint(new DOMPoint(CENTER[0], CENTER[1]));
-      const m = new DOMMatrix().translate(c.x, c.y).rotate((a * 180) / Math.PI).scale(unit).translate(-CENTER[0], -CENTER[1]);
-      return { pose: m, variant: 1 + (n % 4) }; // a new colour (and so a new name) each turn
+      const e = ease(Math.min(1, k));
+      const x = lerp(hop.from.x, hop.to.x, e), y = lerp(hop.from.y, hop.to.y, e);
+      const face = Math.atan2(hop.to.y - hop.from.y, hop.to.x - hop.from.x) - HEADING;
+      hop.angle = lerpAngle(hop.angle, face, 0.18);
+      return { pose: poseAt(x, y, hop.angle, unit), variant: hop.variant };
     }
 
     (function frame(now) {
