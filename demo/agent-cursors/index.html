@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monika Agent Cursors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;700&display=swap">
+<style>
+  /* Layout: a dark control-room header, then each Slate scene on its own light stage, ending on Slate's dark footer scene. */
+  :root {
+    --breakpoint-sm: 700px;
+    --breakpoint-md: 1000px;
+    --night: #05070d;
+    --night-2: #0b1220;
+    --stage: #f5f5f4;       /* Slate's scene ground */
+    --stage-ink: #0c2e4a;
+    --panel: #e6e6e3;
+    --muted: #6d7480;
+    --glow: #0a84ff;
+    --forest: #0d2e30;      /* Slate's footer scene ground */
+    --display: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
+    --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --gutter: max(16px, env(safe-area-inset-left, 0px));
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--stage); color: var(--stage-ink); font-family: var(--body); }
+  html.monika-cursor, html.monika-cursor * { cursor: none !important; }
+  img, video { max-width: 100%; }
+  .invisible { visibility: hidden; }
+  .wrap { width: min(1209px, 100%); margin: 0 auto; padding-left: var(--gutter); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+  /* ---------------- header */
+  .top { background: radial-gradient(1100px 520px at 70% 10%, #0b2a55 0%, var(--night) 62%); color: #eaf2ff; padding-block: 72px 88px; overflow: hidden; }
+  .top .wrap { display: grid; gap: 28px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; }
+  @media (max-width: 860px) { .top .wrap { grid-template-columns: minmax(0, 1fr); } }
+  .eyebrow { font: 500 13px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: #8fb6ff; margin: 0 0 18px; }
+  h1 { font-family: var(--display); font-weight: 700; font-size: clamp(44px, 7vw, 86px); line-height: .95; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+  h1 em { font-style: normal; color: #fff; text-shadow: 0 0 28px rgba(10,132,255,.9), 0 0 6px rgba(10,132,255,.9); }
+  .lede { font-size: 18px; line-height: 1.55; color: #b8c6dc; max-width: 52ch; margin: 22px 0 0; }
+  .crew { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; padding: 0; list-style: none; }
+  .crew li { font: 700 14px/1 var(--body); color: #fff; padding: 9px 14px; border-radius: 999px; background: var(--c); box-shadow: 0 0 18px var(--c); }
+  .hint { margin-top: 26px; font-size: 14px; color: #7f8ea8; }
+  .portrait { position: relative; aspect-ratio: 1536 / 1024; max-width: 100%; }
+  .portrait canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* ---------------- scenes */
+  .scene { padding-block: 96px 40px; }
+  .scene + .scene { padding-top: 56px; }
+  .scene-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; margin-bottom: 28px; }
+  h2 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 4vw, 46px); letter-spacing: -.015em; line-height: 1; margin: 0; text-wrap: balance; }
+  .scene-head p { margin: 0; color: var(--muted); max-width: 46ch; font-size: 16px; line-height: 1.5; }
+  .who { font-size: 13px; color: var(--muted); margin-top: 18px; }
+  c-rive, c-rive-collaborate, c-rive-move-resize-rotate, c-rive-image-dragger, c-rive-cursor-magic, c-inline-video { display: block; }
+  c-rive { position: relative; }
+  c-rive canvas { display: block; width: 100%; height: 100%; }
+  .rive-missing { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; font: 500 14px/1.4 var(--body); color: var(--muted); background: rgba(0,0,0,.03); border-radius: 18px; }
+
+  /* collaborate: Slate's grid is phases panel 331 + gap + board 770 */
+  .collab-stage { display: grid; grid-template-columns: minmax(0, 331fr) minmax(0, 770fr); gap: 0 108px; align-items: start; }
+  .collab-stage [data-collaborate-ui] c-rive { aspect-ratio: 331 / 682; }
+  .collab-stage .board c-rive { aspect-ratio: 818 / 727; }
+  @media (width < 1000px) { .collab-stage { grid-template-columns: minmax(0, 1fr); } .collab-stage [data-collaborate-ui] { display: none; } .collab-stage .board c-rive { aspect-ratio: 350 / 427; } }
+
+  /* move / resize / rotate */
+  .mrr { display: grid; grid-template-columns: minmax(0, 595fr) minmax(0, 298fr); gap: 32px 316px; align-items: center; }
+  .mrr-stage { position: relative; aspect-ratio: 726 / 563; border-radius: 18px; overflow: hidden; }
+  .mrr-stage [data-mrr-image-layer] { position: absolute; inset: 0; }
+  .mrr-stage [data-mrr-image-layer] img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mrr-stage c-rive { position: absolute; inset: 0; }
+  .mrr-tools { display: flex; flex-direction: column; gap: 8px; background: var(--panel); border-radius: 35px; padding: 18px; }
+  .mrr-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; background: #f5f5f4; border-radius: 24px; padding: 14px; }
+  .mrr-row button { aspect-ratio: 1; border: 0; border-radius: 12px; padding: 0; background: #fff; font: 700 22px/1 var(--body); color: var(--stage-ink); overflow: hidden; transition: transform .2s; }
+  .mrr-row button:hover { transform: scale(1.05); }
+  .mrr-row button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--stage-ink); }
+  .mrr-row button:focus-visible { outline: 3px solid var(--glow); outline-offset: 3px; }
+  .mrr-row img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  @media (width < 1000px) { .mrr { grid-template-columns: minmax(0, 1fr); } .mrr-tools { max-width: 360px; } }
+  @media (width < 700px) { .mrr-stage { aspect-ratio: 1; } }
+
+  /* image dragger: dragger canvas spans the stage, left panel sits at its lower left */
+  .drag-stage { position: relative; aspect-ratio: 1265 / 641; }
+  .drag-panel { position: absolute; left: 0; bottom: 0; width: 49.2%; aspect-ratio: 595 / 466; border-radius: 18px; overflow: hidden; }
+  .drag-panel [data-image-dragger-image] { position: absolute; inset: 0; }
+  .drag-panel c-inline-video { position: absolute; inset: 0; }
+  .drag-panel video, .drag-panel c-inline-video img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .drag-panel c-rive { position: absolute; inset: 0; }
+  .drag-over { position: absolute; inset: 0; pointer-events: none; }
+  .drag-over c-rive { width: 100%; height: 100%; }
+  .layers { position: absolute; right: 0; bottom: 6%; width: 25%; min-width: 220px; background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 40px rgba(12,46,74,.08); font-size: 14px; }
+  .layers header { display: flex; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #e6e6e3; font-weight: 500; }
+  .layers header span:last-child { color: var(--muted); font-size: 13px; }
+  .layers [data-image-dragger-hover] { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #f0f0ee; transition: background .2s; }
+  .layers [data-image-dragger-hover][data-hover] { background: #eef5ff; }
+  .layers i { width: 28px; height: 28px; border-radius: 6px; background: var(--t); flex: none; }
+  @media (width < 700px) {
+    .drag-stage { aspect-ratio: 188 / 320; }
+    .drag-panel { width: 100%; aspect-ratio: 335 / 368; }
+    .layers { display: none; }
+  }
+
+  /* cursor magic footer */
+  .magic { position: relative; background: var(--forest); color: #fff; height: 830px; overflow: hidden; }
+  .magic c-rive { position: absolute; inset: 0; }
+  .magic-copy { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 22px; pointer-events: none; padding-inline: var(--gutter); }
+  .magic h2 { color: #fff; font-size: clamp(36px, 4.4vw, 56px); max-width: 14ch; }
+  .magic p { margin: 0; color: #b7d1cc; max-width: 40ch; }
+  .magic a { pointer-events: auto; display: inline-block; font: 700 16px/1 var(--body); color: #0d2e30; background: #38e07b; padding: 18px 26px; border-radius: 999px; text-decoration: none; }
+  @media (width < 1000px) { .magic { height: 592px; } }
+
+  footer.credit { background: var(--forest); color: #7fa39d; font-size: 13px; text-align: center; padding: 0 16px 28px; }
+</style>
+</head>
+<body>
+
+<section class="top">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Agent cursors</p>
+      <h1>Meet <em>Monika</em>, your on-screen agent.</h1>
+      <p class="lede">Slate's interactive scenes, played from their own animation files, with every cursor swapped for Monika's glowing rig. Move your mouse: your cursor is Monika too.</p>
+      <ul class="crew" aria-label="Cursor colours">
+        <li style="--c:#0a84ff">Monika</li>
+        <li style="--c:#00b72b">Jonas</li>
+        <li style="--c:#fa5d1e">Ava</li>
+        <li style="--c:#b06df5">Leo</li>
+        <li style="--c:#ff5c8a">Noor</li>
+      </ul>
+      <p class="hint">Scroll down to watch them work.</p>
+    </div>
+    <div class="portrait" aria-hidden="true"><canvas id="portrait"></canvas></div>
+  </div>
+</section>
+
+<section class="scene">
+  <div class="wrap">
+    <div class="scene-head">
+      <h2>Collaborate</h2>
+      <p>Three teammates rearrange a headline, leave comments and move it through review.</p>
+    </div>
+    <c-rive-collaborate>
+      <div class="collab-stage" data-collaborate-stage>
+        <div data-collaborate-ui>
+          <c-rive data-rive="collaborate" data-artboard="collaborate-phases-ui" data-state-machine="collaborate-phases-ui" data-mobile-breakpoint="md" data-root-margin="200px" data-fit="contain" data-autoplay="true" data-auto-bind="true"><canvas></canvas></c-rive>
+        </div>
+        <div class="board">
+          <c-rive data-rive="collaborate" data-artboard="collaborate" data-artboard-mobile="mobile_collaborate" data-state-machine="collaborate" data-state-machine-mobile="mobile_collaborate" data-mobile-breakpoint="md" data-root-margin="200px" data-fit="contain" data-autoplay="true" data-auto-bind="true"><canvas></canvas></c-rive>
+        </div>
+      </div>
+    </c-rive-collaborate>
+  </div>
+</section>
+
+<section class="scene">
+  <div class="wrap">
+    <div class="scene-head">
+      <h2>Move, resize, rotate</h2>
+      <p>Ava drags the layers into place. Pick a colour, typeface or backdrop and she works with it.</p>
+    </div>
+    <c-rive-move-resize-rotate>
+      <div class="mrr">
+        <div class="mrr-stage" data-mrr-stage>
+          <div data-mrr-image-layer><img src="slate-assets/mrr-1.png" alt=""></div>
+          <div data-mrr-image-layer><img src="slate-assets/mrr-2.png" alt=""></div>
+          <div data-mrr-image-layer><img src="slate-assets/mrr-3.png" alt=""></div>
+          <c-rive data-rive="move-resize-rotate" data-artboard="move-resize-rotate" data-artboard-mobile="mobile_move-resize-rotate" data-state-machine="move-resize-rotate" data-state-machine-mobile="mobile_move-resize-rotate" data-mobile-breakpoint="sm" data-root-margin="200px" data-fit="contain" data-autoplay="true" data-auto-bind="true"><canvas></canvas></c-rive>
+        </div>
+        <div class="mrr-tools">
+          <div class="mrr-row">
+            <button type="button" data-mrr-color="#F8ED34" aria-pressed="true" aria-label="Yellow" style="background:#F8ED34"></button>
+            <button type="button" data-mrr-color="#22FFB5" aria-pressed="false" aria-label="Mint" style="background:#22FFB5"></button>
+            <button type="button" data-mrr-color="#FF91FB" aria-pressed="false" aria-label="Pink" style="background:#FF91FB"></button>
+          </div>
+          <div class="mrr-row">
+            <button type="button" data-mrr-typeface="1" aria-pressed="true" aria-label="Bold sans-serif" style="font-family:Inter;font-weight:800">Aa</button>
+            <button type="button" data-mrr-typeface="2" aria-pressed="false" aria-label="Condensed display" style="font-family:'Bricolage Grotesque';font-stretch:condensed;letter-spacing:-.06em">Aa</button>
+            <button type="button" data-mrr-typeface="3" aria-pressed="false" aria-label="Rounded sans-serif" style="font-family:ui-rounded,'SF Pro Rounded',Inter;font-weight:700">Aa</button>
+          </div>
+          <div class="mrr-row">
+            <button type="button" data-mrr-image="0" aria-pressed="true" aria-label="Backdrop 1"><img src="slate-assets/mrr-1.png" alt=""></button>
+            <button type="button" data-mrr-image="1" aria-pressed="false" aria-label="Backdrop 2"><img src="slate-assets/mrr-2.png" alt=""></button>
+            <button type="button" data-mrr-image="2" aria-pressed="false" aria-label="Backdrop 3"><img src="slate-assets/mrr-3.png" alt=""></button>
+          </div>
+        </div>
+      </div>
+    </c-rive-move-resize-rotate>
+  </div>
+</section>
+
+<section class="scene">
+  <div class="wrap">
+    <div class="scene-head">
+      <h2>Drag and drop</h2>
+      <p>Noor drops a clip into a locked template; hover the layers to point at them.</p>
+    </div>
+    <c-rive-image-dragger>
+      <div class="drag-stage" data-image-dragger-stage>
+        <div class="drag-panel">
+          <div data-image-dragger-image class="invisible">
+            <c-inline-video><img src="slate-assets/dragger.jpg" alt=""><video src="slate-assets/dragger.mp4" muted loop playsinline preload="auto"></video></c-inline-video>
+          </div>
+          <c-rive data-rive="img-video-draggers" data-artboard="image-dragger_left-panel" data-artboard-mobile="mobile_image-dragger_left-panel" data-state-machine="image-dragger_left-panel" data-state-machine-mobile="mobile_image-dragger_left-panel" data-mobile-breakpoint="sm" data-root-margin="100%" data-fit="contain" data-autoplay="true" data-auto-bind="true"><canvas></canvas></c-rive>
+        </div>
+        <div class="layers" aria-label="Layers">
+          <header><span>Layers</span><span>Show warning</span></header>
+          <div data-image-dragger-hover="txt1"><i style="--t:#ffd9e6"></i>Mana Yerba Mate</div>
+          <div data-image-dragger-hover="txt2"><i style="--t:#ffe9c7"></i>Tropical Blast</div>
+          <div data-image-dragger-hover="illustration1"><i style="--t:#ff9ec4"></i>Flamingo</div>
+          <div data-image-dragger-hover="illustration2"><i style="--t:#ffc46b"></i>Tiger</div>
+          <div data-image-dragger-hover="logo"><i style="--t:#e9475f"></i>Logo</div>
+        </div>
+        <div class="drag-over">
+          <c-rive data-rive="img-video-draggers" data-artboard="image-dragger_dragger" data-artboard-mobile="mobile_image-dragger_dragger" data-state-machine="image-dragger_dragger" data-state-machine-mobile="mobile_image-dragger_dragger" data-mobile-breakpoint="sm" data-root-margin="100%" data-fit="contain" data-autoplay="true" data-auto-bind="true"><canvas></canvas></c-rive>
+        </div>
+      </div>
+    </c-rive-image-dragger>
+  </div>
+</section>
+
+<c-rive-cursor-magic class="magic">
+  <c-rive data-rive="cursor-magic" data-artboard="footer-cta" data-state-machine="footer-cta" data-mobile-breakpoint="md" data-root-margin="200px" data-fit="layout" data-alignment="topCenter" data-autoplay="true" data-auto-bind="true"><canvas></canvas></c-rive>
+  <div class="magic-copy">
+    <h2>Bring the whole crew along.</h2>
+    <p>Move into this panel and the team gathers round your cursor. Hover the button to see them cheer.</p>
+    <div data-cursor-magic-cta><a href="#top-of-page" onclick="scrollTo({top:0,behavior:'smooth'});return false">Back to the top</a></div>
+  </div>
+</c-rive-cursor-magic>
+<footer class="credit">Animations and media by Slate (slateteams.com), for private preview only. Monika cursor rig by this project.</footer>
+
+<script src="monika.js"></script>
+<script src="vendor/rive-canvas/rive.js"></script>
+<script src="vendor/rive-canvas/rive-wasm.js"></script>
+<script src="slate-assets/rivs.js" onerror="void 0"></script>
+<script>
+  rive.RuntimeLoader.setWasmUrl(window.RIVE_CANVAS_WASM_URL);
+</script>
+<script src="slate-scenes.js"></script>
+<script>
+  // your own pointer becomes Monika, except where Slate's footer draws its own cursor for you
+  MonikaCursor.page({ hideWhen: '[data-user-cursor-active]' });
+  MonikaCursor.portrait(document.getElementById('portrait'));
+</script>
+</body>
+</html>

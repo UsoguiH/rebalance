@@ -2,3 +2,6 @@ node_modules/
 .DS_Store
 # Slate's loader animation: their file, fetched locally by tools/fetch-slate-loader.js, never committed
 assets/slate/
+
+# Slate demo assets: their files, fetched locally by demo/agent-cursors/tools/fetch-slate-assets.js, never committed
+demo/agent-cursors/slate-assets/
