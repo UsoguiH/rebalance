@@ -21,10 +21,14 @@ Then open `demo/agent-cursors/index.html`, straight from disk or through any loc
 - `tools/fetch-slate-assets.js` downloads the loader, turns its navy ground black, and recolours
   its `cursor` artboard to marker colours, in place (only colour bytes change).
   `tools/rive-format.json` is the property table it needs, generated from Rive's MIT runtime headers.
-- `slate-loader.js` ports Slate's `<c-preloader>` script; `MonikaLoader.replay()` plays it again.
+- `slate-loader.js` ports Slate's `<c-preloader>` script. So the first second is never dead while the
+  ~3 MB player loads, it draws the cursor itself from the first frame (glides to the middle,
+  spins, changes name and colour each turn), then glides it into Slate's cursor the moment that
+  appears. The player and the font load in the background. `MonikaLoader.replay()` plays it again.
 - `monika.js` patches `CanvasRenderingContext2D.fill/stroke`. When the cursor's marker colour is
   painted, it skips Slate's cursor and draws this one with the same transform and colour, with the
   upright pill trailing on a spring. `CREW` and `FONT` at the top set the names and font; `data-monika-scale`
   on the canvas sets the size (2.6 on the loader).
 
-`vendor/rive-canvas/` is `@rive-app/canvas` 2.45.0 (MIT).
+`vendor/rive-canvas/` is `@rive-app/canvas` 2.45.0 (MIT): `rive.wasm` for served pages, `rive-wasm.js`
+(the same, inlined) for opening the page from disk.

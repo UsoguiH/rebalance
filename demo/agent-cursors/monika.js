@@ -79,7 +79,14 @@
 
   // Slate's cursor colours by marker index (see tools/fetch-slate-assets.js); 1 is the blue
   const COLORS = { 1: [10, 132, 255], 2: [0, 183, 43], 3: [250, 93, 30], 4: [200, 138, 250], 5: [255, 103, 145], 6: [10, 132, 255] };
-  const css = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+  function toHsl([r, g, b]) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
+    if (!d) return [0, 0, l * 100];
+    const sat = d / (1 - Math.abs(2 * l - 1));
+    const h = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, sat * 100, l * 100];
+  }
 
   // draw the cursor. pose maps Slate cursor space to canvas pixels, so the arrow turns and
   // flips exactly like Slate's; the pill stays upright beside the tip so the name reads.
@@ -98,15 +105,25 @@
     if (rig.who == null) { rig.who = (lastWho + 1) % CREW.length; lastWho = rig.who; }
     if (fresh) { rig.v = v; rig.seen = v; rig.seenAt = now; }
     if (v !== rig.seen) { rig.seen = v; rig.seenAt = now; }
-    if (rig.seen !== rig.v && now - rig.seenAt > 70) {
+    // Slate blends through other colours on its way (green -> orange -> purple), so a colour
+    // only counts once it holds for a moment; then the name and the fade both follow it
+    if (rig.seen !== rig.v && now - rig.seenAt > 120) {
       rig.v = rig.seen;
       rig.who = (rig.who + 1) % CREW.length;
       lastWho = rig.who;
     }
-    const target = COLORS[v] || COLORS[1];
-    if (fresh || !rig.color) rig.color = target.slice();
-    else for (let i = 0; i < 3; i++) rig.color[i] += (target[i] - rig.color[i]) * Math.min(1, dt * 18);
-    const fill = css(rig.color);
+    const target = COLORS[rig.v] || COLORS[1];
+    // fade colours around the colour wheel, so green -> purple stays bright instead of going brown
+    const goal = toHsl(target);
+    if (fresh || !rig.hsl) rig.hsl = goal.slice();
+    else {
+      const k = Math.min(1, dt * 14);
+      rig.hsl[0] += (((goal[0] - rig.hsl[0] + 540) % 360) - 180) * k;
+      rig.hsl[1] += (goal[1] - rig.hsl[1]) * k;
+      rig.hsl[2] += (goal[2] - rig.hsl[2]) * k;
+    }
+    rig.color = target;
+    const fill = `hsl(${(((rig.hsl[0] % 360) + 360) % 360).toFixed(1)} ${rig.hsl[1].toFixed(1)}% ${rig.hsl[2].toFixed(1)}%)`;
 
     // pill trails the tip on a spring
     const tx = tipX + PILL.dx * s, ty = tipY + PILL.dy * s;
@@ -167,6 +184,9 @@
     // data-monika-scale on the canvas draws it bigger, grown around the arrow tip
     const grow = parseFloat(this.canvas.dataset && this.canvas.dataset.monikaScale) || 1;
     if (grow !== 1) pose = pose.multiply(new DOMMatrix().translate(TIP.x, TIP.y).scale(grow).translate(-TIP.x, -TIP.y));
+    // a page can watch Slate's cursor (and hide it, by returning false) through AgentCursor.hook;
+    // the loader uses it to hand its own intro cursor over to Slate's without a jump
+    if (AC.hook && AC.hook(this.canvas, pose, mk.b) === false) return;
     let rig = rigs.get(this.canvas);
     if (!rig) rigs.set(this.canvas, (rig = { t: 0, px: 0, py: 0 }));
     draw(this, rig, pose, mk.a, mk.b, performance.now());
@@ -176,5 +196,9 @@
     return nativeStroke.apply(this, arguments);
   };
 
-  window.AgentCursor = { CREW, draw };
+  const AC = (window.AgentCursor = {
+    CREW, TIP, ARROW, draw, hook: null,
+    newRig: () => ({ t: 0, px: 0, py: 0 }),
+    setRig: (canvas, rig) => rigs.set(canvas, rig),
+  });
 })();
