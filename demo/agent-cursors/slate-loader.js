@@ -8,7 +8,7 @@
   const R = window.rive;
   const REVEAL_TIMEOUT = 3250; // Slate's values
   const PLAY_DELAY = 150;
-  const MIN_IDLE = 2600; // let Monika fly around for a moment before the reveal
+  const MIN_IDLE = 5200; // long enough to meet several of the crew before the reveal
   const portrait = matchMedia('(orientation: portrait)');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
