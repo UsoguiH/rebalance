@@ -8,7 +8,8 @@
 // when it sweeps in to open the site (recorded from it), reaches the middle and spins there
 // (a new colour and name each turn). It never goes backward: Slate's own cursor stays hidden
 // while it idles, spins and dives back to the left edge; when the opening sweep comes in from
-// the left and its tip reaches the cursor in the middle, the cursor joins it and leads it off. During the opening sweep the spring
+// its edge (the left, or the top on a phone) and its tip reaches the cursor, the cursor joins it
+// and leads it off. During the opening sweep the spring
 // tightens so the cursor rides the ribbons' tip.
 // MonikaLoader.replay() plays it again.
 (function () {
@@ -114,7 +115,7 @@
       return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k];
     }
     const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-    let turnFrac = 0, introTipX = 0, lastSlateX = null, slateDived = false, sweepAt = null, sweepFrom = null, sweepTo = null;
+    let turnFrac = 0, introTipX = 0, introTipY = 0, lastSlateAlong = null, slateCross = null, slateDived = false, sweepAt = null, sweepFrom = null, sweepTo = null, revealAt = null;
     function introPose(now) {
       const t = reduced.matches ? ENTRY_MS : now - started;
       const cx = W / 2 - 46 * unit, cy = H / 2 - 12 * unit; // tip spot that centres arrow + pill
@@ -124,7 +125,7 @@
         // the recorded path, from the left edge (where Slate's starts) to the middle spot
         const x = rx * cx, y = cy + ry * H;
         const settle = tau <= SPLIT ? 0 : ease((tau - SPLIT) / (1 - SPLIT));
-        introTipX = x;
+        introTipX = x; introTipY = y;
         return { pose: poseAt(x, y, A_IN * (1 - settle), unit * (rs / 1.001)), variant: 1 };
       }
       // spin in place about the arrow's middle, easing in and out of each turn. Once the opening
@@ -141,8 +142,14 @@
       const n = Math.floor(turns);
       turnFrac = turns - n;
       const a = (n + ease(turnFrac)) * Math.PI * 2;
-      introTipX = cx;
-      const c = poseAt(cx, cy, 0, unit).transformPoint(new DOMPoint(CENTER[0], CENTER[1]));
+      // during the last turn, drift onto the line the sweep's tip is running along, to meet it exactly
+      let tx = cx, ty = cy;
+      if (sweepAt != null && slateCross != null) {
+        const k = ease(Math.min(1, (now - sweepAt) / SWEEP_ETA));
+        if (portrait.matches) tx = cx + (slateCross - cx) * k; else ty = cy + (slateCross - cy) * k;
+      }
+      introTipX = tx; introTipY = ty;
+      const c = poseAt(tx, ty, 0, unit).transformPoint(new DOMPoint(CENTER[0], CENTER[1]));
       const m = new DOMMatrix().translate(c.x, c.y).rotate((a * 180) / Math.PI).scale(unit).translate(-CENTER[0], -CENTER[1]);
       return { pose: m, variant: 1 + (Math.min(n, sweepTo == null ? n : sweepTo - 1) % 4) }; // a new colour (and so a new name) each turn
     }
@@ -182,17 +189,24 @@
     }
     AC.hook = (cv, pose, variant) => {
       if (cv !== canvas || !introOn) return true;
-      // hide Slate's cursor while it idles, spins and dives left; take over when the opening
-      // sweep's tip, coming in from the left, reaches the intro cursor in the middle
+      // hide Slate's cursor while it idles, spins and dives back to its starting edge; take over
+      // when the opening sweep, coming in from that edge, reaches the intro cursor. Wide screens
+      // sweep from the left, tall (portrait) screens from the top.
       if (!root.classList.contains('is-revealing')) return false;
       const rect = canvas.getBoundingClientRect(), k = rect.width / canvas.width;
       const x = (pose.a * AC.TIP.x + pose.c * AC.TIP.y + pose.e) * k + rect.left;
-      // Slate's cursor first dives back to the left edge; only after that is it the sweep coming in
-      if (x < innerWidth * 0.08) slateDived = true;
-      const forward = lastSlateX != null && x > lastSlateX;
-      lastSlateX = x;
-      if (slateDived && forward && sweepAt == null) sweepAt = performance.now(); // the sweep has started
-      if (!slateDived || !forward || x * dpr < introTipX) return false;
+      const y = (pose.b * AC.TIP.x + pose.d * AC.TIP.y + pose.f) * k + rect.top;
+      const tall = portrait.matches;
+      const along = tall ? y : x, size = tall ? innerHeight : innerWidth;
+      slateCross = (tall ? x : y) * dpr; // where across the screen the sweep's tip runs
+      if (along < size * 0.08) slateDived = true;
+      const forward = lastSlateAlong != null && along > lastSlateAlong;
+      lastSlateAlong = along;
+      // the sweep has really started (not just the small nudges while Slate pauses at the edge)
+      if (slateDived && forward && along > size * 0.02 && sweepAt == null) sweepAt = performance.now();
+      // safety net: never leave the intro cursor behind once the site is opening
+      const late = revealAt != null && performance.now() - revealAt > 3000;
+      if (!late && (!slateDived || !forward || along * dpr < (tall ? introTipY : introTipX))) return false;
       handOver(variant);
       return true;
     };
@@ -216,6 +230,7 @@
     };
     const reveal = () => {
       if (dismissed) return;
+      revealAt = performance.now();
       // tighten the honey over a moment so the cursor rides the tip of the sweep
       const from = performance.now();
       (function tighten(now) {
