@@ -1,6 +1,6 @@
 // The agent cursor (arrow + name pill) from the reference image, drawn in place of the cursor
 // in Slate's loading screen. Every time Slate's cursor changes colour, the name changes to the
-// next one in the list.
+// next one in the list, each in its own, very different font.
 //
 // How it works: the loader's Rive file is fetched with its cursor recoloured to "marker"
 // colours (tools/fetch-slate-assets.js). Rive's Canvas2D player paints every shape with a
@@ -11,9 +11,27 @@
 (function () {
   'use strict';
 
-  // the names, one after another at each colour change
-  const NAMES = ['سارة', 'نورة', 'ليان', 'رهف', 'جود', 'ريم', 'هيا'];
-  const FONT = '700 {px}px "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif';
+  // a different name and a very different font at each colour change, women and men in turn
+  // (all Google Fonts, loaded in index.html). size/dy even out how big and how high each draws.
+  const CREW = [
+    { name: 'سارة', font: '700 {px}px "Aref Ruqaa"', size: 1.08, dy: 0.02 },             // ruqʿah
+    { name: 'فهد', font: '400 {px}px "Blaka"', size: 1.0, dy: 0.03 },                   // blackletter
+    { name: 'نورة', font: '700 {px}px "Lemonada"', size: 0.74, dy: 0.05 },               // bubbly round
+    { name: 'خالد', font: '400 {px}px "Jomhuria"', size: 1.75, dy: 0.06 },               // ultra heavy
+    { name: 'ليان', font: '400 {px}px "Gulzar"', size: 0.82, dy: -0.02 },                 // nastaʿlīq
+    { name: 'محمد', font: '700 {px}px "Handjet"', size: 1.25, dy: -0.09 },                // pixel
+    { name: 'رهف', font: '700 {px}px "Marhey"', size: 0.88, dy: -0.04 },                  // playful
+    { name: 'سعود', font: '700 {px}px "Reem Kufi"', size: 0.95, dy: -0.03 },              // geometric kufi
+    { name: 'جود', font: '400 {px}px "Vibes"', size: 1.35, dy: 0.0 },                   // script
+    { name: 'ناصر', font: '400 {px}px "Lalezar"', size: 0.95, dy: 0.05 },                // heavy display
+    { name: 'ريم', font: '400 {px}px "Katibeh"', size: 1.2, dy: -0.13 },                 // calligraphic display
+    { name: 'تركي', font: '700 {px}px "Amiri"', size: 1.0, dy: -0.06 },                 // classic naskh
+    { name: 'هيا', font: '700 {px}px "Playpen Sans Arabic"', size: 0.76, dy: 0.06 },     // handwriting
+    { name: 'ماجد', font: '400 {px}px "Rakkas"', size: 0.95, dy: 0.03 },                 // decorative
+  ];
+  const FALLBACK = ', "Tajawal", "Segoe UI", Tahoma, sans-serif';
+  // ask the browser for every font up front, so each one is ready when its turn comes
+  if (document.fonts) for (const c of CREW) document.fonts.load(c.font.replace('{px}', '40'), c.name).catch(() => {});
   const TEXT = '#ffffff';
 
   // Geometry, measured from the reference image (1536 x 1024: arrow tip at 403,305, arrow
@@ -76,12 +94,12 @@
 
     // which colour Slate is showing; a new colour that holds for a moment = a new person
     const v = clamp(Math.round(variant), 1, 6);
-    if (rig.who == null) { rig.who = (lastWho + 1) % NAMES.length; lastWho = rig.who; }
+    if (rig.who == null) { rig.who = (lastWho + 1) % CREW.length; lastWho = rig.who; }
     if (fresh) { rig.v = v; rig.seen = v; rig.seenAt = now; }
     if (v !== rig.seen) { rig.seen = v; rig.seenAt = now; }
     if (rig.seen !== rig.v && now - rig.seenAt > 70) {
       rig.v = rig.seen;
-      rig.who = (rig.who + 1) % NAMES.length;
+      rig.who = (rig.who + 1) % CREW.length;
       lastWho = rig.who;
     }
     const target = COLORS[v] || COLORS[1];
@@ -108,11 +126,12 @@
     ctx.fillStyle = fill;
     nativeFill.call(ctx, pill);
     ctx.fillStyle = TEXT;
-    ctx.font = FONT.replace('{px}', (PILL.font * s).toFixed(2));
+    const who = CREW[rig.who];
+    ctx.font = who.font.replace('{px}', (PILL.font * s * who.size).toFixed(2)) + FALLBACK;
     ctx.direction = 'rtl';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(NAMES[rig.who], rig.px + w / 2, rig.py + h * 0.5);
+    ctx.fillText(who.name, rig.px + w / 2, rig.py + h * (0.5 + who.dy));
     // arrow, turning with Slate's cursor
     ctx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
     ctx.fillStyle = fill;
@@ -156,5 +175,5 @@
     return nativeStroke.apply(this, arguments);
   };
 
-  window.AgentCursor = { NAMES, draw };
+  window.AgentCursor = { CREW, draw };
 })();
