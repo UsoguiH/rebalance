@@ -4,9 +4,11 @@
 // "loaded" state (or after 3.25s, their fallback). Its cursor is drawn by monika.js.
 //
 // No dead first second: until the animation player is in, this script draws the cursor itself
-// from the very first frame, hopping around the middle of the screen the way Slate's cursor
-// does (a new colour and name each hop). The moment Slate's cursor appears, the intro cursor
-// glides into it and hands over, so it all reads as one loading screen from the first frame.
+// from the very first frame, flowing round a figure-eight in the middle of the screen like a
+// juggled ball (a new colour and name at each crossing). Everything is pulled through a soft
+// spring, so the motion runs like honey: the intro, the handover to Slate's cursor (which just
+// keeps the same position and speed) and Slate's own hops. During the opening sweep the spring
+// tightens so the cursor rides the ribbons' tip.
 // MonikaLoader.replay() plays it again.
 (function () {
   'use strict';
@@ -14,9 +16,9 @@
   const PLAY_DELAY = 150;
   const MIN_IDLE = 1600;       // the loader shows at least this long, then opens as soon as it can
   const GIVE_UP = 12000;       // if the animation never loads, fade to the page anyway
-  const HOP_MS = [380, 520];   // intro: one hop takes this long (random in the range)
-  const HOP_PAUSE = 90;        // intro: rest between hops
-  const HANDOFF_MS = 420;      // intro cursor -> Slate's cursor
+  const LOOP_MS = 3400;        // intro: one figure-eight, like a juggling cascade
+  const HONEY = 5;             // how runny the cursor is while loading (see AgentCursor.smooth)
+  const TIGHT = 0.5;           // ...and during the opening sweep, so it stays on the ribbons' tip
   const GROW = 2.6;            // matches data-monika-scale on the loader canvas
   const portrait = matchMedia('(orientation: portrait)');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -70,15 +72,7 @@
   // ---------------------------------------------------------------- pose helpers
   // a pose maps cursor units to canvas pixels: tip at (x, y), turned by a, scaled by s
   const poseAt = (x, y, a, s) => new DOMMatrix().translate(x, y).rotate((a * 180) / Math.PI).scale(s).translate(-AC.TIP.x, -AC.TIP.y);
-  function parts(m) {
-    const t = m.transformPoint(new DOMPoint(AC.TIP.x, AC.TIP.y));
-    return { x: t.x, y: t.y, a: Math.atan2(m.b, m.a), s: Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) };
-  }
-  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
-  const lerp = (a, b, t) => a + (b - a) * t;
-  const lerpAngle = (a, b, t) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
-  // which way the arrow points in its own drawing (from its middle to its tip), to face its hops
+  // which way the arrow points in its own drawing (from its middle to its tip), to face its path
   const CENTER = AC.ARROW.reduce((c, p) => [c[0] + p[0] / AC.ARROW.length, c[1] + p[1] / AC.ARROW.length], [0, 0]);
   const HEADING = Math.atan2(AC.TIP.y - CENTER[1], AC.TIP.x - CENTER[0]);
 
@@ -93,7 +87,7 @@
 
     // ------------------------------------------------ intro cursor
     const rig = AC.newRig();
-    let introOn = true, handoff = null, dpr = 1, W = 0, H = 0, unit = 1;
+    let introOn = true, dpr = 1, W = 0, H = 0, unit = 1;
     const fitIntro = () => {
       dpr = Math.min(2, window.devicePixelRatio || 1);
       W = Math.round(innerWidth * dpr); H = Math.round(innerHeight * dpr);
@@ -103,68 +97,56 @@
     };
     fitIntro();
 
-    // Slate-style hopping: glide from spot to spot near the middle, turning to face each hop
-    const hop = { from: null, to: null, at: started, dur: 450, variant: 1, angle: 0 };
-    const spot = () => ({ x: W * (0.36 + Math.random() * 0.28), y: H * (0.36 + Math.random() * 0.24) });
+    // juggling: the tip flows round a figure-eight (a lemniscate) centred on the screen, starting
+    // from rest and easing up to speed, always facing the way it is going
+    const TAU = 0.45; // seconds to ease up to speed from a standstill
+    function phase(t) { const sec = t / 1000; return ((2 * Math.PI) / (LOOP_MS / 1000)) * (sec - TAU * (1 - Math.exp(-sec / TAU))); }
+    function tipAt(t) {
+      const cx = W / 2 - 46 * unit, cy = H / 2 - 12 * unit; // arrow + pill centred together
+      const A = Math.min(W, H) * 0.17, th = phase(t);
+      return { x: cx + A * Math.sin(th), y: cy + A * 0.55 * Math.sin(2 * th) };
+    }
     function introPose(now) {
-      if (!hop.from) { hop.from = { x: W * 0.46, y: H * 0.46 }; hop.to = spot(); hop.angle = Math.atan2(hop.to.y - hop.from.y, hop.to.x - hop.from.x) - HEADING; }
-      if (reduced.matches) return { pose: poseAt(W * 0.46, H * 0.46, 0, unit), variant: 1 };
-      let k = (now - hop.at) / hop.dur;
-      if (k > 1 + HOP_PAUSE / hop.dur) {
-        hop.from = hop.to; hop.to = spot(); hop.at = now; k = 0;
-        hop.dur = HOP_MS[0] + Math.random() * (HOP_MS[1] - HOP_MS[0]);
-        hop.variant = (hop.variant % 4) + 1; // a new colour (and so a new name) each hop
-      }
-      const e = ease(Math.min(1, k));
-      const x = lerp(hop.from.x, hop.to.x, e), y = lerp(hop.from.y, hop.to.y, e);
-      const face = Math.atan2(hop.to.y - hop.from.y, hop.to.x - hop.from.x) - HEADING;
-      hop.angle = lerpAngle(hop.angle, face, 0.18);
-      return { pose: poseAt(x, y, hop.angle, unit), variant: hop.variant };
+      const t = now - started;
+      if (reduced.matches) { const c = tipAt(0); return { pose: poseAt(c.x, c.y, 0, unit), variant: 1 }; }
+      const p = tipAt(t), q = tipAt(t + 16);
+      const face = Math.hypot(q.x - p.x, q.y - p.y) > 0.01 ? Math.atan2(q.y - p.y, q.x - p.x) - HEADING : 0;
+      const n = Math.floor(phase(t) / Math.PI); // each time it crosses the middle
+      return { pose: poseAt(p.x, p.y, face, unit), variant: 1 + (n % 4) };
     }
 
+    AC.smooth = HONEY;
     (function frame(now) {
       if (!introOn || dismissed) { ictx.clearRect(0, 0, W, H); return; }
       requestAnimationFrame(frame);
       ictx.setTransform(1, 0, 0, 1, 0, 0);
       ictx.clearRect(0, 0, W, H);
-      let { pose, variant } = introPose(now);
-      if (handoff) {
-        const k = Math.min(1, (now - handoff.at) / HANDOFF_MS);
-        const e = ease(k), a = handoff.from, b = parts(handoff.to);
-        pose = poseAt(lerp(a.x, b.x, e), lerp(a.y, b.y, e), lerpAngle(a.a, b.a, e), lerp(a.s, b.s, e));
-        variant = handoff.variant;
-        if (k >= 1) finishHandoff();
-      }
+      const { pose, variant } = introPose(now);
       AC.draw(ictx, rig, pose, 1, variant, now);
     })(performance.now());
 
-    // Slate's cursor drawn in the Rive canvas -> the same pose in intro-canvas pixels
-    function toIntro(m) {
-      const rect = canvas.getBoundingClientRect();
-      const k = (rect.width / canvas.width) * dpr;
-      return new DOMMatrix().translate(rect.left * dpr, rect.top * dpr).scale(k).multiply(m);
-    }
-    function finishHandoff() {
+    // first sight of Slate's cursor: hand the intro cursor's state (where it is, how fast it is
+    // moving, its name, colour and pill) to Slate's canvas; the honey spring carries it on from
+    // exactly there toward Slate's cursor, so there is no seam
+    function handOver() {
       introOn = false;
       AC.hook = null;
-      // Slate's cursor carries on with the same name, colour and pill position
       const rect = canvas.getBoundingClientRect();
-      const k = canvas.width / rect.width / dpr;
-      const next = Object.assign(AC.newRig(), rig, {
-        px: (rig.px - rect.left * dpr) * k, py: (rig.py - rect.top * dpr) * k,
-        pxV: (rig.pxV || 0) * k, pyV: (rig.pyV || 0) * k, hsl: rig.hsl && rig.hsl.slice(),
+      const k = canvas.width / rect.width / dpr, ox = rect.left * dpr, oy = rect.top * dpr;
+      const sm = rig.sm && Object.assign({}, rig.sm, {
+        x: (rig.sm.x - ox) * k, y: (rig.sm.y - oy) * k, xV: rig.sm.xV * k, yV: rig.sm.yV * k,
+        sx: rig.sm.sx * k, sy: rig.sm.sy * k, sxV: rig.sm.sxV * k, syV: rig.sm.syV * k,
       });
-      AC.setRig(canvas, next);
+      AC.setRig(canvas, Object.assign(AC.newRig(), rig, {
+        sm, hsl: rig.hsl && rig.hsl.slice(),
+        px: (rig.px - ox) * k, py: (rig.py - oy) * k, pxV: (rig.pxV || 0) * k, pyV: (rig.pyV || 0) * k,
+      }));
       ictx.clearRect(0, 0, W, H);
       intro.style.display = 'none';
     }
-    AC.hook = (cv, pose, variant) => {
-      if (cv !== canvas || !introOn) return true;
-      // first sight of Slate's cursor: glide the intro cursor into it, hiding Slate's meanwhile
-      if (!handoff) handoff = { at: performance.now(), from: parts(introPose(performance.now()).pose) };
-      handoff.to = toIntro(pose);
-      handoff.variant = variant;
-      return false;
+    AC.hook = (cv) => {
+      if (cv === canvas && introOn) handOver();
+      return true;
     };
 
     // ------------------------------------------------ Slate's loader
@@ -178,6 +160,7 @@
       if (dismissed) return;
       dismissed = true;
       if (AC.hook && introOn) AC.hook = null;
+      AC.smooth = 0;
       removeEventListener('resize', onResize);
       portrait.removeEventListener('change', syncOrientation);
       try { r && r.cleanup(); } catch (e) {}
@@ -185,6 +168,13 @@
     };
     const reveal = () => {
       if (dismissed) return;
+      // tighten the honey over a moment so the cursor rides the tip of the sweep
+      const from = performance.now();
+      (function tighten(now) {
+        const k = Math.min(1, (now - from) / 350);
+        AC.smooth = HONEY + (TIGHT - HONEY) * k;
+        if (k < 1 && !dismissed) requestAnimationFrame(tighten);
+      })(from);
       const loaded = r.viewModelInstance && r.viewModelInstance.boolean('siteLoaded');
       if (loaded) loaded.value = true;
       root.classList.add('is-revealing');

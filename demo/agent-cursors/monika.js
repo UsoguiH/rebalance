@@ -88,6 +88,28 @@
     return [h * 60, sat * 100, l * 100];
   }
 
+  // Honey smoothing: instead of jumping to each pose, the arrow is pulled toward it by a soft,
+  // critically damped spring (position, turn and size), so Slate's quick hops become one
+  // flowing path. AgentCursor.smooth sets how soft: 0 follows exactly, higher is runnier.
+  function honey(rig, pose, dt, fresh) {
+    const soft = AC.smooth || 0;
+    const m = pose;
+    const sx = Math.hypot(m.a, m.b), det = m.a * m.d - m.b * m.c;
+    const raw = {
+      x: m.a * TIP.x + m.c * TIP.y + m.e, y: m.b * TIP.x + m.d * TIP.y + m.f,
+      a: Math.atan2(m.b, m.a), sx, sy: det / (sx || 1),
+    };
+    const st = rig.sm;
+    if (!soft || fresh || !st) { rig.sm = Object.assign({ xV: 0, yV: 0, aV: 0, sxV: 0, syV: 0 }, raw); if (!soft) return pose; }
+    else {
+      const k = 1600 / (1 + soft * soft); // soft 0 -> very tight, soft 5 -> honey
+      st.a = raw.a + Math.atan2(Math.sin(st.a - raw.a), Math.cos(st.a - raw.a)); // turn the short way
+      for (const key of ['x', 'y', 'a', 'sx', 'sy']) spring(st, key, raw[key], k, 1, dt);
+    }
+    const q = rig.sm;
+    return new DOMMatrix().translate(q.x, q.y).rotate((q.a * 180) / Math.PI).scale(q.sx, q.sy).translate(-TIP.x, -TIP.y);
+  }
+
   // draw the cursor. pose maps Slate cursor space to canvas pixels, so the arrow turns and
   // flips exactly like Slate's; the pill stays upright beside the tip so the name reads.
   function draw(ctx, rig, pose, alpha, variant, now) {
@@ -95,7 +117,7 @@
     const fresh = !rig.t || dt > 0.25;
     rig.t = now;
     dt = Math.min(dt, 1 / 20);
-    const m = pose;
+    const m = honey(rig, pose, dt, fresh);
     const s = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c));
     const tipX = m.a * TIP.x + m.c * TIP.y + m.e;
     const tipY = m.b * TIP.x + m.d * TIP.y + m.f;
@@ -130,8 +152,9 @@
     if (fresh || Math.hypot(tx - rig.px, ty - rig.py) > 420 * s) {
       rig.px = tx; rig.py = ty; rig.pxV = rig.pyV = 0;
     } else {
-      spring(rig, 'px', tx, 520, 0.8, dt);
-      spring(rig, 'py', ty, 520, 0.8, dt);
+      // honey: soft and fully damped, it flows after the tip and settles without a wobble
+      spring(rig, 'px', tx, 150, 1, dt);
+      spring(rig, 'py', ty, 150, 1, dt);
     }
 
     const w = PILL.w * s, h = PILL.h * s;
@@ -197,7 +220,7 @@
   };
 
   const AC = (window.AgentCursor = {
-    CREW, TIP, ARROW, draw, hook: null,
+    CREW, TIP, ARROW, draw, hook: null, smooth: 0,
     newRig: () => ({ t: 0, px: 0, py: 0 }),
     setRig: (canvas, rig) => rigs.set(canvas, rig),
   });
