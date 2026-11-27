@@ -1,29 +1,34 @@
-// Monika: the glowing blue agent cursor (arrow + "Monika" pill) from the reference image,
-// drawn in place of the cursor in Slate's loading screen.
+// The agent cursor (arrow + name pill) from the reference image, named سارة, drawn in place
+// of the cursor in Slate's loading screen.
 //
 // How it works: the loader's Rive file is fetched with its cursor recoloured to "marker"
 // colours (tools/fetch-slate-assets.js). Rive's Canvas2D player paints every shape with a
 // plain ctx.fill()/stroke(), so this file patches those two calls. When the cursor's marker
-// colour comes through, Slate's cursor is skipped and Monika is drawn at the same spot and
-// layer, always upright and always blue, exactly as in the reference. The pill trails the
-// arrow on a spring so fast moves feel soft.
+// colour comes through, Slate's cursor is skipped and this one is drawn at the same spot and
+// layer, always upright, always blue and flat. The pill trails the arrow on a spring so fast
+// moves feel soft.
 (function () {
   'use strict';
 
   const LOOK = {
-    name: 'Monika',
+    name: 'سارة',
     fill: '#0a84ff',            // arrow and pill
-    glow: 'rgba(0, 112, 255, 0.95)',
     text: '#ffffff',
-    font: '700 {px}px "Inter", "SF Pro Display", system-ui, -apple-system, "Segoe UI", sans-serif',
+    font: '700 {px}px "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif',
   };
 
   // Geometry, measured from the reference image (1536 x 1024: arrow tip at 403,305, arrow
   // ~245px tall), in Slate cursor units (their arrow is ~29 units tall, tip near -12.6,-14.2).
+  // The arrow is a pointer, not a plain triangle: its lower edge has the notch a mouse cursor has.
   const TIP = { x: -12.6, y: -14.2 };
-  const ARROW = [[-15.0, -16.4, 2.6], [18.2, -5.1, 3.4], [-2.5, 16.2, 3.6]]; // x, y, corner radius
-  const PILL = { dx: 20.7, dy: 18.9, h: 27.85, font: 15.1, pad: 15.1 };   // from the tip
-  const GLOW = 13;                                                         // blur radius, units
+  const ARROW = [
+    [-15.0, -16.4, 2.6], // tip
+    [18.2, -5.1, 3.4],   // right point
+    [2.1, 0.1, 1.6],     // notch on the lower edge
+    [-2.5, 16.2, 3.6],   // bottom point
+  ];
+  // pill, from the tip; width fixed to the reference's so the shape stays the same for any name
+  const PILL = { dx: 20.7, dy: 18.9, w: 82.5, h: 27.85, font: 17.5 };
 
   function roundedPoly(pts) {
     const p = new Path2D();
@@ -42,19 +47,6 @@
   const nativeFill = CanvasRenderingContext2D.prototype.fill;
   const nativeStroke = CanvasRenderingContext2D.prototype.stroke;
 
-  // fill a path with the reference's glow: a wide soft halo, a tighter bright one, then the body
-  function glowFill(ctx, path, blurPx, passes = [2.4, 1.3, 0.6, 0.25]) {
-    ctx.fillStyle = LOOK.fill;
-    ctx.shadowColor = LOOK.glow;
-    for (const k of passes) {
-      ctx.shadowBlur = blurPx * k;
-      nativeFill.call(ctx, path);
-    }
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
-    nativeFill.call(ctx, path);
-  }
-
   // ---------------------------------------------------------------- rig
   function spring(st, key, target, k, zeta, dt) {
     const c = 2 * Math.sqrt(k) * zeta;
@@ -66,14 +58,7 @@
     st[key + 'V'] = v;
   }
 
-  const widths = new Map();
-  function textWidth(ctx, px) {
-    const k = Math.round(px * 4);
-    if (!widths.has(k)) { ctx.font = LOOK.font.replace('{px}', px.toFixed(2)); widths.set(k, ctx.measureText(LOOK.name).width); }
-    return widths.get(k);
-  }
-
-  // draw Monika with her arrow tip at (tipX, tipY) canvas pixels, s canvas pixels per unit
+  // draw the cursor with its arrow tip at (tipX, tipY) canvas pixels, s canvas pixels per unit
   function draw(ctx, rig, tipX, tipY, s, alpha, now) {
     let dt = rig.t ? (now - rig.t) / 1000 : 0;
     const fresh = !rig.t || dt > 0.25;
@@ -86,26 +71,26 @@
       spring(rig, 'px', tx, 520, 0.8, dt);
       spring(rig, 'py', ty, 520, 0.8, dt);
     }
-    const blur = GLOW * s;
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = alpha;
     // pill
-    const h = PILL.h * s, fontPx = PILL.font * s;
-    const w = textWidth(ctx, fontPx) + PILL.pad * 2 * s;
+    const w = PILL.w * s, h = PILL.h * s;
     const pill = new Path2D();
     if (pill.roundRect) pill.roundRect(rig.px, rig.py, w, h, h / 2);
     else pill.rect(rig.px, rig.py, w, h);
-    glowFill(ctx, pill, blur);
+    ctx.fillStyle = LOOK.fill;
+    nativeFill.call(ctx, pill);
     ctx.fillStyle = LOOK.text;
-    ctx.font = LOOK.font.replace('{px}', fontPx.toFixed(2));
+    ctx.font = LOOK.font.replace('{px}', (PILL.font * s).toFixed(2));
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.textAlign = 'left';
-    ctx.fillText(LOOK.name, rig.px + PILL.pad * s - 0.5 * s, rig.py + h * 0.505);
+    ctx.fillText(LOOK.name, rig.px + w / 2, rig.py + h * 0.5);
     // arrow, upright, tip pinned
     ctx.setTransform(s, 0, 0, s, tipX - TIP.x * s, tipY - TIP.y * s);
-    // the arrow is smaller than the pill, so it gets extra halo passes to glow as brightly
-    glowFill(ctx, ARROW_PATH, blur, [2.4, 1.8, 1.3, 0.9, 0.6, 0.25]);
+    ctx.fillStyle = LOOK.fill;
+    nativeFill.call(ctx, ARROW_PATH);
     ctx.restore();
   }
 
@@ -129,7 +114,7 @@
   P.fill = function () {
     const mk = readMarker(this.fillStyle);
     if (!mk) return nativeFill.apply(this, arguments);
-    if (mk.g !== 254 || mk.a <= 0.004) return; // Slate's own shadow/outline: not part of Monika
+    if (mk.g !== 254 || mk.a <= 0.004) return; // Slate's own shadow/outline: not part of this cursor
     const m = this.getTransform();
     const s0 = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c));
     const grow = parseFloat(this.canvas.dataset && this.canvas.dataset.monikaScale) || 1;
@@ -144,5 +129,5 @@
     return nativeStroke.apply(this, arguments);
   };
 
-  window.MonikaCursor = { LOOK, draw };
+  window.AgentCursor = { LOOK, draw };
 })();

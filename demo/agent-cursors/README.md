@@ -1,7 +1,7 @@
-# Monika loading screen
+# Sara loading screen
 
 Slate's loading screen (slateteams.com), played from Slate's own Rive file on black, with its
-cursor replaced by Monika: the glowing blue arrow and "Monika" name pill from the reference
+cursor replaced by a flat blue pointer with the name pill "سارة", shaped after the reference
 image. It loops.
 
 ## Run it
@@ -21,7 +21,8 @@ Then open `demo/agent-cursors/index.html`, straight from disk or through any loc
   `tools/rive-format.json` is the property table it needs, generated from Rive's MIT runtime headers.
 - `slate-loader.js` ports Slate's `<c-preloader>` script and replays it in a loop.
 - `monika.js` patches `CanvasRenderingContext2D.fill/stroke`. When the cursor's marker colour is
-  painted, it skips Slate's cursor and draws Monika at the same spot, upright and blue, with the
-  pill trailing on a spring. `data-monika-scale` on the canvas sets her size (1.9 on the loader).
+  painted, it skips Slate's cursor and draws this one at the same spot, upright and blue, with the
+  pill trailing on a spring. `LOOK` at the top sets the name, colour and font; `data-monika-scale`
+  on the canvas sets the size (2.6 on the loader).
 
 `vendor/rive-canvas/` is `@rive-app/canvas` 2.45.0 (MIT).
