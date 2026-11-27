@@ -92,7 +92,7 @@
   // critically damped spring (position, turn and size), so Slate's quick hops become one
   // flowing path. AgentCursor.smooth sets how soft: 0 follows exactly, higher is runnier.
   function honey(rig, pose, dt, fresh) {
-    const soft = AC.smooth || 0;
+    const soft = rig.smooth != null ? rig.smooth : AC.smooth || 0;
     const m = pose;
     const sx = Math.hypot(m.a, m.b), det = m.a * m.d - m.b * m.c;
     const raw = {
@@ -100,7 +100,16 @@
       a: Math.atan2(m.b, m.a), sx, sy: det / (sx || 1),
     };
     const st = rig.sm;
-    if (!soft || fresh || !st) { rig.sm = Object.assign({ xV: 0, yV: 0, aV: 0, sxV: 0, syV: 0 }, raw); if (!soft) return pose; }
+    if (!soft || fresh || !st) {
+      // following exactly: still track speed, so a later switch to honey carries on from it
+      const v = { xV: 0, yV: 0, aV: 0, sxV: 0, syV: 0 };
+      if (st && !fresh && dt > 0) {
+        for (const key of ['x', 'y', 'sx', 'sy']) v[key + 'V'] = (raw[key] - st[key]) / dt;
+        v.aV = Math.atan2(Math.sin(raw.a - st.a), Math.cos(raw.a - st.a)) / dt;
+      }
+      rig.sm = Object.assign(v, raw);
+      if (!soft) return pose;
+    }
     else {
       const k = 1600 / (1 + soft * soft); // soft 0 -> very tight, soft 5 -> honey
       st.a = raw.a + Math.atan2(Math.sin(st.a - raw.a), Math.cos(st.a - raw.a)); // turn the short way

@@ -4,21 +4,21 @@
 // "loaded" state (or after 3.25s, their fallback). Its cursor is drawn by monika.js.
 //
 // No dead first second: until the animation player is in, this script draws the cursor itself
-// from the very first frame, spinning in the middle of the screen like a juggled club while it
-// drifts round a small figure-eight (a new colour and name each turn). Everything is pulled through a soft
-// spring, so the motion runs like honey: the intro, the handover to Slate's cursor (which just
-// keeps the same position and speed) and Slate's own hops. During the opening sweep the spring
+// from the very first frame. It enters from the left with exactly the motion Slate's cursor has
+// when it sweeps in to open the site (recorded from it), reaches the middle and spins there
+// (a new colour and name each turn). After a spin it hands its position and speed to Slate's
+// cursor, which is pulled through a soft spring so its hops run like honey. During the opening sweep the spring
 // tightens so the cursor rides the ribbons' tip.
 // MonikaLoader.replay() plays it again.
 (function () {
   'use strict';
   const REVEAL_TIMEOUT = 3250; // Slate's values
   const PLAY_DELAY = 150;
-  const MIN_IDLE = 2000;       // the loader shows at least this long, then opens as soon as it can
-  const INTRO_MIN = 1300;      // the spinning intro shows at least this long before Slate's cursor takes over
-  const SPIN_MS = 1100;        // intro: one full turn
+  const ENTRY_MS = 820;        // intro: enter from the left to the middle (Slate's sweep motion)
+  const TURN_MS = 900;         // intro: one spin
+  const INTRO_MIN = ENTRY_MS + TURN_MS; // at least one full spin before Slate's cursor takes over
+  const MIN_IDLE = 2300;       // the loader shows at least this long, then opens as soon as it can
   const GIVE_UP = 12000;       // if the animation never loads, fade to the page anyway
-  const LOOP_MS = 3400;        // intro: one small figure-eight, like a juggling cascade
   const HONEY = 5;             // how runny the cursor is while loading (see AgentCursor.smooth)
   const TIGHT = 0.5;           // ...and during the opening sweep, so it stays on the ribbons' tip
   const GROW = 2.6;            // matches data-monika-scale on the loader canvas
@@ -98,23 +98,45 @@
     };
     fitIntro();
 
-    // juggling: the arrow spins about its own middle, like a club in the air, while that middle
-    // drifts round a small figure-eight (a lemniscate) at the centre of the screen. Both start
-    // from rest and ease up to speed.
-    const TAU = 0.45; // seconds to ease up to speed from a standstill
-    const ramp = (t, periodMs) => { const sec = t / 1000; return ((2 * Math.PI) / (periodMs / 1000)) * (sec - TAU * (1 - Math.exp(-sec / TAU))); };
+    // Entrance: the path Slate's cursor takes when it sweeps in from the left to open the site,
+    // recorded frame by frame from their animation: [time 0..1, x (1 = the middle), y offset in
+    // screen heights, size]. Its speed is kept as recorded for the first 60% of the time, then it
+    // eases to a stop in the middle so it can spin there.
+    const ENTRY = [[0.0,0.0045,0.0052,0.715],[0.0219,0.0059,0.0052,0.719],[0.0436,0.0079,0.0052,0.724],[0.066,0.0103,0.0052,0.73],[0.0883,0.0132,0.0052,0.737],[0.1096,0.0168,0.0051,0.744],[0.1316,0.0209,0.0048,0.752],[0.153,0.0257,0.0043,0.761],[0.1741,0.0312,0.0036,0.77],[0.1958,0.0371,0.0025,0.779],[0.2184,0.0438,0.0013,0.789],[0.2403,0.0511,-0.0003,0.8],[0.2618,0.0592,-0.0023,0.811],[0.2839,0.0681,-0.0046,0.822],[0.3052,0.0776,-0.0072,0.833],[0.3276,0.0881,-0.01,0.845],[0.3489,0.0991,-0.013,0.856],[0.3701,0.111,-0.016,0.868],[0.3917,0.1238,-0.0188,0.879],[0.4134,0.1374,-0.0212,0.891],[0.4352,0.1521,-0.0233,0.901],[0.4567,0.1677,-0.0248,0.912],[0.4786,0.184,-0.026,0.922],[0.5005,0.2016,-0.0268,0.932],[0.5222,0.2202,-0.0272,0.941],[0.544,0.2397,-0.0273,0.949],[0.5655,0.2607,-0.0266,0.957],[0.5871,0.2824,-0.0248,0.964],[0.6088,0.3057,-0.0217,0.971],[0.6306,0.3302,-0.0174,0.977],[0.6524,0.3558,-0.012,0.982],[0.6741,0.3829,-0.0055,0.986],[0.6957,0.4115,0.0016,0.99],[0.7178,0.4415,0.0089,0.994],[0.7394,0.4731,0.0161,0.996],[0.7613,0.5061,0.0226,0.998],[0.7828,0.5411,0.0281,1],[0.8046,0.5776,0.0325,1],[0.8265,0.6165,0.0357,1.001],[0.848,0.6566,0.0376,1.001],[0.8698,0.6991,0.0383,1.001],[0.8916,0.7435,0.0376,1.001],[0.9131,0.7901,0.0345,1.001],[0.935,0.8391,0.0287,1.001],[0.9568,0.89,0.0206,1.001],[0.9786,0.9435,0.0107,1.001],[1.0,1.0,0.0,1.001]];
+    const A_IN = -0.1842; // the angle Slate's cursor holds through the sweep
+    const SPLIT = 0.6, K = 1 / (SPLIT + (1 - SPLIT) / 2);
+    const entryTime = (tau) => (tau <= SPLIT ? K * tau : K * SPLIT + K * (tau - SPLIT) - (K * (tau - SPLIT) ** 2) / (2 * (1 - SPLIT)));
+    function entryAt(u) {
+      let i = 1;
+      while (i < ENTRY.length - 1 && ENTRY[i][0] < u) i++;
+      const a = ENTRY[i - 1], b = ENTRY[i], k = Math.min(1, Math.max(0, (u - a[0]) / (b[0] - a[0] || 1)));
+      return [a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k];
+    }
+    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    let turnFrac = 0;
     function introPose(now) {
-      const t = reduced.matches ? 0 : now - started;
-      // centre the arrow and its name pill together
-      const mid = poseAt(W / 2 - 46 * unit, H / 2 - 12 * unit, 0, unit).transformPoint(new DOMPoint(CENTER[0], CENTER[1]));
-      const A = Math.min(W, H) * 0.08, th = ramp(t, LOOP_MS);
-      const cx = mid.x + A * Math.sin(th), cy = mid.y + A * 0.55 * Math.sin(2 * th);
-      const spin = ramp(t, SPIN_MS);
-      const pose = new DOMMatrix().translate(cx, cy).rotate((spin * 180) / Math.PI).scale(unit).translate(-CENTER[0], -CENTER[1]);
-      return { pose, variant: 1 + (Math.floor(spin / (2 * Math.PI)) % 4) }; // a new colour (and name) each turn
+      const t = reduced.matches ? ENTRY_MS : now - started;
+      const cx = W / 2 - 46 * unit, cy = H / 2 - 12 * unit; // tip spot that centres arrow + pill
+      if (t < ENTRY_MS) {
+        const tau = t / ENTRY_MS;
+        const [rx, ry, rs] = entryAt(entryTime(tau));
+        // the recorded path, from the left edge (where Slate's starts) to the middle spot
+        const x = rx * cx, y = cy + ry * H;
+        const settle = tau <= SPLIT ? 0 : ease((tau - SPLIT) / (1 - SPLIT));
+        return { pose: poseAt(x, y, A_IN * (1 - settle), unit * (rs / 1.001)), variant: 1 };
+      }
+      // spin in place about the arrow's middle, easing in and out of each turn
+      const turns = (t - ENTRY_MS) / TURN_MS;
+      const n = Math.floor(turns);
+      turnFrac = turns - n;
+      const a = (n + ease(turnFrac)) * Math.PI * 2;
+      const c = poseAt(cx, cy, 0, unit).transformPoint(new DOMPoint(CENTER[0], CENTER[1]));
+      const m = new DOMMatrix().translate(c.x, c.y).rotate((a * 180) / Math.PI).scale(unit).translate(-CENTER[0], -CENTER[1]);
+      return { pose: m, variant: 1 + (n % 4) }; // a new colour (and so a new name) each turn
     }
 
     AC.smooth = HONEY;
+    rig.smooth = 0; // the intro follows its own path exactly
     (function frame(now) {
       if (!introOn || dismissed) { ictx.clearRect(0, 0, W, H); return; }
       requestAnimationFrame(frame);
@@ -137,7 +159,7 @@
         sx: rig.sm.sx * k, sy: rig.sm.sy * k, sxV: rig.sm.sxV * k, syV: rig.sm.syV * k,
       });
       AC.setRig(canvas, Object.assign(AC.newRig(), rig, {
-        sm, hsl: rig.hsl && rig.hsl.slice(),
+        sm, smooth: undefined, hsl: rig.hsl && rig.hsl.slice(),
         px: (rig.px - ox) * k, py: (rig.py - oy) * k, pxV: (rig.pxV || 0) * k, pyV: (rig.pyV || 0) * k,
       }));
       ictx.clearRect(0, 0, W, H);
@@ -145,8 +167,9 @@
     }
     AC.hook = (cv) => {
       if (cv !== canvas || !introOn) return true;
-      // let the spin play for a moment even when the animation loads instantly
-      if (performance.now() - started < INTRO_MIN) return false;
+      // let the entrance and a full spin play even when the animation loads instantly, and hand
+      // over at the end of a turn, when the cursor is upright and slow
+      if (performance.now() - started < INTRO_MIN || turnFrac > 0.05) return false;
       handOver();
       return true;
     };
