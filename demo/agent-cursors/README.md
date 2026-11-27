@@ -1,8 +1,8 @@
 # Monika agent cursors
 
-Slate's interactive scenes (slateteams.com: Collaborate, Move/resize/rotate, Drag and drop,
+Slate's loading screen and interactive scenes (slateteams.com: Collaborate, Move/resize/rotate, Drag and drop,
 and the "cursor magic" footer), played from Slate's own Rive files with every cursor replaced
-by Monika: a glowing arrow with a spring-rigged name pill. Your own mouse becomes Monika too.
+by Monika: an arrow with a spring-rigged name pill. Your own mouse becomes Monika too.
 
 ## Run it
 

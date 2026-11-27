@@ -21,6 +21,7 @@ const PALETTE = { 0x2796f1: 1, 0x00b72b: 2, 0xfa5d1e: 3, 0xc88afa: 4, 0xff6791: 
 // The scenes, by the file name prefix on Slate (the hash is looked up on the live page).
 // `bubbles`: comment bubbles that sit beside a cursor, by artboard -> SolidColor component index.
 const RIVS = {
+  preloader: {},
   collaborate: { bubbles: { collaborate: [69, 85, 115, 150] } },
   'move-resize-rotate': {},
   'img-video-draggers': {},
@@ -163,7 +164,7 @@ function markCursors(buf, opts) {
   fs.mkdirSync(OUT, { recursive: true });
   let html = '';
   try { html = (await get(SITE + '/', { html: true })).toString(); } catch (e) { console.warn('Could not read the home page:', e.message); }
-  const known = { collaborate: 'BPipCHy7', 'move-resize-rotate': 'CIX11jvE', 'img-video-draggers': 'CzrOj6hU', 'cursor-magic': 'BECmDHxu' };
+  const known = { preloader: 'B_5LkbCw', collaborate: 'BPipCHy7', 'move-resize-rotate': 'CIX11jvE', 'img-video-draggers': 'CzrOj6hU', 'cursor-magic': 'BECmDHxu' };
   const bundle = {};
   for (const [name, opts] of Object.entries(RIVS)) {
     const m = html.match(new RegExp(`/_astro/${name}\\.[\\w-]+\\.riv`));

@@ -1,4 +1,4 @@
-// Monika: a glowing agent cursor (arrow + name pill) that takes over Slate's cursors.
+// Monika: an agent cursor (arrow + name pill) that takes over Slate's cursors.
 //
 // How it works: Slate's Rive files are loaded with their cursor recoloured to "marker"
 // colours (tools/mark-cursor.py). The Rive Canvas2D player paints every shape with a plain
@@ -6,7 +6,7 @@
 // through, Slate's own cursor is skipped and Monika is drawn in its place with the exact same
 // transform (position, rotation, scale, mirroring, fades) at the exact same layer depth.
 // On top of Slate's motion, the name pill is rigged with a spring so it trails, tilts and
-// settles, and the glow pulses on clicks.
+// settles, and bobs on clicks.
 //
 // MonikaCursor.page() also turns the visitor's own mouse into Monika.
 (function () {
@@ -15,12 +15,12 @@
   // ---------------------------------------------------------------- look
   // Slate's palette index -> Monika teammate. 1 (blue) is Monika herself.
   const CREW = {
-    1: { name: 'Monika', fill: '#0a84ff', glow: [0, 122, 255] },
-    2: { name: 'Jonas', fill: '#00b72b', glow: [0, 183, 43] },
-    3: { name: 'Ava', fill: '#fa5d1e', glow: [250, 93, 30] },
-    4: { name: 'Leo', fill: '#b06df5', glow: [176, 109, 245] },
-    5: { name: 'Noor', fill: '#ff5c8a', glow: [255, 92, 138] },
-    6: { name: 'Guest', fill: '#f5f5f4', glow: [200, 220, 255] },
+    1: { name: 'Monika', fill: '#0a84ff' },
+    2: { name: 'Jonas', fill: '#00b72b' },
+    3: { name: 'Ava', fill: '#fa5d1e' },
+    4: { name: 'Leo', fill: '#b06df5' },
+    5: { name: 'Noor', fill: '#ff5c8a' },
+    6: { name: 'Guest', fill: '#f5f5f4' },
   };
   const FONT = '700 {px}px "Inter", "SF Pro Display", system-ui, -apple-system, "Segoe UI", sans-serif';
 
@@ -45,7 +45,6 @@
   }
   const ARROW_PATH = roundedPoly(ARROW);
 
-  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
   function crewAt(v) {
     // colour keyframes interpolate, so the marker can land between two indices
     const i = Math.max(1, Math.min(6, Math.round(v)));
@@ -123,31 +122,18 @@
   const nativeFill = CanvasRenderingContext2D.prototype.fill;
   const nativeStroke = CanvasRenderingContext2D.prototype.stroke;
 
-  // draw the arrow in the current transform (Slate cursor space)
-  function drawArrow(ctx, crew, alpha, s, press, now, seed) {
-    const breathe = 1 + 0.07 * Math.sin(now / 520 + seed);
-    const blur = (13 + 22 * press) * s * breathe;
+  // draw the arrow in the current transform (Slate cursor space): flat fill, no glow
+  function drawArrow(ctx, crew, alpha) {
     ctx.globalAlpha *= alpha;
     ctx.fillStyle = crew.fill;
-    ctx.shadowColor = rgba(crew.glow, 0.95);
-    ctx.shadowBlur = blur * 1.9;
-    nativeFill.call(ctx, ARROW_PATH);
-    ctx.shadowBlur = blur * 0.7;
-    nativeFill.call(ctx, ARROW_PATH);
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
-    // a soft inner sheen so it reads as lit from within
-    ctx.fillStyle = 'rgba(255,255,255,0.10)';
     nativeFill.call(ctx, ARROW_PATH);
   }
 
   // draw the name pill in canvas pixels, anchored at its top-left (or top-right when mirrored)
-  function drawPill(ctx, rig, s, flip, crew, alpha, now, seed) {
+  function drawPill(ctx, rig, s, flip, crew, alpha) {
     const h = PILL.h * s;
     const fontPx = PILL.font * s;
     const w = textWidth(ctx, crew.name, fontPx) + PILL.pad * 2 * s;
-    const breathe = 1 + 0.07 * Math.sin(now / 520 + seed);
-    const blur = (13 + 22 * rig.press) * s * breathe;
     const tuck = Math.max(0, Math.min(1.2, rig.tuck || 0));
     const show = Math.max(0, 1 - tuck);
     if (show <= 0.01) return;
@@ -157,19 +143,15 @@
     ctx.scale(0.35 + 0.65 * show, 0.35 + 0.65 * show);
     // pivot the tilt around the corner nearest the arrow, so it swings like a tag
     ctx.rotate(rig.tilt);
-    ctx.scale(rig.stretch, 2 - rig.stretch);
+    // on a click the tag gives a small bob
+    const bob = 1 - 0.07 * (rig.press || 0);
+    ctx.scale(rig.stretch * bob, (2 - rig.stretch) * bob);
     const x = flip ? -w : 0;
     const body = new Path2D();
     if (body.roundRect) body.roundRect(x, 0, w, h, h / 2);
     else body.rect(x, 0, w, h);
     ctx.fillStyle = crew.fill;
-    ctx.shadowColor = rgba(crew.glow, 0.95);
-    ctx.shadowBlur = blur * 1.9;
     nativeFill.call(ctx, body);
-    ctx.shadowBlur = blur * 0.7;
-    nativeFill.call(ctx, body);
-    ctx.shadowBlur = 0;
-    ctx.shadowColor = 'transparent';
     ctx.fillStyle = crew === CREW[6] ? '#0b2a4a' : '#ffffff';
     ctx.font = FONT.replace('{px}', fontPx.toFixed(2));
     ctx.textBaseline = 'middle';
@@ -188,11 +170,11 @@
     stepRig(rig, tipX, tipY, s, flip, now);
     const fadeIn = Math.min(1, (now - rig.born) / 160);
     ctx.save();
-    drawPill(ctx, rig, s, flip, crew, alpha * fadeIn, now, seed);
+    drawPill(ctx, rig, s, flip, crew, alpha * fadeIn);
     ctx.restore();
     ctx.save();
     ctx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
-    drawArrow(ctx, crew, alpha * fadeIn, s, rig.press, now, seed);
+    drawArrow(ctx, crew, alpha * fadeIn);
     ctx.restore();
   }
 
@@ -238,11 +220,14 @@
       const rig = st.rigs[i] || (st.rigs[i] = newRig());
       rig.bubbles = st.lastBubbles.concat(st.bubbles);
       rig.crewIndex = Math.round(mk.b);
-      if (mk.a > 0.004) drawMonika(this, rig, crewAt(mk.b), mk.a, performance.now(), i * 1.7, this.getTransform());
+      let crew = crewAt(mk.b);
+      const forced = this.canvas.dataset && this.canvas.dataset.monikaName;
+      if (forced) crew = Object.assign({}, crew, { name: forced });
+      if (mk.a > 0.004) drawMonika(this, rig, crew, mk.a, performance.now(), i * 1.7, this.getTransform());
       return;
     }
     if (mk.g === 248) {
-      // a Slate comment bubble: give it Monika's glow, and let the cursor beside it make room
+      // a Slate comment bubble: wear the teammate's colour, and let the cursor beside it make room
       const st = canvasState(this);
       const m = this.getTransform();
       const crew = crewAt(mk.b);
@@ -260,10 +245,6 @@
       this.save();
       this.fillStyle = crew.fill;
       this.globalAlpha *= mk.a;
-      this.shadowColor = rgba(crew.glow, 0.9);
-      this.shadowBlur = 16 * k;
-      nativeFill.apply(this, arguments);
-      this.shadowBlur = 6 * k;
       nativeFill.apply(this, arguments);
       this.restore();
       return;
@@ -274,13 +255,11 @@
       this.save();
       this.fillStyle = crew.fill;
       this.globalAlpha *= mk.a;
-      this.shadowColor = rgba(crew.glow, 0.9);
-      this.shadowBlur = 10 * Math.sqrt(Math.abs(this.getTransform().a * this.getTransform().d));
       nativeFill.apply(this, arguments);
       this.restore();
       return;
     }
-    // 252 shadow / 253 outline: Monika has her own glow, skip
+    // 252 shadow / 253 outline: not part of Monika's look, skip
   };
   P.stroke = function () {
     const mk = readMarker(this.strokeStyle);
@@ -290,8 +269,6 @@
       this.save();
       this.strokeStyle = crew.fill;
       this.globalAlpha *= mk.a;
-      this.shadowColor = rgba(crew.glow, 0.9);
-      this.shadowBlur = 10 * Math.sqrt(Math.abs(this.getTransform().a * this.getTransform().d));
       nativeStroke.apply(this, arguments);
       this.restore();
     }

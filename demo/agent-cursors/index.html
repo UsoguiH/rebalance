@@ -33,16 +33,28 @@
   .wrap { width: min(1209px, 100%); margin: 0 auto; padding-left: var(--gutter); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 
   /* ---------------- header */
-  .top { background: radial-gradient(1100px 520px at 70% 10%, #0b2a55 0%, var(--night) 62%); color: #eaf2ff; padding-block: 72px 88px; overflow: hidden; }
+  .top { background: var(--night); color: #eaf2ff; padding-block: 72px 88px; overflow: hidden; }
   .top .wrap { display: grid; gap: 28px; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; }
   @media (max-width: 860px) { .top .wrap { grid-template-columns: minmax(0, 1fr); } }
   .eyebrow { font: 500 13px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: #8fb6ff; margin: 0 0 18px; }
   h1 { font-family: var(--display); font-weight: 700; font-size: clamp(44px, 7vw, 86px); line-height: .95; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
-  h1 em { font-style: normal; color: #fff; text-shadow: 0 0 28px rgba(10,132,255,.9), 0 0 6px rgba(10,132,255,.9); }
+  h1 em { font-style: normal; color: var(--glow); }
   .lede { font-size: 18px; line-height: 1.55; color: #b8c6dc; max-width: 52ch; margin: 22px 0 0; }
   .crew { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; padding: 0; list-style: none; }
-  .crew li { font: 700 14px/1 var(--body); color: #fff; padding: 9px 14px; border-radius: 999px; background: var(--c); box-shadow: 0 0 18px var(--c); }
-  .hint { margin-top: 26px; font-size: 14px; color: #7f8ea8; }
+  .crew li { font: 700 14px/1 var(--body); color: #fff; padding: 9px 14px; border-radius: 999px; background: var(--c); }
+  .hint { margin-top: 26px; font-size: 14px; color: #7f8ea8; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .replay { font: 700 14px/1 var(--body); color: var(--night); background: #fff; border: 0; border-radius: 999px; padding: 12px 18px; }
+  .replay:focus-visible { outline: 3px solid var(--glow); outline-offset: 3px; }
+
+  /* Slate's preloader layout (their c-preloader CSS) */
+  .c-preloader { z-index: 300; position: fixed; inset: 0; overflow: hidden; }
+  .c-preloader.is-revealing { pointer-events: none; }
+  .c-preloader_placeholder { position: fixed; inset: 0; z-index: 300; background-color: rgb(12, 50, 79); }
+  .c-preloader.is-playing .c-preloader_placeholder { display: none; }
+  .c-preloader_stage { z-index: 0; width: 100%; position: absolute; top: 50%; left: 0; transform: translateY(-50%); }
+  .c-preloader_rive { width: 100%; height: auto; display: block; }
+  .c-preloader[data-orientation="portrait"] .c-preloader_stage { width: auto; height: 100%; top: 0; left: 50%; transform: translate(-50%); }
+  .c-preloader[data-orientation="portrait"] .c-preloader_rive { width: auto; height: 100%; }
   .portrait { position: relative; aspect-ratio: 1536 / 1024; max-width: 100%; }
   .portrait canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
@@ -114,13 +126,14 @@
 </style>
 </head>
 <body>
+<div class="c-preloader" role="progressbar" aria-label="Loading"><div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-name="Monika"></canvas></div></div>
 
 <section class="top">
   <div class="wrap">
     <div>
       <p class="eyebrow">Agent cursors</p>
       <h1>Meet <em>Monika</em>, your on-screen agent.</h1>
-      <p class="lede">Slate's interactive scenes, played from their own animation files, with every cursor swapped for Monika's glowing rig. Move your mouse: your cursor is Monika too.</p>
+      <p class="lede">Slate's loading screen and interactive scenes, played from their own animation files, with every cursor swapped for Monika's rig. Move your mouse: your cursor is Monika too.</p>
       <ul class="crew" aria-label="Cursor colours">
         <li style="--c:#0a84ff">Monika</li>
         <li style="--c:#00b72b">Jonas</li>
@@ -128,7 +141,7 @@
         <li style="--c:#b06df5">Leo</li>
         <li style="--c:#ff5c8a">Noor</li>
       </ul>
-      <p class="hint">Scroll down to watch them work.</p>
+      <p class="hint"><button type="button" class="replay" onclick="MonikaLoader.replay()">Replay the loading screen</button> Then scroll down to watch them work.</p>
     </div>
     <div class="portrait" aria-hidden="true"><canvas id="portrait"></canvas></div>
   </div>
@@ -236,6 +249,7 @@
 <script>
   rive.RuntimeLoader.setWasmUrl(window.RIVE_CANVAS_WASM_URL);
 </script>
+<script src="slate-loader.js"></script>
 <script src="slate-scenes.js"></script>
 <script>
   // your own pointer becomes Monika, except where Slate's footer draws its own cursor for you
