@@ -49,7 +49,7 @@
   /* Slate's preloader layout (their c-preloader CSS) */
   .c-preloader { z-index: 300; position: fixed; inset: 0; overflow: hidden; }
   .c-preloader.is-revealing { pointer-events: none; }
-  .c-preloader_placeholder { position: fixed; inset: 0; z-index: 300; background-color: rgb(12, 50, 79); }
+  .c-preloader_placeholder { position: fixed; inset: 0; z-index: 300; background-color: #000; }
   .c-preloader.is-playing .c-preloader_placeholder { display: none; }
   .c-preloader_stage { z-index: 0; width: 100%; position: absolute; top: 50%; left: 0; transform: translateY(-50%); }
   .c-preloader_rive { width: 100%; height: auto; display: block; }
@@ -126,7 +126,7 @@
 </style>
 </head>
 <body>
-<div class="c-preloader" role="progressbar" aria-label="Loading"><div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-name="Monika"></canvas></div></div>
+<div class="c-preloader" role="progressbar" aria-label="Loading"><div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-name="Monika" data-monika-scale="1.9"></canvas></div></div>
 
 <section class="top">
   <div class="wrap">

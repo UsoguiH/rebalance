@@ -221,9 +221,13 @@
       rig.bubbles = st.lastBubbles.concat(st.bubbles);
       rig.crewIndex = Math.round(mk.b);
       let crew = crewAt(mk.b);
-      const forced = this.canvas.dataset && this.canvas.dataset.monikaName;
-      if (forced) crew = Object.assign({}, crew, { name: forced });
-      if (mk.a > 0.004) drawMonika(this, rig, crew, mk.a, performance.now(), i * 1.7, this.getTransform());
+      const ds = this.canvas.dataset || {};
+      if (ds.monikaName) crew = Object.assign({}, crew, { name: ds.monikaName });
+      let pose = this.getTransform();
+      // data-monika-scale on the canvas draws Monika bigger, grown around the arrow tip
+      const grow = parseFloat(ds.monikaScale);
+      if (grow > 0 && grow !== 1) pose = pose.multiply(new DOMMatrix().translate(TIP.x, TIP.y).scale(grow).translate(-TIP.x, -TIP.y));
+      if (mk.a > 0.004) drawMonika(this, rig, crew, mk.a, performance.now(), i * 1.7, pose);
       return;
     }
     if (mk.g === 248) {

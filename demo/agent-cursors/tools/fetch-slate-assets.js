@@ -21,7 +21,8 @@ const PALETTE = { 0x2796f1: 1, 0x00b72b: 2, 0xfa5d1e: 3, 0xc88afa: 4, 0xff6791: 
 // The scenes, by the file name prefix on Slate (the hash is looked up on the live page).
 // `bubbles`: comment bubbles that sit beside a cursor, by artboard -> SolidColor component index.
 const RIVS = {
-  preloader: {},
+  // the loading screen, with Slate's navy ground turned black
+  preloader: { recolor: { '0d324f': '000000' } },
   collaborate: { bubbles: { collaborate: [69, 85, 115, 150] } },
   'move-resize-rotate': {},
   'img-video-draggers': {},
@@ -159,6 +160,21 @@ function markCursors(buf, opts) {
   return n;
 }
 
+// recolour every fill and colour keyframe of one RGB to another, keeping alpha
+function recolor(buf, map) {
+  const T = FORMAT.types;
+  const swap = Object.fromEntries(Object.entries(map).map(([a, b]) => [parseInt(a, 16), parseInt(b, 16)]));
+  let n = 0;
+  for (const o of readRiv(buf)) {
+    const key = o.t === T.SolidColorBase ? 37 : o.t === T.KeyFrameColorBase ? 88 : null;
+    if (key == null || !(key in o.off)) continue;
+    const v = o.p[key], to = swap[v & 0xffffff];
+    if (to === undefined) continue;
+    buf.writeUInt32LE(((v & 0xff000000) | to) >>> 0, o.off[key]); n++;
+  }
+  return n;
+}
+
 // ------------------------------------------------------------ main
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
@@ -172,6 +188,7 @@ function markCursors(buf, opts) {
     const buf = await get(url);
     fs.writeFileSync(path.join(OUT, `${name}.original.riv`), buf);
     const n = markCursors(buf, opts);
+    if (opts.recolor) console.log(`${name}.riv  ${recolor(buf, opts.recolor)} colours recoloured`);
     fs.writeFileSync(path.join(OUT, `${name}.riv`), buf);
     bundle[name] = buf.toString('base64');
     console.log(`${name}.riv  ${buf.length} bytes, ${n} cursor colours marked`);
