@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Downloads the Slate (slateteams.com) animations and media used by this demo, for local,
-// private use, and recolours each file's cursor so monika.js can take it over.
+// Downloads Slate's (slateteams.com) loading-screen animation for local, private use,
+// turns its navy ground black, and recolours its cursor so monika.js can take it over.
 // Slate's files are theirs, so they are written to ./slate-assets/, which git ignores.
 //
 //   node demo/agent-cursors/tools/fetch-slate-assets.js
@@ -23,20 +23,8 @@ const PALETTE = { 0x2796f1: 1, 0x00b72b: 2, 0xfa5d1e: 3, 0xc88afa: 4, 0xff6791: 
 const RIVS = {
   // the loading screen, with Slate's navy ground turned black
   preloader: { recolor: { '0d324f': '000000' } },
-  collaborate: { bubbles: { collaborate: [69, 85, 115, 150] } },
-  'move-resize-rotate': {},
-  'img-video-draggers': {},
-  'cursor-magic': {},
 };
-const MEDIA = [
-  // Move / resize / rotate backdrops
-  ['mrr-1.png', 'https://www.datocms-assets.com/224895/1788213267-bf618325ea289d31c1979ad5363e4a103006d07c.png?ar64=NzI2LzU2Mw&fit=crop&w=1200'],
-  ['mrr-2.png', 'https://www.datocms-assets.com/224895/1788213267-9f8522d025d3ea269011f6ebfd3cc71f32077ca3.png?ar64=NzI2LzU2Mw&fit=crop&w=1200'],
-  ['mrr-3.png', 'https://www.datocms-assets.com/224895/1788213267-e8e882e38d21277592d73ffed6ce571196d320f0.png?ar64=NzI2LzU2Mw&fit=crop&w=1200'],
-  // Image dragger: the clip that plays once the image is dropped, plus its poster
-  ['dragger.mp4', 'https://stream.mux.com/F9LrcpVtwEzOKocvTJ35CRRxcx00qY4bF/medium.mp4'],
-  ['dragger.jpg', 'https://image.mux.com/F9LrcpVtwEzOKocvTJ35CRRxcx00qY4bF/thumbnail.jpg?time=0.0'],
-];
+const MEDIA = [];
 
 async function get(url, { tries = 4, html = false } = {}) {
   let last;
@@ -180,7 +168,7 @@ function recolor(buf, map) {
   fs.mkdirSync(OUT, { recursive: true });
   let html = '';
   try { html = (await get(SITE + '/', { html: true })).toString(); } catch (e) { console.warn('Could not read the home page:', e.message); }
-  const known = { preloader: 'B_5LkbCw', collaborate: 'BPipCHy7', 'move-resize-rotate': 'CIX11jvE', 'img-video-draggers': 'CzrOj6hU', 'cursor-magic': 'BECmDHxu' };
+  const known = { preloader: 'B_5LkbCw' };
   const bundle = {};
   for (const [name, opts] of Object.entries(RIVS)) {
     const m = html.match(new RegExp(`/_astro/${name}\\.[\\w-]+\\.riv`));

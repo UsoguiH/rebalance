@@ -2,13 +2,14 @@
 // Their Rive file loops its idle animation until the view-model flag `siteLoaded` is set,
 // then plays the ribbon reveal; the overlay goes once the state machine reaches its
 // "loaded" state (or after 3.25s, their fallback). Its cursor is taken over by monika.js.
-// MonikaLoader.replay() plays it again.
+// It replays on its own, so the page is just the loading screen on a loop.
 (function () {
   'use strict';
   const R = window.rive;
   const REVEAL_TIMEOUT = 3250; // Slate's values
   const PLAY_DELAY = 150;
-  const MIN_IDLE = 1600; // let the idle loop show for a moment even when the page is already loaded
+  const MIN_IDLE = 2600; // let Monika fly around for a moment before the reveal
+  const LOOP_GAP = 1000; // black pause before it plays again
   const portrait = matchMedia('(orientation: portrait)');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -17,7 +18,7 @@
     root.className = 'c-preloader';
     root.setAttribute('role', 'progressbar');
     root.setAttribute('aria-label', 'Loading');
-    root.innerHTML = '<div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-name="Monika" data-monika-scale="1.9"></canvas></div>';
+    root.innerHTML = '<div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-scale="1.9"></canvas></div>';
     document.body.prepend(root);
     return root;
   }
@@ -53,6 +54,7 @@
       portrait.removeEventListener('change', syncOrientation);
       try { r && r.cleanup(); } catch (e) {}
       root.remove();
+      setTimeout(() => run(markup()), LOOP_GAP);
     };
     const reveal = () => {
       if (dismissed) return;
@@ -62,7 +64,7 @@
       setTimeout(dismiss, REVEAL_TIMEOUT);
     };
 
-    if (reduced.matches || !R) { pageLoaded.then(dismiss); return; }
+    if (reduced.matches || !R) return; // no motion: keep the black screen
     syncOrientation();
     buffer().then((buf) => {
       r = new R.Rive({
@@ -81,24 +83,17 @@
           setTimeout(() => !dismissed && root.classList.add('is-playing'), PLAY_DELAY);
           pageLoaded.then(() => setTimeout(reveal, Math.max(0, MIN_IDLE - (performance.now() - started))));
         },
-        onLoadError() { pageLoaded.then(dismiss); },
+        onLoadError() { console.warn('[loader] could not load preloader.riv'); },
         onStateChange(e) {
           const states = (e && e.data) || [];
           if (root.classList.contains('is-revealing') && states.some((s) => typeof s === 'string' && s.toLowerCase().includes('loaded'))) dismiss();
         },
       });
       R.Rive.suppressDeprecationWarnings = ['state-change-events'];
-    }, () => pageLoaded.then(dismiss));
+    }, () => console.warn('[loader] Slate animation missing: run node demo/agent-cursors/tools/fetch-slate-assets.js'));
     addEventListener('resize', onResize);
     portrait.addEventListener('change', syncOrientation);
   }
 
-  window.MonikaLoader = {
-    replay() {
-      if (document.querySelector('.c-preloader')) return;
-      scrollTo(0, 0);
-      run(markup());
-    },
-  };
   run();
 })();
