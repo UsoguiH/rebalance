@@ -5,14 +5,13 @@
 // colours (tools/fetch-slate-assets.js). Rive's Canvas2D player paints every shape with a
 // plain ctx.fill()/stroke(), so this file patches those two calls. When the cursor's marker
 // colour comes through, Slate's cursor is skipped and this one is drawn at the same spot and
-// layer, always upright, always blue and flat. The pill trails the arrow on a spring so fast
-// moves feel soft.
+// layer, turning and changing colour with Slate's cursor, flat. The pill stays upright and
+// trails the arrow on a spring so fast moves feel soft.
 (function () {
   'use strict';
 
   const LOOK = {
     name: 'سارة',
-    fill: '#0a84ff',            // arrow and pill
     text: '#ffffff',
     font: '700 {px}px "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif',
   };
@@ -58,12 +57,28 @@
     st[key + 'V'] = v;
   }
 
-  // draw the cursor with its arrow tip at (tipX, tipY) canvas pixels, s canvas pixels per unit
-  function draw(ctx, rig, tipX, tipY, s, alpha, now) {
+  // Slate's cursor colours by marker index (see tools/fetch-slate-assets.js); 1 is the blue
+  const COLORS = { 1: [10, 132, 255], 2: [0, 183, 43], 3: [250, 93, 30], 4: [200, 138, 250], 5: [255, 103, 145], 6: [10, 132, 255] };
+  const css = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
+
+  // draw the cursor. pose maps Slate cursor space to canvas pixels, so the arrow turns and
+  // flips exactly like Slate's; the pill stays upright beside the tip so the name reads.
+  function draw(ctx, rig, pose, alpha, variant, now) {
     let dt = rig.t ? (now - rig.t) / 1000 : 0;
     const fresh = !rig.t || dt > 0.25;
     rig.t = now;
     dt = Math.min(dt, 1 / 20);
+    const m = pose;
+    const s = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c));
+    const tipX = m.a * TIP.x + m.c * TIP.y + m.e;
+    const tipY = m.b * TIP.x + m.d * TIP.y + m.f;
+    // colour: Slate blends between its colours, which can pass through others on the way,
+    // so ease toward the nearest one instead of copying every in-between value
+    const target = COLORS[Math.max(1, Math.min(6, Math.round(variant)))] || COLORS[1];
+    if (fresh || !rig.color) rig.color = target.slice();
+    else for (let i = 0; i < 3; i++) rig.color[i] += (target[i] - rig.color[i]) * Math.min(1, dt * 10);
+    const fill = css(rig.color);
+    // pill trails the tip on a spring
     const tx = tipX + PILL.dx * s, ty = tipY + PILL.dy * s;
     if (fresh || Math.hypot(tx - rig.px, ty - rig.py) > 420 * s) {
       rig.px = tx; rig.py = ty; rig.pxV = rig.pyV = 0;
@@ -74,12 +89,11 @@
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = alpha;
-    // pill
     const w = PILL.w * s, h = PILL.h * s;
     const pill = new Path2D();
     if (pill.roundRect) pill.roundRect(rig.px, rig.py, w, h, h / 2);
     else pill.rect(rig.px, rig.py, w, h);
-    ctx.fillStyle = LOOK.fill;
+    ctx.fillStyle = fill;
     nativeFill.call(ctx, pill);
     ctx.fillStyle = LOOK.text;
     ctx.font = LOOK.font.replace('{px}', (PILL.font * s).toFixed(2));
@@ -87,24 +101,25 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(LOOK.name, rig.px + w / 2, rig.py + h * 0.5);
-    // arrow, upright, tip pinned
-    ctx.setTransform(s, 0, 0, s, tipX - TIP.x * s, tipY - TIP.y * s);
-    ctx.fillStyle = LOOK.fill;
+    // arrow, turning with Slate's cursor
+    ctx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f);
+    ctx.fillStyle = fill;
     nativeFill.call(ctx, ARROW_PATH);
     ctx.restore();
   }
 
   // ---------------------------------------------------------------- Rive interception
-  // marker colours are rgb(1, g, b); g 254 = the cursor arrow fill, 252/253 = its shadow/outline
+  // marker colours are rgb(1, g, b); g 254 = the cursor arrow fill (b = which colour),
+  // 252/253 = its shadow/outline
   function readMarker(style) {
     if (typeof style !== 'string') return null;
     if (style.length === 7 && style.startsWith('#01f')) {
       const g = parseInt(style.slice(3, 5), 16);
-      return g >= 248 ? { g, a: 1 } : null;
+      return g >= 248 ? { g, b: parseInt(style.slice(5, 7), 16), a: 1 } : null;
     }
     if (style.startsWith('rgba(1, 2')) {
-      const m = /^rgba\(1, (\d+), \d+, ([\d.]+)\)$/.exec(style);
-      if (m && +m[1] >= 248) return { g: +m[1], a: +m[2] };
+      const m = /^rgba\(1, (\d+), (\d+), ([\d.]+)\)$/.exec(style);
+      if (m && +m[1] >= 248) return { g: +m[1], b: +m[2], a: +m[3] };
     }
     return null;
   }
@@ -115,14 +130,13 @@
     const mk = readMarker(this.fillStyle);
     if (!mk) return nativeFill.apply(this, arguments);
     if (mk.g !== 254 || mk.a <= 0.004) return; // Slate's own shadow/outline: not part of this cursor
-    const m = this.getTransform();
-    const s0 = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c));
+    let pose = this.getTransform();
+    // data-monika-scale on the canvas draws it bigger, grown around the arrow tip
     const grow = parseFloat(this.canvas.dataset && this.canvas.dataset.monikaScale) || 1;
-    const tipX = m.a * TIP.x + m.c * TIP.y + m.e;
-    const tipY = m.b * TIP.x + m.d * TIP.y + m.f;
+    if (grow !== 1) pose = pose.multiply(new DOMMatrix().translate(TIP.x, TIP.y).scale(grow).translate(-TIP.x, -TIP.y));
     let rig = rigs.get(this.canvas);
     if (!rig) rigs.set(this.canvas, (rig = { t: 0, px: 0, py: 0 }));
-    draw(this, rig, tipX, tipY, s0 * grow, mk.a, performance.now());
+    draw(this, rig, pose, mk.a, mk.b, performance.now());
   };
   P.stroke = function () {
     if (readMarker(this.strokeStyle)) return;

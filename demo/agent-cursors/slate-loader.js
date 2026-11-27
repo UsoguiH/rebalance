@@ -2,14 +2,13 @@
 // Their Rive file loops its idle animation until the view-model flag `siteLoaded` is set,
 // then plays the ribbon reveal; the overlay goes once the state machine reaches its
 // "loaded" state (or after 3.25s, their fallback). Its cursor is taken over by monika.js.
-// It replays on its own, so the page is just the loading screen on a loop.
+// MonikaLoader.replay() plays it again.
 (function () {
   'use strict';
   const R = window.rive;
   const REVEAL_TIMEOUT = 3250; // Slate's values
   const PLAY_DELAY = 150;
   const MIN_IDLE = 2600; // let Monika fly around for a moment before the reveal
-  const LOOP_GAP = 1000; // black pause before it plays again
   const portrait = matchMedia('(orientation: portrait)');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -54,7 +53,6 @@
       portrait.removeEventListener('change', syncOrientation);
       try { r && r.cleanup(); } catch (e) {}
       root.remove();
-      setTimeout(() => run(markup()), LOOP_GAP);
     };
     const reveal = () => {
       if (dismissed) return;
@@ -95,5 +93,11 @@
     portrait.addEventListener('change', syncOrientation);
   }
 
+  window.MonikaLoader = {
+    replay() {
+      if (document.querySelector('.c-preloader')) return;
+      run(markup());
+    },
+  };
   run();
 })();

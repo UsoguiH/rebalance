@@ -3,13 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sara Loading Screen</title>
+<title>Sara Hero</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@500;700&display=swap">
 <style>
-  :root { color-scheme: dark; }
-  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  :root {
+    --ground: #f5f5f4;   /* the page the loader reveals */
+    --ink: #0b0b0c;
+    --muted: #66676b;
+    --blue: #0a84ff;     /* the cursor's blue */
+    --arabic: "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+    --latin: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  html, body { margin: 0; min-height: 100%; background: var(--ground); color: var(--ink); }
+  body { font-family: var(--latin); }
+
+  /* hero: the placeholder the loader opens onto */
+  .hero { min-height: 100vh; min-height: 100svh; display: grid; place-items: center; text-align: center; padding: 48px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); box-sizing: border-box; }
+  .hero-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; max-width: 760px; }
+  .tag { font: 500 13px/1 var(--latin); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  .hero h1 { font: 800 clamp(48px, 9vw, 112px)/1.05 var(--arabic); margin: 0; text-wrap: balance; }
+  .hero h1 span { color: var(--blue); }
+  .hero p.lede { font: 500 clamp(17px, 2.2vw, 21px)/1.6 var(--arabic); color: var(--muted); margin: 0; max-width: 34ch; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 12px; }
+  .actions button { font: 700 16px/1 var(--arabic); border: 0; border-radius: 999px; padding: 16px 26px; cursor: pointer; }
+  .actions .primary { background: var(--blue); color: #fff; }
+  .actions .ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px #d6d6d3; }
+  .actions button:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
 
   /* Slate's preloader layout (their c-preloader CSS), on black */
   .c-preloader { z-index: 300; position: fixed; inset: 0; overflow: hidden; }
@@ -23,6 +45,17 @@
 </style>
 </head>
 <body>
+<main class="hero" dir="rtl" lang="ar">
+  <div class="hero-inner">
+    <p class="tag" dir="ltr" lang="en">Hero section</p>
+    <h1>هنا قسم <span>الهيرو</span></h1>
+    <p class="lede">ضع هنا عنوان صفحتك الرئيسي ووصفاً قصيراً لما تقدمه. هذا المكان أول ما يراه الزائر بعد شاشة التحميل.</p>
+    <div class="actions">
+      <button type="button" class="primary">ابدأ الآن</button>
+      <button type="button" class="ghost" onclick="MonikaLoader.replay()">أعد شاشة التحميل</button>
+    </div>
+  </div>
+</main>
 <div class="c-preloader" role="progressbar" aria-label="Loading"><div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-scale="2.6"></canvas></div></div>
 
 <script src="monika.js"></script>
