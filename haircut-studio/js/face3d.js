@@ -62,7 +62,7 @@
   }
 
   // simple: no stand-in head and no flying dots; the real face just fades in where it is.
-  function create(canvas, { scale = 1, simple = false, dot = "255,255,255", scan = "#ff4a1c" } = {}) {
+  function create(canvas, { scale = 1, simple = false, dot = "255,255,255", scan = "#ffffff" } = {}) {
     const g = canvas.getContext("2d");
     let pts = [], born = 0, raf = 0, running = false;
     let yaw = 0, pitch = 0, vy = 0, vp = 0, dragging = false, lastX = 0, lastY = 0, idleAt = 0;

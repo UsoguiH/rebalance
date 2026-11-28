@@ -3,230 +3,162 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#0b0b0d">
-<meta name="color-scheme" content="dark">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f1f1f1">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="New Look">
-<meta name="description" content="See a new haircut or beard on yourself before the barber starts.">
-<title>Try a New Look</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Try a New Look</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://images.unsplash.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-
-<!-- Icons -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <defs>
-    <symbol id="i-logo" viewBox="0 0 32 32"><circle cx="9.5" cy="23" r="4" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="22.5" cy="23" r="4" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12.4 20.2 23.5 5M19.6 20.2 8.5 5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
-    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
-    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12.4" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
-    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="1.8" fill="currentColor"/><path d="m5 18 5-5 3 3 2.5-2.5L20 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
-    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
-    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
-    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
-    <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M4 7h3.5c2 0 3 1 4.2 2.8l.6.9M4 17h3.5c2 0 3-1 4.2-2.8l1.6-2.4C14.5 10 15.5 9 17.5 9H20M20 15h-2.5c-1.3 0-2.2-.4-3-1.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m17.5 6.5 2.5 2.5-2.5 2.5M17.5 12.5l2.5 2.5-2.5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-turn" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M20 4v4.5h-4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3c.6 4.4 2.6 6.4 7 7-4.4.6-6.4 2.6-7 7-.6-4.4-2.6-6.4-7-7 4.4-.6 6.4-2.6 7-7z" fill="currentColor"/><path d="M19 15.5c.3 1.8 1 2.5 2.5 2.8-1.6.3-2.2 1-2.5 2.7-.3-1.7-1-2.4-2.5-2.7 1.6-.3 2.2-1 2.5-2.8z" fill="currentColor"/></symbol>
-    <symbol id="i-face" viewBox="0 0 24 24"><path d="M5 9V6.5A1.5 1.5 0 0 1 6.5 5H9M15 5h2.5A1.5 1.5 0 0 1 19 6.5V9M19 15v2.5a1.5 1.5 0 0 1-1.5 1.5H15M9 19H6.5A1.5 1.5 0 0 1 5 17.5V15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9.5" cy="10.5" r="1.1" fill="currentColor"/><circle cx="14.5" cy="10.5" r="1.1" fill="currentColor"/><path d="M9.5 14.5c1.4 1.2 3.6 1.2 5 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-    <symbol id="i-plan" viewBox="0 0 24 24"><path d="M7 4h7l4 4v10.5A1.5 1.5 0 0 1 16.5 20h-9A1.5 1.5 0 0 1 6 18.5v-13A1.5 1.5 0 0 1 7.5 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.5 12.5h5M9.5 16h3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-    <symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6.5" cy="17" r="2.8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="17" r="2.8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.6 15 18 4M15.4 15 6 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
-    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="m11 12 8-8M16 7l2.5 2.5M14 9l2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
-    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="8" r="1.2" fill="currentColor"/></symbol>
-  </defs>
-</svg>
-
 <div class="app" id="app" data-screen="photo">
 
-  <!-- Launch screen -->
-  <div class="splash" id="splash" aria-hidden="true">
-    <div class="splash-mark"><svg><use href="#i-logo"/></svg></div>
-    <div class="splash-name">New Look</div>
-  </div>
-
   <header class="top">
-    <!-- Tap: back. Press and hold for 2 seconds: staff settings. -->
-    <button class="round-btn top-left" id="backBtn" aria-label="Staff settings (press and hold)">
-      <svg class="ico ico-logo"><use href="#i-logo"/></svg>
-      <svg class="ico ico-back"><use href="#i-back"/></svg>
-      <svg class="ico ico-x"><use href="#i-x"/></svg>
-      <svg class="hold-ring" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22"/></svg>
+    <button class="pill pill--gray" id="backBtn" aria-label="Back">
+      <span class="pill-dash"></span>
+      <svg class="pill-ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19"/></svg>
     </button>
-
-    <div class="top-mid">
-      <div class="brand" aria-hidden="true">New Look</div>
-      <div class="tabs" role="tablist" aria-label="Style type">
-        <span class="tabs-knob" aria-hidden="true"></span>
-        <button role="tab" aria-selected="true" data-kind="hair">Haircut</button>
-        <button role="tab" aria-selected="false" data-kind="beard">Beard</button>
-      </div>
-      <div class="top-title" id="topTitle"></div>
-    </div>
-
-    <button class="avatar" id="meBtn" aria-label="Take a new photo" hidden><img alt=""></button>
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <button class="me" id="meBtn" aria-label="Take a new photo" hidden><img alt=""></button>
   </header>
 
   <main class="screens">
 
     <!-- 1. Photo -->
     <section class="screen" data-name="photo" aria-labelledby="t-photo">
-      <div class="head">
-        <p class="eyebrow">Step 1 of 3</p>
-        <h1 class="h1" id="t-photo">Let's see you</h1>
-        <p class="sub" id="photoHint" aria-live="polite">Look straight at the camera.</p>
-      </div>
-      <div class="cam" id="cam">
+      <h1 class="title" id="t-photo">Let's see you</h1>
+      <div class="card cam" id="cam">
         <video id="video" playsinline muted autoplay hidden></video>
         <img id="shot" alt="Your photo" hidden>
-        <svg class="guide" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><ellipse cx="150" cy="190" rx="100" ry="132"/></svg>
+        <svg class="guide" viewBox="0 0 300 400" aria-hidden="true"><ellipse cx="150" cy="190" rx="98" ry="128"/></svg>
         <div class="count" id="count" aria-live="assertive"></div>
         <div class="flash" id="flash"></div>
         <!-- Labels open the photo picker natively: phones honour a tap on them even inside other apps. -->
         <label class="cam-pick" id="camPick" for="file" hidden>
           <canvas class="idle-face" id="idleFace" aria-hidden="true"></canvas>
-          <span class="cam-chip"><svg class="ico"><use href="#i-image"/></svg>Tap to add a photo</span>
         </label>
-        <span class="cam-ok" id="camOk" aria-hidden="true"><svg class="ico"><use href="#i-check"/></svg></span>
       </div>
+      <p class="hint mono" id="photoHint" aria-live="polite"></p>
       <div class="actions">
-        <button class="btn btn--primary" id="shootBtn" hidden><svg class="ico"><use href="#i-camera"/></svg><span class="lbl">Take photo</span></button>
-        <label class="btn btn--primary" id="pickBtn" for="file"><svg class="ico"><use href="#i-image"/></svg><span class="lbl">Choose a photo</span></label>
-        <button class="btn btn--text" id="altBtn" hidden><span class="lbl">Retake</span></button>
-        <label class="btn btn--text" id="pickAgainBtn" for="file" hidden><span class="lbl">Upload a photo instead</span></label>
+        <button class="btn btn--black" id="shootBtn" hidden><span class="lbl">Take photo</span></button>
+        <label class="btn btn--black" id="pickBtn" for="file"><span class="ico ico-photo"></span><span class="lbl">Choose a photo</span></label>
+        <button class="btn btn--gray" id="altBtn" hidden><span class="lbl">Take again</span></button>
+        <label class="btn btn--gray" id="pickAgainBtn" for="file" hidden><span class="lbl">Choose another</span></label>
       </div>
       <input type="file" id="file" accept="image/*" class="file-input" tabindex="-1" aria-hidden="true">
     </section>
 
     <!-- 2. Pick -->
     <section class="screen" data-name="pick" aria-labelledby="t-pick">
-      <div class="head head--row">
-        <div>
-          <p class="eyebrow">Step 2 of 3</p>
-          <h1 class="h1" id="t-pick">Pick a haircut</h1>
-        </div>
-        <button class="round-btn round-btn--sm" id="searchBtn" aria-label="Search styles" aria-expanded="false"><svg class="ico"><use href="#i-search"/></svg></button>
+      <h1 class="title" id="t-pick">Pick a style</h1>
+      <div class="seg" role="tablist" aria-label="Style type">
+        <span class="seg-knob" aria-hidden="true"></span>
+        <button role="tab" aria-selected="true" data-kind="hair">Haircut</button>
+        <button role="tab" aria-selected="false" data-kind="beard">Beard</button>
       </div>
-      <div class="search" id="search" hidden>
-        <svg class="ico"><use href="#i-search"/></svg>
-        <input type="search" id="searchInput" placeholder="Search haircuts" autocomplete="off" spellcheck="false" enterkeyhint="search">
-        <button class="search-x" id="searchX" aria-label="Clear search"><svg class="ico"><use href="#i-x"/></svg></button>
-      </div>
-      <div class="chips" id="chips" role="tablist" aria-label="Groups"></div>
-      <div class="grid-wrap" id="gridWrap">
-        <div class="grid" id="grid" role="list"></div>
-        <p class="empty" id="empty" hidden>No styles found.</p>
+      <div class="grid" id="grid" role="list"></div>
+      <div class="pager" id="pager">
+        <button class="pager-btn" id="prevPage" aria-label="Previous styles">‹</button>
+        <span class="pager-label mono" id="pageLbl" aria-live="polite">1 / 1</span>
+        <button class="pager-btn" id="nextPage" aria-label="More styles">›</button>
       </div>
     </section>
 
-    <!-- 3. Making -->
+    <!-- 3. Making: the photo fills with colour from the bottom up as the look is made -->
     <section class="screen" data-name="make" aria-labelledby="t-make">
-      <div class="head head--center">
-        <p class="eyebrow" id="makeName">Your new look</p>
-        <h1 class="big" id="t-make"><span id="makePct">0</span><small>%</small></h1>
-        <p class="sub sub--accent"><span id="makeTime">0:00</span><span class="sep">·</span><span id="makeEta">about 25s</span></p>
+      <h1 class="title" id="t-make">Making your look</h1>
+      <div class="card load" id="load" style="--p:0">
+        <img class="load-base" id="loadBase" alt="">
+        <div class="load-fill"><img id="loadImg" alt=""></div>
+        <div class="load-edge" aria-hidden="true">
+          <div class="wave wave--a"><svg viewBox="0 0 1200 24" preserveAspectRatio="none"><path d="M0 12 Q75 2 150 12 T300 12 T450 12 T600 12 T750 12 T900 12 T1050 12 T1200 12"/></svg></div>
+          <div class="wave wave--b"><svg viewBox="0 0 1200 24" preserveAspectRatio="none"><path d="M0 12 Q75 2 150 12 T300 12 T450 12 T600 12 T750 12 T900 12 T1050 12 T1200 12"/></svg></div>
+          <i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="load-pct" aria-hidden="true"><span id="makePct">0</span><small>%</small></div>
       </div>
-      <div class="face3d" id="face3d">
-        <canvas id="faceCanvas" aria-label="3D view of your face. Drag to turn it."></canvas>
-        <span class="face3d-hint">Drag to turn</span>
-        <div class="bar"><i id="makeBar"></i></div>
-      </div>
-      <ol class="rows" id="stepsList" aria-live="polite"></ol>
+      <div class="say" id="log" aria-live="polite"></div>
+      <p class="times mono"><span id="makeTime">0:00</span><span class="dot"></span><span id="makeEta">about 25s</span></p>
       <div class="actions">
-        <button class="btn btn--gray" id="stopBtn"><span class="lbl">Stop</span></button>
+        <button class="btn btn--black" id="stopBtn"><span class="ico ico-stop"></span><span class="lbl">Stop</span></button>
       </div>
     </section>
 
     <!-- 4. Result -->
     <section class="screen" data-name="result" aria-labelledby="t-result">
-      <h1 class="sr-only" id="t-result">Your new look</h1>
+      <h1 class="title sr-only" id="t-result">Your new look</h1>
       <div class="stage" id="stage">
         <div class="turn" id="turn"></div>
         <div class="before" id="before"><img id="beforeImg" alt="Before"></div>
         <div class="glare" aria-hidden="true"></div>
-        <span class="pill-tag" id="angleLbl">Front</span>
-        <span class="pill-tag pill-tag--right" id="beforeTag">Before</span>
-        <span class="pill-tag pill-tag--work" id="improving" hidden><i class="spin"></i>Checking details</span>
-        <div class="drag-hint gone" id="dragHint" aria-hidden="true"><span class="hand"></span><span>Drag to turn</span></div>
+        <div class="angle mono" id="angleLbl">Front</div>
+        <div class="improving mono" id="improving" hidden>Checking the details</div>
+        <div class="drag-hint gone" id="dragHint" aria-hidden="true"><span class="hand"></span><span class="mono">drag to turn</span></div>
       </div>
       <div class="views" id="views" role="tablist" aria-label="Views"></div>
-      <div class="result-bar">
-        <button class="round-btn round-btn--lg" id="holdBtn" aria-label="Hold to see before"><svg class="ico"><use href="#i-eye"/></svg><span class="round-cap">Before</span></button>
-        <button class="btn btn--primary btn--grow" id="loveBtn"><svg class="ico"><use href="#i-check"/></svg><span class="lbl">I like it</span></button>
-        <button class="round-btn round-btn--lg" id="againBtn" aria-label="Try another style"><svg class="ico"><use href="#i-shuffle"/></svg><span class="round-cap">Another</span></button>
+      <div class="actions">
+        <button class="btn btn--gray" id="sidesBtn" hidden><span class="ico ico-turn"></span><span class="lbl">See sides &amp; back</span></button>
+        <button class="btn btn--gray btn--hold" id="holdBtn"><span class="lbl">Hold for before</span></button>
+        <button class="btn btn--black" id="loveBtn"><span class="ico ico-check"></span><span class="lbl">I like it</span></button>
+        <button class="btn btn--ghost" id="againBtn"><span class="lbl">Try another style</span></button>
       </div>
     </section>
 
   </main>
 
-  <!-- Selection dock (pick screen): what is picked + Try it on -->
-  <div class="dock" id="dock" aria-live="polite">
+  <!-- Selection bar (pick screen): what is picked + Try it on -->
+  <div class="island" id="island" aria-live="polite">
     <div class="picked" id="picked"></div>
-    <button class="btn btn--primary btn--dock" id="goBtn"><span class="lbl">Try it on</span><svg class="ico"><use href="#i-arrow"/></svg></button>
+    <button class="go" id="goBtn"><span class="ico ico-check"></span><span class="lbl">Try it on</span></button>
   </div>
 
   <!-- Show the barber -->
-  <div class="sheet" id="show" role="dialog" aria-modal="true" aria-labelledby="t-show" hidden>
-    <div class="sheet-panel">
-      <span class="grab" aria-hidden="true"></span>
-      <div class="sheet-head">
-        <h2 class="h2" id="t-show">Show your barber</h2>
-        <button class="round-btn round-btn--sm" id="showBack" aria-label="Close"><svg class="ico"><use href="#i-x"/></svg></button>
-      </div>
+  <div class="sheet show" id="show" role="dialog" aria-modal="true" aria-labelledby="t-show" hidden>
+    <div class="show-inner">
       <div class="show-photo"><img id="showImg" alt="Your new look"></div>
       <div class="show-views" id="showViews" role="tablist" aria-label="Views" hidden></div>
-      <ul class="rows rows--card" id="showPicked"></ul>
+      <div class="picked picked--show" id="showPicked"></div>
+      <h2 class="title" id="t-show">Show this to your barber</h2>
       <div class="actions">
-        <button class="btn btn--primary" id="saveBtn"><svg class="ico"><use href="#i-down"/></svg><span class="lbl">Save picture</span></button>
-        <button class="btn btn--gray" id="doneBtn"><span class="lbl">Done, next customer</span></button>
+        <button class="btn btn--black" id="saveBtn"><span class="ico ico-down"></span><span class="lbl">Save picture</span></button>
+        <button class="btn btn--gray" id="doneBtn"><span class="lbl">Next customer</span></button>
+        <button class="btn btn--ghost" id="showBack"><span class="lbl">Back</span></button>
       </div>
     </div>
   </div>
 
-  <!-- Staff settings: press and hold the top-left button -->
-  <div class="sheet" id="settings" role="dialog" aria-modal="true" aria-labelledby="t-settings" hidden>
-    <form class="sheet-panel" id="settingsForm">
-      <span class="grab" aria-hidden="true"></span>
-      <div class="sheet-head">
-        <h2 class="h2" id="t-settings">Staff settings</h2>
-        <button class="round-btn round-btn--sm" type="button" id="closeSettings" aria-label="Close"><svg class="ico"><use href="#i-x"/></svg></button>
-      </div>
-      <div class="group">
-        <label class="field"><span class="field-lbl"><svg class="ico"><use href="#i-key"/></svg>Gemini API key</span>
-          <input type="password" id="keyInput" autocomplete="off" spellcheck="false" placeholder="Paste key here">
-        </label>
-        <div class="field-row">
-          <a class="link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a key</a>
-          <button class="chip-btn" type="button" id="checkBtn">Check key</button>
-        </div>
-      </div>
-      <div class="group" id="advanced">
-        <label class="field field--select"><span class="field-lbl">Image model</span>
+  <!-- Staff settings: long-press the top-left button -->
+  <div class="sheet settings" id="settings" role="dialog" aria-modal="true" aria-labelledby="t-settings" hidden>
+    <form class="card card--gray settings-card" id="settingsForm">
+      <h2 class="make-title" id="t-settings">Staff settings</h2>
+      <label class="field"><span class="mono">Gemini API key</span>
+        <input type="password" id="keyInput" autocomplete="off" spellcheck="false" placeholder="Paste key here">
+      </label>
+      <a class="mono link" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a key at aistudio.google.com</a>
+      <button class="btn btn--gray btn--small" type="button" id="checkBtn"><span class="lbl">Check key</span></button>
+      <div class="advanced" id="advanced">
+        <label class="field"><span class="mono">Image model</span>
           <select id="modelInput"></select>
         </label>
-        <label class="toggle"><span class="toggle-txt"><b>Plan and check</b><small>Better results, a bit slower</small></span><input type="checkbox" id="smartInput"><span class="toggle-ui"></span></label>
-        <label class="toggle"><span class="toggle-txt"><b>Sides &amp; back every time</b><small>3 more pictures per try</small></span><input type="checkbox" id="viewsInput"><span class="toggle-ui"></span></label>
+        <label class="toggle"><input type="checkbox" id="smartInput"><span class="toggle-ui"></span><span>Plan and check each result (better, a bit slower)</span></label>
+        <label class="toggle"><input type="checkbox" id="viewsInput"><span class="toggle-ui"></span><span>Make side &amp; back views every time (3 more pictures per try)</span></label>
       </div>
-      <p class="note" id="settingsNote">The key stays on this device only.</p>
+      <p class="mono note" id="settingsNote">The key stays on this device only.</p>
       <div class="actions">
-        <button class="btn btn--primary" type="submit"><span class="lbl">Save</span></button>
-        <button class="btn btn--text" type="button" id="credBtn" data-advanced><span class="lbl">Photo credits</span></button>
+        <button class="btn btn--black" type="submit"><span class="ico ico-check"></span><span class="lbl">Save</span></button>
+        <button class="btn btn--ghost" type="button" id="closeSettings"><span class="lbl">Close</span></button>
+        <button class="btn btn--ghost btn--small" type="button" id="credBtn" data-advanced><span class="lbl">Photo credits</span></button>
       </div>
     </form>
   </div>
 
-  <div class="toast" id="toast" role="status"></div>
+  <div class="toast mono" id="toast" role="status"></div>
 </div>
 
 <script src="js/styles.js"></script>

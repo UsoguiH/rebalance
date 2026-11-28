@@ -1,6 +1,6 @@
 /* Keeps the app itself working offline. App files: network first, saved copy when offline.
    Gemini calls and style photos are never cached here. */
-const CACHE = "new-look-v1";
+const CACHE = "new-look-v2";
 const SHELL = ["./", "index.html", "css/app.css", "js/app.js", "js/styles.js", "js/prompts.js", "js/gemini.js",
   "js/vision.js", "js/facelock.js", "js/pipeline.js", "js/face3d.js", "manifest.webmanifest", "icons/icon.svg"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
