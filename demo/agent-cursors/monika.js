@@ -113,8 +113,8 @@
     if (fresh || Math.hypot(tx - rig.px, ty - rig.py) > 420 * s) {
       rig.px = tx; rig.py = ty; rig.pxV = rig.pyV = 0;
     } else {
-      spring(rig, 'px', tx, 320, 1, dt); // fully damped: follows smoothly, no bounce
-      spring(rig, 'py', ty, 320, 1, dt);
+      spring(rig, 'px', tx, 520, 0.8, dt);
+      spring(rig, 'py', ty, 520, 0.8, dt);
     }
 
     const w = PILL.w * s, h = PILL.h * s;
@@ -138,91 +138,6 @@
     ctx.fillStyle = fill;
     nativeFill.call(ctx, ARROW_PATH);
     ctx.restore();
-  }
-
-  // ---------------------------------------------------------------- pointer pose and entrance
-  // Like a regular mouse pointer it never turns or flips: it keeps the pose of the reference
-  // image (tip at the top-left). With data-monika-upright on the canvas the cursor keeps that pose
-  // whatever Slate's cursor does, and only follows where it is and how big.
-  function pointerPose(x, y, s) {
-    return new DOMMatrix().translate(x, y).scale(s).translate(-TIP.x, -TIP.y);
-  }
-  function liveParts(m) {
-    return { x: m.a * TIP.x + m.c * TIP.y + m.e, y: m.b * TIP.x + m.d * TIP.y + m.f, s: Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) };
-  }
-
-  // The first time the cursor appears, it comes in from below the screen along a winding path
-  // (traced from the sketch: up from the bottom, swinging left, right, left) in one smooth
-  // movement, setting off and settling gently in the middle of the screen.
-  // Points are [x, y] offsets from where it lands, in screen heights.
-  const ENTRANCE_PATH = [
-    [0.079, 0.593], [0.067, 0.4375], [0.033, 0.4245], [-0.0075, 0.4155], [-0.0156, 0.3725],
-    [0.0156, 0.3225], [0.05, 0.2655], [0.033, 0.2405], [-0.0092, 0.2095], [-0.0017, 0.1725],
-    [0.0213, 0.1155], [0.047, 0.0755], [0.027, 0.0225], [0, 0],
-  ];
-  const ENTRANCE_MS = 1700;
-  // a smooth curve through the points (Catmull-Rom), measured so it is travelled at an even pace
-  const CURVE = (() => {
-    const P = ENTRANCE_PATH, pts = [];
-    for (let i = 0; i < P.length - 1; i++) {
-      const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
-      for (let j = 0; j < 40; j++) {
-        const t = j / 40, t2 = t * t, t3 = t2 * t;
-        const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
-        pts.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
-      }
-    }
-    pts.push(P[P.length - 1]);
-    const len = [0];
-    for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
-    return { pts, len, total: len[len.length - 1] };
-  })();
-  function along(u) {
-    const d = u * CURVE.total, L = CURVE.len, P = CURVE.pts;
-    let i = 1;
-    while (i < L.length - 1 && L[i] < d) i++;
-    const k = (d - L[i - 1]) / (L[i] - L[i - 1] || 1), a = P[i - 1], b = P[i];
-    return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k };
-  }
-  // minimum-jerk: the smoothest possible start-to-stop movement
-  const minJerk = (t) => t * t * t * (10 - 15 * t + 6 * t * t);
-
-  // After coming in, it spins in place in the middle of the screen (the first spin: whole turns
-  // about its own middle, easing in and out of each, a new name and colour each turn), then
-  // glides over to Slate's cursor and carries on with it.
-  const SPIN_TURNS = 2, TURN_MS = 900, GLIDE_MS = 420;
-  const MID = ARROW.reduce((c, p) => [c[0] + p[0] / ARROW.length, c[1] + p[1] / ARROW.length], [0, 0]);
-  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-
-  function entrancePose(canvas, rig, live, now, liveVariant) {
-    const L = liveParts(live);
-    const r = canvas.getBoundingClientRect(), k = canvas.width / (r.width || 1);
-    let e = rig.entry;
-    if (!e) {
-      // the middle of the screen, in this canvas's pixels; the tip sits left of it so the arrow
-      // and its name pill are centred together
-      const cx = (innerWidth / 2 - r.left) * k - 46 * L.s, cy = (innerHeight / 2 - r.top) * k - 12 * L.s;
-      e = rig.entry = { at: now, cx, cy, v0: Math.round(liveVariant) || 1 };
-    }
-    const t = now - e.at, Hpx = innerHeight * k; // screen height in canvas pixels
-    const spinAt = ENTRANCE_MS, glideAt = spinAt + SPIN_TURNS * TURN_MS, endAt = glideAt + GLIDE_MS;
-    if (t >= endAt) { e.done = true; return null; }
-    if (t < spinAt) {
-      // in from below along the path, ending on the middle
-      const p = along(minJerk(t / ENTRANCE_MS));
-      return { pose: pointerPose(e.cx + p.x * Hpx, e.cy + p.y * Hpx, L.s), variant: liveVariant };
-    }
-    if (t < glideAt) {
-      // spin in place about the arrow's middle
-      const turns = (t - spinAt) / TURN_MS, n = Math.floor(turns);
-      const a = (n + easeInOut(turns - n)) * Math.PI * 2;
-      const c = pointerPose(e.cx, e.cy, L.s).transformPoint(new DOMPoint(MID[0], MID[1]));
-      const pose = new DOMMatrix().translate(c.x, c.y).rotate((a * 180) / Math.PI).scale(L.s).translate(-MID[0], -MID[1]);
-      return { pose, variant: ((e.v0 - 1 + n) % 4) + 1 };
-    }
-    // glide from the middle onto Slate's cursor, wherever it is now
-    const g = easeInOut((t - glideAt) / GLIDE_MS);
-    return { pose: pointerPose(e.cx + (L.x - e.cx) * g, e.cy + (L.y - e.cy) * g, L.s), variant: liveVariant };
   }
 
   // ---------------------------------------------------------------- Rive interception
@@ -254,14 +169,7 @@
     if (grow !== 1) pose = pose.multiply(new DOMMatrix().translate(TIP.x, TIP.y).scale(grow).translate(-TIP.x, -TIP.y));
     let rig = rigs.get(this.canvas);
     if (!rig) rigs.set(this.canvas, (rig = { t: 0, px: 0, py: 0 }));
-    const now = performance.now();
-    const ds = this.canvas.dataset;
-    // data-monika-entrance: come in along the winding path the first time it appears
-    let variant = mk.b;
-    const entering = ds.monikaEntrance != null && !(rig.entry && rig.entry.done) && entrancePose(this.canvas, rig, pose, now, mk.b);
-    if (entering) { pose = entering.pose; variant = entering.variant; }
-    else if (ds.monikaUpright != null) { const L = liveParts(pose); pose = pointerPose(L.x, L.y, L.s); } // a regular pointer
-    draw(this, rig, pose, mk.a, variant, now);
+    draw(this, rig, pose, mk.a, mk.b, performance.now());
   };
   P.stroke = function () {
     if (readMarker(this.strokeStyle)) return;
