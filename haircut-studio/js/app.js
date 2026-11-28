@@ -1,9 +1,9 @@
-/* Try a New Look: photo -> pick -> making -> result. */
+/* Try a New Look: photo -> pick -> making -> result.
+   Every screen has one main action; the choices are cut into small groups (Hick's law). */
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const app = $("#app");
-  const STEPS = ["photo", "pick", "make", "result"];
   const VIEWS = [ // yaw in degrees: dragging right turns the nose toward the right edge
     { id: "front", label: "Front", yaw: 0 },
     { id: "right", label: "Right", yaw: 90 },
@@ -12,12 +12,39 @@
   ];
   const STYLE_BY_ID = Object.fromEntries(window.STYLES.map((s) => [s.id, s]));
 
+  // Small groups so nobody has to look through 40 photos at once. "Popular" opens first.
+  const GROUPS = {
+    hair: [
+      ["popular", "Popular", ["low-fade", "skin-fade", "textured-crop", "buzz-cut", "taper-fade", "french-crop", "quiff", "side-part"]],
+      ["short", "Short", ["buzz-cut", "ivy-league", "caesar-cut", "french-crop", "high-and-tight", "textured-crop", "shaved-head", "edgar-cut", "brush-up", "spiky"]],
+      ["fade", "Fades", ["low-fade", "mid-fade", "high-fade", "skin-fade", "taper-fade", "comb-over-fade", "undercut", "disconnected-undercut", "waves"]],
+      ["classic", "Classic", ["pompadour", "quiff", "slicked-back", "side-part", "hard-part", "rockabilly", "faux-hawk", "mohawk"]],
+      ["long", "Long & curly", ["curtains", "bowl-cut", "mullet", "modern-mullet", "man-bun", "top-knot", "long-hair", "surfer-hair", "bro-flow", "messy-tousled", "curly-top", "afro", "twists", "dreadlocks", "cornrows"]],
+    ],
+    beard: [
+      ["popular", "Popular", ["light-stubble", "heavy-stubble", "short-boxed", "full-beard", "goatee", "circle-beard", "van-dyke", "chevron"]],
+      ["short", "Short", ["light-stubble", "heavy-stubble", "short-boxed", "chin-strap", "circle-beard", "balbo", "anchor"]],
+      ["full", "Full", ["full-beard", "garibaldi", "bandholz", "ducktail", "verdi"]],
+      ["goatee", "Goatee", ["goatee", "circle-beard", "van-dyke", "anchor", "balbo"]],
+      ["mustache", "Mustache & sides", ["chevron", "handlebar", "walrus", "pencil", "mutton-chops", "friendly-chops", "sideburns"]],
+    ],
+  };
+  // Styles that are in no group still show up, in the last one.
+  for (const kind of ["hair", "beard"]) {
+    const seen = new Set(GROUPS[kind].flatMap((g) => g[2]));
+    const rest = window.STYLES.filter((s) => s.kind === kind && !seen.has(s.id)).map((s) => s.id);
+    GROUPS[kind][GROUPS[kind].length - 1][2].push(...rest);
+  }
+  const groupName = (s) => { const g = GROUPS[s.kind].find((x) => x[0] !== "popular" && x[2].includes(s.id)); return g ? g[1] : ""; };
+
   const S = {
     photo: null, // data URL, 3:4
     photoImg: null,
     photoSource: null, // "camera" | "upload"
     camera: "wait", // "wait" | "on" | "off"
     kind: "hair",
+    group: { hair: "popular", beard: "popular" },
+    query: "",
     pick: { hair: null, beard: null },
     frames: {}, // view id -> data URL | "wait" | "fail"
     yaw: 0,
@@ -27,6 +54,7 @@
 
   const buzz = (ms = 8) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* no haptics */ } };
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const icon = (name) => `<svg class="ico"><use href="#i-${name}"/></svg>`;
 
   function toast(msg) {
     const t = $("#toast");
@@ -35,7 +63,7 @@
   }
 
   /* ---------- presses & ripples on everything tappable ---------- */
-  const PRESSABLE = ".btn, .tile, .go, .pill, .view, .seg button, .me";
+  const PRESSABLE = ".btn, .tile, .round-btn, .chip, .tabs button, .avatar, .dock-add, .show-view, .chip-btn";
   document.addEventListener("pointerdown", (e) => {
     const el = e.target.closest(PRESSABLE);
     if (!el) return;
@@ -50,20 +78,31 @@
     addEventListener("pointerup", off); addEventListener("pointercancel", off);
   });
 
+  /* ---------- sheets ---------- */
+  function openSheet(el) {
+    el.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("open")));
+  }
+  function closeSheet(el) {
+    if (el.hidden) return;
+    el.classList.remove("open");
+    clearTimeout(el.t); el.t = setTimeout(() => { if (!el.classList.contains("open")) el.hidden = true; }, 420);
+  }
+
   /* ---------- screens ---------- */
   function go(name, back = false) {
     app.classList.toggle("going-back", back);
     app.dataset.screen = name;
-    const i = STEPS.indexOf(name);
-    $$(".dots i").forEach((d, j) => { d.className = j === i ? "on" : j < i ? "done" : ""; });
+    $$(".screen").forEach((s) => s.classList.toggle("is-on", s.dataset.name === name));
     $("#meBtn").hidden = !S.photo || name === "photo";
-    $("#backBtn").setAttribute("aria-label", name === "photo" ? "Staff settings (press and hold)" : "Back");
-    scrollTo({ top: 0, behavior: "instant" in document.documentElement.style ? "instant" : "auto" });
+    const bb = $("#backBtn");
+    bb.setAttribute("aria-label", name === "photo" ? "Staff settings (press and hold)" : name === "make" ? "Stop" : "Back");
     if (name === "photo") startCamera(); else stopCamera();
     if (name !== "make") face.stop();
     if (name !== "photo") idleFace.stop();
-    if (name === "pick") requestAnimationFrame(() => renderGrid()); // measure once it is on screen
-    updateIsland();
+    if (name === "pick") renderPick();
+    if (name !== "pick") closeSearch(true);
+    updateDock();
   }
 
   /* ---------- 1. photo ---------- */
@@ -137,41 +176,40 @@
     $("#shot").hidden = true; $("#shot").removeAttribute("src");
     photoUI();
   }
-  // One place decides what the photo screen shows. Choosing a file is always a <label for="file">,
+  // One place decides what the photo screen shows: always one big button, and at most
+  // one quiet second choice under it. Choosing a file is always a <label for="file">,
   // a native tap target, because some in-app browsers ignore a file input clicked from script.
   function photoUI() {
-    const cam = $("#cam"), shoot = $("#shootBtn"), alt = $("#altBtn"), pick = $("#pickBtn"), again = $("#pickAgainBtn"), hint = $("#photoHint");
+    const cam = $("#cam"), shootB = $("#shootBtn"), alt = $("#altBtn"), pick = $("#pickBtn"), again = $("#pickAgainBtn"), hint = $("#photoHint");
     const live = !S.photo && S.camera === "on";
-    hint.hidden = false;
     cam.classList.toggle("has-shot", !!S.photo);
     cam.classList.toggle("no-cam", !S.photo && !live);
     video.hidden = !live; // an empty video shows a big "play" placeholder on Android
     $("#camPick").hidden = !!S.photo || live;
-    shoot.disabled = false;
+    shootB.disabled = false;
     if (S.photo) {
-      hint.textContent = "Do you like this photo?";
-      setBtn(shoot, "ico-check", "Use this photo");
-      shoot.hidden = false; pick.hidden = true;
+      hint.textContent = "Looking good. Is this photo okay?";
+      setBtn(shootB, "arrow", "Use this photo", true);
+      shootB.hidden = false; pick.hidden = true;
       alt.hidden = S.photoSource !== "camera";
       again.hidden = S.photoSource === "camera";
-      again.querySelector(".lbl").textContent = "Choose another";
+      again.querySelector(".lbl").textContent = "Choose another photo";
     } else if (live) {
-      hint.hidden = true; // the oval says it all
-      setBtn(shoot, "ico-rec", "Take photo");
-      shoot.hidden = false; pick.hidden = true; alt.hidden = true;
+      hint.textContent = "Fit your face in the oval.";
+      setBtn(shootB, "camera", "Take photo");
+      shootB.hidden = false; pick.hidden = true; alt.hidden = true;
       again.hidden = false;
-      again.querySelector(".lbl").textContent = "Upload a photo";
+      again.querySelector(".lbl").textContent = "Upload a photo instead";
     } else {
-      // Simple: the stadium with a 3D face, and the Choose a photo button.
-      hint.hidden = true;
-      shoot.hidden = true; alt.hidden = true; again.hidden = true;
+      hint.textContent = S.camera === "wait" ? "Starting the camera…" : "Choose a clear photo of your face.";
+      shootB.hidden = true; alt.hidden = true; again.hidden = true;
       pick.hidden = false;
     }
     if (!S.photo && !live && app.dataset.screen === "photo") { idleInit(); idleFace.start(); } else idleFace.stop();
   }
 
-  // The turning 3D face skeleton shown while waiting for a photo (built from a style photo's face).
-  const idleFace = Face3D.create($("#idleFace"), { scale: 0.82, simple: true });
+  // The turning 3D face shown while waiting for a photo (built from a style photo's face).
+  const idleFace = Face3D.create($("#idleFace"), { scale: 0.82, simple: true, dot: "190,180,255", scan: "#ffffff" });
   let idleLoaded = false;
   function idleInit() {
     if (idleLoaded) return;
@@ -182,18 +220,19 @@
       .then(() => $("#cam").classList.add("face-ready"))
       .catch(() => { idleLoaded = false; });
   }
-  function setBtn(btn, ico, label) {
+  // Icon + label; the icon goes after the label for "forward" buttons.
+  function setBtn(btn, ico, label, after) {
     btn.querySelector(".lbl").textContent = label;
     const old = btn.querySelector(".ico");
     if (old) old.remove();
-    if (ico) { const i = document.createElement("span"); i.className = "ico " + ico; btn.prepend(i); }
+    if (ico) btn.insertAdjacentHTML(after ? "beforeend" : "afterbegin", icon(ico));
   }
 
   $("#shootBtn").addEventListener("click", () => {
     if (S.photo) { $("#meBtn img").src = S.photo; buzz(); go("pick"); }
     else if (S.camera === "on") shoot();
   });
-  $("#altBtn").addEventListener("click", () => { clearPhoto(); startCamera(); }); // "Take again"
+  $("#altBtn").addEventListener("click", () => { clearPhoto(); startCamera(); }); // "Retake"
   ["#pickBtn", "#pickAgainBtn", "#camPick"].forEach((sel) => $(sel).addEventListener("click", () => buzz(6)));
   async function usePicture(f) {
     if (!f || !/^image\//.test(f.type)) { toast("Please choose a photo."); return; }
@@ -216,100 +255,110 @@
     e.preventDefault(); camCard.classList.remove("drag");
     usePicture(e.dataTransfer.files[0]);
   });
-  $("#meBtn").addEventListener("click", () => { clearPhoto(); go("photo", true); });
+  $("#meBtn").addEventListener("click", () => { S.run++; S.ctrl && S.ctrl.abort(); clearPhoto(); go("photo", true); });
 
   /* ---------- 2. pick ---------- */
-  const grid = $("#grid");
+  const grid = $("#grid"), gridWrap = $("#gridWrap");
+  const KIND_WORD = { hair: "haircut", beard: "beard" };
 
-  // One page of styles at a time, as many as fit the space without scrolling.
-  // Swipe sideways or use the arrows to see the next page.
-  const page = { hair: 0, beard: 0 };
-  function layout() {
-    const w = grid.clientWidth, h = grid.clientHeight;
-    if (!w || !h) return { cols: 2, rows: 2 };
-    const cols = w >= 760 ? 4 : w >= 520 ? 3 : 2;
-    const tileW = (w - 12 * (cols - 1)) / cols;
-    const rows = Math.max(1, Math.round((h + 12) / (tileW * 1.2 + 12)));
-    return { cols, rows };
+  function currentList() {
+    const all = window.STYLES.filter((s) => s.kind === S.kind);
+    const q = S.query.trim().toLowerCase();
+    if (q) return all.filter((s) => s.name.toLowerCase().includes(q));
+    const g = GROUPS[S.kind].find((x) => x[0] === S.group[S.kind]) || GROUPS[S.kind][0];
+    return g[2].map((id) => STYLE_BY_ID[id]).filter(Boolean);
   }
-  function renderGrid(dir) {
-    const list = window.STYLES.filter((s) => s.kind === S.kind);
-    const { cols, rows } = layout();
-    const per = cols * rows, pages = Math.max(1, Math.ceil(list.length / per));
-    page[S.kind] = Math.min(Math.max(0, page[S.kind]), pages - 1);
-    const p = page[S.kind];
-    grid.style.setProperty("--cols", cols);
-    grid.style.setProperty("--rows", rows);
-    grid.dataset.dir = dir || "";
-    grid.dataset.per = per;
-    grid.innerHTML = "";
-    list.slice(p * per, p * per + per).forEach((s, k) => {
-      const i = p * per + k;
+
+  function renderPick() {
+    $("#t-pick").textContent = "Pick a " + KIND_WORD[S.kind];
+    $("#searchInput").placeholder = "Search " + KIND_WORD[S.kind] + "s";
+    renderChips();
+    renderGrid();
+  }
+
+  function renderChips() {
+    const box = $("#chips");
+    box.hidden = !!S.query.trim();
+    box.innerHTML = "";
+    for (const [id, label, ids] of GROUPS[S.kind]) {
       const b = document.createElement("button");
-      b.className = "tile" + (S.pick[s.kind] === s.id ? " on" : "");
+      b.className = "chip"; b.setAttribute("role", "tab");
+      b.dataset.group = id;
+      b.setAttribute("aria-selected", S.group[S.kind] === id);
+      b.innerHTML = `<span></span><b>${ids.filter((x) => STYLE_BY_ID[x]).length}</b>`;
+      b.firstChild.textContent = label;
+      box.appendChild(b);
+    }
+  }
+  $("#chips").addEventListener("click", (e) => {
+    const b = e.target.closest(".chip");
+    if (!b || S.group[S.kind] === b.dataset.group) return;
+    S.group[S.kind] = b.dataset.group;
+    $$(".chip", $("#chips")).forEach((c) => c.setAttribute("aria-selected", c === b));
+    b.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+    buzz(6);
+    renderGrid();
+  });
+
+  function renderGrid() {
+    const list = currentList();
+    grid.innerHTML = "";
+    list.forEach((s, k) => {
+      const b = document.createElement("button");
+      const on = S.pick[s.kind] === s.id;
+      b.className = "tile" + (on ? " on" : "");
       b.setAttribute("role", "listitem");
-      b.setAttribute("aria-pressed", S.pick[s.kind] === s.id);
-      b.style.setProperty("--i", k);
+      b.setAttribute("aria-pressed", on);
+      b.style.setProperty("--i", Math.min(k, 12));
       b.dataset.id = s.id;
-      b.innerHTML = `<img alt="" decoding="async"><span class="tile-no">${String(i + 1).padStart(2, "0")}</span><span class="tile-name"></span><span class="tile-tick"><span class="ico ico-check"></span></span>`;
+      b.innerHTML = `<span class="tile-photo"><img alt="" decoding="async" loading="${k < 8 ? "eager" : "lazy"}"><span class="tile-tick">${icon("check")}</span></span><span class="tile-name"></span><span class="tile-sub"></span>`;
       b.querySelector(".tile-name").textContent = s.name;
+      b.querySelector(".tile-sub").textContent = S.query ? groupName(s) : (S.group[S.kind] === "popular" ? groupName(s) : s.kind === "hair" ? "Haircut" : "Beard");
       const img = b.querySelector("img");
       img.onload = () => img.classList.add("ok");
       img.src = s.img;
       if (s.pos) img.style.objectPosition = s.pos;
       grid.appendChild(b);
     });
-    // warm up the next page's photos so paging feels instant
-    list.slice((p + 1) * per, (p + 2) * per).forEach((s) => { new Image().src = s.img; });
-    $("#pageLbl").textContent = `${p + 1} / ${pages}`;
-    $("#prevPage").disabled = p === 0;
-    $("#nextPage").disabled = p >= pages - 1;
-    $("#pager").style.visibility = pages > 1 ? "visible" : "hidden";
+    $("#empty").hidden = list.length > 0;
+    gridWrap.scrollTop = 0;
   }
-  function turnPage(d) {
-    const before = page[S.kind];
-    page[S.kind] += d;
-    renderGrid(d > 0 ? "next" : "prev");
-    if (page[S.kind] !== before) buzz(6);
-  }
-  $("#prevPage").addEventListener("click", () => turnPage(-1));
-  $("#nextPage").addEventListener("click", () => turnPage(1));
-  // swipe left / right on the styles
-  let swipe = null, swiped = false;
-  grid.addEventListener("pointerdown", (e) => { swipe = { x: e.clientX, y: e.clientY }; swiped = false; });
-  grid.addEventListener("pointerup", (e) => {
-    if (!swipe) return;
-    const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
-    swipe = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) { swiped = true; turnPage(dx < 0 ? 1 : -1); }
-  });
-  grid.addEventListener("pointercancel", () => { swipe = null; });
-  // keep the same styles in view when the screen size changes
-  let resizeT = 0;
-  addEventListener("resize", () => {
-    clearTimeout(resizeT);
-    resizeT = setTimeout(() => {
-      if (app.dataset.screen !== "pick") return;
-      const first = page[S.kind] * (+grid.dataset.per || 4);
-      const { cols, rows } = layout();
-      page[S.kind] = Math.floor(first / (cols * rows));
-      renderGrid();
-    }, 150);
-  });
 
   function setKind(kind) {
     if (S.kind === kind) return;
     S.kind = kind;
-    $(".seg").dataset.kind = kind;
-    $$(".seg button").forEach((b) => b.setAttribute("aria-selected", b.dataset.kind === kind));
+    $(".tabs").dataset.kind = kind;
+    $$(".tabs button").forEach((b) => b.setAttribute("aria-selected", b.dataset.kind === kind));
     buzz(6);
-    renderGrid();
+    if (app.dataset.screen === "pick") renderPick();
+    updateDock();
   }
-  $$(".seg button").forEach((b) => b.addEventListener("click", () => setKind(b.dataset.kind)));
+  $$(".tabs button").forEach((b) => b.addEventListener("click", () => setKind(b.dataset.kind)));
+
+  // Search: hidden until asked for, so the screen starts with fewer choices.
+  function openSearch() {
+    $("#search").hidden = false;
+    $("#searchBtn").setAttribute("aria-expanded", "true");
+    $("#searchInput").focus();
+  }
+  function closeSearch(silent) {
+    if ($("#search").hidden) return;
+    $("#search").hidden = true;
+    $("#searchBtn").setAttribute("aria-expanded", "false");
+    $("#searchInput").value = "";
+    if (S.query) { S.query = ""; if (!silent) renderPick(); }
+  }
+  $("#searchBtn").addEventListener("click", () => { buzz(6); if ($("#search").hidden) openSearch(); else closeSearch(); });
+  $("#searchX").addEventListener("click", () => closeSearch());
+  $("#searchInput").addEventListener("input", (e) => {
+    S.query = e.target.value;
+    renderChips(); renderGrid();
+  });
+  $("#searchInput").addEventListener("keydown", (e) => { if (e.key === "Enter") e.target.blur(); if (e.key === "Escape") closeSearch(); });
 
   grid.addEventListener("click", (e) => {
     const tile = e.target.closest(".tile");
-    if (!tile || swiped) { swiped = false; return; }
+    if (!tile) return;
     const s = STYLE_BY_ID[tile.dataset.id];
     const on = S.pick[s.kind] !== s.id;
     $$(".tile.on", grid).forEach((t) => { t.classList.remove("on"); t.setAttribute("aria-pressed", "false"); });
@@ -319,7 +368,7 @@
       buzz(10);
       loadRef(s);
     } else buzz(4);
-    updateIsland();
+    updateDock();
   });
 
   // The chosen style(s): round photos, the names, and what they are.
@@ -330,18 +379,33 @@
     el.dataset.key = key;
     el.innerHTML = '<span class="picked-thumbs"></span><span class="picked-text"><span class="picked-name"></span><span class="picked-sub"></span></span>';
     list.forEach((x) => { const img = document.createElement("img"); img.alt = ""; img.src = x.img; el.firstChild.appendChild(img); });
-    // One style: its name and what it is. Two: both names, one per line.
     el.querySelector(".picked-name").textContent = list[0].name;
-    const sub = el.querySelector(".picked-sub");
-    if (list[1]) { sub.textContent = list[1].name; sub.classList.add("picked-name2"); }
-    else sub.textContent = list[0].kind === "hair" ? "Haircut" : "Beard";
+    el.querySelector(".picked-sub").textContent = list[1] ? "+ " + list[1].name : list[0].kind === "hair" ? "Haircut" : "Beard";
+    // One gentle suggestion in the dock: add the other half.
+    if (el.id === "picked" && list.length === 1) {
+      const other = list[0].kind === "hair" ? "beard" : "hair";
+      const b = document.createElement("button");
+      b.className = "dock-add"; b.dataset.kind = other;
+      b.innerHTML = icon("plus") + `<span>Add a ${KIND_WORD[other]}</span>`;
+      el.querySelector(".picked-sub").replaceWith(b);
+    }
   }
 
-  function updateIsland() {
+  function updateDock() {
     const any = S.pick.hair || S.pick.beard;
-    $("#island").classList.toggle("up", !!any && app.dataset.screen === "pick");
+    const up = !!any && app.dataset.screen === "pick";
+    $("#dock").classList.toggle("up", up);
+    app.classList.toggle("has-pick", up);
     if (any) picked($("#picked"));
+    const add = $(".dock-add", $("#dock"));
+    if (add) { // already on that tab: it just says what to do
+      const here = S.kind === add.dataset.kind;
+      add.disabled = here;
+      add.querySelector("span").textContent = (here ? "Pick a " : "Add a ") + KIND_WORD[add.dataset.kind] + (here ? " above" : "");
+      add.querySelector(".ico").style.display = here ? "none" : "";
+    }
   }
+  $("#dock").addEventListener("click", (e) => { const b = e.target.closest(".dock-add"); if (b) { buzz(6); setKind(b.dataset.kind); } });
 
   const refCache = {};
   function loadRef(s) {
@@ -371,30 +435,53 @@
   });
 
   /* ---------- 3. making ---------- */
-  const face = Face3D.create($("#faceCanvas"));
-  const log = $("#log");
+  const face = Face3D.create($("#faceCanvas"), { scale: 0.74, dot: "190,180,255", scan: "#ffffff" });
+  const stepsList = $("#stepsList");
 
-  function say(text, cls) {
-    const lines = $$("p", log);
-    lines.forEach((p, i) => {
-      const age = lines.length - i;
-      p.classList.toggle("old", age === 1);
-      p.classList.toggle("older", age >= 2);
-      const c = p.querySelector(".caret"); if (c) c.remove();
-      if (age >= 3) p.remove();
+  // The steps the customer sees, in the order the pipeline runs them.
+  function buildSteps(hair, beard) {
+    const cut = hair && beard ? "Cutting and shaping" : hair ? "Cutting your hair" : "Shaping your beard";
+    const steps = [
+      { id: "look", ico: "face", title: "Checking your photo", sub: "One face, good light" },
+      Gemini.settings.smart && { id: "plan", ico: "plan", title: "Planning the cut", sub: "Like a barber would" },
+      { id: "draw", ico: "cut", title: cut, sub: [hair, beard].filter(Boolean).map((s) => s.name).join(" + ") },
+      { id: "lock", ico: "lock", title: "Keeping your face", sub: "Only the hair changes" },
+    ].filter(Boolean);
+    stepsList.innerHTML = "";
+    steps.forEach((st, i) => {
+      const li = document.createElement("li");
+      li.className = "row"; li.dataset.step = st.id; li.dataset.st = "wait";
+      li.style.setProperty("--i", i);
+      li.innerHTML = `<span class="row-ico">${icon(st.ico)}</span><span class="row-txt"><span class="row-title"></span><span class="row-sub"></span></span><span class="row-end"></span>`;
+      li.querySelector(".row-title").textContent = st.title;
+      li.querySelector(".row-sub").textContent = st.sub;
+      stepsList.appendChild(li);
     });
-    const p = document.createElement("p");
-    if (cls) p.className = cls;
-    log.appendChild(p);
+  }
+  // state: "wait" | "run" | "done" | "err"
+  function setStep(id, state, sub) {
+    const li = stepsList.querySelector(`[data-step="${id}"]`);
+    if (!li) return;
+    if (state === "run") { // everything before it is done
+      for (const x of $$(".row", stepsList)) { if (x === li) break; if (x.dataset.st !== "done") setStep(x.dataset.step, "done"); }
+    }
+    li.dataset.st = state;
+    const end = li.querySelector(".row-end");
+    end.innerHTML = state === "run" ? '<i class="spin"></i>' : state === "done" ? icon("check") : state === "err" ? "" : "";
+    if (sub != null) typeSub(li, sub);
+  }
+  function typeSub(li, text) {
+    const p = li.querySelector(".row-sub");
+    clearTimeout(p.t);
     let i = 0;
-    const caret = document.createElement("span"); caret.className = "caret";
+    const caret = '<span class="caret"></span>';
     const tick = () => {
       p.textContent = text.slice(0, ++i);
-      p.appendChild(caret);
-      if (i < text.length) p.t = setTimeout(tick, 26);
+      if (i < text.length) { p.insertAdjacentHTML("beforeend", caret); p.t = setTimeout(tick, 22); }
     };
     tick();
   }
+  const say = (text) => { const run = stepsList.querySelector('[data-st="run"]'); if (run) typeSub(run, text); };
 
   async function make() {
     const hair = S.pick.hair && STYLE_BY_ID[S.pick.hair];
@@ -407,45 +494,50 @@
     S.frames = {};
 
     go("make");
-    $("#makeThumb").src = S.photo;
     $("#makeName").textContent = names.join(" + ");
-    setBtn($("#stopBtn"), "ico-stop", "Stop");
-    log.innerHTML = "";
+    $("#topTitle").textContent = "Making your look";
+    setBtn($("#stopBtn"), null, "Stop");
+    $("#stopBtn").className = "btn btn--gray";
+    buildSteps(hair, beard);
     face.start();
 
-    // The lines follow the real steps of the pipeline; while the picture is drawn
-    // (the long step) they cycle through what a barber would be doing.
+    // While the picture is drawn (the long step) the line under it says what a barber would be doing.
     const drawing = [
-      ...(hair ? ["Trimming the sides.", "Shaping the top.", "Blending it all in."] : []),
-      ...(beard ? [`Shaping the ${beard.name.toLowerCase()}.`, "Cleaning up the lines."] : []),
-      "Matching the light.", "Almost there.",
+      ...(hair ? ["Trimming the sides", "Shaping the top", "Blending it all in"] : []),
+      ...(beard ? [`Shaping the ${beard.name.toLowerCase()}`, "Cleaning up the lines"] : []),
+      "Matching the light", "Almost there",
     ];
     let talk = 0;
     const talkThrough = (lines) => {
       clearInterval(talk);
       let i = 0;
-      talk = setInterval(() => { if (i < lines.length) say(lines[i++]); }, 3800);
+      talk = setInterval(() => { if (i < lines.length) say(lines[i++]); }, 3600);
     };
-    say("Hello! Let me have a look at you.");
 
     const t0 = performance.now(), EST = estimate();
-    $("#makeEta").textContent = "~" + clock(EST);
-    const timer = setInterval(() => {
+    const tick = () => {
       const s = (performance.now() - t0) / 1000;
+      const pct = Math.min(95, (1 - Math.exp(-s / (EST * 0.55))) * 100);
       $("#makeTime").textContent = clock(s);
-      $("#makeBar").style.width = Math.min(95, (1 - Math.exp(-s / (EST * 0.55))) * 100) + "%";
-    }, 250);
+      const left = Math.max(0, EST - s);
+      $("#makeEta").textContent = left > 2 ? `about ${Math.ceil(left)}s left` : "almost done";
+      $("#makeBar").style.width = pct + "%";
+      $("#makePct").textContent = Math.floor(pct);
+    };
+    tick();
+    const timer = setInterval(tick, 250);
     const end = () => { clearInterval(talk); clearInterval(timer); };
 
     const onStep = (stage, info) => {
       if (run !== S.run) return;
-      if (stage === "plan") say("Reading your hair and the shape of your face.");
+      if (stage === "look") setStep("look", "run");
+      if (stage === "plan") setStep("plan", "run", "Reading your hair and face shape");
       if (stage === "planned" && info) {
         if (info.greeting) say(info.greeting);
-        if (info.hair_colour && hair) setTimeout(() => run === S.run && say(`I will keep your natural ${info.hair_colour.toLowerCase()} colour.`), 1800);
+        if (info.hair_colour && hair) setTimeout(() => run === S.run && say(`Keeping your natural ${info.hair_colour.toLowerCase()} colour`), 1900);
       }
-      if (stage === "draw") { say(`Now the ${names.join(" and the ")}.`); talkThrough(drawing); }
-      if (stage === "fix" && app.dataset.screen === "make") { say("Fixing a small detail. One moment."); talkThrough(["Redoing the edges.", "Matching the light.", "Almost there."]); }
+      if (stage === "draw") { setStep("draw", "run", `Now the ${names.join(" and the ")}`); talkThrough(drawing); }
+      if (stage === "fix" && app.dataset.screen === "make") { say("Fixing a small detail"); talkThrough(["Redoing the edges", "Matching the light", "Almost there"]); }
     };
 
     try {
@@ -460,19 +552,24 @@
       if (run !== S.run) return;
       end();
       learn((performance.now() - t0) / 1000);
+      setStep("lock", "run");
       $("#makeBar").style.width = "100%";
-      say("Done. Have a look!");
+      $("#makePct").textContent = "100";
+      $("#makeEta").textContent = "done";
+      await wait(350);
+      setStep("lock", "done");
       buzz([15, 60, 30]);
-      await wait(700);
+      await wait(600);
       if (run !== S.run) return;
       S.frames = { front: out.url };
       S.plan = out.plan;
       showResult(true);
       const refs = [hRef, bRef].filter(Boolean);
+      S.refs = refs;
       if (Gemini.settings.views) { // show the coming views straight away
         VIEWS.forEach((v) => { if (v.id !== "front") S.frames[v.id] = "wait"; });
-        renderViews();
       }
+      renderViews();
       // The check runs while they look; a fixed picture slides in, then the side views are made from it.
       $("#improving").hidden = !Gemini.settings.smart;
       const better = await out.improve;
@@ -483,21 +580,22 @@
         renderFrames();
         const img = turn.querySelector('[data-v="front"]');
         if (img) { img.classList.remove("swap"); void img.offsetWidth; img.classList.add("swap"); }
-        toast("I fixed a small detail");
+        toast("Fixed a small detail");
       }
-      S.refs = refs;
       if (Gemini.settings.views) makeViews(run, refs);
-      else $("#sidesBtn").hidden = false; // on request: three more pictures cost money
+      else { S.canSides = true; renderViews(); } // on request: three more pictures cost money
     } catch (e) {
       end();
       if (e.name === "AbortError" || run !== S.run) return;
       console.error(e);
       if (e.code === "NO_KEY") { openSettings("Add the Gemini API key first."); go("pick", true); return; }
-      say(friendly(e), "err");
+      const cur = stepsList.querySelector('[data-st="run"]') || stepsList.querySelector(".row");
+      if (cur) setStep(cur.dataset.step, "err", friendly(e));
       buzz([40, 60, 40]);
       S.failed = e.code === "PHOTO" ? "photo" : "retry";
-      if (S.failed === "photo") setBtn($("#stopBtn"), "ico-rec", "Take a new photo");
-      else setBtn($("#stopBtn"), "ico-again", "Try again");
+      $("#stopBtn").className = "btn btn--primary";
+      if (S.failed === "photo") setBtn($("#stopBtn"), "camera", "Take a new photo");
+      else setBtn($("#stopBtn"), "turn", "Try again");
     }
   }
 
@@ -534,7 +632,7 @@
   function learn(s) {
     try { localStorage.setItem(etaKey(), String(Math.round(estimate() * 0.6 + s * 0.4))); } catch (e) { /* private mode */ }
   }
-  const clock = (s) => String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+  const clock = (s) => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 
   function stopMaking() {
     S.failed = false;
@@ -549,11 +647,11 @@
   });
 
   // Side and back views are made together; each one appears as soon as it is ready.
-  $("#sidesBtn").addEventListener("click", () => {
-    $("#sidesBtn").hidden = true;
+  function askSides() {
+    S.canSides = false;
     buzz(8);
     makeViews(S.run, S.refs || []);
-  });
+  }
   function makeViews(run, refs) {
     S.refs = refs;
     const todo = VIEWS.filter((v) => v.id !== "front");
@@ -581,9 +679,10 @@
   const norm = (a) => ((a % 360) + 360) % 360;
 
   function showResult(fresh) {
-    $("#sidesBtn").hidden = true;
+    S.canSides = false;
     S.yaw = 0;
     $("#beforeImg").src = S.photo;
+    $("#topTitle").textContent = [S.pick.hair, S.pick.beard].filter(Boolean).map((id) => STYLE_BY_ID[id].name).join(" + ");
     go("result");
     renderFrames(); renderViews();
     if (fresh) { stage.classList.remove("reveal"); void stage.offsetWidth; stage.classList.add("reveal"); }
@@ -637,23 +736,32 @@
     $$(".view").forEach((el) => el.setAttribute("aria-selected", el.dataset.v === near.id));
   }
 
+  // Under the picture: the view chips once there is more than one, or one chip to ask for them.
   function renderViews() {
     const box = $("#views");
-    box.hidden = !Gemini.settings.views && ready().length < 2;
     box.innerHTML = "";
-    for (const v of VIEWS) {
-      const st = S.frames[v.id];
-      if (!st) continue;
+    const shown = VIEWS.filter((v) => S.frames[v.id]);
+    if (shown.length > 1) {
+      for (const v of shown) {
+        const st = S.frames[v.id];
+        const b = document.createElement("button");
+        b.className = "chip view" + (st === "wait" ? " wait" : st === "fail" ? " fail" : "");
+        b.dataset.v = v.id; b.setAttribute("role", "tab");
+        b.append(v.label);
+        if (st === "wait") b.setAttribute("aria-label", v.label + ", still making");
+        if (st === "fail") b.setAttribute("aria-label", v.label + ", failed. Tap to try again");
+        box.appendChild(b);
+      }
+    } else if (S.canSides) {
       const b = document.createElement("button");
-      b.className = "view" + (st === "wait" ? " wait" : st === "fail" ? " fail" : "");
-      b.dataset.v = v.id; b.setAttribute("role", "tab");
-      b.textContent = v.label;
-      if (st === "wait") b.setAttribute("aria-label", v.label + ", still making");
+      b.className = "chip chip--accent"; b.id = "sidesBtn";
+      b.innerHTML = icon("turn") + "<span>See sides &amp; back</span>";
       box.appendChild(b);
     }
     paint();
   }
   $("#views").addEventListener("click", (e) => {
+    if (e.target.closest("#sidesBtn")) { askSides(); return; }
     const b = e.target.closest(".view");
     if (!b) return;
     const v = VIEWS.find((x) => x.id === b.dataset.v);
@@ -697,7 +805,6 @@
 
   let drag = null;
   stage.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("#holdBtn")) return;
     cancelAnimationFrame(anim);
     drag = { x: e.clientX, y: e.clientY, yaw: S.yaw, id: e.pointerId, moved: false, lastFrame: null };
     stage.classList.add("live");
@@ -708,7 +815,7 @@
     stage.style.setProperty("--gx", (nx + 0.5) * 100 + "%");
     stage.style.setProperty("--gy", (ny + 0.5) * 100 + "%");
     if (!drag) {
-      if (e.pointerType === "mouse") { stage.style.setProperty("--rx", (-ny * 8).toFixed(2) + "deg"); stage.style.setProperty("--ry", (nx * 10).toFixed(2) + "deg"); }
+      if (e.pointerType === "mouse") { stage.style.setProperty("--rx", (-ny * 6).toFixed(2) + "deg"); stage.style.setProperty("--ry", (nx * 8).toFixed(2) + "deg"); }
       return;
     }
     const dx = e.clientX - drag.x;
@@ -722,8 +829,8 @@
     const many = ready().length > 1;
     // With only the front view, the head can lean but springs back.
     S.yaw = many ? drag.yaw + dx * 0.55 : 30 * Math.tanh(dx / 160);
-    stage.style.setProperty("--rx", Math.max(-8, Math.min(8, -(e.clientY - drag.y) * 0.05)).toFixed(2) + "deg");
-    stage.style.setProperty("--ry", Math.max(-10, Math.min(10, dx * 0.03)).toFixed(2) + "deg");
+    stage.style.setProperty("--rx", Math.max(-6, Math.min(6, -(e.clientY - drag.y) * 0.04)).toFixed(2) + "deg");
+    stage.style.setProperty("--ry", Math.max(-8, Math.min(8, dx * 0.025)).toFixed(2) + "deg");
     paint();
     const near = $("#angleLbl").textContent;
     if (near !== drag.lastFrame) { if (drag.lastFrame) buzz(5); drag.lastFrame = near; }
@@ -741,7 +848,7 @@
     if (!drag && e.pointerType === "mouse") { stage.style.setProperty("--rx", "0deg"); stage.style.setProperty("--ry", "0deg"); }
   });
   addEventListener("keydown", (e) => {
-    if (app.dataset.screen !== "result" || e.target.closest("input, select")) return;
+    if (app.dataset.screen !== "result" || e.target.closest("input, select") || !$("#show").hidden) return;
     if (e.key === "ArrowRight" || e.key === "ArrowLeft") { stepView(e.key === "ArrowRight" ? 1 : -1); e.preventDefault(); }
   });
   function stepView(dir) {
@@ -756,14 +863,14 @@
 
   // Hold to see the original photo.
   const hold = $("#holdBtn");
-  const holdOn = (e) => { if (e.type === "keydown" && e.key !== " " && e.key !== "Enter") return; if (e.repeat) return; e.preventDefault(); stage.classList.add("show-before"); hold.classList.add("holding"); hold.querySelector(".lbl").textContent = "Before"; buzz(8); };
-  const holdOff = () => { stage.classList.remove("show-before"); hold.classList.remove("holding"); hold.querySelector(".lbl").textContent = "Hold for before"; };
+  const holdOn = (e) => { if (e.type === "keydown" && e.key !== " " && e.key !== "Enter") return; if (e.repeat) return; e.preventDefault(); stage.classList.add("show-before"); hold.classList.add("holding"); buzz(8); };
+  const holdOff = () => { stage.classList.remove("show-before"); hold.classList.remove("holding"); };
   hold.addEventListener("pointerdown", holdOn);
   ["pointerup", "pointerleave", "pointercancel", "keyup", "blur"].forEach((ev) => hold.addEventListener(ev, holdOff));
   hold.addEventListener("keydown", holdOn);
   hold.addEventListener("contextmenu", (e) => e.preventDefault());
 
-  $("#againBtn").addEventListener("click", () => { S.run++; S.ctrl && S.ctrl.abort(); go("pick", true); });
+  $("#againBtn").addEventListener("click", () => { S.run++; S.ctrl && S.ctrl.abort(); buzz(6); go("pick", true); });
 
   /* ---------- show the barber ---------- */
   function currentFrame() {
@@ -776,8 +883,18 @@
     const list = ready();
     const cur = currentFrame();
     $("#showImg").src = cur;
-    $("#showPicked").dataset.key = "";
-    picked($("#showPicked"));
+    const rows = $("#showPicked");
+    rows.innerHTML = "";
+    [S.pick.hair, S.pick.beard].filter(Boolean).map((id) => STYLE_BY_ID[id]).forEach((s) => {
+      const li = document.createElement("li");
+      li.className = "row";
+      li.innerHTML = `<span class="row-ico"><img alt=""></span><span class="row-txt"><span class="row-title"></span><span class="row-sub"></span></span><span class="row-end"></span>`;
+      li.querySelector("img").src = s.img;
+      li.querySelector(".row-title").textContent = s.name;
+      li.querySelector(".row-sub").textContent = s.desc || (s.kind === "hair" ? "Haircut" : "Beard");
+      li.querySelector(".row-end").textContent = s.kind === "hair" ? "Haircut" : "Beard";
+      rows.appendChild(li);
+    });
     const box = $("#showViews");
     box.innerHTML = "";
     box.hidden = list.length < 2;
@@ -796,10 +913,11 @@
       box.appendChild(b);
     });
     $("#saveBtn .lbl").textContent = list.length > 1 ? `Save ${list.length} pictures` : "Save picture";
-    $("#show").hidden = false;
+    openSheet($("#show"));
     buzz([10, 50, 10]);
   });
-  $("#showBack").addEventListener("click", () => { $("#show").hidden = true; });
+  $("#showBack").addEventListener("click", () => closeSheet($("#show")));
+  $("#show").addEventListener("click", (e) => { if (e.target.id === "show") closeSheet($("#show")); });
   // Inside claude.ai the page asks the viewer to save through the downloads capability;
   // elsewhere a normal download link does it.
   let downloadsP = null;
@@ -848,18 +966,19 @@
   function reset() {
     S.run++; S.ctrl && S.ctrl.abort();
     S.pick = { hair: null, beard: null }; S.frames = {};
+    S.group = { hair: "popular", beard: "popular" };
     Pipeline.clear();
     turn.innerHTML = ""; $("#picked").dataset.key = "";
-    $("#show").hidden = true;
+    closeSheet($("#show"));
     $("#beforeImg").removeAttribute("src");
     $("#meBtn img").removeAttribute("src");
     clearPhoto();
-    page.hair = page.beard = 0;
     S.kind = "beard"; setKind("hair");
     go("photo", true);
+    toast("Ready for the next customer");
   }
 
-  /* ---------- back pill: tap = back, press and hold = staff settings ---------- */
+  /* ---------- top-left button: tap = back, press and hold = staff settings ---------- */
   const back = $("#backBtn");
   let holdT = 0, held = false;
   back.addEventListener("pointerdown", () => {
@@ -873,7 +992,7 @@
   back.addEventListener("click", () => {
     if (held) return;
     const sc = app.dataset.screen;
-    if (sc === "photo") { toast("Press and hold for staff settings"); return; }
+    if (sc === "photo") { toast("Staff: press and hold for settings"); return; }
     buzz(6);
     if (sc === "pick") go("photo", true);
     else if (sc === "make") stopMaking();
@@ -917,9 +1036,9 @@
     $("#viewsInput").checked = Gemini.settings.views;
     $("#smartInput").checked = Gemini.settings.smart;
     const used = Gemini.usage();
-    $("#settingsNote").textContent = note || `The key stays on this device only. Used on this device so far: ${used.images} picture${used.images === 1 ? "" : "s"} and ${used.checks} quick check${used.checks === 1 ? "" : "s"}.`;
-    $("#settings").hidden = false;
-    setTimeout(() => (Gemini.settings.key ? modelSel : $("#keyInput")).focus(), 300);
+    $("#settingsNote").textContent = note || `The key stays on this device only. Used here so far: ${used.images} picture${used.images === 1 ? "" : "s"} and ${used.checks} quick check${used.checks === 1 ? "" : "s"}.`;
+    openSheet($("#settings"));
+    if (!Gemini.settings.key) setTimeout(() => $("#keyInput").focus(), 450);
   }
   $("#settingsForm").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -927,21 +1046,34 @@
     if (modelSel.value !== Gemini.settings.model) Gemini.settings.model = modelSel.value;
     Gemini.settings.views = $("#viewsInput").checked;
     Gemini.settings.smart = $("#smartInput").checked;
-    $("#settings").hidden = true;
+    closeSheet($("#settings"));
     toast(Gemini.settings.key ? "Saved" : "No key saved");
   });
-  $("#settings").addEventListener("click", (e) => { if (e.target.id === "settings") $("#settings").hidden = true; });
-  $("#closeSettings").addEventListener("click", () => { $("#settings").hidden = true; });
+  $("#settings").addEventListener("click", (e) => { if (e.target.id === "settings") closeSheet($("#settings")); });
+  $("#closeSettings").addEventListener("click", () => closeSheet($("#settings")));
   $("#credBtn").addEventListener("click", () => window.open("credits.html", "_blank", "noopener"));
   addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("#settings").hidden) $("#settings").hidden = true;
-    else if (!$("#show").hidden) $("#show").hidden = true;
+    if (!$("#settings").hidden) closeSheet($("#settings"));
+    else if (!$("#show").hidden) closeSheet($("#show"));
   });
 
   /* ---------- start ---------- */
-  renderGrid();
   go("photo");
-  if (!Gemini.settings.key) setTimeout(() => openSettings("Paste your Gemini API key once. It stays on this device. Later, press and hold the top-left button to come back here.", true), 700);
+  setTimeout(() => $("#splash").classList.add("gone"), 900);
+  if (!Gemini.settings.key) setTimeout(() => openSettings("Paste your Gemini API key once. It stays on this device. Later, press and hold the top-left button to come back here.", true), 1300);
   setTimeout(() => Vision.warm(), 4000);
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+
+  // Hooks for the screenshot script (only with ?test in the address).
+  if (/[?&]test\b/.test(location.search)) {
+    window.__test = {
+      next: () => $("#shootBtn").click(),
+      pick: () => { $(".tile").click(); },
+      go: () => $("#goBtn").click(),
+      sides: () => { const b = $("#sidesBtn"); if (b) b.click(); },
+      love: () => $("#loveBtn").click(),
+      settings: () => { closeSheet($("#show")); openSettings(); },
+    };
+  }
 })();

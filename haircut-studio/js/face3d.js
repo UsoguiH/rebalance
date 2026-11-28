@@ -62,7 +62,7 @@
   }
 
   // simple: no stand-in head and no flying dots; the real face just fades in where it is.
-  function create(canvas, { scale = 1, simple = false } = {}) {
+  function create(canvas, { scale = 1, simple = false, dot = "255,255,255", scan = "#ff4a1c" } = {}) {
     const g = canvas.getContext("2d");
     let pts = [], born = 0, raf = 0, running = false;
     let yaw = 0, pitch = 0, vy = 0, vp = 0, dragging = false, lastX = 0, lastY = 0, idleAt = 0;
@@ -114,10 +114,10 @@
         let a = (p.shell ? 0.2 : 0.22 + p.l * 0.75) * (0.25 + front * 0.75) * (0.3 + k * 0.7) * fade;
         const r = (p.shell ? 0.9 : 1.05 + p.l * 0.6) * q;
         if (!p.shell && Math.abs(Y - scanY) < 0.035) { hot.push(px, py, r); continue; }
-        g.fillStyle = "rgba(255,255,255," + a.toFixed(3) + ")";
+        g.fillStyle = "rgba(" + dot + "," + a.toFixed(3) + ")";
         g.fillRect(px - r, py - r, r * 2, r * 2);
       }
-      g.fillStyle = "#ff4a1c";
+      g.fillStyle = scan;
       for (let i = 0; i < hot.length; i += 3) {
         const r = hot[i + 2] * 1.5;
         g.fillRect(hot[i] - r, hot[i + 1] - r, r * 2, r * 2);

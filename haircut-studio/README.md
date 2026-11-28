@@ -10,14 +10,27 @@ Big buttons, few screens, few words: it is built for people who are not used to 
 
 ## The flow
 
-1. **Let's see you**: a 3-2-1 countdown takes the photo, or "Use a picture" uploads one.
-2. **Pick a style**: switch between Haircut and Beard. Tap a photo and it drops into the
-   orange card at the bottom. One haircut and one beard can be combined.
-3. **Making it**: elapsed time, progress, short status lines, and a 3D model of their
-   face (MediaPipe face mesh) that they can drag around. **Stop** cancels.
-4. **Your new look**: drag sideways to turn the head. "Hold to see before" shows the
-   original photo while held. **I like it** opens a "Show this to your barber" card with
-   the style names and a Save button. **Done, next customer** clears everything.
+Dark, calm app look: one lavender accent, rounded cards, pill tabs and a floating bottom bar.
+Each screen has **one main button** and at most one quiet second choice, and the 63 styles
+are cut into small groups, so nobody has to choose from 40 photos at once (Hick's law).
+
+1. **Let's see you** (step 1 of 3): a 3-2-1 countdown takes the photo. The only other
+   choice is "Upload a photo instead". Then "Use this photo" or "Retake".
+2. **Pick a haircut / beard** (step 2 of 3): Haircut and Beard tabs at the top, then 5 small
+   groups (Popular opens first, 8 styles). Search is hidden behind the magnifier. Tap a photo
+   and the bottom bar slides up with the style, **Try it on**, and one hint: "Add a beard"
+   (or "Add a haircut").
+3. **Making your look**: a big percentage, time left, a 3D model of their face (MediaPipe face
+   mesh) they can drag, and the real steps as rows that tick off: checking the photo, planning
+   the cut, cutting, keeping the face. Errors show on the step that failed with one button.
+4. **Your new look**: drag sideways to turn the head. Three buttons: hold the eye to see
+   before, **I like it**, or try another style. "See sides & back" asks for the other views.
+   **I like it** opens "Show your barber" with the styles and **Save**. **Done, next customer**
+   clears everything.
+
+It installs like a real app: `manifest.webmanifest`, home-screen icons in `icons/`, full-screen
+on iPhone and Android, and `sw.js` keeps the app itself working offline (the AI still needs
+the internet).
 
 ## Run it
 
@@ -129,8 +142,9 @@ people who agreed to it.
 
 | Path | What it is |
 |---|---|
-| `index.html`, `css/app.css` | The four screens and the components (black stadiums, gray cards, orange accent) |
-| `js/app.js` | Screens, camera, picking, the turnable result, settings |
+| `index.html`, `css/app.css` | The four screens, the sheets and the components (dark cards, lavender accent) |
+| `manifest.webmanifest`, `icons/`, `sw.js` | Install as an app: name, icons, offline app files |
+| `js/app.js` | Screens, camera, style groups and search, the turnable result, settings |
 | `js/prompts.js` | Every prompt and JSON schema (plan, draw, check, side and back views) |
 | `js/pipeline.js` | The try-on steps: plan, draw, check, redraw once, cache |
 | `js/gemini.js` | Gemini calls: image edits and JSON answers, retries, model fallback, model discovery |
