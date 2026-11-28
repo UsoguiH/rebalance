@@ -153,7 +153,7 @@
 
   // The first time the cursor appears, it comes in from below the screen along a winding path
   // (traced from the sketch: up from the bottom, swinging left, right, left) in one smooth
-  // movement, setting off gently and settling gently onto Slate's cursor.
+  // movement, setting off and settling gently in the middle of the screen.
   // Points are [x, y] offsets from where it lands, in screen heights.
   const ENTRANCE_PATH = [
     [0.079, 0.593], [0.067, 0.4375], [0.033, 0.4245], [-0.0075, 0.4155], [-0.0156, 0.3725],
@@ -187,19 +187,42 @@
   // minimum-jerk: the smoothest possible start-to-stop movement
   const minJerk = (t) => t * t * t * (10 - 15 * t + 6 * t * t);
 
-  function entrancePose(canvas, rig, live, now) {
+  // After coming in, it spins in place in the middle of the screen (the first spin: whole turns
+  // about its own middle, easing in and out of each, a new name and colour each turn), then
+  // glides over to Slate's cursor and carries on with it.
+  const SPIN_TURNS = 2, TURN_MS = 900, GLIDE_MS = 420;
+  const MID = ARROW.reduce((c, p) => [c[0] + p[0] / ARROW.length, c[1] + p[1] / ARROW.length], [0, 0]);
+  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  function entrancePose(canvas, rig, live, now, liveVariant) {
     const L = liveParts(live);
-    const e = rig.entry || (rig.entry = { at: now, x: L.x, y: L.y });
-    const k = (now - e.at) / ENTRANCE_MS;
-    if (k >= 1) { e.done = true; return null; }
-    const r = canvas.getBoundingClientRect();
-    const Hpx = innerHeight * (canvas.width / (r.width || 1)); // screen height in canvas pixels
-    const p = along(minJerk(k));
-    let x = e.x + p.x * Hpx, y = e.y + p.y * Hpx;
-    // over the last stretch, settle onto Slate's cursor wherever it is by now
-    const land = k < 0.75 ? 0 : minJerk((k - 0.75) / 0.25);
-    x += (L.x - x) * land; y += (L.y - y) * land;
-    return pointerPose(x, y, L.s);
+    const r = canvas.getBoundingClientRect(), k = canvas.width / (r.width || 1);
+    let e = rig.entry;
+    if (!e) {
+      // the middle of the screen, in this canvas's pixels; the tip sits left of it so the arrow
+      // and its name pill are centred together
+      const cx = (innerWidth / 2 - r.left) * k - 46 * L.s, cy = (innerHeight / 2 - r.top) * k - 12 * L.s;
+      e = rig.entry = { at: now, cx, cy, v0: Math.round(liveVariant) || 1 };
+    }
+    const t = now - e.at, Hpx = innerHeight * k; // screen height in canvas pixels
+    const spinAt = ENTRANCE_MS, glideAt = spinAt + SPIN_TURNS * TURN_MS, endAt = glideAt + GLIDE_MS;
+    if (t >= endAt) { e.done = true; return null; }
+    if (t < spinAt) {
+      // in from below along the path, ending on the middle
+      const p = along(minJerk(t / ENTRANCE_MS));
+      return { pose: pointerPose(e.cx + p.x * Hpx, e.cy + p.y * Hpx, L.s), variant: liveVariant };
+    }
+    if (t < glideAt) {
+      // spin in place about the arrow's middle
+      const turns = (t - spinAt) / TURN_MS, n = Math.floor(turns);
+      const a = (n + easeInOut(turns - n)) * Math.PI * 2;
+      const c = pointerPose(e.cx, e.cy, L.s).transformPoint(new DOMPoint(MID[0], MID[1]));
+      const pose = new DOMMatrix().translate(c.x, c.y).rotate((a * 180) / Math.PI).scale(L.s).translate(-MID[0], -MID[1]);
+      return { pose, variant: ((e.v0 - 1 + n) % 4) + 1 };
+    }
+    // glide from the middle onto Slate's cursor, wherever it is now
+    const g = easeInOut((t - glideAt) / GLIDE_MS);
+    return { pose: pointerPose(e.cx + (L.x - e.cx) * g, e.cy + (L.y - e.cy) * g, L.s), variant: liveVariant };
   }
 
   // ---------------------------------------------------------------- Rive interception
@@ -234,10 +257,11 @@
     const now = performance.now();
     const ds = this.canvas.dataset;
     // data-monika-entrance: come in along the winding path the first time it appears
-    const entering = ds.monikaEntrance != null && !(rig.entry && rig.entry.done) && entrancePose(this.canvas, rig, pose, now);
-    if (entering) pose = entering;
+    let variant = mk.b;
+    const entering = ds.monikaEntrance != null && !(rig.entry && rig.entry.done) && entrancePose(this.canvas, rig, pose, now, mk.b);
+    if (entering) { pose = entering.pose; variant = entering.variant; }
     else if (ds.monikaUpright != null) { const L = liveParts(pose); pose = pointerPose(L.x, L.y, L.s); } // a regular pointer
-    draw(this, rig, pose, mk.a, mk.b, now);
+    draw(this, rig, pose, mk.a, variant, now);
   };
   P.stroke = function () {
     if (readMarker(this.strokeStyle)) return;
