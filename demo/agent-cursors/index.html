@@ -4,13 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sara Hero</title>
-<!-- start the loader's downloads at once, in parallel -->
-<link rel="preload" href="vendor/rive-canvas-lite/rive.js" as="script">
-<script>/* the .wasm can only be preloaded when served, not from disk */ if (location.protocol !== "file:") document.write('<link rel="preload" href="vendor/rive-canvas-lite/rive.wasm" as="fetch" type="application/wasm" crossorigin>');</script>
-<link rel="preload" href="slate-assets/rivs.js" as="script">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap">
 <style>
   :root {
     --ground: #f5f5f4;   /* the page the loader reveals */
@@ -46,14 +42,9 @@
   .c-preloader_rive { width: 100%; height: auto; display: block; }
   .c-preloader[data-orientation="portrait"] .c-preloader_stage { width: auto; height: 100%; top: 0; left: 50%; transform: translate(-50%); }
   .c-preloader[data-orientation="portrait"] .c-preloader_rive { width: auto; height: 100%; }
-  /* the intro cursor, drawn from the first frame until Slate's animation takes over */
-  .c-preloader_intro { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 301; pointer-events: none; }
 </style>
 </head>
 <body>
-<div class="c-preloader" role="progressbar" aria-label="Loading"><div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-scale="2.6"></canvas></div><canvas class="c-preloader_intro" aria-hidden="true"></canvas></div>
-<script src="monika.js"></script>
-<script src="slate-loader.js"></script>
 <main class="hero" dir="rtl" lang="ar">
   <div class="hero-inner">
     <p class="tag" dir="ltr" lang="en">Hero section</p>
@@ -65,9 +56,15 @@
     </div>
   </div>
 </main>
+<div class="c-preloader" role="progressbar" aria-label="Loading"><div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-scale="2.6"></canvas></div></div>
 
-<!-- the heavy parts load in the background; the intro cursor is already moving -->
-<script defer src="vendor/rive-canvas-lite/rive.js"></script>
-<script defer src="slate-assets/rivs.js" onerror="void 0"></script>
+<script src="monika.js"></script>
+<script src="vendor/rive-canvas/rive.js"></script>
+<script src="vendor/rive-canvas/rive-wasm.js"></script>
+<script src="slate-assets/rivs.js" onerror="void 0"></script>
+<script>
+  rive.RuntimeLoader.setWasmUrl(window.RIVE_CANVAS_WASM_URL);
+</script>
+<script src="slate-loader.js"></script>
 </body>
 </html>

@@ -79,45 +79,7 @@
 
   // Slate's cursor colours by marker index (see tools/fetch-slate-assets.js); 1 is the blue
   const COLORS = { 1: [10, 132, 255], 2: [0, 183, 43], 3: [250, 93, 30], 4: [200, 138, 250], 5: [255, 103, 145], 6: [10, 132, 255] };
-  function toHsl([r, g, b]) {
-    r /= 255; g /= 255; b /= 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
-    if (!d) return [0, 0, l * 100];
-    const sat = d / (1 - Math.abs(2 * l - 1));
-    const h = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
-    return [h * 60, sat * 100, l * 100];
-  }
-
-  // Honey smoothing: instead of jumping to each pose, the arrow is pulled toward it by a soft,
-  // critically damped spring (position, turn and size), so Slate's quick hops become one
-  // flowing path. AgentCursor.smooth sets how soft: 0 follows exactly, higher is runnier.
-  function honey(rig, pose, dt, fresh) {
-    const soft = rig.smooth != null ? rig.smooth : AC.smooth || 0;
-    const m = pose;
-    const sx = Math.hypot(m.a, m.b), det = m.a * m.d - m.b * m.c;
-    const raw = {
-      x: m.a * TIP.x + m.c * TIP.y + m.e, y: m.b * TIP.x + m.d * TIP.y + m.f,
-      a: Math.atan2(m.b, m.a), sx, sy: det / (sx || 1),
-    };
-    const st = rig.sm;
-    if (!soft || fresh || !st) {
-      // following exactly: still track speed, so a later switch to honey carries on from it
-      const v = { xV: 0, yV: 0, aV: 0, sxV: 0, syV: 0 };
-      if (st && !fresh && dt > 0) {
-        for (const key of ['x', 'y', 'sx', 'sy']) v[key + 'V'] = (raw[key] - st[key]) / dt;
-        v.aV = Math.atan2(Math.sin(raw.a - st.a), Math.cos(raw.a - st.a)) / dt;
-      }
-      rig.sm = Object.assign(v, raw);
-      if (!soft) return pose;
-    }
-    else {
-      const k = 1600 / (1 + soft * soft); // soft 0 -> very tight, soft 5 -> honey
-      st.a = raw.a + Math.atan2(Math.sin(st.a - raw.a), Math.cos(st.a - raw.a)); // turn the short way
-      for (const key of ['x', 'y', 'a', 'sx', 'sy']) spring(st, key, raw[key], k, 1, dt);
-    }
-    const q = rig.sm;
-    return new DOMMatrix().translate(q.x, q.y).rotate((q.a * 180) / Math.PI).scale(q.sx, q.sy).translate(-TIP.x, -TIP.y);
-  }
+  const css = (c) => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
 
   // draw the cursor. pose maps Slate cursor space to canvas pixels, so the arrow turns and
   // flips exactly like Slate's; the pill stays upright beside the tip so the name reads.
@@ -126,7 +88,7 @@
     const fresh = !rig.t || dt > 0.25;
     rig.t = now;
     dt = Math.min(dt, 1 / 20);
-    const m = honey(rig, pose, dt, fresh);
+    const m = pose;
     const s = Math.sqrt(Math.abs(m.a * m.d - m.b * m.c));
     const tipX = m.a * TIP.x + m.c * TIP.y + m.e;
     const tipY = m.b * TIP.x + m.d * TIP.y + m.f;
@@ -136,34 +98,23 @@
     if (rig.who == null) { rig.who = (lastWho + 1) % CREW.length; lastWho = rig.who; }
     if (fresh) { rig.v = v; rig.seen = v; rig.seenAt = now; }
     if (v !== rig.seen) { rig.seen = v; rig.seenAt = now; }
-    // Slate blends through other colours on its way (green -> orange -> purple), so a colour
-    // only counts once it holds for a moment; then the name and the fade both follow it
-    if (rig.seen !== rig.v && now - rig.seenAt > 120) {
+    if (rig.seen !== rig.v && now - rig.seenAt > 70) {
       rig.v = rig.seen;
       rig.who = (rig.who + 1) % CREW.length;
       lastWho = rig.who;
     }
-    const target = COLORS[rig.v] || COLORS[1];
-    // fade colours around the colour wheel, so green -> purple stays bright instead of going brown
-    const goal = toHsl(target);
-    if (fresh || !rig.hsl) rig.hsl = goal.slice();
-    else {
-      const k = Math.min(1, dt * 14);
-      rig.hsl[0] += (((goal[0] - rig.hsl[0] + 540) % 360) - 180) * k;
-      rig.hsl[1] += (goal[1] - rig.hsl[1]) * k;
-      rig.hsl[2] += (goal[2] - rig.hsl[2]) * k;
-    }
-    rig.color = target;
-    const fill = `hsl(${(((rig.hsl[0] % 360) + 360) % 360).toFixed(1)} ${rig.hsl[1].toFixed(1)}% ${rig.hsl[2].toFixed(1)}%)`;
+    const target = COLORS[v] || COLORS[1];
+    if (fresh || !rig.color) rig.color = target.slice();
+    else for (let i = 0; i < 3; i++) rig.color[i] += (target[i] - rig.color[i]) * Math.min(1, dt * 18);
+    const fill = css(rig.color);
 
     // pill trails the tip on a spring
     const tx = tipX + PILL.dx * s, ty = tipY + PILL.dy * s;
     if (fresh || Math.hypot(tx - rig.px, ty - rig.py) > 420 * s) {
       rig.px = tx; rig.py = ty; rig.pxV = rig.pyV = 0;
     } else {
-      // honey: soft and fully damped, it flows after the tip and settles without a wobble
-      spring(rig, 'px', tx, rig.pillK || 150, rig.pillZ || 1, dt);
-      spring(rig, 'py', ty, rig.pillK || 150, rig.pillZ || 1, dt);
+      spring(rig, 'px', tx, 520, 0.8, dt);
+      spring(rig, 'py', ty, 520, 0.8, dt);
     }
 
     const w = PILL.w * s, h = PILL.h * s;
@@ -216,9 +167,6 @@
     // data-monika-scale on the canvas draws it bigger, grown around the arrow tip
     const grow = parseFloat(this.canvas.dataset && this.canvas.dataset.monikaScale) || 1;
     if (grow !== 1) pose = pose.multiply(new DOMMatrix().translate(TIP.x, TIP.y).scale(grow).translate(-TIP.x, -TIP.y));
-    // a page can watch Slate's cursor (and hide it, by returning false) through AgentCursor.hook;
-    // the loader uses it to hand its own intro cursor over to Slate's without a jump
-    if (AC.hook && AC.hook(this.canvas, pose, mk.b) === false) return;
     let rig = rigs.get(this.canvas);
     if (!rig) rigs.set(this.canvas, (rig = { t: 0, px: 0, py: 0 }));
     draw(this, rig, pose, mk.a, mk.b, performance.now());
@@ -228,9 +176,5 @@
     return nativeStroke.apply(this, arguments);
   };
 
-  const AC = (window.AgentCursor = {
-    CREW, TIP, ARROW, draw, hook: null, smooth: 0,
-    newRig: () => ({ t: 0, px: 0, py: 0 }),
-    setRig: (canvas, rig) => rigs.set(canvas, rig),
-  });
+  window.AgentCursor = { CREW, draw };
 })();
