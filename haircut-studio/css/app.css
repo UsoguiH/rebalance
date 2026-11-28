@@ -55,18 +55,46 @@ img { display: block; -webkit-user-drag: none; }
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; padding: 4px 0 12px;
 }
-.pill {
-  position: relative;
-  height: 64px; min-width: 116px; border-radius: 999px;
+/* The round top-left button. Its icon changes shape with the screen:
+   scissors that snip now and then (first screen), a back arrow, or an X while making. */
+.nav {
+  position: relative; flex: none;
+  width: 64px; height: 64px; border-radius: 50%;
   display: grid; place-items: center;
+  background: var(--white); color: var(--ink);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 10px 24px -12px rgba(0, 0, 0, .35);
   transition: transform .45s var(--spring), background .3s;
 }
-.pill--gray { background: var(--pill); }
-.pill-dash { width: 30px; height: 4px; border-radius: 4px; background: var(--white); transition: width .4s var(--spring), transform .4s var(--spring); }
-.app[data-screen="photo"] .pill-dash { width: 14px; height: 14px; border-radius: 50%; background: var(--white); }
-.pill-ring { position: absolute; width: 44px; height: 44px; transform: rotate(-90deg); pointer-events: none; }
-.pill-ring circle { fill: none; stroke: var(--white); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 120; stroke-dashoffset: 120; opacity: 0; }
-.pill.is-holding .pill-ring circle { opacity: 1; stroke-dashoffset: 0; transition: stroke-dashoffset 1.6s linear, opacity .2s; }
+.nav-ico { width: 34px; height: 34px; overflow: visible; }
+.nav-ico circle, .nav-ico path { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.nav-ico > * { transform-box: view-box; transform-origin: 16px 16px; transition: opacity .3s, transform .55s var(--spring); }
+.nav-back, .nav-x { opacity: 0; transform: scale(.3) rotate(-90deg); }
+.app:not([data-screen="photo"]) .nav-cut { opacity: 0; transform: scale(.3) rotate(90deg); }
+.app[data-screen="pick"] .nav-back, .app[data-screen="result"] .nav-back { opacity: 1; transform: none; }
+.app[data-screen="make"] .nav-x { opacity: 1; transform: none; }
+.blade { transform-box: view-box; transform-origin: 16px 14.6px; }
+.app[data-screen="photo"] .blade--a { animation: snipA 4.2s var(--soft) infinite; }
+.app[data-screen="photo"] .blade--b { animation: snipB 4.2s var(--soft) infinite; }
+.nav.is-pressed .blade--a { transform: rotate(-16deg); }
+.nav.is-pressed .blade--b { transform: rotate(16deg); }
+@keyframes snipA { 0%, 70%, 100% { transform: none; } 78% { transform: rotate(-16deg); } 86% { transform: none; } 92% { transform: rotate(-10deg); } }
+@keyframes snipB { 0%, 70%, 100% { transform: none; } 78% { transform: rotate(16deg); } 86% { transform: none; } 92% { transform: rotate(10deg); } }
+.nav-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
+.nav-ring circle { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 189; stroke-dashoffset: 189; opacity: 0; }
+.nav.is-holding .nav-ring circle { opacity: 1; stroke-dashoffset: 0; transition: stroke-dashoffset 1.6s linear, opacity .2s; }
+
+/* Camera icon on the Take photo button: the lens focuses and the little light blinks. */
+.ico-cam { width: 34px; height: 34px; overflow: visible; }
+.ico-cam .cam-body, .ico-cam .cam-lens { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
+.ico-cam .cam-iris, .ico-cam .cam-led { fill: currentColor; }
+.ico-cam > * { transform-box: fill-box; transform-origin: center; }
+.ico-cam .cam-iris { animation: focus 2.6s var(--soft) infinite; }
+.ico-cam .cam-led { animation: led 2.6s steps(1) infinite; }
+.ico-cam .cam-body { animation: camBob 2.6s var(--soft) infinite; transform-origin: 50% 100%; }
+.btn.is-pressed .ico-cam .cam-iris { animation: none; transform: scale(.25); transition: transform .12s; }
+@keyframes focus { 0%, 100% { transform: scale(1); } 45% { transform: scale(.45); } 60% { transform: scale(1.15); } 72% { transform: scale(1); } }
+@keyframes led { 0%, 80% { opacity: 1; } 84%, 92% { opacity: .15; } }
+@keyframes camBob { 0%, 100% { transform: none; } 55% { transform: scale(1.04, .97); } 65% { transform: none; } }
 
 .dots { display: flex; gap: 8px; }
 .dots i { width: 10px; height: 10px; border-radius: 10px; background: #cfcfcf; transition: width .5s var(--spring), background .3s; }
@@ -340,8 +368,20 @@ label.btn { cursor: pointer; }
   display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .35s, color .3s, transform .5s var(--spring);
 }
 .view[aria-selected="true"] { background: var(--coal); color: var(--white); }
-.view.wait { color: rgba(255, 255, 255, .35); }
-.view.wait::before { content: ""; width: 12px; height: 12px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .9s linear infinite; }
+/* A view that is still being made: a small round copy of the front picture that fills
+   with colour from the bottom, just like the big loader, with its percentage. */
+.view.wait { color: rgba(255, 255, 255, .55); gap: 8px; }
+.vmini { position: relative; flex: none; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; background: var(--coal); -webkit-mask-image: -webkit-radial-gradient(white, black); --e: calc((1 - var(--p, 0)) * 100%); }
+.vmini img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.vmini .g { filter: grayscale(1) brightness(.55); }
+.vmini .c { clip-path: inset(var(--e) 0 0 0); }
+.vmini::after { content: ""; position: absolute; left: -2px; right: -2px; top: var(--e); height: 2px; margin-top: -1px; background: #fff; box-shadow: 0 0 6px #fff; border-radius: 2px; animation: vwave 1.6s ease-in-out infinite; }
+.vtxt { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.05; min-width: 0; }
+.vpct { font: 400 12px var(--mono); color: rgba(255, 255, 255, .45); font-variant-numeric: tabular-nums; }
+.view.just-done { animation: viewDone .7s var(--spring); }
+@keyframes vwave { 50% { transform: translateY(-1.5px) scaleX(.9); } }
+@keyframes viewDone { 0% { transform: scale(.85); background: var(--white); color: var(--ink); } 100% { transform: none; } }
+@media (max-width: 380px) { .vmini { display: none; } }
 .view.fail { color: rgba(255, 255, 255, .3); text-decoration: line-through; }
 .btn--hold.holding { background: var(--ink); color: var(--white); }
 
@@ -430,8 +470,7 @@ label.btn { cursor: pointer; }
   .btn { min-height: 70px; font-size: 22px; }
   .btn--ghost { min-height: 52px; font-size: 19px; }
   .seg { height: 72px; }
-  .pill, .me { height: 56px; }
-  .me { width: 56px; }
+  .nav, .me { height: 56px; width: 56px; }
   .pager-btn { width: 56px; height: 56px; }
   .screen[data-name="pick"] .title, .show .title { display: none; }
   .views .view { min-height: 52px; }

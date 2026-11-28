@@ -35,7 +35,7 @@
   }
 
   /* ---------- presses & ripples on everything tappable ---------- */
-  const PRESSABLE = ".btn, .tile, .go, .pill, .view, .seg button, .me";
+  const PRESSABLE = ".btn, .tile, .go, .nav, .view, .seg button, .me";
   document.addEventListener("pointerdown", (e) => {
     const el = e.target.closest(PRESSABLE);
     if (!el) return;
@@ -156,7 +156,7 @@
       again.querySelector(".lbl").textContent = "Choose another";
     } else if (live) {
       hint.hidden = true; // the oval says it all
-      setBtn(shoot, "ico-rec", "Take photo");
+      setBtn(shoot, "ico-cam", "Take photo");
       shoot.hidden = false; pick.hidden = true; alt.hidden = true;
       again.hidden = false;
       again.querySelector(".lbl").textContent = "Upload a photo";
@@ -181,11 +181,13 @@
       .then(() => $("#cam").classList.add("face-ready"))
       .catch(() => { idleLoaded = false; });
   }
+  const CAM_SVG = '<svg class="ico ico-cam" viewBox="0 0 32 32" aria-hidden="true"><path class="cam-body" d="M4.5 12A3.5 3.5 0 0 1 8 8.5h2.6l2-3h6.8l2 3H24a3.5 3.5 0 0 1 3.5 3.5v9.5A3.5 3.5 0 0 1 24 25H8a3.5 3.5 0 0 1-3.5-3.5z"/><circle class="cam-lens" cx="16" cy="16.6" r="5.2"/><circle class="cam-iris" cx="16" cy="16.6" r="2.4"/><circle class="cam-led" cx="23.4" cy="12.2" r="1.2"/></svg>';
   function setBtn(btn, ico, label) {
     btn.querySelector(".lbl").textContent = label;
     const old = btn.querySelector(".ico");
     if (old) old.remove();
-    if (ico) { const i = document.createElement("span"); i.className = "ico " + ico; btn.prepend(i); }
+    if (ico === "ico-cam") btn.insertAdjacentHTML("afterbegin", CAM_SVG);
+    else if (ico) { const i = document.createElement("span"); i.className = "ico " + ico; btn.prepend(i); }
   }
 
   $("#shootBtn").addEventListener("click", () => {
@@ -511,7 +513,7 @@
       $("#makeEta").textContent = "stopped";
       buzz([40, 60, 40]);
       S.failed = e.code === "PHOTO" ? "photo" : "retry";
-      if (S.failed === "photo") setBtn($("#stopBtn"), "ico-rec", "Take a new photo");
+      if (S.failed === "photo") setBtn($("#stopBtn"), "ico-cam", "Take a new photo");
       else setBtn($("#stopBtn"), "ico-again", "Try again");
     }
   }
@@ -564,15 +566,40 @@
   });
 
   // Side and back views are made together; each one appears as soon as it is ready.
+  // The front picture stays on screen the whole time; the views fill in under it.
   $("#sidesBtn").addEventListener("click", () => {
     $("#sidesBtn").hidden = true;
     buzz(8);
     makeViews(S.run, S.refs || []);
+    toast("Making the sides. Keep looking at the front.");
   });
+
+  // Each view being made has its own small colour-fill loader (same idea as the big one).
+  const viewEtaKey = "hs.eta.view";
+  const viewEst = () => { try { return Math.max(8, Math.min(120, parseFloat(localStorage.getItem(viewEtaKey)) || 24)); } catch (e) { return 24; } };
+  const viewLearn = (s) => { try { localStorage.setItem(viewEtaKey, String(Math.round(viewEst() * 0.6 + s * 0.4))); } catch (e) { /* private mode */ } };
+  S.viewT0 = {};
+  let viewRaf = 0;
+  function viewTick() {
+    viewRaf = 0;
+    const est = viewEst();
+    let any = false;
+    for (const b of $$(".view.wait", $("#views"))) {
+      const t0 = S.viewT0[b.dataset.v];
+      if (!t0) continue;
+      any = true;
+      const p = Math.min(0.95, 1 - Math.exp(-((performance.now() - t0) / 1000) / (est * 0.55)));
+      b.style.setProperty("--p", p.toFixed(3));
+      const pct = b.querySelector(".vpct");
+      if (pct) pct.textContent = Math.round(p * 100) + "%";
+    }
+    if (any) viewRaf = requestAnimationFrame(viewTick);
+  }
   function makeViews(run, refs) {
     S.refs = refs;
     const todo = VIEWS.filter((v) => v.id !== "front");
-    todo.forEach((v) => { S.frames[v.id] = "wait"; });
+    const now = performance.now();
+    todo.forEach((v) => { S.frames[v.id] = "wait"; S.viewT0[v.id] = now; });
     renderViews();
     return Promise.all(todo.map(async (v, i) => {
       await new Promise((r) => setTimeout(r, i * 400)); // stagger to be gentle on rate limits
@@ -580,6 +607,8 @@
         const url = await Pipeline.view({ result: S.frames.front, photo: S.photo, view: v.id, refs, plan: S.plan, signal: S.ctrl.signal });
         if (run !== S.run) return;
         S.frames[v.id] = url;
+        viewLearn((performance.now() - S.viewT0[v.id]) / 1000);
+        S.justDone = v.id;
         buzz(6);
       } catch (e) {
         if (e.name === "AbortError" || run !== S.run) return;
@@ -654,18 +683,25 @@
 
   function renderViews() {
     const box = $("#views");
-    box.hidden = !Gemini.settings.views && ready().length < 2;
+    // Shown as soon as there is more than the front: views that are ready, being made or failed.
+    box.hidden = VIEWS.filter((v) => S.frames[v.id]).length < 2;
     box.innerHTML = "";
     for (const v of VIEWS) {
       const st = S.frames[v.id];
       if (!st) continue;
       const b = document.createElement("button");
-      b.className = "view" + (st === "wait" ? " wait" : st === "fail" ? " fail" : "");
+      b.className = "view" + (st === "wait" ? " wait" : st === "fail" ? " fail" : "") + (S.justDone === v.id ? " just-done" : "");
       b.dataset.v = v.id; b.setAttribute("role", "tab");
-      b.textContent = v.label;
-      if (st === "wait") b.setAttribute("aria-label", v.label + ", still making");
+      if (st === "wait") {
+        b.innerHTML = '<span class="vmini"><img class="g" alt=""><img class="c" alt=""></span><span class="vtxt"><span class="vlbl"></span><span class="vpct">0%</span></span>';
+        b.querySelectorAll(".vmini img").forEach((img) => { img.src = S.frames.front; });
+        b.querySelector(".vlbl").textContent = v.label;
+        b.setAttribute("aria-label", v.label + ", still making");
+      } else b.textContent = v.label;
       box.appendChild(b);
     }
+    S.justDone = null;
+    if (!viewRaf) viewTick();
     paint();
   }
   $("#views").addEventListener("click", (e) => {
@@ -680,7 +716,7 @@
   });
   async function retryView(v) {
     const run = S.run;
-    S.frames[v.id] = "wait"; renderViews();
+    S.frames[v.id] = "wait"; S.viewT0[v.id] = performance.now(); renderViews();
     try { S.frames[v.id] = await Pipeline.view({ result: S.frames.front, photo: S.photo, view: v.id, refs: S.refs || [], plan: S.plan, signal: S.ctrl.signal }); }
     catch (e) { S.frames[v.id] = "fail"; }
     if (run === S.run) { renderFrames(); renderViews(); }
