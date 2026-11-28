@@ -21,9 +21,10 @@ Then open `demo/agent-cursors/index.html`, straight from disk or through any loc
 - `tools/fetch-slate-assets.js` downloads the loader, turns its navy ground black, and recolours
   its `cursor` artboard to marker colours, in place (only colour bytes change).
   `tools/rive-format.json` is the property table it needs, generated from Rive's MIT runtime headers.
-- On its first appearance the cursor flies in from below the screen along a winding S-path (traced
-  from a sketch), upright and leaning into its bends, then lands on Slate's cursor
-  (`data-monika-entrance` on the canvas; the path is `ENTRANCE_PATH` in `monika.js`).
+- On its first appearance the cursor comes in from below the screen along a winding S-path (traced
+  from a sketch) the way a hand moves a mouse: upright and full size, quicker on straights and
+  slower in bends, with a faint tremor and a small overshoot it corrects, then eases into Slate's
+  cursor (`data-monika-entrance` on the canvas; the path is `ENTRANCE_PATH` in `monika.js`).
 - `slate-loader.js` ports Slate's `<c-preloader>` script; `MonikaLoader.replay()` plays it again.
 - `monika.js` patches `CanvasRenderingContext2D.fill/stroke`. When the cursor's marker colour is
   painted, it skips Slate's cursor and draws this one with the same transform and colour, with the
