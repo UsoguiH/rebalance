@@ -22,9 +22,9 @@ Then open `demo/agent-cursors/index.html`, straight from disk or through any loc
   its `cursor` artboard to marker colours, in place (only colour bytes change).
   `tools/rive-format.json` is the property table it needs, generated from Rive's MIT runtime headers.
 - On its first appearance the cursor comes in from below the screen along a winding S-path (traced
-  from a sketch) the way a hand moves a mouse: upright and full size, quicker on straights and
-  slower in bends, with a faint tremor and a small overshoot it corrects, then eases into Slate's
-  cursor (`data-monika-entrance` on the canvas; the path is `ENTRANCE_PATH` in `monika.js`).
+  from a sketch) in one smooth movement, then settles onto Slate's cursor (`data-monika-entrance`;
+  the path is `ENTRANCE_PATH` in `monika.js`). Like a regular mouse pointer it never turns or flips
+  (`data-monika-upright`): it only follows where Slate's cursor is.
 - `slate-loader.js` ports Slate's `<c-preloader>` script; `MonikaLoader.replay()` plays it again.
 - `monika.js` patches `CanvasRenderingContext2D.fill/stroke`. When the cursor's marker colour is
   painted, it skips Slate's cursor and draws this one with the same transform and colour, with the

@@ -17,7 +17,7 @@
     root.className = 'c-preloader';
     root.setAttribute('role', 'progressbar');
     root.setAttribute('aria-label', 'Loading');
-    root.innerHTML = '<div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-scale="2.6" data-monika-entrance></canvas></div>';
+    root.innerHTML = '<div class="c-preloader_placeholder" aria-hidden="true"></div><div class="c-preloader_stage"><canvas class="c-preloader_rive" data-monika-scale="2.6" data-monika-entrance data-monika-upright></canvas></div>';
     document.body.prepend(root);
     return root;
   }

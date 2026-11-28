@@ -113,8 +113,8 @@
     if (fresh || Math.hypot(tx - rig.px, ty - rig.py) > 420 * s) {
       rig.px = tx; rig.py = ty; rig.pxV = rig.pyV = 0;
     } else {
-      spring(rig, 'px', tx, 520, 0.8, dt);
-      spring(rig, 'py', ty, 520, 0.8, dt);
+      spring(rig, 'px', tx, 320, 1, dt); // fully damped: follows smoothly, no bounce
+      spring(rig, 'py', ty, 320, 1, dt);
     }
 
     const w = PILL.w * s, h = PILL.h * s;
@@ -140,24 +140,28 @@
     ctx.restore();
   }
 
-  // ---------------------------------------------------------------- entrance
+  // ---------------------------------------------------------------- pointer pose and entrance
+  // Like a regular mouse pointer it never turns or flips: it keeps the pose of the reference
+  // image (tip at the top-left). With data-monika-upright on the canvas the cursor keeps that pose
+  // whatever Slate's cursor does, and only follows where it is and how big.
+  function pointerPose(x, y, s) {
+    return new DOMMatrix().translate(x, y).scale(s).translate(-TIP.x, -TIP.y);
+  }
+  function liveParts(m) {
+    return { x: m.a * TIP.x + m.c * TIP.y + m.e, y: m.b * TIP.x + m.d * TIP.y + m.f, s: Math.sqrt(Math.abs(m.a * m.d - m.b * m.c)) };
+  }
+
   // The first time the cursor appears, it comes in from below the screen along a winding path
-  // (traced from the sketch: up from the bottom, swinging left, right, left) the way a person
-  // moves a mouse: upright and full size like a real pointer, quick on the straights and slower
-  // in tight bends, setting off and slowing like a hand, with a faint hand tremor, overshooting
-  // the target a little and correcting back. Then it eases into Slate's cursor's movement.
+  // (traced from the sketch: up from the bottom, swinging left, right, left) in one smooth
+  // movement, setting off gently and settling gently onto Slate's cursor.
   // Points are [x, y] offsets from where it lands, in screen heights.
   const ENTRANCE_PATH = [
     [0.079, 0.593], [0.067, 0.4375], [0.033, 0.4245], [-0.0075, 0.4155], [-0.0156, 0.3725],
     [0.0156, 0.3225], [0.05, 0.2655], [0.033, 0.2405], [-0.0092, 0.2095], [-0.0017, 0.1725],
     [0.0213, 0.1155], [0.047, 0.0755], [0.027, 0.0225], [0, 0],
   ];
-  const ENTRANCE_MS = 1500;   // the main movement
-  const CORRECT_MS = 260;     // the little correction after overshooting
-  const OVERSHOOT = 0.022;    // how far past the target it goes, in screen heights
-  const TURN_IN_MS = 650;     // after landing, ease from upright into Slate's cursor's turning
-  // a smooth curve through the points (Catmull-Rom), then a timetable for travelling it: hands
-  // slow down in bends (speed ~ curvature^-1/3, the "two-thirds power law" of human motion)
+  const ENTRANCE_MS = 1700;
+  // a smooth curve through the points (Catmull-Rom), measured so it is travelled at an even pace
   const CURVE = (() => {
     const P = ENTRANCE_PATH, pts = [];
     for (let i = 0; i < P.length - 1; i++) {
@@ -169,66 +173,33 @@
       }
     }
     pts.push(P[P.length - 1]);
-    const n = pts.length, time = [0];
-    for (let i = 1; i < n; i++) {
-      const a = pts[Math.max(0, i - 2)], b = pts[i - 1], c = pts[Math.min(n - 1, i)];
-      const ds = Math.hypot(c[0] - b[0], c[1] - b[1]);
-      // curvature from the turn between neighbouring steps
-      const t1 = Math.atan2(b[1] - a[1], b[0] - a[0]), t2 = Math.atan2(c[1] - b[1], c[0] - b[0]);
-      const turn = Math.abs(Math.atan2(Math.sin(t2 - t1), Math.cos(t2 - t1)));
-      const k = Math.max(turn / (ds || 1e-6), 2);
-      time.push(time[i - 1] + ds / Math.pow(k, -1 / 3));
-    }
-    return { pts, time, total: time[n - 1] };
+    const len = [0];
+    for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    return { pts, len, total: len[len.length - 1] };
   })();
-  function at(tau) { // where the hand is at a fraction tau of the travel time
-    const T = tau * CURVE.total, tm = CURVE.time, P = CURVE.pts;
+  function along(u) {
+    const d = u * CURVE.total, L = CURVE.len, P = CURVE.pts;
     let i = 1;
-    while (i < tm.length - 1 && tm[i] < T) i++;
-    const k = (T - tm[i - 1]) / (tm[i] - tm[i - 1] || 1), a = P[i - 1], b = P[i];
+    while (i < L.length - 1 && L[i] < d) i++;
+    const k = (d - L[i - 1]) / (L[i] - L[i - 1] || 1), a = P[i - 1], b = P[i];
     return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k };
   }
-  // minimum-jerk profile: how real reaching movements speed up and slow down
+  // minimum-jerk: the smoothest possible start-to-stop movement
   const minJerk = (t) => t * t * t * (10 - 15 * t + 6 * t * t);
-  const turnTo = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
 
   function entrancePose(canvas, rig, live, now) {
-    const det = live.a * live.d - live.b * live.c, s = Math.sqrt(Math.abs(det)), flip = det < 0 ? -1 : 1;
-    const tipX = live.a * TIP.x + live.c * TIP.y + live.e, tipY = live.b * TIP.x + live.d * TIP.y + live.f;
-    const e = rig.entry || (rig.entry = { at: now, x: tipX, y: tipY, seed: Math.random() * 100 });
-    const t = now - e.at;
-    const landed = ENTRANCE_MS + CORRECT_MS;
-    if (t >= landed + TURN_IN_MS) { e.done = true; return live; }
-    if (t >= landed) {
-      // landed: right on Slate's cursor, easing from upright into its turn
-      const rot = turnTo(0, Math.atan2(live.b, live.a), minJerk((t - landed) / TURN_IN_MS));
-      return new DOMMatrix().translate(tipX, tipY).rotate((rot * 180) / Math.PI).scale(s, s * flip).translate(-TIP.x, -TIP.y);
-    }
+    const L = liveParts(live);
+    const e = rig.entry || (rig.entry = { at: now, x: L.x, y: L.y });
+    const k = (now - e.at) / ENTRANCE_MS;
+    if (k >= 1) { e.done = true; return null; }
     const r = canvas.getBoundingClientRect();
     const Hpx = innerHeight * (canvas.width / (r.width || 1)); // screen height in canvas pixels
-    // the overshoot point: a little past the target, carrying on the way it was heading
-    const last = CURVE.pts[CURVE.pts.length - 8], dirLen = Math.hypot(last[0], last[1]) || 1;
-    const over = { x: (-last[0] / dirLen) * OVERSHOOT, y: (-last[1] / dirLen) * OVERSHOOT };
-    let x, y;
-    if (t < ENTRANCE_MS) {
-      // the main stroke along the path, ending past the target
-      const k = minJerk(t / ENTRANCE_MS), p = at(k);
-      x = e.x + (p.x + over.x * k * k) * Hpx;
-      y = e.y + (p.y + over.y * k * k) * Hpx;
-    } else {
-      // the correction: a short second stroke back onto Slate's cursor, wherever it is now
-      const k = minJerk((t - ENTRANCE_MS) / CORRECT_MS);
-      const ox = e.x + over.x * Hpx, oy = e.y + over.y * Hpx;
-      x = ox + (tipX - ox) * k;
-      y = oy + (tipY - oy) * k;
-    }
-    // a faint hand tremor, fading out as it settles
-    const fade = 1 - Math.min(1, t / (ENTRANCE_MS + CORRECT_MS));
-    const q = e.seed + t / 1000;
-    x += Hpx * 0.0016 * fade * (Math.sin(q * 23.1) + 0.6 * Math.sin(q * 41.7 + 1.3));
-    y += Hpx * 0.0016 * fade * (Math.sin(q * 19.3 + 2.1) + 0.6 * Math.sin(q * 37.9 + 0.4));
-    // a real pointer stays upright the whole way
-    return new DOMMatrix().translate(x, y).scale(s, s * flip).translate(-TIP.x, -TIP.y);
+    const p = along(minJerk(k));
+    let x = e.x + p.x * Hpx, y = e.y + p.y * Hpx;
+    // over the last stretch, settle onto Slate's cursor wherever it is by now
+    const land = k < 0.75 ? 0 : minJerk((k - 0.75) / 0.25);
+    x += (L.x - x) * land; y += (L.y - y) * land;
+    return pointerPose(x, y, L.s);
   }
 
   // ---------------------------------------------------------------- Rive interception
@@ -261,8 +232,11 @@
     let rig = rigs.get(this.canvas);
     if (!rig) rigs.set(this.canvas, (rig = { t: 0, px: 0, py: 0 }));
     const now = performance.now();
-    // data-monika-entrance: fly in along the winding path the first time it appears
-    if (this.canvas.dataset.monikaEntrance != null && !(rig.entry && rig.entry.done)) pose = entrancePose(this.canvas, rig, pose, now);
+    const ds = this.canvas.dataset;
+    // data-monika-entrance: come in along the winding path the first time it appears
+    const entering = ds.monikaEntrance != null && !(rig.entry && rig.entry.done) && entrancePose(this.canvas, rig, pose, now);
+    if (entering) pose = entering;
+    else if (ds.monikaUpright != null) { const L = liveParts(pose); pose = pointerPose(L.x, L.y, L.s); } // a regular pointer
     draw(this, rig, pose, mk.a, mk.b, now);
   };
   P.stroke = function () {
