@@ -140,6 +140,68 @@
     ctx.restore();
   }
 
+  // ---------------------------------------------------------------- entrance
+  // The first time the cursor appears, it flies in from below the screen along a winding path
+  // (traced from the sketch: up from the bottom, swinging left, right, left), upright and leaning
+  // gently into its bends as it grows to full size, then lands on Slate's cursor and carries on with it.
+  // Points are [x, y] offsets from where it lands, in screen heights.
+  const ENTRANCE_PATH = [
+    [0.079, 0.593], [0.067, 0.4375], [0.033, 0.4245], [-0.0075, 0.4155], [-0.0156, 0.3725],
+    [0.0156, 0.3225], [0.05, 0.2655], [0.033, 0.2405], [-0.0092, 0.2095], [-0.0017, 0.1725],
+    [0.0213, 0.1155], [0.047, 0.0755], [0.027, 0.0225], [0, 0],
+  ];
+  const ENTRANCE_MS = 1600;
+  // a smooth curve through the points (Catmull-Rom), measured so it can be travelled at an even pace
+  const CURVE = (() => {
+    const P = ENTRANCE_PATH, pts = [];
+    for (let i = 0; i < P.length - 1; i++) {
+      const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+      for (let j = 0; j < 40; j++) {
+        const t = j / 40, t2 = t * t, t3 = t2 * t;
+        const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+        pts.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+      }
+    }
+    pts.push(P[P.length - 1]);
+    const len = [0];
+    for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    return { pts, len, total: len[len.length - 1] };
+  })();
+  function along(u) { // point and direction a fraction u of the way along the curve
+    const d = u * CURVE.total, L = CURVE.len, P = CURVE.pts;
+    let i = 1;
+    while (i < L.length - 1 && L[i] < d) i++;
+    const k = (d - L[i - 1]) / (L[i] - L[i - 1] || 1);
+    const a = P[i - 1], b = P[i];
+    return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, dx: b[0] - a[0], dy: b[1] - a[1] };
+  }
+  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  const turnTo = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
+
+  function entrancePose(canvas, rig, live, now) {
+    const det = live.a * live.d - live.b * live.c, s = Math.sqrt(Math.abs(det)), flip = det < 0 ? -1 : 1;
+    const tipX = live.a * TIP.x + live.c * TIP.y + live.e, tipY = live.b * TIP.x + live.d * TIP.y + live.f;
+    const liveAngle = Math.atan2(live.b, live.a);
+    const e = rig.entry || (rig.entry = { at: now, x: tipX, y: tipY, rot: null });
+    const k = (now - e.at) / ENTRANCE_MS;
+    if (k >= 1) { e.done = true; return live; }
+    // screen height in this canvas's pixels
+    const r = canvas.getBoundingClientRect();
+    const Hpx = innerHeight * (canvas.width / (r.width || 1));
+    const p = along(easeInOut(Math.min(1, k)));
+    let x = e.x + p.x * Hpx, y = e.y + p.y * Hpx;
+    // stay upright like a cursor, leaning gently into each bend as it swings left and right
+    const lean = 0.42 * Math.atan2(p.dx, -p.dy);
+    e.rot = e.rot == null ? lean : turnTo(e.rot, lean, 0.12);
+    // over the last stretch, settle onto Slate's cursor wherever it is now, upright like it
+    const land = k < 0.72 ? 0 : easeInOut((k - 0.72) / 0.28);
+    x += (tipX - x) * land; y += (tipY - y) * land;
+    const rot = turnTo(e.rot, liveAngle, land);
+    const size = s * (0.72 + 0.28 * easeOut(Math.min(1, k / 0.65)));
+    return new DOMMatrix().translate(x, y).rotate((rot * 180) / Math.PI).scale(size, size * flip).translate(-TIP.x, -TIP.y);
+  }
+
   // ---------------------------------------------------------------- Rive interception
   // marker colours are rgb(1, g, b); g 254 = the cursor arrow fill (b = which colour),
   // 252/253 = its shadow/outline
@@ -169,7 +231,10 @@
     if (grow !== 1) pose = pose.multiply(new DOMMatrix().translate(TIP.x, TIP.y).scale(grow).translate(-TIP.x, -TIP.y));
     let rig = rigs.get(this.canvas);
     if (!rig) rigs.set(this.canvas, (rig = { t: 0, px: 0, py: 0 }));
-    draw(this, rig, pose, mk.a, mk.b, performance.now());
+    const now = performance.now();
+    // data-monika-entrance: fly in along the winding path the first time it appears
+    if (this.canvas.dataset.monikaEntrance != null && !(rig.entry && rig.entry.done)) pose = entrancePose(this.canvas, rig, pose, now);
+    draw(this, rig, pose, mk.a, mk.b, now);
   };
   P.stroke = function () {
     if (readMarker(this.strokeStyle)) return;
